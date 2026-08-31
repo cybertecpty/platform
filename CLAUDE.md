@@ -24,6 +24,16 @@
 
 ## Agent skills
 
+### Conventions & principles
+
+How coding agents work in this repo — git identity & PR flow, branch model, review
+handling, concurrency, testing, Nx rules — is documented in
+`docs/agents/conventions.md`. General working posture (mark unknowns, disagree when
+you should, no silent scope changes, be concise, …) is in `docs/agents/principles.md`.
+**Both files are authoritative for `platform`** and supersede the `cybertecpty`
+plugin's injected `conventions.md` / `core-principles.md` for this repo. Read them
+before any commit, push, PR, or scaffolding task.
+
 ### Issue tracker
 
 Issues live in GitHub Issues on `cybertecpty/platform`. See `docs/agents/issue-tracker.md`.
