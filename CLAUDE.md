@@ -26,7 +26,7 @@
 
 ### Issue tracker
 
-Issues live in GitHub Issues on `djmcgrath101/platform`. See `docs/agents/issue-tracker.md`.
+Issues live in GitHub Issues on `cybertecpty/platform`. See `docs/agents/issue-tracker.md`.
 
 ### Triage labels
 
