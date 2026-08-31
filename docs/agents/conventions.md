@@ -229,6 +229,13 @@ In shell/bash code blocks, use `{placeholder}` or `[placeholder]`, **not** `<...
 shells read `<`/`>` as redirection and a copy-paste can error or clobber a file. Keep
 placeholder style consistent across a block.
 
+### Format-on-save hook
+
+An editor format-on-save / import-organizer hook runs on save. It **strips an import added
+without its usage in the same edit** — so add an import and its first use atomically, in one
+edit, not as two. After edits made by an agent with no automatic format hook, run
+`nx format:write --files={paths}`.
+
 ### Windows / PowerShell
 
 - No `&&` chaining in PowerShell — use `;` or separate lines.
