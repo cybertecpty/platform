@@ -17,7 +17,7 @@ how the repo actually works:
 
 - **Closing keywords didn't fire.** `Closes #19` in PR #25 (merged into `develop`) did not
   close issue #19 — GitHub only auto-closes referenced issues when a PR merges into the
-  *default* branch. Every issue closed via a feature PR had to be closed by hand, or waited
+  _default_ branch. Every issue closed via a feature PR had to be closed by hand, or waited
   for the next `develop → main` promotion. This defeats the point of the linkage syntax and is
   easy to forget (see PR #25 / issue #19, 2026-09-01).
 - **The issue "Development" sidebar** and `closed_by_pull_requests` linkage are likewise keyed
