@@ -5,6 +5,7 @@
     "EditorConfig.EditorConfig",
     "pkief.material-icon-theme",
     "github.vscode-github-actions",
-    "github.vscode-pull-request-github"
+    "github.vscode-pull-request-github",
+    "dbaeumer.vscode-eslint"
   ]
 }
