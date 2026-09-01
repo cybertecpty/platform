@@ -185,7 +185,7 @@ Both `@nx/js/typescript` and `@nx/vite/plugin` auto-detect `vue-tsc` when instal
 
 1. `pnpm add -wD eslint@^9 eslint-plugin-vue vue-eslint-parser @vue/eslint-config-typescript @typescript-eslint/parser @nx/eslint-plugin typescript-eslint`
 2. Create root `eslint.config.mjs`
-3. Then `npx nx add @nx/eslint`
+3. Then `pnpm exec nx add @nx/eslint`
 
 ### Vue ESLint Config Pattern
 
@@ -332,7 +332,7 @@ See SKILL.md for generic multi-import (name collisions, dep refs). Vite-specific
 4. Fix `tsconfig.json`: `noEmit` → `composite + emitDeclarationOnly + outDir + tsBuildInfoFile`
 5. Add `build` and `.react-router` to dest root `.gitignore`
 6. **Keep all npm scripts** — React Router 7 uses framework CLI (`react-router build/dev`), not plain vite (see "Redundant npm Scripts" above)
-7. `npm install && nx reset && nx sync --yes`
+7. `pnpm install && nx reset && nx sync --yes`
 
 ### Non-Nx Source: TanStack Start
 
@@ -344,7 +344,7 @@ See SKILL.md for generic multi-import (name collisions, dep refs). Vite-specific
 6. Add `.vinxi`, `.tanstack`, `.nitro`, `.output` to dest root `.gitignore`
 7. Move hardcoded `--port` from `dev` script into `vite.config.ts` (`server: { port: N }`)
 8. Remove redundant npm scripts — `@nx/vite/plugin` infers `build`, `dev`, `preview`, `test` (see "Redundant npm Scripts" above)
-9. `npm install && nx reset && nx sync --yes`
+9. `pnpm install && nx reset && nx sync --yes`
 
 ### Quick Reference: React vs Vue
 
@@ -382,7 +382,7 @@ See SKILL.md for generic multi-import (name collisions, dep refs). Vite-specific
   1. Removed `packages/.gitkeep` and committed
   2. `git init && git add . && git commit` in Vite app (no git at all)
   3. `git add . && git commit` in TanStack app (git init'd but no commits)
-- Import: `npm exec nx -- import <source> packages/<name> --source=. --ref=main --no-interactive`
+- Import: `pnpm exec nx -- import <source> packages/<name> --source=. --ref=main --no-interactive`
   - Next.js import auto-installed `@nx/eslint`, `@nx/next`
   - React Router 7 import auto-installed `@nx/vite`, `@nx/react`, `@nx/docker` (Dockerfile present)
   - TanStack import auto-installed `@nx/vitest`

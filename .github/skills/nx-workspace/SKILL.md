@@ -7,7 +7,7 @@ description: "Explore and understand Nx workspaces. USE WHEN answering questions
 
 This skill provides read-only exploration of Nx workspaces. Use it to understand workspace structure, project configuration, available targets, and dependencies.
 
-Keep in mind that you might have to prefix commands with `npx`/`pnpx`/`yarn` if nx isn't installed globally. Check the lockfile to determine the package manager in use.
+This workspace uses pnpm — prefix commands with `pnpm exec` (e.g. `pnpm exec nx show projects`) so you use the workspace-pinned CLI rather than a global one.
 
 ## Listing Projects
 
@@ -244,9 +244,7 @@ Example output:
       }
     },
     "dependencies": {
-      "my-app": [
-        { "source": "my-app", "target": "shared-ui", "type": "static" }
-      ],
+      "my-app": [{ "source": "my-app", "target": "shared-ui", "type": "static" }],
       "shared-ui": []
     }
   }
