@@ -21,15 +21,15 @@ The repo is a fresh rebuild (`dfc4c32 chore: first commit`, 2026-08-31). Some ru
 below describe the **intended** setup and are **not wired yet** — treated here as
 policy so they're in place when the tooling lands, but don't assume they're active:
 
-| Area | Now | Planned |
-| --- | --- | --- |
-| Bot PR flow (`cybertec-bot`, `cybertecpty/bots` team) | ✅ live | — |
-| CI (`ci.yml`, Nx Cloud) | ✅ live | — |
-| Branch protection on `develop` / `main` | ✅ live — rulesets `protect-develop` / `protect-main` | — |
-| Commitlint / format-on-save hook | ❌ not configured | §3, §8 |
-| `@cybertecpty/*` publish on merge to `main` | ❌ no release flow, no packages | §2 |
-| `cybertec-back-merge` app | app installed, not driving anything | §2 |
-| pnpm | ❌ npm today | ADR 0001 |
+| Area                                                  | Now                                                   | Planned  |
+| ----------------------------------------------------- | ----------------------------------------------------- | -------- |
+| Bot PR flow (`cybertec-bot`, `cybertecpty/bots` team) | ✅ live                                               | —        |
+| CI (`ci.yml`, Nx Cloud)                               | ✅ live                                               | —        |
+| Branch protection on `develop` / `main`               | ✅ live — rulesets `protect-develop` / `protect-main` | —        |
+| Commitlint / format-on-save hook                      | ❌ not configured                                     | §3, §8   |
+| `@cybertecpty/*` publish on merge to `main`           | ❌ no release flow, no packages                       | §2       |
+| `cybertec-back-merge` app                             | app installed, not driving anything                   | §2       |
+| pnpm                                                  | ❌ npm today                                          | ADR 0001 |
 
 Where a rule depends on unwired tooling, it says so inline.
 
@@ -155,7 +155,7 @@ review has not accepted.
   them would leave a broken intermediate state. Deliberate exception, not a license
   to bundle loosely related work.
 - **Dependent work:** before starting the next issue, check whether it depends on
-  code in an open, unmerged PR. If so, wait for the *merge* (not just approval)
+  code in an open, unmerged PR. If so, wait for the _merge_ (not just approval)
   before proceeding.
 
 ### Commit subjects & issue references
@@ -246,8 +246,8 @@ record of anything the repo depends on.
 When a repo has checked-in agent docs covering routing, placement, naming, or
 tagging, **use them directly** — don't re-derive the same answer from generator
 source, schemas, or existing packages (high token cost, and you risk generalizing an
-exception). Source exploration is for *extending or debugging* a convention, not
-*using* one.
+exception). Source exploration is for _extending or debugging_ a convention, not
+_using_ one.
 
 ---
 
@@ -293,7 +293,7 @@ edit, not as two.
 ### Generator changes — update all surfaces together
 
 1. `generator.ts` (runtime) 2. `schema.ts` (option types) 3. `schema.json` (CLI
-schema) 4. `generator.spec.ts` (unit coverage) 5. generator-local `README.md`.
+   schema) 4. `generator.spec.ts` (unit coverage) 5. generator-local `README.md`.
 
 ---
 
@@ -351,5 +351,5 @@ an ADR.
 - Use the Nx MCP server / `nx-workspace` / `nx-generate` skills when available.
 - Don't guess generator flags — check `schema.json`, `--help`, or Nx docs.
 - To move a project, use `nx g @nx/workspace:move --project={name}
-  --destination={new/path}` — never `git mv` (the generator also fixes
+--destination={new/path}` — never `git mv` (the generator also fixes
   `tsconfig.base.json` aliases, `project.json` roots, and workspace references).

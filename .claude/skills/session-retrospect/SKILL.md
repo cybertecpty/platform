@@ -19,14 +19,14 @@ next session starts faster and repeats fewer mistakes.
 
 - **IS:** a whole-session sweep for lessons visible only in aggregate (a repeated mistake, a
   convention learned the hard way, a workflow friction worth encoding), routed to a durable home.
-- **IS NOT** `anthropic-skills:consolidate-memory` — that *tidies* the existing pool (dedup,
-  prune, fix stale facts). This one *captures new* lessons. If the pool needs tidying,
+- **IS NOT** `anthropic-skills:consolidate-memory` — that _tidies_ the existing pool (dedup,
+  prune, fix stale facts). This one _captures new_ lessons. If the pool needs tidying,
   recommend running that separately.
 
 ## The bar
 
 Most of a session is transient troubleshooting and **must not** be recorded. Keep a candidate
-only if it is **durable** — it would change how a *future* session works:
+only if it is **durable** — it would change how a _future_ session works:
 
 - A repo convention / constraint / gotcha not yet written down.
 - A working-style preference or correction the user gave.
@@ -38,14 +38,14 @@ Drop everything else. When in doubt, **drop it** — a noisy pool is worse than 
 
 ## Routing
 
-| Lesson kind | Home | Memory pointer? |
-| --- | --- | --- |
-| Repo convention / agent working rule | `CLAUDE.md` or `docs/agents/conventions.md` | optional one-liner |
-| Architectural decision (alternative weighed) | new ADR in `docs/adr/` + index row | optional |
-| Open / pending / deferred work | a GitHub issue (see below) | short pointer only |
-| Local setup / run instructions | co-located `README.md` | optional |
-| Personal working-style preference, identity, correction | **memory only** (`feedback` / `user`) | this is its home |
-| External resource pointer | memory (`reference`) and/or the doc that uses it | yes |
+| Lesson kind                                             | Home                                             | Memory pointer?    |
+| ------------------------------------------------------- | ------------------------------------------------ | ------------------ |
+| Repo convention / agent working rule                    | `CLAUDE.md` or `docs/agents/conventions.md`      | optional one-liner |
+| Architectural decision (alternative weighed)            | new ADR in `docs/adr/` + index row               | optional           |
+| Open / pending / deferred work                          | a GitHub issue (see below)                       | short pointer only |
+| Local setup / run instructions                          | co-located `README.md`                           | optional           |
+| Personal working-style preference, identity, correction | **memory only** (`feedback` / `user`)            | this is its home   |
+| External resource pointer                               | memory (`reference`) and/or the doc that uses it | yes                |
 
 Constraints (do not violate):
 
@@ -66,7 +66,7 @@ Deferred work becomes a GitHub issue on `cybertecpty/platform` (see
 [`docs/agents/issue-tracker.md`](../../../docs/agents/issue-tracker.md)), added to the
 **Platform · Foundation** project board. Prefer the `mattpocock-skills:to-tickets` skill for
 anything that is more than a single well-scoped issue (vertical slices + blocking edges); use
-a single `mcp__github__issue_write` create call otherwise. An issue *is* the durable record —
+a single `mcp__github__issue_write` create call otherwise. An issue _is_ the durable record —
 creating it here is the completed action, no later commit step.
 
 ## Workflow
@@ -77,7 +77,7 @@ Review from the top. Collect raw candidates — mistakes and their root cause, c
 user gave, conventions/gotchas hit, decisions taken, work left open. Don't filter yet.
 
 **Scoped drift check (only if a repo was modified this session).** For each doc that
-*describes* something this session changed (`CLAUDE.md`, `docs/agents/*.md`, `README.md`,
+_describes_ something this session changed (`CLAUDE.md`, `docs/agents/*.md`, `README.md`,
 `docs/adr/`), re-verify the claims **about what changed** against the actual filesystem/git,
 read-only — the way `audit-drift` does, but scoped to this session's changes only. Any drift
 joins the candidate list. If the session touched no repo, skip.
@@ -92,14 +92,14 @@ Discard transient candidates. For survivors, write a one-line statement in the u
 For each survivor, find its home from the table. For memory lessons, read `MEMORY.md` (+ the
 related file) to decide new vs. update. For repo-doc lessons, locate the exact file + section.
 For pending work, decide issue type and a proposed Priority. Note lessons needing writes in
-**two** places (a convention → doc *and* a memory pointer).
+**two** places (a convention → doc _and_ a memory pointer).
 
 ### 4. Present the plan, get approval
 
 Show a compact table **before writing anything**:
 
-| # | Lesson (one line) | Destination | New/Update |
-| --- | --- | --- | --- |
+| #   | Lesson (one line) | Destination | New/Update |
+| --- | ----------------- | ----------- | ---------- |
 
 Also list what you considered and **dropped**, so the user can pull anything back. Then ask
 for approval (`AskUserQuestion` if a routing choice is genuinely ambiguous, else a plain
