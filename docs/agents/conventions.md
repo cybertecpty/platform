@@ -307,8 +307,7 @@ _using_ one.
 ### Dependency reuse
 
 Before adding a runtime or dev dependency, check whether the workspace already
-covers it — an existing dependency, an Nx plugin, or a shared helper in
-`src/lib/utils/` etc.
+covers it — an existing dependency, an Nx plugin, or a shared helper.
 
 - Prefer a well-supported third-party package over a custom implementation when it
   meaningfully cuts risk, maintenance, or complexity. Prefer a few lines of our
