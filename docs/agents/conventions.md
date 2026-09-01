@@ -25,7 +25,7 @@ policy so they're in place when the tooling lands, but don't assume they're acti
 | --- | --- | --- |
 | Bot PR flow (`cybertec-bot`, `cybertecpty/bots` team) | ✅ live | — |
 | CI (`ci.yml`, Nx Cloud) | ✅ live | — |
-| Branch protection on `develop` / `main` | ❌ **none** | rulesets — [#2](https://github.com/cybertecpty/platform/issues/2) |
+| Branch protection on `develop` / `main` | ✅ live — rulesets `protect-develop` / `protect-main` | — |
 | Commitlint / format-on-save hook | ❌ not configured | §3, §8 |
 | `@cybertecpty/*` publish on merge to `main` | ❌ no release flow, no packages | §2 |
 | `cybertec-back-merge` app | app installed, not driving anything | §2 |
@@ -80,16 +80,14 @@ manual git is unaffected.
 
 ### Auto-merge
 
-- **Do not arm auto-merge until branch protection is live (§0, §2).** With no
-  required check or approval on `develop`, `gh pr merge --auto` merges
-  **immediately** — it has nothing to wait for. Until then, open the PR and leave
-  it for the maintainer to review and merge.
-- Once protection is in place: as `cybertec-bot`,
-  `gh pr merge {n} --auto --squash` for PRs into `develop`. Auto-merge only
-  pre-arms; it then waits for the required check **and** the maintainer's approval.
-  Only the human maintainer approves and merges protected branches.
-- If the bot is not authorized for a protected branch, report that — do not grant
-  the bot bypass rights to force a self-merge of unreviewed code.
+- Branch protection is live (§2), so auto-merge is safe: as `cybertec-bot`,
+  `gh pr merge {n} --auto --squash` for PRs into `develop`. It pre-arms the merge
+  and then waits for the required `main` check **and** the maintainer's approval —
+  it will not merge unreviewed code.
+- Only the human maintainer approves and merges protected branches. Do not grant
+  the bot bypass rights to force a self-merge.
+- If the bot loses authorization for a protected branch, report that rather than
+  working around it.
 
 ### Post-merge cleanup
 
@@ -117,6 +115,22 @@ not proof. Prefer `git branch -d` (refuses unmerged work).
 - Never push directly to `develop` or `main`. Never force-push a shared branch — add
   a new commit.
 
+**Branch protection (live).** Rulesets `protect-develop` and `protect-main` enforce,
+on both branches:
+
+- a pull request is required — no direct pushes;
+- one approving review, from the maintainer (`require_code_owner_review` off; approvals
+  dismissed on any new push);
+- the `main` GitHub Actions check must pass (non-strict — the branch need not be up to
+  date first);
+- all review threads resolved before merge;
+- no force-push, no branch deletion;
+- merge methods: squash or merge commit.
+
+Repo admins (currently just the maintainer) can bypass. A CI-status or release
+automation account that needs to push directly would have to be added as a bypass
+actor — none is today.
+
 **Intended (not wired yet — see §0):**
 
 - `main` publishes `@cybertecpty/*` to npm on merge, once a release flow and
@@ -125,10 +139,6 @@ not proof. Prefer `git branch -d` (refuses unmerged work).
   creates on the release branch, breaking the next release's baseline.
 - `main` → `develop` back-merges (via the `cybertec-back-merge` app or manually) are
   real two-parent merges.
-- Branch-protection rulesets for both branches: require a PR, require the `main` CI
-  check, one maintainer approval, dismiss stale approvals on push, block force-push
-  and deletion; repo admins bypass. Rollout tracked in
-  [#2](https://github.com/cybertecpty/platform/issues/2).
 
 ---
 
