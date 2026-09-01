@@ -6,7 +6,8 @@
     "affected:format": "pnpm exec nx format:write --affected",
     "format": "pnpm exec nx format:write --all",
     "format:check": "pnpm exec nx format:check --all",
-    "preinstall": "npx only-allow pnpm"
+    "preinstall": "npx only-allow pnpm",
+    "prepare": "husky"
   },
   "private": true,
   "packageManager": "pnpm@10.34.5",
@@ -14,6 +15,15 @@
     "onlyBuiltDependencies": [
       "@swc/core",
       "nx"
+    ]
+  },
+  "lint-staged": {
+    "*.{ts,tsx,cts,mts,js,jsx,cjs,mjs}": [
+      "eslint --fix --no-warn-ignored",
+      "nx format:write --files"
+    ],
+    "*.{json,md,mdx,html,css,scss,yml,yaml}": [
+      "nx format:write --files"
     ]
   },
   "devDependencies": {
@@ -26,6 +36,8 @@
     "@types/node": "^24.0.0",
     "eslint": "^9.8.0",
     "eslint-config-prettier": "^10.1.8",
+    "husky": "^9.1.7",
+    "lint-staged": "^17.4.1",
     "nx": "23.1.1",
     "prettier": "^3.8.1",
     "prettier-plugin-organize-imports": "^4.3.0",

@@ -28,7 +28,8 @@ policy so they're in place when the tooling lands, but don't assume they're acti
 | Nx Cloud remote cache (`NX_CLOUD_ACCESS_TOKEN` secret)    | ✅ live                                                 | —       |
 | Branch protection on `develop` / `main`                   | ✅ live — rulesets `protect-develop` / `protect-main`   | —       |
 | Reviewer routing (`.github/CODEOWNERS` → `@djmcgrath101`) | ✅ live — auto-requests maintainer review on every PR   | —       |
-| Commitlint / format-on-save hook                          | ❌ not configured                                       | §3, §8  |
+| Pre-commit hook (`husky` + `lint-staged`)                 | ✅ live — formats/`eslint --fix`es staged files (#24)   | —       |
+| Commitlint / `commit-msg` hook                            | ❌ not configured                                       | §3      |
 | `@cybertecpty/*` publish on merge to `main`               | ❌ no release flow, no packages                         | §2      |
 | `cybertec-back-merge` app                                 | app installed, not driving anything                     | §2      |
 | pnpm (`pnpm-lock.yaml`, `pnpm exec nx`)                   | ✅ live — pnpm@10.34.5, `node-linker=isolated` (PR #17) | —       |
@@ -305,6 +306,23 @@ Prettier owns Markdown too, and its normalization is **not** configurable:
 If a format-on-save / import-organizer hook is configured (see §0), it **strips an
 import added without its usage in the same edit** — so add an import and its first
 use atomically, in one edit, not as two.
+
+### Pre-commit hook
+
+A `husky` `pre-commit` hook runs `lint-staged` on every `git commit` (#24): staged
+`*.{ts,tsx,cts,mts,js,jsx,cjs,mjs}` get `eslint --fix` then `nx format:write`; staged
+`*.{json,md,mdx,html,css,scss,yml,yaml}` get `nx format:write`. lint-staged re-stages
+what it changed, so the commit lands clean.
+
+- It's a **convenience backstop**, not the gate. CI (`nx format:check`,
+  `nx run-many -t lint`) stays authoritative — `git commit --no-verify` bypasses the
+  hook entirely.
+- Installed by the `prepare` script on `pnpm install`; the hook shells out through
+  `sh` (Git for Windows provides it). If `.husky/_/` is missing, run `pnpm install`.
+- It fires on **bot commits** too. When the working tree is already formatted (per the
+  rule above, the bot runs `nx format:write` before committing) the hook is a no-op.
+  Don't reach for `--no-verify` in the bot flow unless the hook is actively breaking a
+  commit — see `.claude/skills/commit-push-pr`.
 
 ### Windows / PowerShell
 

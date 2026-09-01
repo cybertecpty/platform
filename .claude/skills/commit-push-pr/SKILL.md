@@ -82,6 +82,12 @@ in the body when the commit should close an issue (subject-line `(#n)` is a refe
 closer). `develop` is the default branch (ADR 0002), so `Closes #{issue}` fires on merge to
 `develop` — don't put closing keywords in `develop → main` promotion PRs.
 
+The `pre-commit` hook (`husky` + `lint-staged`, conventions §8) runs `eslint --fix` +
+`nx format:write` on the staged files here. If you followed §8 and ran `nx format:write`
+before staging, it's a no-op. If it changes files, they're re-staged into this commit —
+re-check `git show HEAD` and amend the PR body if a "prettier clean" box needs it. Only add
+`--no-verify` if the hook is actively failing the commit (say so in the PR).
+
 ### 6. Push via the bot remote
 
 ```bash
