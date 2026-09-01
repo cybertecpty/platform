@@ -4,5 +4,6 @@
   "endOfLine": "lf",
   "arrowParens": "avoid",
   "trailingComma": "none",
+  "embeddedLanguageFormatting": "off",
   "plugins": ["prettier-plugin-organize-imports", "prettier-plugin-tailwindcss"]
 }
