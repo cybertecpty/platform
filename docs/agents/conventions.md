@@ -304,6 +304,23 @@ _using_ one.
 - Don't swallow errors — rethrow or return a structured failure.
 - Exported functions have explicit return types.
 
+### Dependency reuse
+
+Before adding a runtime or dev dependency, check whether the workspace already
+covers it — an existing dependency, an Nx plugin, or a shared helper in
+`src/lib/utils/` etc.
+
+- Prefer a well-supported third-party package over a custom implementation when it
+  meaningfully cuts risk, maintenance, or complexity. Prefer a few lines of our
+  own code over a dependency for trivial logic.
+- Vet a candidate before adding it: maintenance and release cadence, adoption,
+  security posture (open advisories, `pnpm audit`), license compatibility,
+  TypeScript support, and runtime / bundle impact.
+- Add or update tests for the integration behavior and failure modes the new
+  dependency introduces — don't lean on its own test suite.
+- Adding a dependency is a `build` change (`build(deps): ...`); if it sets a
+  durable technical direction, it may also warrant an ADR (§7).
+
 ### Documentation placeholders
 
 In shell/bash code blocks, use `{placeholder}` or `[placeholder]`, **not** `<...>` —
