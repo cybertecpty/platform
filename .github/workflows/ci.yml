@@ -10,6 +10,14 @@ permissions:
   actions: read
   contents: read
 
+env:
+  # Read-write CI token for the Nx Cloud remote cache. Set the repo secret
+  # NX_CLOUD_ACCESS_TOKEN to the "protected-branch-pipeline" token from
+  # https://cloud.nx.app. Empty until then — CI still runs, just without shared
+  # caching. If fork PRs ever land, switch this to a conditional that hands forks
+  # the read-only token instead.
+  NX_CLOUD_ACCESS_TOKEN: ${{ secrets.NX_CLOUD_ACCESS_TOKEN }}
+
 jobs:
   main:
     runs-on: ubuntu-latest
