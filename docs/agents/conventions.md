@@ -117,8 +117,13 @@ not proof. Prefer `git branch -d` (refuses unmerged work).
 
 ## 2. Branch model & protection
 
-- **`develop`** — integration branch. All feature/fix/chore PRs target `develop`.
-- **`main`** — release / published-package branch.
+- **`develop`** — integration branch and the **GitHub default branch** (ADR 0002). All
+  feature/fix/chore PRs target `develop`; `gh pr create` with no `--base` and the web
+  compare/PR UI default to it. Because it's the default branch, `Closes #N` / `Fixes #N`
+  in a PR body closes the issue on merge to `develop` — no manual close step.
+- **`main`** — release / published-package branch. Promotion PRs must pass `--base main`
+  explicitly (the default is now `develop`), and carry **no** closing keywords — the issues
+  they promote were already closed when the work merged to `develop`.
 - Never push directly to `develop` or `main`. Never force-push a shared branch — add
   a new commit.
 
@@ -172,8 +177,9 @@ review has not accepted.
   conventional-commit subject: `type(scope): message (#123)`. Optional — only when an
   issue actually exists; don't fabricate one.
 - The subject parenthetical is a scan reference, not a closer. GitHub auto-closes
-  only from body/footer keywords (`Closes #123`) **and** only on merge to `main` —
-  so a PR merged to `develop` typically leaves its issue open until the work ships.
+  only from body/footer keywords (`Closes #123`) on merge to the **default branch**,
+  which is `develop` (ADR 0002) — so a feature PR's `Closes #123` fires when it merges
+  to `develop`. Keep closing keywords out of `develop → main` promotion PRs.
 
 ### Commit message format
 
@@ -284,10 +290,21 @@ placeholder style consistent across a block.
 
 ### Formatting
 
-Run `nx format:write --files={paths}` after editing. If a format-on-save /
-import-organizer hook is configured (see §0), it **strips an import added without its
-usage in the same edit** — so add an import and its first use atomically, in one
-edit, not as two.
+Run `nx format:write --files={paths}` after editing, and actually run it before
+ticking a "prettier clean" box in a PR body — CI runs `nx format:check` and a stray
+marker fails the required check.
+
+Prettier owns Markdown too, and its normalization is **not** configurable:
+
+- Emphasis (italic) uses single underscores; strong (bold) uses double asterisks.
+  Write `_word_`, not `*word*` — `*word*` gets rewritten to `_word_` on the next
+  format run. (Prettier keeps `*` only for mid-word emphasis like `a*b*c`, which
+  prose rarely wants.)
+- Unordered list bullets are `-` (Prettier rewrites `*` / `+`).
+
+If a format-on-save / import-organizer hook is configured (see §0), it **strips an
+import added without its usage in the same edit** — so add an import and its first
+use atomically, in one edit, not as two.
 
 ### Windows / PowerShell
 

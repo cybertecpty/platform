@@ -79,7 +79,8 @@ Conventional Commits: `type(scope): subject`, subject **lowercase** (acronyms to
 lines <= 100, blank line before any footer. (When commitlint is configured — see
 `docs/agents/conventions.md` §0 — a `commit-msg` hook enforces this.) Add `Closes #{issue}`
 in the body when the commit should close an issue (subject-line `(#n)` is a reference, not a
-closer, and GitHub only auto-closes on merge to `main`).
+closer). `develop` is the default branch (ADR 0002), so `Closes #{issue}` fires on merge to
+`develop` — don't put closing keywords in `develop → main` promotion PRs.
 
 ### 6. Push via the bot remote
 
