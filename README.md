@@ -4,14 +4,25 @@
 
 ✨ Your new, shiny [Nx workspace](https://nx.dev) is ready ✨.
 
-[Learn more about this workspace setup and its capabilities](https://nx.dev/docs/technologies/typescript/introduction?utm_source=nx_project&utm_medium=readme&utm_campaign=nx_projects) or run `npx nx graph` to visually explore what was created. Now, let's get you up to speed!
+## Prerequisites
+
+- **Node 24** (the version CI runs).
+- **pnpm** — this workspace uses pnpm exclusively. Enable it once with `corepack enable`; the
+  pinned version comes from `package.json`'s `packageManager` field. `npm` and `yarn` are
+  blocked by a `preinstall` guard.
+
+Install dependencies with `pnpm install`.
+
+[Learn more about this workspace setup and its capabilities](https://nx.dev/docs/technologies/typescript/introduction?utm_source=nx_project&utm_medium=readme&utm_campaign=nx_projects) or run `pnpm exec nx graph` to visually explore what was created. Now, let's get you up to speed!
+
 ## Finish your Nx platform setup
 
 🚀 [Finish setting up your workspace](https://cloud.nx.app/connect/1NJ5tXGjpT) to get faster builds with remote caching, distributed task execution, and self-healing CI. [Learn more about Nx Cloud](https://nx.dev/ci/intro/why-nx-cloud).
+
 ## Generate a library
 
 ```sh
-npx nx g @nx/js:lib packages/pkg1 --publishable --importPath=@my-org/pkg1
+pnpm exec nx g @nx/js:lib packages/pkg1 --publishable --importPath=@my-org/pkg1
 ```
 
 ## Run tasks
@@ -19,13 +30,13 @@ npx nx g @nx/js:lib packages/pkg1 --publishable --importPath=@my-org/pkg1
 To build the library use:
 
 ```sh
-npx nx run pkg1:build
+pnpm exec nx run pkg1:build
 ```
 
 To run any task with Nx use:
 
 ```sh
-npx nx run <project-name>:<target>
+pnpm exec nx run <project-name>:<target>
 ```
 
 These targets are either [inferred automatically](https://nx.dev/docs/concepts/inferred-tasks?utm_source=nx_project&utm_medium=readme&utm_campaign=nx_projects) or defined in the `project.json` or `package.json` files.
@@ -37,7 +48,7 @@ These targets are either [inferred automatically](https://nx.dev/docs/concepts/i
 To version and release the library use
 
 ```
-npx nx release
+pnpm exec nx release
 ```
 
 Pass `--dry-run` to see what would happen without actually releasing the library.
@@ -51,13 +62,13 @@ Nx automatically updates TypeScript [project references](https://www.typescriptl
 To manually trigger the process to sync the project graph dependencies information to the TypeScript project references, run the following command:
 
 ```sh
-npx nx sync
+pnpm exec nx sync
 ```
 
 You can enforce that the TypeScript project references are always in the correct state when running in CI by adding a step to your CI job configuration that runs the following command:
 
 ```sh
-npx nx sync:check
+pnpm exec nx sync:check
 ```
 
 [Learn more about nx sync](https://nx.dev/reference/nx-commands#sync)
@@ -78,7 +89,7 @@ Nx Cloud ensures a [fast and scalable CI](https://nx.dev/nx-cloud?utm_source=nx_
 Use the following command to configure a CI workflow for your workspace:
 
 ```sh
-npx nx g ci-workflow
+pnpm exec nx g ci-workflow
 ```
 
 [Learn more about Nx on CI](https://nx.dev/docs/features/ci-features?utm_source=nx_project&utm_medium=readme&utm_campaign=nx_projects)
