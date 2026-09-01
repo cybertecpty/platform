@@ -1,0 +1,55 @@
+# Build context excludes for any image built from the repo root.
+# Keep in sync with .gitignore — anything not needed at runtime or build time.
+
+# VCS / CI / editor
+.git
+.gitattributes
+.github
+.vscode
+.idea
+*.md
+!README.md
+
+# Agent / tooling config
+.claude
+.codex
+.cursor
+.gemini
+.opencode
+.agents
+.remember
+.editorconfig
+.prettierrc
+.prettierignore
+
+# Dependencies (reinstalled inside the image)
+node_modules
+**/node_modules
+
+# Nx / build output & caches
+.nx
+dist
+tmp
+out-tsc
+**/dist
+**/.angular
+vite.config.*.timestamp*
+vitest.config.*.timestamp*
+
+# Tests & coverage
+coverage
+**/coverage
+**/test-results
+**/playwright-report
+**/.last-run.json
+**/__screenshots__
+**/*.spec.ts
+**/*.test.ts
+
+# Secrets & local env
+.env
+.env.*
+**/local.settings.json
+
+# Logs
+*.log
