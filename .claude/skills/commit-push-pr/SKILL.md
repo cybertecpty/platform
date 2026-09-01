@@ -122,7 +122,7 @@ Branch protection is live (`docs/agents/conventions.md` §2), so this is safe:
 gh pr merge {n} --repo cybertecpty/platform --auto --squash
 ```
 
-Auto-merge pre-arms and then waits for the required `main` CI check **and** the maintainer's
+Auto-merge pre-arms and then waits for the required `ci` check **and** the maintainer's
 approval — it will not merge unreviewed. If the bot is not authorized for the branch, report
 that; do not grant bypass to force a self-merge.
 

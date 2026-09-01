@@ -20,7 +20,7 @@ env:
   NX_CLOUD_ACCESS_TOKEN: ${{ secrets.NX_CLOUD_ACCESS_TOKEN }}
 
 jobs:
-  main:
+  ci:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v5
@@ -51,6 +51,7 @@ jobs:
       - run: pnpm exec nx start-ci-run --distribute-on="3 linux-medium-js" --stop-agents-after="e2e"
 
       # Prepend any command with "nx record --" to record its logs to Nx Cloud
+      # $NX_BASE / $NX_HEAD come from nrwl/nx-set-shas above.
       - run: pnpm exec nx record -- pnpm exec nx format:check --base=$NX_BASE --head=$NX_HEAD
       - run: pnpm exec nx run-many -t lint test build typecheck e2e
       # Nx Cloud recommends fixes for failures to help you get CI green faster. Learn more: https://nx.dev/docs/features/ci-features/self-healing-ci
