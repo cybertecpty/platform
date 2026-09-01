@@ -19,7 +19,7 @@
 .agents
 .remember
 .editorconfig
-.prettierrc
+.prettierrc*
 .prettierignore
 
 # Dependencies (reinstalled inside the image)

@@ -1,3 +1,10 @@
 {
-  "recommendations": ["nrwl.angular-console", "esbenp.prettier-vscode"]
+  "recommendations": [
+    "nrwl.angular-console",
+    "esbenp.prettier-vscode",
+    "EditorConfig.EditorConfig",
+    "pkief.material-icon-theme",
+    "github.vscode-github-actions",
+    "github.vscode-pull-request-github"
+  ]
 }

@@ -3,6 +3,9 @@
   "version": "0.0.0",
   "license": "MIT",
   "scripts": {
+    "affected:format": "pnpm exec nx format:write --affected",
+    "format": "pnpm exec nx format:write --all",
+    "format:check": "pnpm exec nx format:check --all",
     "preinstall": "npx only-allow pnpm"
   },
   "private": true,
@@ -13,7 +16,6 @@
       "nx"
     ]
   },
-  "dependencies": {},
   "devDependencies": {
     "@nx/js": "23.1.1",
     "@swc-node/register": "1.11.1",
@@ -22,6 +24,8 @@
     "@types/node": "^24.0.0",
     "nx": "23.1.1",
     "prettier": "^3.8.1",
+    "prettier-plugin-organize-imports": "^4.3.0",
+    "prettier-plugin-tailwindcss": "^0.8.1",
     "tslib": "^2.3.0",
     "typescript": "~6.0.3"
   }
