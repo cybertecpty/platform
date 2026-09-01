@@ -4,6 +4,7 @@
 dist
 tmp
 out-tsc
+/deploy/
 
 # dependencies
 node_modules
@@ -43,8 +44,27 @@ Thumbs.db
 .cursor/rules/nx-rules.mdc
 .github/instructions/nx.instructions.md
 
-.claude/worktrees
+.angular
 .claude/settings.local.json
+.playwright-mcp
+
+vite.config.*.timestamp*
+vitest.config.*.timestamp*
+
 .nx/polygraph
 .nx/self-healing
-.nx/migrate-runs
+__screenshots__/
+
+# Sensitive files
+.env
+
+.claude/worktrees
+
+# Log files
+*.log
+error.log
+
+# Playwright
+**/playwright-report
+**/test-results
+**/.last-run.json
