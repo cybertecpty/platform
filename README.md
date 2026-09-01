@@ -13,6 +13,15 @@
 
 Install dependencies with `pnpm install`.
 
+## Pre-commit formatting
+
+`pnpm install` sets up a `husky` `pre-commit` hook that runs `lint-staged` — staged
+JS/TS files get `eslint --fix` then `nx format:write`, other supported files get
+`nx format:write`, and the changes are re-staged so the commit lands clean. It's a
+convenience backstop; CI (`nx format:check`, `nx run-many -t lint`) is the real gate.
+Bypass it with `git commit --no-verify`. The hook runs through `sh`, which Git for
+Windows installs.
+
 [Learn more about this workspace setup and its capabilities](https://nx.dev/docs/technologies/typescript/introduction?utm_source=nx_project&utm_medium=readme&utm_campaign=nx_projects) or run `pnpm exec nx graph` to visually explore what was created. Now, let's get you up to speed!
 
 ## Finish your Nx platform setup
