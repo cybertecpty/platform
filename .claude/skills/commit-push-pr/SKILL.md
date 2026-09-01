@@ -103,10 +103,15 @@ Refs #{issue}
 
 🤖 Generated with [Claude Code](https://claude.com/claude-code)
 EOF
-gh pr create --repo cybertecpty/platform --base develop --head {branch} --title "{title}" --body-file /tmp/pr-body.txt
+gh pr create --repo cybertecpty/platform --base develop --head {branch} --title "{title}" --body-file /tmp/pr-body.txt --reviewer djmcgrath101
 ```
 
 Capture the PR number from the `/pull/{n}` URL.
+
+`.github/CODEOWNERS` already makes GitHub auto-request the maintainer's review, so
+`--reviewer djmcgrath101` is belt-and-suspenders — keep it so the request still
+fires if CODEOWNERS ever stops matching. If it errors (e.g. the maintainer can't be
+requested on this PR), drop the flag and re-run; do not block the PR on it.
 
 ### 8. Arm auto-merge
 

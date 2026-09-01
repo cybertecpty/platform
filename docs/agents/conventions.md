@@ -21,16 +21,17 @@ The repo is a fresh rebuild (`dfc4c32 chore: first commit`, 2026-08-31). Some ru
 below describe the **intended** setup and are **not wired yet** — treated here as
 policy so they're in place when the tooling lands, but don't assume they're active:
 
-| Area                                                   | Now                                                     | Planned |
-| ------------------------------------------------------ | ------------------------------------------------------- | ------- |
-| Bot PR flow (`cybertec-bot`, `cybertecpty/bots` team)  | ✅ live                                                 | —       |
-| CI (`ci.yml`) + Nx Cloud distribution / self-healing   | ✅ live                                                 | —       |
-| Nx Cloud remote cache (`NX_CLOUD_ACCESS_TOKEN` secret) | ✅ live                                                 | —       |
-| Branch protection on `develop` / `main`                | ✅ live — rulesets `protect-develop` / `protect-main`   | —       |
-| Commitlint / format-on-save hook                       | ❌ not configured                                       | §3, §8  |
-| `@cybertecpty/*` publish on merge to `main`            | ❌ no release flow, no packages                         | §2      |
-| `cybertec-back-merge` app                              | app installed, not driving anything                     | §2      |
-| pnpm (`pnpm-lock.yaml`, `pnpm exec nx`)                | ✅ live — pnpm@10.34.5, `node-linker=isolated` (PR #17) | —       |
+| Area                                                      | Now                                                     | Planned |
+| --------------------------------------------------------- | ------------------------------------------------------- | ------- |
+| Bot PR flow (`cybertec-bot`, `cybertecpty/bots` team)     | ✅ live                                                 | —       |
+| CI (`ci.yml`) + Nx Cloud distribution / self-healing      | ✅ live                                                 | —       |
+| Nx Cloud remote cache (`NX_CLOUD_ACCESS_TOKEN` secret)    | ✅ live                                                 | —       |
+| Branch protection on `develop` / `main`                   | ✅ live — rulesets `protect-develop` / `protect-main`   | —       |
+| Reviewer routing (`.github/CODEOWNERS` → `@djmcgrath101`) | ✅ live — auto-requests maintainer review on every PR   | —       |
+| Commitlint / format-on-save hook                          | ❌ not configured                                       | §3, §8  |
+| `@cybertecpty/*` publish on merge to `main`               | ❌ no release flow, no packages                         | §2      |
+| `cybertec-back-merge` app                                 | app installed, not driving anything                     | §2      |
+| pnpm (`pnpm-lock.yaml`, `pnpm exec nx`)                   | ✅ live — pnpm@10.34.5, `node-linker=isolated` (PR #17) | —       |
 
 Where a rule depends on unwired tooling, it says so inline.
 
@@ -73,6 +74,11 @@ manual git is unaffected.
   `gh pr create --repo cybertecpty/platform --base develop --head {branch} ...`.
 - Use `--body-file {path}` for multi-line bodies — never inline `--body` (PowerShell
   strips embedded quotes) and never `--body @-`.
+- Request the maintainer's review: pass `--reviewer djmcgrath101` to `gh pr create`.
+  `.github/CODEOWNERS` (`* @djmcgrath101`) already auto-requests it, and the branch
+  protection rule _requires_ a maintainer approval — but "required" is not
+  "requested", so without CODEOWNERS or the flag a PR just sits `BLOCKED` with
+  nobody pinged. Keep both.
 - Switch to the maintainer account only for actions that genuinely need a seated
   account (e.g. requesting a Copilot review, approving). Switch **back** to
   `cybertec-bot` before bot-owned maintenance (arming auto-merge, bot comments,
@@ -120,8 +126,9 @@ not proof. Prefer `git branch -d` (refuses unmerged work).
 on both branches:
 
 - a pull request is required — no direct pushes;
-- one approving review, from the maintainer (`require_code_owner_review` off; approvals
-  dismissed on any new push);
+- one approving review, from the maintainer (`require_code_owner_review` off, so a
+  CODEOWNERS review is requested but not itself gating; approvals dismissed on any new
+  push);
 - the `main` GitHub Actions check must pass (non-strict — the branch need not be up to
   date first);
 - all review threads resolved before merge;
