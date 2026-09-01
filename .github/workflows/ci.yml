@@ -3,6 +3,7 @@ name: CI
 on:
   push:
     branches:
+      - develop
       - main
   pull_request:
 
@@ -38,13 +39,19 @@ jobs:
 
       - run: pnpm install --frozen-lockfile
 
+      # Derive the diff base/head for format:check (and, later, `nx affected`):
+      # on a PR, the merge-base with the target branch; on a push, the last
+      # successful commit on this branch. Exposes $NX_BASE / $NX_HEAD. Needs
+      # `actions: read` + `fetch-depth: 0` (both set above).
+      - uses: nrwl/nx-set-shas@v5
+
       # Enable Nx Cloud task distribution. Runs after install because it is
       # invoked through the workspace's pinned Nx (pnpm exec).
       # Learn more at https://nx.dev/docs/reference/nx-cloud-cli#npx-nxcloud-startcirun
       - run: pnpm exec nx start-ci-run --distribute-on="3 linux-medium-js" --stop-agents-after="e2e"
 
       # Prepend any command with "nx record --" to record its logs to Nx Cloud
-      - run: pnpm exec nx record -- pnpm exec nx format:check --base="remotes/origin/main"
+      - run: pnpm exec nx record -- pnpm exec nx format:check --base=$NX_BASE --head=$NX_HEAD
       - run: pnpm exec nx run-many -t lint test build typecheck e2e
       # Nx Cloud recommends fixes for failures to help you get CI green faster. Learn more: https://nx.dev/docs/features/ci-features/self-healing-ci
       - run: pnpm exec nx fix-ci
