@@ -29,7 +29,7 @@ policy so they're in place when the tooling lands, but don't assume they're acti
 | Branch protection on `develop` / `main`                   | ✅ live — rulesets `protect-develop` / `protect-main`   | —       |
 | Reviewer routing (`.github/CODEOWNERS` → `@djmcgrath101`) | ✅ live — auto-requests maintainer review on every PR   | —       |
 | Pre-commit hook (`husky` + `lint-staged`)                 | ✅ live — formats/`eslint --fix`es staged files (#24)   | —       |
-| Commitlint / `commit-msg` hook                            | ❌ not configured                                       | §3      |
+| Commitlint / `commit-msg` hook                            | ✅ live — `commit-msg` hook + CI PR-title check (#32)   | §3      |
 | `@cybertecpty/*` publish on merge to `main`               | ❌ no release flow, no packages                         | §2      |
 | `cybertec-back-merge` app                                 | app installed, not driving anything                     | §2      |
 | pnpm (`pnpm-lock.yaml`, `pnpm exec nx`)                   | ✅ live — pnpm@10.34.5, `node-linker=isolated` (PR #17) | —       |
@@ -184,13 +184,34 @@ review has not accepted.
 
 ### Commit message format
 
-Conventional Commits: `type(scope): subject`. When commitlint is configured (see
-§0), these are enforced by a `commit-msg` hook — write the message to a file and
-`git commit -F {file}`:
+[Conventional Commits](https://www.conventionalcommits.org/en/v1.0.0/):
+`type(scope): subject`. Enforced two ways (§0) from `@commitlint/config-conventional`
+plus a terse custom formatter: the `.husky/commit-msg` hook locally, and a CI check
+on the **PR title** — the subject that lands, since `develop` squash-merges. Write
+the message to a file and `git commit -F {file}`.
 
-- subject **lowercase** (acronyms too);
-- body lines ≤ 100 characters (blocking);
-- blank line before any footer (warning only — the commit still lands).
+- subject **lowercase** (acronyms too), no trailing period;
+- header ≤ 100 characters; body / footer lines ≤ 100 (blocking);
+- blank line before any footer (warning only — the commit still lands);
+- breaking change: `!` after the type/scope — `feat(api)!: drop v1 endpoints`.
+
+`--no-verify` skips the hook, but the CI check on the PR title still gates the merge.
+
+**Types** (scope is optional and free-form):
+
+| type       | for                                                       |
+| ---------- | --------------------------------------------------------- |
+| `feat`     | a user-facing feature                                     |
+| `fix`      | a bug fix                                                 |
+| `docs`     | documentation only                                        |
+| `refactor` | a code change that neither fixes a bug nor adds a feature |
+| `perf`     | a code change that improves performance                   |
+| `test`     | adding or correcting tests                                |
+| `build`    | build system, dependencies, or tooling config             |
+| `ci`       | CI workflows and scripts                                  |
+| `chore`    | anything that doesn't touch `src` or tests                |
+| `style`    | formatting only — whitespace, semicolons (not CSS)        |
+| `revert`   | reverts a previous commit                                 |
 
 ---
 

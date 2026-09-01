@@ -1,0 +1,33 @@
+name: commitlint
+
+# `develop` squash-merges, so the PR title is the commit subject that lands on the
+# default branch. Lint it here; the local `.husky/commit-msg` hook covers commits
+# on the branch but is bypassable and gets squashed away.
+on:
+  pull_request:
+    types: [opened, edited, reopened, synchronize]
+
+permissions:
+  contents: read
+
+jobs:
+  pr-title:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v5
+
+      - uses: pnpm/action-setup@v4
+
+      - uses: actions/setup-node@v5
+        with:
+          node-version: 24
+          cache: 'pnpm'
+
+      - run: pnpm install --frozen-lockfile
+
+      # The title is untrusted input — pass it through the environment, never
+      # interpolated into the run script.
+      - name: Lint PR title
+        env:
+          PR_TITLE: ${{ github.event.pull_request.title }}
+        run: printf '%s\n' "$PR_TITLE" | pnpm exec commitlint --verbose
