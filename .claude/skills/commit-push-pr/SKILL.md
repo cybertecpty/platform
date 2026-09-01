@@ -76,8 +76,9 @@ git -c user.name="cybertec-bot" -c user.email="cybertec-bot@cybertec.io" commit 
 ```
 
 Conventional Commits: `type(scope): subject`, subject **lowercase** (acronyms too), body
-lines <= 100, blank line before any footer. (When commitlint is configured — see
-`docs/agents/conventions.md` §0 — a `commit-msg` hook enforces this.) Add `Closes #{issue}`
+lines <= 100, blank line before any footer. The `.husky/commit-msg` hook enforces this
+(`docs/agents/conventions.md` §3 lists the valid types); `--no-verify` skips it but CI
+still checks the PR title. Add `Closes #{issue}`
 in the body when the commit should close an issue (subject-line `(#n)` is a reference, not a
 closer). `develop` is the default branch (ADR 0002), so `Closes #{issue}` fires on merge to
 `develop` — don't put closing keywords in `develop → main` promotion PRs.
@@ -97,6 +98,10 @@ git push cybertec-bot HEAD
 Never `origin` for bot work — `origin` is HTTPS via GCM (maintainer), not the bot's key.
 
 ### 7. Create the PR as the bot
+
+The `--title` must itself be a valid Conventional Commit (`type(scope): subject`,
+lowercase subject) — the `commitlint` CI check blocks the PR otherwise, and since
+`develop` squash-merges it is the title that becomes the commit on `develop`.
 
 ```bash
 cat > /tmp/pr-body.txt << 'EOF'
