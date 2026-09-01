@@ -4,13 +4,13 @@
 //
 // The valid types and the full format rules live in
 // docs/agents/conventions.md §3 ("Commit message format"); `helpUrl` points there
-// and the terse custom formatter (scripts/commitlint-formatter.mjs) links to it
+// and the terse custom formatter (tools/commitlint-formatter.mjs) links to it
 // rather than restating it.
 
 /** @type {import('@commitlint/types').UserConfig} */
 export default {
   extends: ['@commitlint/config-conventional'],
-  formatter: './scripts/commitlint-formatter.mjs',
+  formatter: './tools/commitlint-formatter.mjs',
   helpUrl:
     'https://github.com/cybertecpty/platform/blob/develop/docs/agents/conventions.md#commit-message-format',
   rules: {
