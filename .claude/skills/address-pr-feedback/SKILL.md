@@ -18,10 +18,10 @@ GitHub thread-resolution writes; do them unless the user explicitly opts out.
 
 Reviewers seen on this repo:
 
-| Reviewer | First comment `author.login` |
-| --- | --- |
-| GitHub Copilot | `copilot-pull-request-reviewer[bot]` |
-| Gemini Code Assist | `gemini-code-assist[bot]` |
+| Reviewer           | First comment `author.login`         |
+| ------------------ | ------------------------------------ |
+| GitHub Copilot     | `copilot-pull-request-reviewer[bot]` |
+| Gemini Code Assist | `gemini-code-assist[bot]`            |
 
 Step 2 discovers the actual thread authors before filtering — surface any login not in this
 table rather than skipping it.
@@ -121,10 +121,10 @@ switch back to the maintainer at the end, even on failure.
 ```markdown
 **PR review feedback — PR #{n}** ({branch})
 
-| # | Reviewer | File:line | The point | Action | Thread |
-| --- | --- | --- | --- | --- | --- |
-| 1 | Copilot | foo.ts:42 | {one line} | Fixed (resolved) | {link} |
-| 2 | Gemini | baz.ts:88 | {one line} | Deferred (open, replied) — {why} | {link} |
+| #   | Reviewer | File:line | The point  | Action                           | Thread |
+| --- | -------- | --------- | ---------- | -------------------------------- | ------ |
+| 1   | Copilot  | foo.ts:42 | {one line} | Fixed (resolved)                 | {link} |
+| 2   | Gemini   | baz.ts:88 | {one line} | Deferred (open, replied) — {why} | {link} |
 
 **Verification:** {results}
 **Commit/push:** {short-sha} pushed to {branch} via cybertec-bot.

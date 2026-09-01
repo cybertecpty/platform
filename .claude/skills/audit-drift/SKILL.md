@@ -14,7 +14,7 @@ argument-hint: '[path to scope to — default: every agent-facing doc in the rep
 
 ## Goal
 
-Find **documentation drift**: places where a doc *claims* something reality no longer backs.
+Find **documentation drift**: places where a doc _claims_ something reality no longer backs.
 A doc is a promise — "this file exists", "this command works", "this repo is laid out that
 way". Over time the world moves and the prose doesn't. Re-check each falsifiable claim against
 the actual filesystem, git, tooling, and code, and report the gaps.
@@ -47,7 +47,7 @@ Extract claims, verify each with a **read-only** probe, group findings by type:
    `~` and env vars, then verify it resolves. A reference to something gone or moved is drift.
 
 2. **Command / incantation references.** Documented commands assume real tools, flags, git
-   remotes, `gh` accounts, branches, identifiers. Verify the *referents* exist, read-only — a
+   remotes, `gh` accounts, branches, identifiers. Verify the _referents_ exist, read-only — a
    named git remote is present (`git remote`), a documented `gh` keyring user exists
    (`gh auth status`), a branch the policy names exists on the remote, the `nxCloudId` in
    `nx.json` matches what Nx Cloud reports. **Never run a state-changing command to test it.**
@@ -63,7 +63,7 @@ Extract claims, verify each with a **read-only** probe, group findings by type:
    under `.github/workflows`? `gh api repos/cybertecpty/platform/rulesets`) and explicitly
    mark the rest **asserted but not verifiable from here** rather than guessing.
 
-5. **Catalog / manifest consistency.** A doc that *enumerates* something must match what
+5. **Catalog / manifest consistency.** A doc that _enumerates_ something must match what
    ships: `AGENTS.md` / `CLAUDE.md`'s list of skills vs. the real `.claude/skills/` +
    `.agents/skills/` contents; `package.json` version vs. any version named in docs; the ADR
    index vs. the files in `docs/adr/`. A list that names a removed item — or omits an added
@@ -84,11 +84,13 @@ another machine), say so — an honest "not verifiable here" beats a guessed PAS
 Verdict: {docs consistent with reality | N drift items across M docs}
 
 ### {Claim type, e.g. File / path references}
-| Doc (file:line) | Claim | Reality | Finding |
-| --- | --- | --- | --- |
-| {path:line} | "{the claim}" | {what the probe found} | OK / DRIFT / NOT VERIFIABLE |
+
+| Doc (file:line) | Claim         | Reality                | Finding                     |
+| --------------- | ------------- | ---------------------- | --------------------------- |
+| {path:line}     | "{the claim}" | {what the probe found} | OK / DRIFT / NOT VERIFIABLE |
 
 ### Proposed fixes
+
 - {doc:line} — {specific edit: repoint / update value / delete stale ref}. {where it lands}
 ```
 

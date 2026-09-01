@@ -19,7 +19,7 @@ plausible inference stated as a finding. An inference is not an observation.
 - Never assert state you **structurally cannot see**: a credential you can't read, a remote system's
   internals, another machine's or service's configuration.
 - Treat ambiguous-by-construction signals as causeless until proven: a 404 on a restricted/private
-  resource, a 401 from an auth check, an empty result — each says *something* failed, not *why*. Don't
+  resource, a 401 from an auth check, an empty result — each says _something_ failed, not _why_. Don't
   infer the cause.
 - This applies to your own corrections too: verify the fix against ground truth before claiming it's
   right.
@@ -66,7 +66,7 @@ slow down — do one well-scoped thing, surface the plan, and checkpoint before 
 - Lead with a recommendation and the next step, then let them set the speed.
 
 **Why:** pacing to the user's state keeps them in control and prevents the expensive wrong turn taken
-at speed. A request made under stress is still a request to proceed *carefully*.
+at speed. A request made under stress is still a request to proceed _carefully_.
 
 ## Be concise — answer first, justify only as needed
 
@@ -115,11 +115,13 @@ maintenance) burns the token budget for changes a direct Edit/Bash sequence woul
 fraction of the cost.
 
 **Mechanical (execute directly):**
+
 - The steps are fully determined before execution begins.
 - Each step is an Edit, a shell command, or a commit — no judgment call.
 - The "plan" is already a numbered checklist (an ADR, a migration wave, a documented process).
 
 **Warrants orchestration:**
+
 - Real design decisions remain open.
 - Multiple files with non-obvious interaction.
 - Genuine risk of subtle bugs a reviewer would catch.

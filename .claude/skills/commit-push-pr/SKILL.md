@@ -2,10 +2,10 @@
 name: commit-push-pr
 description: >
   Bot-flow commit -> push -> PR for this repo. Commits as cybertec-bot, pushes via the
-  cybertec-bot SSH remote, and creates the PR as cybertec-bot (arming auto-merge only once
-  branch protection is live). The gh account switches to cybertec-bot BEFORE gh pr create so
-  the PR is bot-attributed. Use this instead of commit-commands:commit-push-pr for agent work
-  in platform.
+  cybertec-bot SSH remote, creates the PR as cybertec-bot, and arms auto-merge (branch
+  protection gates it on CI + maintainer approval). The gh account switches to cybertec-bot
+  BEFORE gh pr create so the PR is bot-attributed. Use this instead of
+  commit-commands:commit-push-pr for agent work in platform.
 ---
 
 # Bot flow: commit -> push -> PR
@@ -108,21 +108,17 @@ gh pr create --repo cybertecpty/platform --base develop --head {branch} --title 
 
 Capture the PR number from the `/pull/{n}` URL.
 
-### 8. Auto-merge
+### 8. Arm auto-merge
 
-**Only if branch protection is live** (`docs/agents/conventions.md` §0). Until then,
-**do not** run `gh pr merge --auto` — with no required check or approval on `develop` it
-merges the PR **immediately**, defeating review. Leave the PR for the maintainer.
-
-Once protection is in place:
+Branch protection is live (`docs/agents/conventions.md` §2), so this is safe:
 
 ```bash
 gh pr merge {n} --repo cybertecpty/platform --auto --squash
 ```
 
-Auto-merge then pre-arms and waits for the required `main` CI check and the maintainer's
-approval. If the bot is not authorized for the branch, report that; do not grant bypass to
-force a self-merge.
+Auto-merge pre-arms and then waits for the required `main` CI check **and** the maintainer's
+approval — it will not merge unreviewed. If the bot is not authorized for the branch, report
+that; do not grant bypass to force a self-merge.
 
 ### 9. Switch back to the maintainer
 
