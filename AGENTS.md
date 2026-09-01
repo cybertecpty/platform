@@ -21,15 +21,3 @@
 - The `nx-generate` skill handles generator discovery internally - don't call nx_docs just to look up generator syntax
 
 <!-- nx configuration end-->
-
-## Agent conventions & principles
-
-How coding agents work in this repo — git identity & PR flow, branch model, review handling,
-concurrency, testing, Nx rules — is documented in `docs/agents/conventions.md`. General working
-posture (mark unknowns, disagree when you should, no silent scope changes, be concise, keep the
-context lean) is in `docs/agents/principles.md`. Both are authoritative for this repo. Read them
-before any commit, push, PR, or scaffolding task.
-
-Companion docs: `docs/agents/issue-tracker.md` (GitHub Issues workflow),
-`docs/agents/triage-labels.md` (triage vocabulary), `docs/agents/domain.md` (`CONTEXT.md` /
-`docs/adr/`).
