@@ -21,15 +21,16 @@ The repo is a fresh rebuild (`dfc4c32 chore: first commit`, 2026-08-31). Some ru
 below describe the **intended** setup and are **not wired yet** — treated here as
 policy so they're in place when the tooling lands, but don't assume they're active:
 
-| Area                                                  | Now                                                   | Planned  |
-| ----------------------------------------------------- | ----------------------------------------------------- | -------- |
-| Bot PR flow (`cybertec-bot`, `cybertecpty/bots` team) | ✅ live                                               | —        |
-| CI (`ci.yml`, Nx Cloud)                               | ✅ live                                               | —        |
-| Branch protection on `develop` / `main`               | ✅ live — rulesets `protect-develop` / `protect-main` | —        |
-| Commitlint / format-on-save hook                      | ❌ not configured                                     | §3, §8   |
-| `@cybertecpty/*` publish on merge to `main`           | ❌ no release flow, no packages                       | §2       |
-| `cybertec-back-merge` app                             | app installed, not driving anything                   | §2       |
-| pnpm                                                  | ❌ npm today                                          | ADR 0001 |
+| Area                                                   | Now                                                   | Planned  |
+| ------------------------------------------------------ | ----------------------------------------------------- | -------- |
+| Bot PR flow (`cybertec-bot`, `cybertecpty/bots` team)  | ✅ live                                               | —        |
+| CI (`ci.yml`) + Nx Cloud distribution / self-healing   | ✅ live                                               | —        |
+| Nx Cloud remote cache (`NX_CLOUD_ACCESS_TOKEN` secret) | ✅ live                                               | —        |
+| Branch protection on `develop` / `main`                | ✅ live — rulesets `protect-develop` / `protect-main` | —        |
+| Commitlint / format-on-save hook                       | ❌ not configured                                     | §3, §8   |
+| `@cybertecpty/*` publish on merge to `main`            | ❌ no release flow, no packages                       | §2       |
+| `cybertec-back-merge` app                              | app installed, not driving anything                   | §2       |
+| pnpm                                                   | ❌ npm today                                          | ADR 0001 |
 
 Where a rule depends on unwired tooling, it says so inline.
 
