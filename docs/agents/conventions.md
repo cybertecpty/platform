@@ -290,10 +290,21 @@ placeholder style consistent across a block.
 
 ### Formatting
 
-Run `nx format:write --files={paths}` after editing. If a format-on-save /
-import-organizer hook is configured (see §0), it **strips an import added without its
-usage in the same edit** — so add an import and its first use atomically, in one
-edit, not as two.
+Run `nx format:write --files={paths}` after editing, and actually run it before
+ticking a "prettier clean" box in a PR body — CI runs `nx format:check` and a stray
+marker fails the required check.
+
+Prettier owns Markdown too, and its normalization is **not** configurable:
+
+- Emphasis (italic) uses single underscores; strong (bold) uses double asterisks.
+  Write `_word_`, not `*word*` — `*word*` gets rewritten to `_word_` on the next
+  format run. (Prettier keeps `*` only for mid-word emphasis like `a*b*c`, which
+  prose rarely wants.)
+- Unordered list bullets are `-` (Prettier rewrites `*` / `+`).
+
+If a format-on-save / import-organizer hook is configured (see §0), it **strips an
+import added without its usage in the same edit** — so add an import and its first
+use atomically, in one edit, not as two.
 
 ### Windows / PowerShell
 
