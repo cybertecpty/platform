@@ -89,7 +89,7 @@ manual git is unaffected.
 
 - Branch protection is live (§2), so auto-merge is safe: as `cybertec-bot`,
   `gh pr merge {n} --auto --squash` for PRs into `develop`. It pre-arms the merge
-  and then waits for the required `main` check **and** the maintainer's approval —
+  and then waits for the required `ci` check **and** the maintainer's approval —
   it will not merge unreviewed code.
 - Only the human maintainer approves and merges protected branches. Do not grant
   the bot bypass rights to force a self-merge.
@@ -134,7 +134,7 @@ on both branches:
 - one approving review, from the maintainer (`require_code_owner_review` off, so a
   CODEOWNERS review is requested but not itself gating; approvals dismissed on any new
   push);
-- the `main` GitHub Actions check must pass (non-strict — the branch need not be up to
+- the `ci` GitHub Actions check must pass (non-strict — the branch need not be up to
   date first);
 - all review threads resolved before merge;
 - no force-push, no branch deletion;
