@@ -8,3 +8,6 @@
 # CRLF round-tripping — regardless of a contributor's local `core.autocrlf`.
 
 * text=auto eol=lf
+
+# Lockfiles: generated — collapse in GitHub PR diffs, exclude from language stats.
+package-lock.json linguist-generated=true
