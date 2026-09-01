@@ -11,3 +11,4 @@
 
 # Lockfiles: generated — collapse in GitHub PR diffs, exclude from language stats.
 package-lock.json linguist-generated=true
+pnpm-lock.yaml    linguist-generated=true
