@@ -1,1 +1,3 @@
-pnpm exec commitlint --edit "$1"
+# The commitlint formatter is a .ts file loaded by bare node; silence node's
+# "module type not specified" reparse notice. See tools/git/utils/src/lib/commitlint-formatter.ts.
+NODE_OPTIONS="${NODE_OPTIONS:+$NODE_OPTIONS }--disable-warning=MODULE_TYPELESS_PACKAGE_JSON" pnpm exec commitlint --edit "$1"

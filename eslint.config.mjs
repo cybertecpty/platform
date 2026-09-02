@@ -22,7 +22,12 @@ export default [
       '**/playwright-report',
       '**/__screenshots__',
       '**/.angular',
-      '**/.remember'
+      '**/.remember',
+      // Jest config files (root + per-project) are tooling, not lint targets; the
+      // root `jest.config.ts` is also outside every tsconfig, which trips the
+      // typed-linting project service.
+      '**/jest.config.*',
+      '**/jest.preset.js'
     ]
   },
   {

@@ -65,6 +65,12 @@ Chosen option: **1 — Jest everywhere.**
   toolchain, the `@nx/vitest` plugin registration, and the root `vitest.config.ts` were
   reverted.
 - **`nx test {project}` is the entry point** (conventions §9), not `jest` directly.
+- **`passWithNoTests: true` in `jest.preset.js`.** `nx run-many` / `nx affected -t test`
+  sweep every project and some legitimately have no unit tests (`type:types` libs,
+  freshly scaffolded or barrel-only libs); one of those should not fail the whole test
+  job. Whether a runtime lib _should_ have tests is a code-review concern
+  (review-priorities §3), and a `coverageThreshold` — not this flag — is the guard
+  against a silently-broken `testMatch`.
 - **E2E is out of scope.** Browser e2e uses Playwright (its own tooling); this ADR
   governs the unit / integration test runner only.
 

@@ -6,6 +6,9 @@
     "pkief.material-icon-theme",
     "github.vscode-github-actions",
     "github.vscode-pull-request-github",
-    "dbaeumer.vscode-eslint"
+    "dbaeumer.vscode-eslint",
+    "firsttris.vscode-jest-runner",
+    "christian-kohler.path-intellisense",
+    "orta.vscode-jest"
   ]
 }
