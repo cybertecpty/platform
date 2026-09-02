@@ -68,3 +68,6 @@ error.log
 **/playwright-report
 **/test-results
 **/.last-run.json
+
+# Angular build cache
+.angular
