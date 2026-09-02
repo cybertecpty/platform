@@ -385,6 +385,9 @@ what it changed, so the commit lands clean.
 
 ## 9. Testing & verification
 
+- Jest is the workspace test runner for every project — Angular, NestJS, and plain libs
+  (ADR 0007). Generators are defaulted to `unitTestRunner: jest` in `nx.json`; there is
+  no `@nx/vitest` plugin. Run tests through `nx test {project}`, never `jest` directly.
 - Unit tests are `*.spec.ts`, beside the implementation.
 - Name the top-level `describe` after the exported unit; write `it(...)` names as
   behavior statements.
@@ -432,7 +435,7 @@ an ADR.
 ## 11. Nx workspace rules
 
 - Run Nx through pnpm (`pnpm exec nx`), not a global CLI.
-- Prefer Nx targets over underlying tools (`nx test` over `vitest` directly).
+- Prefer Nx targets over underlying tools (`nx test` over `jest` directly).
 - Use the Nx MCP server / `nx-workspace` / `nx-generate` skills when available.
 - Don't guess generator flags — check `schema.json`, `--help`, or Nx docs.
 - To move a project, use `nx g @nx/workspace:move --project={name}

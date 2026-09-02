@@ -189,6 +189,8 @@ C. **Split the setup** — project references for backend libs, path-alias for f
   "pending frameworks ADR" they each reference is this one.
 - ADR 0001 (`replace-npm-with-pnpm`) — unchanged by this decision; noted here to record
   that the pnpm setup was reviewed and deliberately left alone.
+- ADR 0007 (`jest-test-runner`) — Jest is the test runner for both frameworks; records
+  why `@nx/nest` + Vitest is not worth the decorator-metadata glue.
 - Nx docs: "A New Nx Experience for TypeScript Monorepos" (why Angular monorepos stay on
   the path-alias setup), the `@nx/angular` and `@nx/nest` plugin overviews, and
   `nx migrate`.
