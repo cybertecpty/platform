@@ -320,8 +320,8 @@ covers it — an existing dependency, an Nx plugin, or a shared helper.
 - Some packages ship an import entry point that defeats bundler tree-shaking.
   Before adding a utility or validation library, check
   `docs/adr/0003-frontend-bundle-hygiene.md` for the entry-point rules — `lodash`
-  → `lodash-es` workspace-wide, `zod` → `zod/mini` in `scope:frontend` code, both
-  lint-enforced.
+  → `lodash-es` workspace-wide, `zod` → `zod/mini` in `scope:frontend` and
+  `scope:shared` code, both lint-enforced.
 - Adding a dependency is a `build` change (`build(deps): ...`); if it sets a
   durable technical direction, it may also warrant an ADR (§7).
 
