@@ -1,7 +1,7 @@
 # 3. Frontend bundle hygiene — restricted dependency entry points
 
 - Status: accepted
-- Date: 2026-09-02
+- Date: 2026-09-02 (accepted); 2026-09-02 (amended — zod ban extended to `scope:shared`)
 - Deciders: djmcgrath
 - Implemented by: `eslint.config.mjs` import-restriction rules; this ADR + `docs/agents/conventions.md` §8 note
 
@@ -18,9 +18,9 @@ tree-shaking:
   to using it on the backend.
 - **`zod`** — zod 4's classic API (`import { z } from 'zod'`, and the version-pinned
   `zod/v4` entry) is not tree-shakeable. Zod ships `zod/mini` (a functional,
-  tree-shakeable API) plus `zod/v4/core` for error/type primitives. Backend code has no
-  bundle budget and the classic API is materially nicer to write, so this constraint is
-  frontend-only.
+  tree-shakeable API) plus `zod/v4/core` for error/type primitives. The constraint
+  applies to browser code and to shared code that a browser bundle can reach; backend-only
+  code has no bundle budget and keeps the classic API.
 
 We want these constraints enforced mechanically at lint time, not left to code review,
 and we want the reasoning recorded so the rules are not deleted the first time someone
@@ -29,9 +29,8 @@ hits the friction — `zod/mini` is deliberately more verbose than the classic A
 ## Decision drivers
 
 - A bundle regression should fail a check, not depend on a reviewer noticing an import.
-- "Is this frontend?" should be answered by the same axis the rest of the workspace
-  uses — the `scope:frontend` project tag (module-boundaries work, pending ADR) — not a
-  parallel path convention.
+- "Is this browser-reachable?" should be answered by the `scope:` tags the rest of the
+  workspace uses (`scope:frontend`, `scope:shared`) — not a parallel path convention.
 - Type-only imports (`import type`) are erased at build and cost nothing; they must not
   be blocked.
 - Backend developer experience should not pay for a browser constraint.
@@ -61,17 +60,26 @@ complementary future addition, not a substitute.
   `@typescript-eslint/no-restricted-imports` (the TS-aware rule, `allowTypeImports: true`
   per entry so `import type` passes); the base `no-restricted-imports` is set to `off` in
   the same block to avoid double-reporting.
-- **zod — `scope:frontend` only.** `zod` and `zod/v4` are banned for projects tagged
-  `scope:frontend`, via `bannedExternalImports` on that tag's `depConstraints` entry in
-  `@nx/enforce-module-boundaries`. Frontend code uses `zod/mini` for schema builders and
-  `zod/v4/core` for error/type primitives. `zod/mini`, `zod/v4/mini` and `zod/v4/core`
-  stay allowed — the bans are exact-match, not prefix (verified against Nx's
-  `mapGlobToRegExp`).
-- **The zod ban rides with `scope:frontend` tagging.** Until the module-boundaries matrix
-  lands, the `scope:frontend` `depConstraints` entry exists solely to carry
-  `bannedExternalImports`; its `onlyDependOnLibsWithTags` is `['*']` (graph
-  unconstrained). When the real matrix is written, the ban stays on that entry. Widening
-  either ban, or moving zod off the frontend scope, requires reopening this ADR.
+- **zod — `scope:frontend` and `scope:shared`.** `zod` and `zod/v4` are banned for
+  projects tagged `scope:frontend` **or** `scope:shared`, via `bannedExternalImports` on
+  those `depConstraints` entries in `@nx/enforce-module-boundaries`. Both browser code
+  and shared code — including the `type:models` wire contracts — use `zod/mini` for
+  schema builders and `zod/v4/core` for error/type primitives. `zod/mini`, `zod/v4/mini`
+  and `zod/v4/core` stay allowed; the bans are exact-match, not prefix (verified against
+  Nx's `mapGlobToRegExp`). `scope:backend`-only code is not restricted — `zod/mini` works
+  there too, but the classic API is fine where nothing browser-facing consumes it.
+- **Shared must be browser-safe.** `scope:shared` is on the ban list because shared code
+  is, by definition, reachable from a browser bundle. A `scope:shared` `type:models` lib
+  that used the classic API would pull it into every frontend that imports the contract,
+  transitively — which `@nx/enforce-module-boundaries` does not flag by default
+  (`checkNestedExternalImports` is off). Banning at the shared boundary closes that path
+  at the source.
+- **Enforcement depends on tagging.** The bans live on `scope:` `depConstraints` entries,
+  so a project must carry the right `scope:` tag for the correct rule (or absence of one)
+  to apply. There is no catch-all `*` constraint, so an untagged project fails
+  `@nx/enforce-module-boundaries` outright. The full tag matrix is defined by ADR 0004
+  (`nx-module-boundaries`); widening either ban, or moving zod off a scope, requires
+  reopening this ADR.
 - **Shared dependencies stay single-version in the root `package.json`** (`lodash-es`,
   `zod`), per the pnpm single-version policy (ADR 0001).
 
@@ -80,8 +88,8 @@ complementary future addition, not a substitute.
 ### Positive
 
 - A disallowed import fails `nx lint` with a message that names the replacement.
-- The frontend/backend split is expressed once, on the `scope:frontend` tag, and reused
-  here rather than duplicated as a file glob.
+- The frontend/shared/backend split is expressed on the `scope:` tags the workspace
+  already uses, not duplicated as a file glob.
 - `import type` from either library is unaffected.
 
 ### Negative / risks
@@ -89,9 +97,12 @@ complementary future addition, not a substitute.
 - Frontend validation code uses `zod/mini`'s functional API, which is more verbose than
   `z.string().min(5)`. This is the accepted cost of a tree-shakeable schema layer in the
   browser; the rule message points at the mini docs.
+- Shared `type:models` libs write their schemas in `zod/mini` even though backend code
+  also consumes them — a deliberate uniformity cost so one contract lib is safe to pull
+  into a browser bundle.
 - Both rules are inert until a project has a `lint` target and CI runs it — and the zod
-  ban additionally needs `scope:frontend` tags to be assigned. Adding a frontend project
-  without the tag silently opts it out.
+  ban additionally needs `scope:frontend` / `scope:shared` tags to be assigned. Adding a
+  frontend or shared project without the tag silently opts it out.
 - `zod/v3` (the v3 compatibility API, also not tree-shakeable) is **not** currently
   banned. Add it to `bannedExternalImports` if v3-compat imports appear in frontend code.
 - The mechanism is a denylist, not a bundler-level guarantee: a non-shakeable entry point
@@ -100,11 +111,12 @@ complementary future addition, not a substitute.
 ## More information
 
 - `eslint.config.mjs` — the `@typescript-eslint/no-restricted-imports` block and the
-  `scope:frontend` `depConstraints` entry.
+  `scope:frontend` / `scope:shared` `depConstraints` entries.
 - `docs/agents/conventions.md` §8 "Dependency reuse" — points here for entry-point
   constraints when adding a utility or validation library.
-- The module-boundaries ADR (pending) defines the full `scope:` / `type:` / `domain:` tag
-  matrix; its `scope:frontend` entry carries the zod `bannedExternalImports` list.
+- ADR 0004 (`nx-module-boundaries`) defines the full `scope:` / `type:` / `domain:` tag
+  matrix; its `scope:frontend` and `scope:shared` entries carry the zod
+  `bannedExternalImports` list.
 - zod docs: "Zod Mini" (the tree-shakeable API) and `zod/v4/core` (shared error/type
   primitives). lodash: `lodash-es` is the ESM build; the `lodash` CJS package and
   `lodash.*` per-method packages do not tree-shake in a bundler.
