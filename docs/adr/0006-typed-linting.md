@@ -31,8 +31,8 @@ generator flag) or centrally (the workspace base `eslint.config.mjs`).
 - The async-bug rules should fail `nx lint`, not wait for a reviewer.
 - One place to change the ruleset, applied across the whole workspace — the same
   principle as ADR 0004's boundary matrix.
-- A new lib should need zero per-project lint wiring; its `eslint.config.mjs` should be
-  `extends base` and nothing else.
+- A new lib should need zero per-project lint wiring — no typed-linting parser stanza in
+  its own `eslint.config.mjs`.
 - Don't pay the `strictTypeChecked` noise tax to get the `recommendedTypeChecked` signal.
 
 ## Considered options
@@ -89,10 +89,10 @@ Chosen option: **1 — central, `recommendedTypeChecked`.**
 - **Parser wiring is `projectService: true` + `tsconfigRootDir`, central, set after the
   ruleset spread.** Not `parserOptions.project` (the legacy per-tsconfig glob).
 - **Lib generators are not set to `enableTypedLinting: true`.** They stay at the schema
-  default (`false`), so a generated `eslint.config.mjs` is `extends base` only and the
-  parser wiring is never copied per project. `@nx/nest:library` and `@nx/angular:library`
-  do not read the `@nx/js:library` default anyway; if either grows its own parser wiring
-  it must be turned off there too.
+  default (`false`), so a non-buildable `@nx/js` lib's generated `eslint.config.mjs` is
+  `[...baseConfig]` only and the parser wiring is never copied per project.
+  `@nx/nest:library` and `@nx/angular:library` do not read the `@nx/js:library` default
+  anyway; if either grows its own parser wiring it must be turned off there too.
 - **`disableTypeChecked` on JS/CJS/MJS and the test-file relaxation are part of the
   contract** — a config that removes them will fail on config files, or drown spec files
   in `no-unsafe-*`.
@@ -108,8 +108,11 @@ Chosen option: **1 — central, `recommendedTypeChecked`.**
 - Floating / misused promises, always-true conditions, unsafe `any` flow, and
   `restrict-template-expressions` fail `nx lint` for every project, from one config
   block.
-- A new lib needs no per-project lint wiring — generated `eslint.config.mjs` is just
-  `extends base`.
+- A new lib needs no per-project lint wiring. Verified against `@nx/eslint` 23.1.1: a
+  non-buildable `@nx/js:library` (the `bundler: none` default) generates exactly
+  `export default [...baseConfig];`. A buildable lib adds one `files: ['**/*.json']`
+  block for `@nx/dependency-checks`, and `@nx/angular:library` adds `@angular-eslint`
+  blocks — both are framework / tooling config, not typed-linting wiring.
 - Changing the ruleset workspace-wide is a one-line edit.
 - Typed linting is orthogonal to ADR 0003 (bundle-hygiene import bans) and ADR 0004
   (module-boundary tags) — it rides `parserOptions`, not `depConstraints`, so the three
