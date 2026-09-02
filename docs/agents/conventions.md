@@ -21,18 +21,19 @@ The repo is a fresh rebuild (`dfc4c32 chore: first commit`, 2026-08-31). Some ru
 below describe the **intended** setup and are **not wired yet** — treated here as
 policy so they're in place when the tooling lands, but don't assume they're active:
 
-| Area                                                      | Now                                                     | Planned |
-| --------------------------------------------------------- | ------------------------------------------------------- | ------- |
-| Bot PR flow (`cybertec-bot`, `cybertecpty/bots` team)     | ✅ live                                                 | —       |
-| CI (`ci.yml`) + Nx Cloud distribution / self-healing      | ✅ live                                                 | —       |
-| Nx Cloud remote cache (`NX_CLOUD_ACCESS_TOKEN` secret)    | ✅ live                                                 | —       |
-| Branch protection on `develop` / `main`                   | ✅ live — rulesets `protect-develop` / `protect-main`   | —       |
-| Reviewer routing (`.github/CODEOWNERS` → `@djmcgrath101`) | ✅ live — auto-requests maintainer review on every PR   | —       |
-| Pre-commit hook (`husky` + `lint-staged`)                 | ✅ live — formats/`eslint --fix`es staged files (#24)   | —       |
-| Commitlint / `commit-msg` hook                            | ✅ live — `commit-msg` hook + CI PR-title check (#32)   | §3      |
-| `@cybertecpty/*` publish on merge to `main`               | ❌ no release flow, no packages                         | §2      |
-| `cybertec-back-merge` app                                 | app installed, not driving anything                     | §2      |
-| pnpm (`pnpm-lock.yaml`, `pnpm exec nx`)                   | ✅ live — pnpm@10.34.5, `node-linker=isolated` (PR #17) | —       |
+| Area                                                      | Now                                                            | Planned |
+| --------------------------------------------------------- | -------------------------------------------------------------- | ------- |
+| Bot PR flow (`cybertec-bot`, `cybertecpty/bots` team)     | ✅ live                                                        | —       |
+| CI (`ci.yml`) + Nx Cloud distribution / self-healing      | ✅ live                                                        | —       |
+| Nx Cloud remote cache (`NX_CLOUD_ACCESS_TOKEN` secret)    | ✅ live                                                        | —       |
+| Branch protection on `develop` / `main`                   | ✅ live — rulesets `protect-develop` / `protect-main`          | —       |
+| Reviewer routing (`.github/CODEOWNERS` → `@djmcgrath101`) | ✅ live — auto-requests maintainer review on every PR          | —       |
+| Pre-commit hook (`husky` + `lint-staged`)                 | ✅ live — formats/`eslint --fix`es staged files (#24)          | —       |
+| Commitlint / `commit-msg` hook                            | ✅ live — `commit-msg` hook + CI PR-title check (#32)          | §3      |
+| `@cybertecpty/*` publish on merge to `main`               | ❌ no release flow, no packages                                | §2      |
+| `cybertec-back-merge` app                                 | app installed, not driving anything                            | §2      |
+| pnpm (`pnpm-lock.yaml`, `pnpm exec nx`)                   | ✅ live — pnpm@10.34.5, `node-linker=isolated` (PR #17)        | —       |
+| Application frameworks (Angular 22, NestJS 11)            | ✅ live — `@nx/angular` / `@nx/nest`, path-alias TS (ADR 0005) | —       |
 
 Where a rule depends on unwired tooling, it says so inline.
 
@@ -437,3 +438,11 @@ an ADR.
 - To move a project, use `nx g @nx/workspace:move --project={name}
 --destination={new/path}` — never `git mv` (the generator also fixes
   `tsconfig.base.json` aliases, `project.json` roots, and workspace references).
+- **TypeScript layout is path-alias, not project references** (ADR 0005). Projects are
+  wired through `tsconfig.base.json` `compilerOptions.paths`; there is no `composite`
+  setup and no `@nx/js/typescript` plugin. Angular cannot use project references — don't
+  re-introduce them. Let generators add `paths` entries; don't hand-edit unless fixing a
+  generator gap.
+- Angular and NestJS are the only application stacks (ADR 0005). Add framework capability
+  through `@nx/angular` / `@nx/nest` generators and `nx add`, not hand-installed
+  `@angular/*` / `@nestjs/*` packages. Framework upgrades run through `nx migrate`.

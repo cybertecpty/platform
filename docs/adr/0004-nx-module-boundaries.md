@@ -16,9 +16,8 @@ the reverse). By the time this shows up in a review it is load-bearing.
 Nx ships `@nx/enforce-module-boundaries`, an ESLint rule that reads free-form **tags** off
 each project and enforces declared `depConstraints` at lint time. This workspace is a
 single multi-domain monorepo — all product code lives here, targeting Angular on the
-frontend and NestJS on the backend (framework choice is a separate, pending ADR) — so the
-boundary model has to cover runtime environment, architectural layer, and product domain
-at once.
+frontend and NestJS on the backend (ADR 0005) — so the boundary model has to cover runtime
+environment, architectural layer, and product domain at once.
 
 ADR 0003 already put the first `depConstraints` entries in place (the `scope:frontend` /
 `scope:shared` external-import bans for zod). This ADR defines the full tag vocabulary and
@@ -232,8 +231,8 @@ owns, and its `depConstraints` row(s).
 - `eslint.config.mjs` — the `@nx/enforce-module-boundaries` block.
 - ADR 0003 (`frontend-bundle-hygiene`) — the zod / lodash external-import bans that ride
   the `scope:frontend` and `scope:shared` constraint rows.
-- Frameworks ADR (pending) — records Angular + NestJS as the application stacks this
-  catalog is built around.
+- ADR 0005 (`application-frameworks`) — records Angular + NestJS as the application stacks
+  this catalog is built around, and the path-alias TypeScript layout they run on.
 - `docs/agents/conventions.md` §7 — when a decision warrants an ADR.
 - Nx docs: "Enforce Module Boundaries" and the `@nx/enforce-module-boundaries` rule
   options (`onlyDependOnLibsWithTags`, `notDependOnLibsWithTags`, `bannedExternalImports`,

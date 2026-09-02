@@ -7,10 +7,9 @@
 
 ## Context and problem statement
 
-This workspace will ship Angular browser applications alongside NestJS services (framework
-choice is a separate, pending ADR). Browser bundle size is a user-facing performance
-concern, and some widely-used libraries ship an entry point that silently defeats
-tree-shaking:
+This workspace ships Angular browser applications alongside NestJS services (ADR 0005).
+Browser bundle size is a user-facing performance concern, and some widely-used libraries
+ship an entry point that silently defeats tree-shaking:
 
 - **`lodash`** — the CommonJS main entry (`import _ from 'lodash'`) and the per-method
   paths (`lodash/pick`) pull the whole library into a bundle regardless of how much is
@@ -117,6 +116,8 @@ complementary future addition, not a substitute.
 - ADR 0004 (`nx-module-boundaries`) defines the full `scope:` / `type:` / `domain:` tag
   matrix; its `scope:frontend` and `scope:shared` entries carry the zod
   `bannedExternalImports` list.
+- ADR 0005 (`application-frameworks`) — locks in Angular + NestJS, the stack this
+  bundle-hygiene constraint exists for.
 - zod docs: "Zod Mini" (the tree-shakeable API) and `zod/v4/core` (shared error/type
   primitives). lodash: `lodash-es` is the ESM build; the `lodash` CJS package and
   `lodash.*` per-method packages do not tree-shake in a bundler.
