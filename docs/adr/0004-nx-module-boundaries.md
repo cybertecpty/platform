@@ -233,6 +233,9 @@ owns, and its `depConstraints` row(s).
   the `scope:frontend` and `scope:shared` constraint rows.
 - ADR 0005 (`application-frameworks`) — records Angular + NestJS as the application stacks
   this catalog is built around, and the path-alias TypeScript layout they run on.
+- ADR 0006 (`typed-linting`) — the workspace's type-aware ESLint policy. Separate
+  mechanism: it rides `parserOptions`, not `depConstraints`, and does not touch the tag
+  matrix.
 - `docs/agents/conventions.md` §7 — when a decision warrants an ADR.
 - Nx docs: "Enforce Module Boundaries" and the `@nx/enforce-module-boundaries` rule
   options (`onlyDependOnLibsWithTags`, `notDependOnLibsWithTags`, `bannedExternalImports`,
