@@ -1,5 +1,6 @@
 import nx from '@nx/eslint-plugin';
 import eslintConfigPrettier from 'eslint-config-prettier';
+import tseslint from 'typescript-eslint';
 
 const lodashMessage =
   'Import from lodash-es instead so bundle builds can tree-shake lodash utilities.';
@@ -20,7 +21,8 @@ export default [
       '**/test-results',
       '**/playwright-report',
       '**/__screenshots__',
-      '**/.angular'
+      '**/.angular',
+      '**/.remember'
     ]
   },
   {
@@ -235,6 +237,57 @@ export default [
           ]
         }
       ]
+    }
+  },
+  // Typed linting (type-aware rules) — TS source only. `recommendedTypeChecked` pulls in
+  // the rules that need the type-checker: no-floating-promises, no-misused-promises,
+  // await-thenable, no-unnecessary-condition, restrict-template-expressions, and so on —
+  // the highest-value part of the ruleset for an async-heavy Angular + NestJS codebase.
+  // `strictTypeChecked` is deliberately not used: its no-unsafe-* family fires at every
+  // untyped boundary and most of it ends up disabled. Promote individual strict rules
+  // in the override block below if wanted.
+  //
+  // Enabled once here for every project. `@nx/js:library`'s per-project
+  // `enableTypedLinting` is left off (nx.json generator default) so the parser wiring
+  // lives in exactly one place rather than being copied into each lib's config.
+  ...tseslint.configs.recommendedTypeChecked.map(config => ({
+    ...config,
+    files: ['**/*.{ts,tsx,cts,mts}']
+  })),
+  {
+    // Parser project wiring — after the spread so `recommendedTypeChecked`'s base entry
+    // cannot clobber it. `projectService: true` resolves each file to its nearest
+    // tsconfig; `tsconfigRootDir` anchors that lookup at the workspace root. A stray
+    // .ts/.mts/.cts file that no project's tsconfig includes will error here — add it to
+    // a tsconfig, or list a glob under `projectService.allowDefaultProject`.
+    files: ['**/*.{ts,tsx,cts,mts}'],
+    languageOptions: {
+      parserOptions: {
+        projectService: true,
+        tsconfigRootDir: import.meta.dirname
+      }
+    }
+  },
+  {
+    // Type-aware rules cannot run on files outside a TS program — JS/CJS/MJS config
+    // files (this file, jest configs, generator scripts). Turn them back off there so a
+    // plain .js file does not fail with a "parserServices" error.
+    files: ['**/*.{js,cjs,mjs,jsx}'],
+    ...tseslint.configs.disableTypeChecked
+  },
+  {
+    // Type-aware rule overrides for test files: spec code leans on `any` from mocks and
+    // fixtures, so the no-unsafe-* family and unbound-method are noise here.
+    // no-floating-promises stays on — an un-awaited promise in a test is a real bug
+    // (the assertion never runs and the test passes green).
+    files: ['**/*.{spec,test}.{ts,tsx,cts,mts}'],
+    rules: {
+      '@typescript-eslint/no-unsafe-argument': 'off',
+      '@typescript-eslint/no-unsafe-assignment': 'off',
+      '@typescript-eslint/no-unsafe-call': 'off',
+      '@typescript-eslint/no-unsafe-member-access': 'off',
+      '@typescript-eslint/no-unsafe-return': 'off',
+      '@typescript-eslint/unbound-method': 'off'
     }
   },
   {

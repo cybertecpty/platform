@@ -304,6 +304,15 @@ _using_ one.
 - No `any` without an inline comment explaining why.
 - Don't swallow errors — rethrow or return a structured failure.
 - Exported functions have explicit return types.
+- Typed linting is on workspace-wide (ADR 0006): `typescript-eslint`'s
+  `recommendedTypeChecked` runs against every `.ts` / `.cts` / `.mts` file via the base
+  `eslint.config.mjs`, so `no-floating-promises`, `no-misused-promises`,
+  `no-unnecessary-condition` and the rest fail `nx lint`. Per-project
+  `enableTypedLinting` stays **off** (generator default) — the parser wiring is central,
+  not copied into each lib. A lib that genuinely can't be type-linted adds a local
+  `tseslint.configs.disableTypeChecked` override rather than the workspace opting out. A
+  stray `.ts` file outside every project `tsconfig` fails project-service resolution —
+  add it to a `tsconfig`, the `ignores` list, or `projectService.allowDefaultProject`.
 
 ### Dependency reuse
 

@@ -23,6 +23,21 @@
       }
     }
   ],
+  "generators": {
+    "@nx/angular:library": {
+      "style": "scss",
+      "unitTestRunner": "jest"
+    },
+    "@nx/js:library": {
+      "bundler": "none",
+      "linter": "eslint",
+      "unitTestRunner": "jest"
+    },
+    "@nx/nest:library": {
+      "linter": "eslint",
+      "unitTestRunner": "jest"
+    }
+  },
   "nxCloudId": "6a95fdc6e0d4baed8e2bbe46",
   "analytics": true
 }
