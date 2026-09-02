@@ -17,14 +17,9 @@
       "nx"
     ]
   },
-  "lint-staged": {
-    "*.{ts,tsx,cts,mts,js,jsx,cjs,mjs}": [
-      "eslint --fix --no-warn-ignored",
-      "nx format:write --files"
-    ],
-    "*.{json,md,mdx,html,css,scss,yml,yaml}": [
-      "nx format:write --files"
-    ]
+  "dependencies": {
+    "lodash-es": "^4.18.1",
+    "zod": "^4.5.4"
   },
   "devDependencies": {
     "@commitlint/cli": "^21.2.2",
@@ -36,6 +31,7 @@
     "@swc-node/register": "1.11.1",
     "@swc/core": "1.15.8",
     "@swc/helpers": "0.5.18",
+    "@types/lodash-es": "^4.17.12",
     "@types/node": "^24.0.0",
     "eslint": "^9.8.0",
     "eslint-config-prettier": "^10.1.8",
@@ -48,5 +44,14 @@
     "tslib": "^2.3.0",
     "typescript": "~6.0.3",
     "typescript-eslint": "^8.69.0"
+  },
+  "lint-staged": {
+    "*.{ts,tsx,cts,mts,js,jsx,cjs,mjs}": [
+      "eslint --fix --no-warn-ignored",
+      "nx format:write --files"
+    ],
+    "*.{json,md,mdx,html,css,scss,yml,yaml}": [
+      "nx format:write --files"
+    ]
   }
 }
