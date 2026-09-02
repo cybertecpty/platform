@@ -198,6 +198,14 @@ the message to a file and `git commit -F {file}`.
 
 `--no-verify` skips the hook, but the CI check on the PR title still gates the merge.
 
+The custom formatter lives in the `git-utils` project
+(`tools/git/utils/src/lib/commitlint-formatter.ts`). It is a `.ts` file loaded by
+**bare `node`** — no ts-jest, no bundler — so: `import type` only (a value import of a
+type throws at load), erasable syntax only (no enums / namespaces / parameter
+properties), and `NODE_OPTIONS=--disable-warning=MODULE_TYPELESS_PACKAGE_JSON` in
+`.husky/commit-msg` and `commitlint.yml` silences node's reparse notice. `engines.node`
+is `>=22.18.0` because that is where native type stripping became unflagged.
+
 **Types** (scope is optional and free-form):
 
 | type       | for                                                       |
@@ -455,6 +463,10 @@ an ADR.
   setup and no `@nx/js/typescript` plugin. Angular cannot use project references — don't
   re-introduce them. Let generators add `paths` entries; don't hand-edit unless fixing a
   generator gap.
+- **No `baseUrl` in `tsconfig.base.json`.** `moduleResolution: "bundler"` resolves
+  `paths` relative to the config file, so `baseUrl` is redundant — and TS 6.0 makes it a
+  hard error (`TS5101`) under full-diagnostic consumers like `ts-jest`. If a generator
+  re-adds it, remove it.
 - Angular and NestJS are the only application stacks (ADR 0005). Add framework capability
   through `@nx/angular` / `@nx/nest` generators and `nx add`, not hand-installed
   `@angular/*` / `@nestjs/*` packages. Framework upgrades run through `nx migrate`.

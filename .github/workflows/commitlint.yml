@@ -20,7 +20,7 @@ jobs:
 
       - uses: actions/setup-node@v5
         with:
-          node-version: 24
+          node-version-file: '.nvmrc'
           cache: 'pnpm'
 
       - run: pnpm install --frozen-lockfile
@@ -30,4 +30,7 @@ jobs:
       - name: Lint PR title
         env:
           PR_TITLE: ${{ github.event.pull_request.title }}
+          # The formatter is a .ts loaded by bare node — silence the "module type
+          # not specified" reparse notice. See commitlint.config.mjs.
+          NODE_OPTIONS: --disable-warning=MODULE_TYPELESS_PACKAGE_JSON
         run: printf '%s\n' "$PR_TITLE" | pnpm exec commitlint --verbose

@@ -127,11 +127,11 @@ Chosen option: **1 — central, `recommendedTypeChecked`.**
   project-service parsing error — hit immediately on a `.remember` scratch file during
   rollout. Fix: a `tsconfig` `include`, an `ignores` entry, or a glob under
   `projectService.allowDefaultProject`.
-- Inert until projects have a `lint` target and CI runs it — same caveat as ADR 0003 /
-  0004, and **unverified against a real graph** (no projects yet). The `@nx/js:library`
-  scaffold's 3-file tsconfig split — an empty-`include` root `tsconfig.json` delegating to
-  `tsconfig.lib.json` / `tsconfig.spec.json` via `references` — needs a deliberate check
-  that `projectService` resolves `src/**/*.ts` types through it on the first real lib.
+- The `@nx/js:library` scaffold's 3-file tsconfig split — an empty-`include` root
+  `tsconfig.json` delegating to `tsconfig.lib.json` / `tsconfig.spec.json` via
+  `references` — **does** resolve types through `projectService`: verified on the first
+  real lib (`git-utils`) by injecting a floating promise into a source file and
+  confirming `no-floating-promises` fired.
 - The `disableTypeChecked` and test-override blocks are maintenance surface: a new
   type-aware rule category in a future `typescript-eslint` release may need adding to
   them.
