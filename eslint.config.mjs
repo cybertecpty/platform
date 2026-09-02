@@ -1,5 +1,8 @@
+import eslintComments from '@eslint-community/eslint-plugin-eslint-comments/configs';
+import ngrx from '@ngrx/eslint-plugin';
 import nx from '@nx/eslint-plugin';
 import eslintConfigPrettier from 'eslint-config-prettier';
+import jest from 'eslint-plugin-jest';
 import tseslint from 'typescript-eslint';
 
 const lodashMessage =
@@ -274,6 +277,17 @@ export default [
     }
   },
   {
+    // `@typescript-eslint/no-deprecated` ships in `strict-type-checked`, not
+    // `recommendedTypeChecked`, so it is opted into here on its own. It flags use of
+    // any symbol annotated `@deprecated` — cheap now that the type-checker is wired,
+    // and the highest-value strict rule against Angular / NestJS deprecation churn
+    // across minor versions. Turned back off for JS by `disableTypeChecked` below.
+    files: ['**/*.{ts,tsx,cts,mts}'],
+    rules: {
+      '@typescript-eslint/no-deprecated': 'error'
+    }
+  },
+  {
     // Type-aware rules cannot run on files outside a TS program — JS/CJS/MJS config
     // files (this file, jest configs, generator scripts). Turn them back off there so a
     // plain .js file does not fail with a "parserServices" error.
@@ -311,19 +325,49 @@ export default [
       ]
     }
   },
+  // NgRx SignalStore lint rules. Spread the plugin's flat config (the `ngrx/base`
+  // plugin registration + the signals rule set) and narrow each entry to app/lib
+  // TS source. NgRx is Angular-only, but the workspace has no frontend path
+  // convention (ADR 0003 makes browser-reachability a `scope:` tag, which flat
+  // config's path globs can't read), so `{apps,libs}` is a coarse proxy that at
+  // least keeps the rules off `tools/**` and root scripts. The rules are inert on
+  // non-NgRx files. Revisit (per-project spread) when the Angular ADR lands.
+  ...ngrx.configs.signals.map(config => ({ ...config, files: ['{apps,libs}/**/*.ts'] })),
   {
-    files: [
-      '**/*.ts',
-      '**/*.tsx',
-      '**/*.cts',
-      '**/*.mts',
-      '**/*.js',
-      '**/*.jsx',
-      '**/*.cjs',
-      '**/*.mjs'
-    ],
-    // Override or add rules here
-    rules: {}
+    // Jest lint rules for spec/mock files. `flat/recommended` brings the plugin,
+    // the jest globals, and the recommended rule set (no-focused-tests,
+    // no-disabled-tests, valid-expect, ...); the overrides below relax
+    // TS rules that are noise in test code.
+    files: ['**/*.{spec,test}.ts', '**/*.{mock,mocks}.ts'],
+    ...jest.configs['flat/recommended'],
+    rules: {
+      ...jest.configs['flat/recommended'].rules,
+      '@nx/enforce-module-boundaries': 'off',
+      '@typescript-eslint/no-empty-function': 'off',
+      '@typescript-eslint/no-explicit-any': 'off',
+      '@typescript-eslint/no-non-null-assertion': 'off'
+    }
+  },
+  {
+    // A stale `eslint-disable` should not rot silently as the ruleset tightens.
+    // Replaces the now-deprecated eslint-comments/no-unused-disable rule with the
+    // ESLint built-in (v9+).
+    linterOptions: {
+      reportUnusedDisableDirectives: 'error'
+    }
+  },
+  {
+    // ESLint directive-comment hygiene. `recommended` requires a matching
+    // `eslint-enable` for block disables and forbids unlimited / duplicate / unused
+    // directives; `require-description` (not in `recommended`) additionally forces
+    // every disable to carry a reason. Keeps `eslint-disable` auditable given the
+    // deliberately strict ruleset (bundle bans, boundary matrix, typed rules).
+    files: ['**/*.{ts,tsx,cts,mts,js,jsx,cjs,mjs}'],
+    ...eslintComments.recommended,
+    rules: {
+      ...eslintComments.recommended.rules,
+      '@eslint-community/eslint-comments/require-description': 'error'
+    }
   },
   // Keep last: turns off ESLint stylistic rules that would conflict with Prettier.
   // Formatting is owned by `nx format` / the Prettier extension, not ESLint.

@@ -321,6 +321,19 @@ _using_ one.
   `tseslint.configs.disableTypeChecked` override rather than the workspace opting out. A
   stray `.ts` file outside every project `tsconfig` fails project-service resolution —
   add it to a `tsconfig`, the `ignores` list, or `projectService.allowDefaultProject`.
+- On top of that base ruleset, `eslint.config.mjs` carries a **plugin layer** (ADR
+  0008): `@ngrx/eslint-plugin` `configs.signals` on `{apps,libs}/**/*.ts` (SignalStore
+  footguns), `eslint-plugin-jest` `flat/recommended` on spec / mock files (see §9),
+  `@typescript-eslint/no-deprecated` on all TS (flags `@deprecated` symbols — the one
+  `strictTypeChecked` rule promoted), and `@eslint-community/eslint-plugin-eslint-comments`.
+  Adding or removing a whole plugin, or swapping its preset, is an ADR 0008 change;
+  promoting or demoting an individual rule is a normal config edit.
+- **Every `eslint-disable` must name specific rules and carry a reason** —
+  `require-description` and `no-unlimited-disable` are errors, and ESLint's
+  `reportUnusedDisableDirectives` flags stale ones. Write
+  `// eslint-disable-next-line some-rule -- why this is safe here`, never a bare
+  `// eslint-disable-next-line`. A block `/* eslint-disable rule */` needs a matching
+  `/* eslint-enable rule */`.
 
 ### Dependency reuse
 
@@ -408,6 +421,10 @@ what it changed, so the commit lands clean.
 - Unit tests are `*.spec.ts`, beside the implementation.
 - Name the top-level `describe` after the exported unit; write `it(...)` names as
   behavior statements.
+- `eslint-plugin-jest` `flat/recommended` lints spec / mock files (`*.{spec,test}.ts`,
+  `*.{mock,mocks}.ts`) — a left-in `fit` / `fdescribe` / `.only`, an `expect()` with no
+  matcher, or a duplicated `it()` title fails `nx lint` (ADR 0008). The same block
+  relaxes `@nx/enforce-module-boundaries` and a few TS rules for test code.
 - Prefer direct assertions over snapshots.
 - For Nx generators / workspace utilities, use `createTreeWithEmptyWorkspace()` and
   assert against the in-memory `Tree`, generated files, and project config.
