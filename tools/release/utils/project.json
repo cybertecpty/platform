@@ -1,0 +1,9 @@
+{
+  "name": "release-utils",
+  "$schema": "../../../node_modules/nx/schemas/project-schema.json",
+  "sourceRoot": "tools/release/utils/src",
+  "projectType": "library",
+  "tags": ["domain:shared", "scope:tools", "type:utils"],
+  "// targets": "to see all targets run: nx show project release-utils --web",
+  "targets": {}
+}
