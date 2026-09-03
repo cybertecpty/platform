@@ -9,6 +9,7 @@
     "dbaeumer.vscode-eslint",
     "firsttris.vscode-jest-runner",
     "christian-kohler.path-intellisense",
-    "orta.vscode-jest"
+    "orta.vscode-jest",
+    "anthropic.claude-code"
   ]
 }

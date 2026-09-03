@@ -3,7 +3,8 @@
   "compilerOptions": {
     "rootDir": ".",
     "paths": {
-      "@cybertecpty/git-utils": ["./tools/git/utils/src/index.ts"]
+      "@cybertecpty/git-utils": ["./tools/git/utils/src/index.ts"],
+      "@cybertecpty/release-utils": ["./tools/release/utils/src/index.ts"]
     },
     "target": "es2022",
     "module": "esnext",
