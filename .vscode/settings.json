@@ -14,5 +14,6 @@
     "**/dist/**": true,
     "**/.nx/cache/**": true,
     "**/node_modules/**": true
-  }
+  },
+  "eslint.validate": ["json"]
 }

@@ -4,6 +4,7 @@
     "rootDir": ".",
     "paths": {
       "@cybertecpty/git-utils": ["./tools/git/utils/src/index.ts"],
+      "@cybertecpty/nx-plugin": ["./tools/nx/plugin/src/index.ts"],
       "@cybertecpty/release-utils": ["./tools/release/utils/src/index.ts"]
     },
     "target": "es2022",

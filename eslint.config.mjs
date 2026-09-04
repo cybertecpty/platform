@@ -369,6 +369,14 @@ export default [
       '@eslint-community/eslint-comments/require-description': 'error'
     }
   },
+  {
+    files: ['**/*.json'],
+    // Override or add rules here
+    rules: {},
+    languageOptions: {
+      parser: await import('jsonc-eslint-parser')
+    }
+  },
   // Keep last: turns off ESLint stylistic rules that would conflict with Prettier.
   // Formatting is owned by `nx format` / the Prettier extension, not ESLint.
   eslintConfigPrettier
