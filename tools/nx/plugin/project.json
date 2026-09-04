@@ -3,7 +3,7 @@
   "$schema": "../../../node_modules/nx/schemas/project-schema.json",
   "sourceRoot": "tools/nx/plugin/src",
   "projectType": "library",
-  "tags": ["domain:shared scope:tools type:plugin"],
+  "tags": ["scope:tools", "type:plugin"],
   "targets": {
     "build": {
       "executor": "@nx/js:tsc",
