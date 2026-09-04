@@ -4,10 +4,14 @@
   "license": "MIT",
   "scripts": {
     "affected:format": "pnpm exec nx format:write --affected",
-    "format": "pnpm exec nx format:write --all",
-    "format:check": "pnpm exec nx format:check --all",
+    "affected:lint": "pnpm exec nx affected -t lint",
+    "affected:test": "pnpm exec nx affected -t test",
+    "format": "pnpm exec nx format:write",
+    "format:check": "pnpm exec nx format:check",
+    "lint": "pnpm exec nx run-many -t lint",
     "preinstall": "npx only-allow pnpm",
-    "prepare": "husky"
+    "prepare": "husky",
+    "test": "pnpm exec nx run-many -t test"
   },
   "private": true,
   "packageManager": "pnpm@10.34.5",
