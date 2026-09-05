@@ -1,1 +1,1 @@
-export * from './lib/nx-utils';
+export * from './lib/nx-projects.utils';
