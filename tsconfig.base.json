@@ -5,6 +5,7 @@
     "paths": {
       "@cybertecpty/git-utils": ["./tools/git/utils/src/index.ts"],
       "@cybertecpty/nx-plugin": ["./tools/nx/plugin/src/index.ts"],
+      "@cybertecpty/nx-types": ["./tools/nx/types/src/index.ts"],
       "@cybertecpty/nx-utils": ["./tools/nx/utils/src/index.ts"],
       "@cybertecpty/release-utils": ["./tools/release/utils/src/index.ts"]
     },
