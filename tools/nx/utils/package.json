@@ -1,0 +1,16 @@
+{
+  "name": "@cybertecpty/nx-utils",
+  "version": "0.0.1",
+  "private": true,
+  "type": "commonjs",
+  "main": "./src/index.js",
+  "types": "./src/index.d.ts",
+  "dependencies": {
+    "@cybertecpty/nx-types": "0.0.1",
+    "@cybertecpty/shared-types": "0.0.1",
+    "@cybertecpty/shared-utils": "0.0.1",
+    "@nx/devkit": "23.1.1",
+    "tslib": "^2.3.0",
+    "type-fest": "^5.9.0"
+  }
+}

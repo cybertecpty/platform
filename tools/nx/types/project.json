@@ -1,0 +1,19 @@
+{
+  "name": "nx-types",
+  "$schema": "../../../node_modules/nx/schemas/project-schema.json",
+  "sourceRoot": "tools/nx/types/src",
+  "projectType": "library",
+  "tags": ["scope:tools", "type:types"],
+  "targets": {
+    "build": {
+      "executor": "@nx/js:tsc",
+      "outputs": ["{options.outputPath}"],
+      "options": {
+        "outputPath": "dist/tools/nx/types",
+        "main": "tools/nx/types/src/index.ts",
+        "tsConfig": "tools/nx/types/tsconfig.lib.json",
+        "assets": ["tools/nx/types/*.md"]
+      }
+    }
+  }
+}
