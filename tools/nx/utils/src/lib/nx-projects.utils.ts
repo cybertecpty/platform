@@ -1,4 +1,5 @@
 import { NxProjectOptions, NxProjectType } from '@cybertecpty/nx-types';
+import { joinPathFragments } from '@nx/devkit';
 
 /**
  * Maps every `NxProjectType` member to `true`. Its only purpose is to be the
@@ -49,17 +50,83 @@ function assertValidPathSegment(value: string, optionName: string): void {
 }
 
 /**
- * Converts a project domain to a name by validating each `/`-separated
- * segment and joining them with hyphens.
+ * Splits a domain into its `/`-separated segments, validating each one.
  */
-export function projectDomainToName(domain: string): string {
+function domainToSegments(domain: string): string[] {
   const segments = domain.split('/');
 
   for (const segment of segments) {
     assertValidPathSegment(segment, 'domain');
   }
 
-  return segments.join('-');
+  return segments;
+}
+
+/**
+ * Determines the top-level directory a project's source lives under: `apps`
+ * for `type: 'app'` (ADR 0010), `tools` for `scope: 'tools'` projects, and
+ * `libs` for everything else (ADR 0009).
+ */
+export function determineTopLevelProjectDir(options: NxProjectOptions): string {
+  if (options.type === 'app') {
+    return 'apps';
+  }
+
+  if (options.scope === 'tools') {
+    return 'tools';
+  }
+
+  return 'libs';
+}
+
+/**
+ * Derives the directory a project's source lives in from `domain`/`group`/
+ * `type` per ADR 0009 (`libs/<domain>[/<subdomain>...]/[<group>/]<type>` or
+ * `tools/[<group>/]<type>`), or `apps/<name>` for app projects per ADR 0010.
+ *
+ * Mirrors `projectNameFromOpts`: the same options yield a directory and a
+ * name that agree, and malformed `domain` / `group` input is rejected the
+ * same way by both.
+ */
+export function projectDirFromOpts(opts: NxProjectOptions): string {
+  const { domain, group, name, type } = opts;
+
+  const topLevelDir = determineTopLevelProjectDir(opts);
+
+  if (type === 'app') {
+    if (!name) {
+      throw new Error('`name` must be provided to derive a project directory for app projects.');
+    }
+
+    return joinPathFragments(topLevelDir, name);
+  }
+
+  if (!domain && !group && !name) {
+    throw new Error(
+      'At least one of `domain`, `group`, or `name` must be provided to derive a project directory.'
+    );
+  }
+
+  let dir = topLevelDir;
+
+  if (domain) {
+    dir = joinPathFragments(dir, ...domainToSegments(domain));
+  }
+
+  if (group) {
+    assertValidPathSegment(group, 'group');
+    dir = joinPathFragments(dir, group);
+  }
+
+  return joinPathFragments(dir, type);
+}
+
+/**
+ * Converts a project domain to a name by validating each `/`-separated
+ * segment and joining them with hyphens.
+ */
+export function projectDomainToName(domain: string): string {
+  return domainToSegments(domain).join('-');
 }
 
 /**

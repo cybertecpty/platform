@@ -1,5 +1,7 @@
 import {
+  determineTopLevelProjectDir,
   NX_PROJECT_TYPES,
+  projectDirFromOpts,
   projectDomainToName,
   projectNameFromOpts,
   stripProjectTypeFromName
@@ -161,5 +163,106 @@ describe('stripProjectTypeFromName', () => {
 
   it.each(NX_PROJECT_TYPES)('removes every recognized type suffix, including %s', type => {
     expect(stripProjectTypeFromName(`sample-${type}`)).toBe('sample');
+  });
+});
+
+describe('determineTopLevelProjectDir', () => {
+  it('returns apps for an app project', () => {
+    expect(
+      determineTopLevelProjectDir({ name: 'game-collector', scope: 'frontend', type: 'app' })
+    ).toBe('apps');
+  });
+
+  it('returns apps for an app project even when the scope is tools', () => {
+    expect(determineTopLevelProjectDir({ name: 'admin', scope: 'tools', type: 'app' })).toBe(
+      'apps'
+    );
+  });
+
+  it('returns tools for a tools-scoped project', () => {
+    expect(determineTopLevelProjectDir({ group: 'git', scope: 'tools', type: 'utils' })).toBe(
+      'tools'
+    );
+  });
+
+  it('returns libs for a library project', () => {
+    expect(determineTopLevelProjectDir({ domain: 'billing', scope: 'backend', type: 'api' })).toBe(
+      'libs'
+    );
+  });
+});
+
+describe('projectDirFromOpts', () => {
+  it('places a library under libs/<domain>/<type>', () => {
+    expect(projectDirFromOpts({ domain: 'game-collector', scope: 'backend', type: 'api' })).toBe(
+      'libs/game-collector/api'
+    );
+  });
+
+  it('folds subdomains into nested directories', () => {
+    expect(
+      projectDirFromOpts({ domain: 'billing/checkout', scope: 'backend', type: 'data-access' })
+    ).toBe('libs/billing/checkout/data-access');
+  });
+
+  it('inserts the group between the domain and the type', () => {
+    expect(
+      projectDirFromOpts({ domain: 'shared', group: 'design-system', scope: 'shared', type: 'ui' })
+    ).toBe('libs/shared/design-system/ui');
+  });
+
+  it('places a tools project under tools/<group>/<type>', () => {
+    expect(projectDirFromOpts({ group: 'git', scope: 'tools', type: 'utils' })).toBe(
+      'tools/git/utils'
+    );
+  });
+
+  it('places an app under apps/<name>, ignoring domain and group', () => {
+    expect(
+      projectDirFromOpts({
+        domain: 'game-collector',
+        group: 'admin',
+        name: 'game-collector-admin',
+        scope: 'frontend',
+        type: 'app'
+      })
+    ).toBe('apps/game-collector-admin');
+  });
+
+  it('throws for an app project with no `name`', () => {
+    expect(() => projectDirFromOpts({ scope: 'frontend', type: 'app' })).toThrow(
+      '`name` must be provided to derive a project directory for app projects.'
+    );
+  });
+
+  it('throws when none of domain, group, or name are provided', () => {
+    expect(() => projectDirFromOpts({ scope: 'backend', type: 'api' })).toThrow(
+      'At least one of `domain`, `group`, or `name` must be provided to derive a project directory.'
+    );
+  });
+
+  it('rejects a malformed domain the same way projectNameFromOpts does', () => {
+    expect(() =>
+      projectDirFromOpts({ domain: 'billing//checkout', scope: 'backend', type: 'api' })
+    ).toThrow('`domain` segment "" must be lowercase alphanumeric words joined by single hyphens.');
+  });
+
+  it('rejects an uppercase domain segment', () => {
+    expect(() => projectDirFromOpts({ domain: 'Billing', scope: 'backend', type: 'api' })).toThrow(
+      '`domain` segment "Billing" must be lowercase alphanumeric words joined by single hyphens.'
+    );
+  });
+
+  it('rejects a group containing a slash', () => {
+    expect(() =>
+      projectDirFromOpts({
+        domain: 'billing',
+        group: 'foo/bar',
+        scope: 'backend',
+        type: 'services'
+      })
+    ).toThrow(
+      '`group` segment "foo/bar" must be lowercase alphanumeric words joined by single hyphens.'
+    );
   });
 });
