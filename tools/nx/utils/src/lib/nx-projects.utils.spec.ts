@@ -1,5 +1,8 @@
+import { logger } from '@nx/devkit';
 import {
   determineTopLevelProjectDir,
+  normalizeProjectOptions,
+  NX_PROJECT_SCOPES,
   NX_PROJECT_TYPES,
   projectDirFromOpts,
   projectDomainToName,
@@ -263,6 +266,108 @@ describe('projectDirFromOpts', () => {
       })
     ).toThrow(
       '`group` segment "foo/bar" must be lowercase alphanumeric words joined by single hyphens.'
+    );
+  });
+});
+
+describe('NX_PROJECT_SCOPES', () => {
+  it('lists every recognized scope, sorted', () => {
+    expect([...NX_PROJECT_SCOPES]).toEqual(['backend', 'frontend', 'shared', 'tools']);
+  });
+});
+
+describe('normalizeProjectOptions', () => {
+  let warnSpy: jest.SpyInstance;
+
+  beforeEach(() => {
+    warnSpy = jest.spyOn(logger, 'warn').mockImplementation(() => undefined);
+  });
+
+  afterEach(() => {
+    warnSpy.mockRestore();
+  });
+
+  it('fills in the derived name, directory, bundler, and tag string', () => {
+    expect(normalizeProjectOptions({ domain: 'billing', scope: 'backend', type: 'api' })).toEqual({
+      domain: 'billing',
+      scope: 'backend',
+      type: 'api',
+      bundler: 'none',
+      directory: 'libs/billing/api',
+      name: 'billing-api',
+      tags: 'domain:billing,scope:backend,type:api'
+    });
+  });
+
+  it('folds any freeform `tags` into the generated tag string', () => {
+    const result = normalizeProjectOptions({
+      name: 'legacy-lib',
+      scope: 'shared',
+      type: 'utils',
+      tags: 'custom:one'
+    });
+
+    expect(result.tags).toBe('custom:one,domain:shared,scope:shared,type:utils');
+  });
+
+  it('derives an app project directory and name from `name` alone', () => {
+    const result = normalizeProjectOptions({ name: 'vault', scope: 'frontend', type: 'app' });
+
+    expect(result).toMatchObject({
+      bundler: 'none',
+      directory: 'apps/vault',
+      name: 'vault',
+      tags: 'scope:frontend,type:app'
+    });
+  });
+
+  it('defaults the bundler to "none" when `buildable` is not requested', () => {
+    expect(
+      normalizeProjectOptions({ domain: 'billing', scope: 'backend', type: 'api' }).bundler
+    ).toBe('none');
+  });
+
+  it('maps `buildable: true` to the tsc bundler for non-testing library types', () => {
+    const result = normalizeProjectOptions({
+      domain: 'billing',
+      scope: 'backend',
+      type: 'api',
+      buildable: true
+    });
+
+    expect(result.bundler).toBe('tsc');
+    expect(result).not.toHaveProperty('buildable');
+    expect(warnSpy).not.toHaveBeenCalled();
+  });
+
+  it('forces the bundler to "none" for a requested-buildable testing library and warns', () => {
+    const result = normalizeProjectOptions({
+      group: 'test-helpers',
+      scope: 'shared',
+      type: 'testing',
+      buildable: true
+    });
+
+    expect(result.bundler).toBe('none');
+    expect(warnSpy).toHaveBeenCalledWith(
+      'The "testing" library type cannot be buildable. Setting bundler to "none" for project "test-helpers-testing".'
+    );
+  });
+
+  it('leaves a non-buildable testing library non-buildable and does not warn', () => {
+    const result = normalizeProjectOptions({
+      group: 'test-helpers',
+      scope: 'shared',
+      type: 'testing'
+    });
+
+    expect(result.bundler).toBe('none');
+    expect(warnSpy).not.toHaveBeenCalled();
+  });
+
+  it('throws when neither domain, group, nor name are provided for a library', () => {
+    expect(() => normalizeProjectOptions({ scope: 'shared', type: 'utils' })).toThrow(
+      'At least one of `domain`, `group`, or `name` must be provided to derive a project name.'
     );
   });
 });

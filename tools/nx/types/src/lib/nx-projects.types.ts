@@ -1,4 +1,24 @@
+import { SetRequired } from 'type-fest';
 import { NxProjectLibType } from './nx-libs.types';
+
+/**
+ * Bundlers accepted by the underlying `@nx/*:library` generators. `none` means
+ * the library is not buildable.
+ */
+export type NxProjectBundler = 'esbuild' | 'none' | 'rollup' | 'swc' | 'tsc' | 'vite';
+
+/**
+ * The fully-resolved project options the generators consume: `name`,
+ * `directory`, and `tags` are always present, and the ergonomic `buildable`
+ * flag has been replaced by the concrete `bundler` the generator expects.
+ */
+export type NormalizedNxProjectOptions<
+  S extends NxProjectScope = NxProjectScope,
+  T extends NxProjectType = NxProjectType
+> = Omit<SetRequired<NxProjectOptions<S, T>, 'name' | 'tags'>, 'buildable'> & {
+  bundler: NxProjectBundler;
+  directory: string;
+};
 
 /**
  * Common options for all Nx project generators.
@@ -7,6 +27,13 @@ export interface NxProjectOptions<
   S extends NxProjectScope = NxProjectScope,
   T extends NxProjectType = NxProjectType
 > {
+  /**
+   * Whether the library should be buildable. Normalized to a `bundler` value
+   * before it reaches the underlying generator (`true` → `tsc`, omitted or
+   * `false` → `none`). Defaults to non-buildable. The `testing` type is always
+   * forced non-buildable regardless of this flag.
+   */
+  buildable?: boolean;
   /**
    * The product domain and optional subdomains this project belongs to.
    * Subdomains are separated by a forward slash (e.g. `atlas/identity`). Each

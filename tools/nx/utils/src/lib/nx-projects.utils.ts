@@ -1,5 +1,34 @@
-import { NxProjectOptions, NxProjectType } from '@cybertecpty/nx-types';
-import { joinPathFragments } from '@nx/devkit';
+import {
+  NormalizedNxProjectOptions,
+  NxProjectBundler,
+  NxProjectOptions,
+  NxProjectScope,
+  NxProjectType
+} from '@cybertecpty/nx-types';
+import { joinPathFragments, logger } from '@nx/devkit';
+import { createProjectTags } from './nx-project-tags.utils';
+
+/**
+ * Maps every `NxProjectScope` member to `true`. Its only purpose is to be the
+ * source `NX_PROJECT_SCOPES` is derived from — TypeScript requires this object
+ * literal to have exactly the members of `NxProjectScope`, so adding, removing,
+ * or renaming a scope without updating this map is a compile error instead of
+ * a silent runtime gap.
+ */
+const NX_PROJECT_SCOPE_MAP: Record<NxProjectScope, true> = {
+  backend: true,
+  frontend: true,
+  shared: true,
+  tools: true
+};
+
+/**
+ * Array of recognized Nx project scopes, derived from `NX_PROJECT_SCOPE_MAP` so
+ * it can never drift from the `NxProjectScope` union it mirrors.
+ */
+export const NX_PROJECT_SCOPES: readonly NxProjectScope[] = Object.keys(
+  NX_PROJECT_SCOPE_MAP
+) as NxProjectScope[];
 
 /**
  * Maps every `NxProjectType` member to `true`. Its only purpose is to be the
@@ -77,6 +106,41 @@ export function determineTopLevelProjectDir(options: NxProjectOptions): string {
   }
 
   return 'libs';
+}
+
+/**
+ * Normalizes raw project options into the form the generators consume: derives
+ * `name`, `directory`, and the `tags` string, and translates the ergonomic
+ * `buildable` flag into a concrete `bundler` (`true` → `tsc`, omitted/`false` →
+ * `none`). The deprecated `buildable` key is dropped from the result.
+ *
+ * The `testing` library type is always non-buildable: a production library that
+ * imports it would otherwise pull it in as a buildable dependency. A `testing`
+ * project that explicitly requests `buildable: true` is downgraded with a warning.
+ */
+export function normalizeProjectOptions<T extends NxProjectOptions>(
+  options: T
+): Omit<T, 'buildable'> & NormalizedNxProjectOptions {
+  const { buildable: requestedBuildable, ...rest } = options;
+  const name = projectNameFromOpts(options);
+  const directory = projectDirFromOpts(options);
+
+  let bundler: NxProjectBundler = requestedBuildable ? 'tsc' : 'none';
+
+  if (options.type === 'testing' && requestedBuildable) {
+    logger.warn(
+      `The "testing" library type cannot be buildable. Setting bundler to "none" for project "${name}".`
+    );
+    bundler = 'none';
+  }
+
+  return {
+    ...rest,
+    bundler,
+    directory,
+    name,
+    tags: createProjectTags(options).toString()
+  };
 }
 
 /**
