@@ -14,6 +14,14 @@
         "tsConfig": "libs/shared/types/tsconfig.lib.json",
         "assets": ["libs/shared/types/*.md"]
       }
+    },
+    "typecheck": {
+      "executor": "nx:run-commands",
+      "cache": true,
+      "inputs": ["default", "^default"],
+      "options": {
+        "command": "tsc --noEmit -p libs/shared/types/tsconfig.spec.json"
+      }
     }
   }
 }

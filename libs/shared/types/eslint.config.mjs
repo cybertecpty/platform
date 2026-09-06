@@ -8,7 +8,12 @@ export default [
       '@nx/dependency-checks': [
         'error',
         {
-          ignoredFiles: ['{projectRoot}/eslint.config.{js,cjs,mjs,ts,cts,mts}']
+          ignoredFiles: [
+            '{projectRoot}/eslint.config.{js,cjs,mjs,ts,cts,mts}',
+            // Type-level test fixtures are not part of the build output; their
+            // dev-only imports (expect-type) don't belong in `dependencies`.
+            '{projectRoot}/src/**/*.test-d.ts'
+          ]
         }
       ]
     },
