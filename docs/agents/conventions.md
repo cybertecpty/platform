@@ -428,6 +428,15 @@ what it changed, so the commit lands clean.
 - Prefer direct assertions over snapshots.
 - For Nx generators / workspace utilities, use `createTreeWithEmptyWorkspace()` and
   assert against the in-memory `Tree`, generated files, and project config.
+- **Spec files are type-checked by the `typecheck` target, not `test`.** `ts-jest` is
+  transpile-only and `build` excludes `*.spec.ts`, so a spec-only type error (a bad
+  cast, a `never`-typed arg) slips through both. Every lib/tool project carries a
+  `"typecheck": {}` stub in its `project.json` that inherits
+  `tsc --noEmit -p {projectRoot}/tsconfig.spec.json` from `nx.json`
+  `targetDefaults.typecheck`; CI runs it via `nx run-many -t ... typecheck`. A new
+  project needs both the stub and a `tsconfig.spec.json` (spec-less projects are
+  fine — `files: []` in the base `tsconfig.json` suppresses `TS18003`). The
+  `nx-plugin` generator emits the stub for scaffolded plugins. See issue #48.
 
 ### Verification defaults
 

@@ -1,5 +1,12 @@
 import { createProjectTags, projectDirFromOpts, projectNameFromOpts } from '@cybertecpty/nx-utils';
-import { formatFiles, GeneratorCallback, runTasksInSerial, Tree } from '@nx/devkit';
+import {
+  formatFiles,
+  GeneratorCallback,
+  readProjectConfiguration,
+  runTasksInSerial,
+  Tree,
+  updateProjectConfiguration
+} from '@nx/devkit';
 import { pluginGenerator as nxPluginGenerator } from '@nx/plugin/generators';
 import { NxPluginGeneratorOptions } from './schema';
 
@@ -21,6 +28,7 @@ export async function pluginGenerator(
   const name = projectNameFromOpts(projectOptions);
   const directory = projectDirFromOpts(projectOptions);
   const tags = createProjectTags(projectOptions).toString();
+  const unitTestRunner = options.unitTestRunner ?? 'jest';
 
   const projectTask = await nxPluginGenerator(tree, {
     name,
@@ -28,7 +36,7 @@ export async function pluginGenerator(
     tags,
     importPath: options.importPath,
     linter: options.linter ?? 'eslint',
-    unitTestRunner: options.unitTestRunner ?? 'jest',
+    unitTestRunner,
     compiler: options.compiler ?? 'tsc',
     e2eTestRunner: options.e2eTestRunner ?? 'none',
     e2eProjectDirectory: options.e2eProjectDirectory,
@@ -39,6 +47,19 @@ export async function pluginGenerator(
     skipLintChecks: options.skipLintChecks ?? false,
     skipFormat: true
   });
+
+  // Re-add the `typecheck` target the removed `@nx/js/typescript` inference
+  // plugin used to provide (dropped because Angular can't do `composite` —
+  // ADR 0005). The stub inherits its command from `targetDefaults.typecheck`
+  // in nx.json; it gives the plugin's `.spec.ts` files a real `tsc --noEmit`
+  // that `ts-jest` and `build` (lib sources only) both skip. See issue #48.
+  // Skipped without a unit-test runner: `@nx/plugin:plugin` writes no
+  // `tsconfig.spec.json` then, so the inherited command would have no project.
+  if (unitTestRunner !== 'none') {
+    const project = readProjectConfiguration(tree, name);
+    project.targets = { ...project.targets, typecheck: {} };
+    updateProjectConfiguration(tree, name, project);
+  }
 
   if (!options.skipFormat) {
     await formatFiles(tree);

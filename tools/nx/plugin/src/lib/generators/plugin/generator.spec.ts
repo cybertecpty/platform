@@ -1,15 +1,30 @@
 import * as devkit from '@nx/devkit';
-import { Tree } from '@nx/devkit';
+import { addProjectConfiguration, Tree } from '@nx/devkit';
 import { createTreeWithEmptyWorkspace } from '@nx/devkit/testing';
 import { pluginGenerator as nxPluginGenerator } from '@nx/plugin/generators';
 import { pluginGenerator } from './generator';
 import { NxPluginGeneratorOptions } from './schema';
 
 jest.mock('@nx/plugin/generators', () => ({
-  pluginGenerator: jest.fn(() => Promise.resolve(jest.fn()))
+  pluginGenerator: jest.fn()
 }));
 
 const nxPluginGeneratorMock = nxPluginGenerator as jest.MockedFunction<typeof nxPluginGenerator>;
+
+/**
+ * Stand-in for `@nx/plugin:plugin`: writes the minimal project config the
+ * real generator would, so the wrapper's post-delegation edits have a
+ * project to read, then returns a no-op task.
+ */
+function fakeNxPluginGenerator(tree: Tree, options: { name: string; directory: string }) {
+  addProjectConfiguration(tree, options.name, {
+    root: options.directory,
+    projectType: 'library',
+    targets: { build: {} }
+  });
+
+  return Promise.resolve(jest.fn());
+}
 
 function run(tree: Tree, options: Partial<NxPluginGeneratorOptions> & { group: string }) {
   return pluginGenerator(tree, options);
@@ -34,6 +49,9 @@ describe('pluginGenerator', () => {
     jest.clearAllMocks();
     tree = createTreeWithEmptyWorkspace();
     formatFiles = jest.spyOn(devkit, 'formatFiles').mockResolvedValue();
+    nxPluginGeneratorMock.mockImplementation(
+      fakeNxPluginGenerator as unknown as typeof nxPluginGenerator
+    );
   });
 
   describe('project-option normalization', () => {
@@ -130,9 +148,32 @@ describe('pluginGenerator', () => {
       expect(formatFiles).not.toHaveBeenCalled();
     });
 
+    it('adds a `typecheck` target stub that inherits from nx.json target defaults', async () => {
+      await run(tree, { group: 'demo' });
+
+      const { targets } = devkit.readProjectConfiguration(tree, 'demo-plugin');
+
+      expect(targets?.typecheck).toEqual({});
+      expect(targets?.build).toBeDefined();
+    });
+
+    it('skips the `typecheck` stub when there is no unit-test runner', async () => {
+      await run(tree, { group: 'demo', unitTestRunner: 'none' });
+
+      const { targets } = devkit.readProjectConfiguration(tree, 'demo-plugin');
+
+      expect(targets?.typecheck).toBeUndefined();
+    });
+
     it('returns the delegated task wrapped in a serial runner', async () => {
       const task = jest.fn();
-      nxPluginGeneratorMock.mockResolvedValueOnce(task);
+      nxPluginGeneratorMock.mockImplementationOnce(((
+        tree: Tree,
+        options: { name: string; directory: string }
+      ) => {
+        addProjectConfiguration(tree, options.name, { root: options.directory, targets: {} });
+        return Promise.resolve(task);
+      }) as unknown as typeof nxPluginGenerator);
 
       const callback = await run(tree, { group: 'demo' });
       await callback();
