@@ -5,6 +5,14 @@
   "projectType": "library",
   "tags": ["scope:tools", "type:plugin"],
   "targets": {
+    "typecheck": {
+      "executor": "nx:run-commands",
+      "cache": true,
+      "inputs": ["default", "^default", { "externalDependencies": ["typescript"] }],
+      "options": {
+        "command": "tsc --project {projectRoot}/tsconfig.spec.json --noEmit"
+      }
+    },
     "build": {
       "executor": "@nx/js:tsc",
       "outputs": ["{options.outputPath}"],
