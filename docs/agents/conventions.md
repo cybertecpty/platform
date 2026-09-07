@@ -229,7 +229,7 @@ is `>=22.18.0` because that is where native type stripping became unflagged.
 A monitor event can re-surface any new PR comment. Before acting, confirm it is
 genuine reviewer feedback.
 
-**Actionable:** humans, `copilot-pull-request-reviewer[bot]`, `gemini-code-assist[bot]`.
+**Actionable:** humans, `copilot-pull-request-reviewer[bot]`.
 
 **Noise — skip:** CI-status bots, comments authored by `cybertec-bot`, comments with
 an "addressed by" signature from the same workflow, already-resolved/outdated threads
