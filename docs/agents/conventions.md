@@ -428,6 +428,12 @@ what it changed, so the commit lands clean.
 - Prefer direct assertions over snapshots.
 - For Nx generators / workspace utilities, use `createTreeWithEmptyWorkspace()` and
   assert against the in-memory `Tree`, generated files, and project config.
+- **Coverage: an 80% floor, CI-enforced** (ADR 0007 amendment). `jest.preset.js` sets
+  `coverageThreshold.global` to 80 and `collectCoverage: !!process.env.CI`, so local
+  `nx test` stays fast and the threshold gates CI. Under `nx run-many` it is a
+  per-project gate. New runtime projects must clear 80% — check with
+  `nx test {project} --coverage` before opening the PR. `type:types` libs have no
+  `test` target and are exempt.
 - **Spec files are type-checked by the `typecheck` target, not `test`.** `ts-jest` is
   transpile-only and `build` excludes `*.spec.ts`, so a spec-only type error (a bad
   cast, a `never`-typed arg) slips through both. Every lib/tool project carries a

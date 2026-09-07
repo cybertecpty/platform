@@ -1,6 +1,10 @@
-import type { SimpleGit } from 'simple-git';
+import simpleGit, { type SimpleGit } from 'simple-git';
 
 import { gitLocalUserEmail, gitLocalUserName } from './git-config';
+
+jest.mock('simple-git', () => ({ __esModule: true, default: jest.fn() }));
+
+const mockSimpleGit = jest.mocked(simpleGit);
 
 const fakeGit = (value: string | null): SimpleGit =>
   ({
@@ -24,5 +28,25 @@ describe('gitLocalUserEmail', () => {
 
   it('returns an empty string when user.email is unset', async () => {
     await expect(gitLocalUserEmail(fakeGit(null))).resolves.toBe('');
+  });
+});
+
+describe('default simple-git client', () => {
+  afterEach(() => {
+    mockSimpleGit.mockReset();
+  });
+
+  it('gitLocalUserName falls back to simpleGit() when no client is passed', async () => {
+    mockSimpleGit.mockReturnValue(fakeGit('Ada Lovelace'));
+
+    await expect(gitLocalUserName()).resolves.toBe('Ada Lovelace');
+    expect(mockSimpleGit).toHaveBeenCalledTimes(1);
+  });
+
+  it('gitLocalUserEmail falls back to simpleGit() when no client is passed', async () => {
+    mockSimpleGit.mockReturnValue(fakeGit('ada@example.test'));
+
+    await expect(gitLocalUserEmail()).resolves.toBe('ada@example.test');
+    expect(mockSimpleGit).toHaveBeenCalledTimes(1);
   });
 });

@@ -1,6 +1,10 @@
-import type { SimpleGit } from 'simple-git';
+import simpleGit, { type SimpleGit } from 'simple-git';
 
 import { gitCommitsBetween, lastGitCommitHash } from './git-commits';
+
+jest.mock('simple-git', () => ({ __esModule: true, default: jest.fn() }));
+
+const mockSimpleGit = jest.mocked(simpleGit);
 
 const fakeGit = (overrides: Record<string, unknown>): SimpleGit =>
   overrides as unknown as SimpleGit;
@@ -67,5 +71,27 @@ describe('lastGitCommitHash', () => {
     await lastGitCommitHash({ length: 7 }, fakeGit({ revparse }));
 
     expect(revparse).toHaveBeenCalledWith(['--short=7', 'HEAD']);
+  });
+});
+
+describe('default simple-git client', () => {
+  afterEach(() => {
+    mockSimpleGit.mockReset();
+  });
+
+  it('gitCommitsBetween falls back to simpleGit() when no client is passed', async () => {
+    mockSimpleGit.mockReturnValue(fakeGit({ log: () => Promise.resolve({ all: [] }) }));
+
+    await expect(gitCommitsBetween('base', 'head')).resolves.toEqual([]);
+    expect(mockSimpleGit).toHaveBeenCalledTimes(1);
+  });
+
+  it('lastGitCommitHash falls back to simpleGit() and default opts when called bare', async () => {
+    const revparse = jest.fn(() => Promise.resolve('deadbeef\n'));
+    mockSimpleGit.mockReturnValue(fakeGit({ revparse }));
+
+    await expect(lastGitCommitHash()).resolves.toBe('deadbeef');
+    expect(revparse).toHaveBeenCalledWith(['HEAD']);
+    expect(mockSimpleGit).toHaveBeenCalledTimes(1);
   });
 });
