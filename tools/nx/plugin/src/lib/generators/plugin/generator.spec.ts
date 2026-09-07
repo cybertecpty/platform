@@ -165,6 +165,12 @@ describe('pluginGenerator', () => {
       expect(targets?.typecheck).toBeUndefined();
     });
 
+    it('scaffolds a `src/lib` folder with a `.gitkeep` so the convention path always exists', async () => {
+      await run(tree, { group: 'demo' });
+
+      expect(tree.exists('tools/demo/plugin/src/lib/.gitkeep')).toBe(true);
+    });
+
     it('returns the delegated task wrapped in a serial runner', async () => {
       const task = jest.fn();
       nxPluginGeneratorMock.mockImplementationOnce(((
