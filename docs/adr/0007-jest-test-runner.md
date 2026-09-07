@@ -70,7 +70,8 @@ Chosen option: **1 — Jest everywhere.**
   freshly scaffolded or barrel-only libs); one of those should not fail the whole test
   job. Whether a runtime lib _should_ have tests is a code-review concern
   (review-priorities §3), and a `coverageThreshold` — not this flag — is the guard
-  against a silently-broken `testMatch`.
+  against a silently-broken `testMatch`. See the 2026-09-07 amendment for that
+  threshold.
 - **E2E is out of scope.** Browser e2e uses Playwright (its own tooling); this ADR
   governs the unit / integration test runner only.
 
@@ -108,3 +109,50 @@ Chosen option: **1 — Jest everywhere.**
   defaults.
 - `docs/agents/conventions.md` §9 "Testing & verification" — points here.
 - `@nx/nest` generator schema — `unitTestRunner` is `jest | none`, no Vitest option.
+
+## Amendment (2026-09-07): coverage threshold
+
+- Status: accepted
+- Deciders: djmcgrath
+- Implemented by: `coverageThreshold` + `collectCoverage` in `jest.preset.js`; issue #52
+
+The `passWithNoTests: true` note above always deferred to "a `coverageThreshold` — not
+this flag" as the real guard against a silently-broken `testMatch`. This amendment adds
+that threshold.
+
+### Decision
+
+- **80% global floor** — `coverageThreshold.global` in `jest.preset.js` at
+  `branches / functions / lines / statements: 80`. A single `global` block, not
+  per-project entries. Under `nx run-many` each project runs its own Jest process, so
+  `global` is enforced **per project** (that project's own files), not against the
+  workspace aggregate — effectively a per-project gate with one number to maintain.
+- **CI-gated collection** — `collectCoverage: !!process.env.CI`. Jest only enforces
+  `coverageThreshold` when coverage is collected, so the threshold is a CI gate; the
+  local `nx test` inner loop stays fast. `nx test <project> --coverage` opts in locally.
+- **`collectCoverageFrom` instruments all `src/**/*.ts`** (minus specs, `*.d.ts`,
+  `*.{test-d,types}.ts`, and the barrel `index.ts`), so an untested module counts as a
+  gap instead of being invisible. Safe workspace-wide because every project uses a
+  `src/` layout.
+- **`type:types` libs stay exempt** — `shared-types` / `nx-types` have no `test` target
+  (no `jest.config.cts`), so `nx run-many -t test` skips them; there is nothing to
+  threshold. `passWithNoTests` covers the "config exists, no specs yet" case.
+- **No third-party coverage service.** Codecov / Coveralls were considered for the trend
+  dashboard, badge, and PR patch-coverage comment. Rejected for now: they ingest full
+  coverage reports (file tree, line-level data) of a private single-repo project, and
+  add an external integration + token. Revisit if the repo goes public under BUSL-1.1 —
+  the badge and public dashboard become worthwhile and the offsite-exposure concern
+  goes away. PR-visible coverage reporting is to be built inside GitHub Actions instead.
+
+### Consequences
+
+- CI test tasks now collect coverage (extra I/O per `test` task; the Jest run itself is
+  the same). The per-project `coverage/<projectRoot>/` output is already declared on the
+  inferred `test` target, so Nx caches it.
+- `git-utils` sat at 70.58% branch coverage (uncovered `simpleGit()` default-argument
+  paths); its specs were filled in to 100% as part of #52 before the threshold landed.
+  No project carries a per-project override.
+- A new runtime project that scaffolds a `test` target must clear 80% or the `test` job
+  fails. That is the intended pressure (review-priorities §3).
+- A merged workspace coverage number and a per-PR coverage comment are follow-up work
+  under #52 — the threshold gate does not depend on them.

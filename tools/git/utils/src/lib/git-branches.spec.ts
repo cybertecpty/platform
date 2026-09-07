@@ -1,4 +1,4 @@
-import type { SimpleGit } from 'simple-git';
+import simpleGit, { type SimpleGit } from 'simple-git';
 
 import {
   gitBranchExists,
@@ -6,6 +6,10 @@ import {
   isCleanGitBranch,
   isCurrentGitBranch
 } from './git-branches';
+
+jest.mock('simple-git', () => ({ __esModule: true, default: jest.fn() }));
+
+const mockSimpleGit = jest.mocked(simpleGit);
 
 const fakeGit = (overrides: Record<string, unknown>): SimpleGit =>
   overrides as unknown as SimpleGit;
@@ -47,5 +51,41 @@ describe('isCurrentGitBranch', () => {
 
     await expect(isCurrentGitBranch('develop', git)).resolves.toBe(true);
     await expect(isCurrentGitBranch('main', git)).resolves.toBe(false);
+  });
+});
+
+describe('default simple-git client', () => {
+  afterEach(() => {
+    mockSimpleGit.mockReset();
+  });
+
+  it('gitBranchExists falls back to simpleGit() when no client is passed', async () => {
+    mockSimpleGit.mockReturnValue(withBranches(['develop']));
+
+    await expect(gitBranchExists('develop')).resolves.toBe(true);
+    expect(mockSimpleGit).toHaveBeenCalledTimes(1);
+  });
+
+  it('gitCurrentBranch falls back to simpleGit() when no client is passed', async () => {
+    mockSimpleGit.mockReturnValue(withBranches(['develop'], 'develop'));
+
+    await expect(gitCurrentBranch()).resolves.toBe('develop');
+    expect(mockSimpleGit).toHaveBeenCalledTimes(1);
+  });
+
+  it('isCleanGitBranch falls back to simpleGit() when no client is passed', async () => {
+    mockSimpleGit.mockReturnValue(
+      fakeGit({ status: () => Promise.resolve({ isClean: () => true }) })
+    );
+
+    await expect(isCleanGitBranch()).resolves.toBe(true);
+    expect(mockSimpleGit).toHaveBeenCalledTimes(1);
+  });
+
+  it('isCurrentGitBranch falls back to simpleGit() when no client is passed', async () => {
+    mockSimpleGit.mockReturnValue(withBranches(['develop'], 'develop'));
+
+    await expect(isCurrentGitBranch('develop')).resolves.toBe(true);
+    expect(mockSimpleGit).toHaveBeenCalledTimes(1);
   });
 });
