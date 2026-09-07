@@ -17,6 +17,10 @@ over the `@nx/*` generators that apply the naming, directory, and tag convention
   `tools/release/plugin`. Pass `--name` to override the derived project name;
   `--help` lists the rest (all forwarded to `@nx/plugin:plugin`).
 
+  The generated project gets a `typecheck` target stub, so the scaffolded plugin's
+  `.spec.ts` files are type-checked in CI from day one (the config lives in
+  `nx.json` `targetDefaults.typecheck`; see issue #48).
+
 ## Building
 
 `nx build nx-plugin` — `tsc` via `@nx/js:tsc`.
