@@ -1,7 +1,9 @@
 import { createProjectTags, projectDirFromOpts, projectNameFromOpts } from '@cybertecpty/nx-utils';
 import {
   formatFiles,
+  generateFiles,
   GeneratorCallback,
+  joinPathFragments,
   readProjectConfiguration,
   runTasksInSerial,
   Tree,
@@ -48,6 +50,8 @@ export async function pluginGenerator(
     skipFormat: true
   });
 
+  const projectConfig = readProjectConfiguration(tree, name);
+
   // Re-add the `typecheck` target the removed `@nx/js/typescript` inference
   // plugin used to provide (dropped because Angular can't do `composite` —
   // ADR 0005). The stub inherits its command from `targetDefaults.typecheck`
@@ -56,10 +60,13 @@ export async function pluginGenerator(
   // Skipped without a unit-test runner: `@nx/plugin:plugin` writes no
   // `tsconfig.spec.json` then, so the inherited command would have no project.
   if (unitTestRunner !== 'none') {
-    const project = readProjectConfiguration(tree, name);
-    project.targets = { ...project.targets, typecheck: {} };
-    updateProjectConfiguration(tree, name, project);
+    projectConfig.targets = { ...projectConfig.targets, typecheck: {} };
+    updateProjectConfiguration(tree, name, projectConfig);
   }
+
+  generateFiles(tree, joinPathFragments(__dirname, 'files'), projectConfig.root, {
+    tmpl: ''
+  });
 
   if (!options.skipFormat) {
     await formatFiles(tree);
