@@ -1,4 +1,5 @@
 import { gitLocalUserEmail, gitLocalUserName } from '@cybertecpty/git-utils';
+import type { ReleaseManifest } from '@cybertecpty/shared-types';
 import {
   formatFiles,
   joinPathFragments,
@@ -11,15 +12,6 @@ import type { ReleaseManifestGeneratorOptions } from './schema';
 
 /** Name of the file the generator writes; never configurable. */
 const MANIFEST_FILENAME = 'release-manifest.json';
-
-/** Contents of the generated `release-manifest.json`, keys in alphabetical order. */
-interface ReleaseManifest {
-  author?: string;
-  project: string;
-  releaseCommit: string;
-  releaseDate: string;
-  version: string;
-}
 
 /**
  * Writes a `release-manifest.json` for a single project — author, project

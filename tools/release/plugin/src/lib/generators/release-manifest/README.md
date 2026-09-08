@@ -44,6 +44,10 @@ pnpm nx g @cybertecpty/release-plugin:release-manifest <project> <version> --rel
 `author` is `<git user name> (<git user email>)` (email dropped when unset); it is absent when no
 name resolves.
 
+The file's shape is the `ReleaseManifest` interface exported from
+[`@cybertecpty/shared-types`](../../../../../libs/shared/types/src/lib/release.types.ts) — apps and
+libraries that read the manifest at runtime should import it from there.
+
 ## Options
 
 | Option          | Type    | Required | Default      | Notes                                                                    |
