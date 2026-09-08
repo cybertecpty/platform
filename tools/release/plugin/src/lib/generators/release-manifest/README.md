@@ -12,9 +12,8 @@ alongside the built output.
   `releaseDate`, and `version`, with the keys in alphabetical order.
 - Writes the file at the project root. `--dirPath` moves it elsewhere within the project (a `..`
   segment is rejected).
-- Defaults `author` to the local git user name for applications, and `<git user name> (<git user
-email>)` for libraries. The email is dropped when it is not configured; the whole key is omitted
-  when no name can be resolved and `--author` is not given.
+- Defaults `author` to `<git user name> (<git user email>)`, dropping the email when it is not
+  configured. The whole key is omitted when no name can be resolved and `--author` is not given.
 - Normalizes `releaseDate` to an ISO 8601 UTC string. Defaults to the current time.
 - Overwrites an existing `release-manifest.json` without prompting.
 - Formats generated files unless `--skipFormat` is passed.
@@ -42,8 +41,8 @@ pnpm nx g @cybertecpty/release-plugin:release-manifest <project> <version> --rel
 }
 ```
 
-`author` is `<git user name>` for applications and `<git user name> (<git user email>)` for
-libraries; it is absent when no name resolves.
+`author` is `<git user name> (<git user email>)` (email dropped when unset); it is absent when no
+name resolves.
 
 ## Options
 

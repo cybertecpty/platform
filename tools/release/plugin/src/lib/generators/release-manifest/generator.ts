@@ -46,8 +46,7 @@ export async function releaseManifestGenerator(
   }
 
   const releaseDate = normalizeReleaseDate(options.releaseDate);
-  const isApp = projectConfig.projectType === 'application';
-  const author = await resolveAuthor(options.author, isApp);
+  const author = await resolveAuthor(options.author);
 
   const manifestDir = resolveManifestDir(projectConfig.root, dirPath);
   const manifestPath = joinPathFragments(manifestDir, MANIFEST_FILENAME);
@@ -108,20 +107,19 @@ function normalizeReleaseDate(input: string | undefined): string {
 /**
  * Resolves the manifest `author`:
  * - an explicit non-empty `--author` wins;
- * - applications get the local git user name only;
- * - libraries get `<name> (<email>)`, dropping the parenthesized email when it
- *   is not configured;
+ * - otherwise `<git user name> (<git user email>)`, dropping the parenthesized
+ *   email when it is not configured;
  * - returns `''` when no name can be resolved, so the caller omits the key.
  */
-async function resolveAuthor(explicit: string | undefined, isApp: boolean): Promise<string> {
+async function resolveAuthor(explicit: string | undefined): Promise<string> {
   if (explicit !== undefined && explicit !== '') {
     return explicit;
   }
 
   const name = (await gitLocalUserName()).trim();
 
-  if (name === '' || isApp) {
-    return name;
+  if (name === '') {
+    return '';
   }
 
   const email = (await gitLocalUserEmail()).trim();

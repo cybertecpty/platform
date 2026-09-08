@@ -1,8 +1,8 @@
 export interface ReleaseManifestGeneratorOptions {
   /**
-   * Release author. Defaults to the local git user name for applications, and
-   * `<git user name> (<git user email>)` for libraries. When no name resolves,
-   * the `author` key is omitted from the manifest.
+   * Release author. Defaults to `<git user name> (<git user email>)`, dropping
+   * the email when it is not configured. When no name resolves, the `author`
+   * key is omitted from the manifest.
    */
   author?: string;
   /**

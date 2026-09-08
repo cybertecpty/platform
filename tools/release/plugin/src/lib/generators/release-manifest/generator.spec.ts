@@ -145,15 +145,7 @@ describe('releaseManifestGenerator', () => {
   });
 
   describe('author resolution', () => {
-    it('uses the git user name only for an application', async () => {
-      seedApp(tree);
-
-      await run(tree, { project: 'web' });
-
-      expect(readJson(tree, `${APP_ROOT}/release-manifest.json`).author).toBe('Jane Doe');
-    });
-
-    it('uses the git user name and email for a library', async () => {
+    it('defaults to the git user name and email', async () => {
       seedLib(tree);
 
       await run(tree, { project: 'shared-thing' });
@@ -163,7 +155,17 @@ describe('releaseManifestGenerator', () => {
       );
     });
 
-    it('drops the email for a library when it is not configured', async () => {
+    it('uses the same shape for an application', async () => {
+      seedApp(tree);
+
+      await run(tree, { project: 'web' });
+
+      expect(readJson(tree, `${APP_ROOT}/release-manifest.json`).author).toBe(
+        'Jane Doe (jane@example.com)'
+      );
+    });
+
+    it('drops the email when it is not configured', async () => {
       gitLocalUserEmailMock.mockResolvedValue('');
       seedLib(tree);
 

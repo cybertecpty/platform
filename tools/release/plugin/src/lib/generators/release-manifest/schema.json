@@ -47,7 +47,7 @@
     },
     "author": {
       "type": "string",
-      "description": "Release author. Defaults to the local git user name for applications, and `<git user name> (<git user email>)` for libraries. Omitted from the manifest entirely when no name can be resolved."
+      "description": "Release author. Defaults to `<git user name> (<git user email>)`, dropping the email when it is not configured. Omitted from the manifest entirely when no name can be resolved."
     },
     "dirPath": {
       "type": "string",
