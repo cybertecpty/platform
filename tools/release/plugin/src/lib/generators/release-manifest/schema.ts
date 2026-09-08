@@ -6,9 +6,8 @@ export interface ReleaseManifestGeneratorOptions {
    */
   author?: string;
   /**
-   * Output directory for the manifest, relative to the project root. Overrides
-   * the default location (`public` for applications, the project root for
-   * libraries).
+   * Output directory for the manifest, relative to the project root. Defaults to
+   * the project root itself.
    */
   dirPath?: string;
   /** The workspace project to generate the manifest for. */

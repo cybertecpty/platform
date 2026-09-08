@@ -1,6 +1,6 @@
 import { gitLocalUserEmail, gitLocalUserName } from '@cybertecpty/git-utils';
 import * as devkit from '@nx/devkit';
-import { addProjectConfiguration, readJson, readProjectConfiguration, type Tree } from '@nx/devkit';
+import { addProjectConfiguration, readJson, type Tree } from '@nx/devkit';
 import { createTreeWithEmptyWorkspace } from '@nx/devkit/testing';
 import { releaseManifestGenerator } from './generator';
 import type { ReleaseManifestGeneratorOptions } from './schema';
@@ -16,40 +16,19 @@ const gitLocalUserEmailMock = gitLocalUserEmail as jest.MockedFunction<typeof gi
 const LIB_ROOT = 'libs/shared/thing';
 const APP_ROOT = 'apps/web';
 
-interface SeedOptions {
-  /** `assets` array for the build target; `'none'` omits the key entirely. */
-  readonly assets?: unknown[] | 'none';
-  readonly executor?: string;
-  readonly withBuildTarget?: boolean;
-}
-
-function buildTarget(executor: string, assets: unknown[] | 'none') {
-  return { build: { executor, options: assets === 'none' ? {} : { assets } } };
-}
-
-function seedLib(tree: Tree, options: SeedOptions = {}): void {
-  const { executor = '@nx/js:tsc', assets = [], withBuildTarget = true } = options;
-
+function seedLib(tree: Tree): void {
   addProjectConfiguration(tree, 'shared-thing', {
     root: LIB_ROOT,
     sourceRoot: `${LIB_ROOT}/src`,
-    projectType: 'library',
-    targets: withBuildTarget ? buildTarget(executor, assets) : {}
+    projectType: 'library'
   });
 }
 
-function seedApp(tree: Tree, options: SeedOptions = {}): void {
-  const {
-    executor = '@angular/build:application',
-    assets = 'none',
-    withBuildTarget = true
-  } = options;
-
+function seedApp(tree: Tree): void {
   addProjectConfiguration(tree, 'web', {
     root: APP_ROOT,
     sourceRoot: `${APP_ROOT}/src`,
-    projectType: 'application',
-    targets: withBuildTarget ? buildTarget(executor, assets) : {}
+    projectType: 'application'
   });
 }
 
@@ -89,12 +68,12 @@ describe('releaseManifestGenerator', () => {
       expect(tree.exists(`${LIB_ROOT}/release-manifest.json`)).toBe(true);
     });
 
-    it('writes under `public/` for an application', async () => {
+    it('writes to the project root for an application', async () => {
       seedApp(tree);
 
       await run(tree, { project: 'web' });
 
-      expect(tree.exists(`${APP_ROOT}/public/release-manifest.json`)).toBe(true);
+      expect(tree.exists(`${APP_ROOT}/release-manifest.json`)).toBe(true);
     });
 
     it('honours `dirPath` relative to the project root, creating intermediate dirs', async () => {
@@ -115,6 +94,15 @@ describe('releaseManifestGenerator', () => {
       expect(readJson(tree, `${LIB_ROOT}/release-manifest.json`)).toMatchObject({
         version: '9.9.9'
       });
+    });
+
+    it('never touches the project configuration', async () => {
+      const updateProjectConfiguration = jest.spyOn(devkit, 'updateProjectConfiguration');
+      seedLib(tree);
+
+      await run(tree, { project: 'shared-thing' });
+
+      expect(updateProjectConfiguration).not.toHaveBeenCalled();
     });
   });
 
@@ -162,7 +150,7 @@ describe('releaseManifestGenerator', () => {
 
       await run(tree, { project: 'web' });
 
-      expect(readJson(tree, `${APP_ROOT}/public/release-manifest.json`).author).toBe('Jane Doe');
+      expect(readJson(tree, `${APP_ROOT}/release-manifest.json`).author).toBe('Jane Doe');
     });
 
     it('uses the git user name and email for a library', async () => {
@@ -269,117 +257,6 @@ describe('releaseManifestGenerator', () => {
       ).rejects.toThrow(/dirPath/);
       expect(tree.exists('elsewhere/release-manifest.json')).toBe(false);
       expect(tree.exists(`${LIB_ROOT}/release-manifest.json`)).toBe(false);
-    });
-  });
-
-  describe('build wiring', () => {
-    function buildAssets(tree: Tree, project: string): unknown[] {
-      const assets: unknown = readProjectConfiguration(tree, project).targets?.build?.options
-        ?.assets;
-
-      return Array.isArray(assets) ? assets : [];
-    }
-
-    it('adds the manifest to a `@nx/js:tsc` library build assets', async () => {
-      seedLib(tree, { assets: [`${LIB_ROOT}/*.md`] });
-
-      await run(tree, { project: 'shared-thing' });
-
-      expect(buildAssets(tree, 'shared-thing')).toContain(`${LIB_ROOT}/release-manifest.json`);
-    });
-
-    it('creates the assets array when the build target has none', async () => {
-      seedLib(tree, { assets: 'none' });
-
-      await run(tree, { project: 'shared-thing' });
-
-      expect(buildAssets(tree, 'shared-thing')).toEqual([`${LIB_ROOT}/release-manifest.json`]);
-    });
-
-    it('does not duplicate the assets entry on a re-run', async () => {
-      seedLib(tree);
-
-      await run(tree, { project: 'shared-thing' });
-      await run(tree, { project: 'shared-thing' });
-
-      expect(
-        buildAssets(tree, 'shared-thing').filter(
-          entry => entry === `${LIB_ROOT}/release-manifest.json`
-        )
-      ).toHaveLength(1);
-    });
-
-    it('leaves assets untouched when an existing glob already covers the manifest', async () => {
-      seedLib(tree, { assets: [`${LIB_ROOT}/*.json`] });
-
-      await run(tree, { project: 'shared-thing' });
-
-      expect(buildAssets(tree, 'shared-thing')).toEqual([`${LIB_ROOT}/*.json`]);
-    });
-
-    it('recognizes an object-form `{ input, glob }` assets entry that covers the manifest', async () => {
-      const covering = { glob: '*.json', input: LIB_ROOT, output: '.' };
-      seedLib(tree, { assets: [covering] });
-
-      await run(tree, { project: 'shared-thing' });
-
-      expect(buildAssets(tree, 'shared-thing')).toEqual([covering]);
-    });
-
-    it('appends the manifest when an object-form assets entry does not cover it', async () => {
-      const nonCovering = { glob: '**/*.json', input: `${LIB_ROOT}/src`, output: 'src' };
-      seedLib(tree, { assets: [nonCovering] });
-
-      await run(tree, { project: 'shared-thing' });
-
-      expect(buildAssets(tree, 'shared-thing')).toEqual([
-        nonCovering,
-        `${LIB_ROOT}/release-manifest.json`
-      ]);
-    });
-
-    it('does not touch project.json for an Angular application writing to `public/`', async () => {
-      seedApp(tree, { executor: '@angular/build:application' });
-
-      await run(tree, { project: 'web' });
-
-      expect(readProjectConfiguration(tree, 'web').targets?.build?.options?.assets).toBeUndefined();
-    });
-
-    it('still wires assets for an Angular application when `dirPath` moves the file out of `public/`', async () => {
-      seedApp(tree, { executor: '@angular/build:application', assets: [] });
-
-      await run(tree, { project: 'web', dirPath: 'dist/meta' });
-
-      expect(buildAssets(tree, 'web')).toContain(`${APP_ROOT}/dist/meta/release-manifest.json`);
-    });
-
-    it('wires assets for a non-Angular application build', async () => {
-      seedApp(tree, { executor: '@nx/webpack:webpack', assets: [] });
-
-      await run(tree, { project: 'web' });
-
-      expect(buildAssets(tree, 'web')).toContain(`${APP_ROOT}/public/release-manifest.json`);
-    });
-
-    it('warns and still writes the manifest when a library has no build target', async () => {
-      const warn = jest.spyOn(devkit.logger, 'warn').mockImplementation(() => undefined);
-      seedLib(tree, { withBuildTarget: false });
-
-      await run(tree, { project: 'shared-thing' });
-
-      expect(tree.exists(`${LIB_ROOT}/release-manifest.json`)).toBe(true);
-      expect(warn).toHaveBeenCalledWith(expect.stringContaining('build'));
-    });
-
-    it('does not warn for an application writing to `public/` with an inferred build target', async () => {
-      const warn = jest.spyOn(devkit.logger, 'warn').mockImplementation(() => undefined);
-      seedApp(tree, { withBuildTarget: false });
-
-      await run(tree, { project: 'web' });
-
-      expect(tree.exists(`${APP_ROOT}/public/release-manifest.json`)).toBe(true);
-      expect(warn).not.toHaveBeenCalled();
     });
   });
 
