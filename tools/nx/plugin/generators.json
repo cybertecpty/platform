@@ -4,6 +4,11 @@
       "factory": "./src/lib/generators/plugin/generator",
       "schema": "./src/lib/generators/plugin/schema.json",
       "description": "Create an Nx plugin under tools/<group>/plugin, following the workspace naming and tag conventions (ADR 0009)."
+    },
+    "nx-gen": {
+      "factory": "./src/lib/generators/generator/generator",
+      "schema": "./src/lib/generators/generator/schema.json",
+      "description": "Scaffold a generator inside a workspace plugin project, wrapping @nx/plugin:generator with the workspace schema, naming, and barrel conventions."
     }
   }
 }
