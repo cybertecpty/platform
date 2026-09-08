@@ -108,7 +108,10 @@ function writeStarterFiles(
   }
 ): void {
   tree.delete(joinPathFragments(generatorDir, 'files'));
-  generateFiles(tree, joinPathFragments(__dirname, 'files'), generatorDir, substitutions);
+  generateFiles(tree, joinPathFragments(__dirname, 'files'), generatorDir, {
+    ...substitutions,
+    tmpl: ''
+  });
 
   if (substitutions.unitTestRunner === 'none') {
     tree.delete(joinPathFragments(generatorDir, 'generator.spec.ts'));
