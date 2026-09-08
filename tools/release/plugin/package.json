@@ -6,9 +6,9 @@
   "main": "./src/index.js",
   "types": "./src/index.d.ts",
   "dependencies": {
+    "@nx/devkit": "23.1.1",
     "@cybertecpty/git-utils": "0.0.1",
     "@cybertecpty/shared-types": "0.0.1",
-    "@nx/devkit": "23.1.1",
     "semver": "^7.8.5",
     "tslib": "^2.3.0"
   },

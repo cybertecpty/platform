@@ -1,5 +1,10 @@
 {
   "generators": {
+    "release": {
+      "factory": "./src/lib/generators/release/generator",
+      "schema": "./src/lib/generators/release/schema.json",
+      "description": "release generator"
+    },
     "release-manifest": {
       "factory": "./src/lib/generators/release-manifest/generator",
       "schema": "./src/lib/generators/release-manifest/schema.json",
