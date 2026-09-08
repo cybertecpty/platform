@@ -1,5 +1,10 @@
 {
   "generators": {
+    "nx-gen": {
+      "factory": "./src/lib/generators/generator/generator",
+      "schema": "./src/lib/generators/generator/schema.json",
+      "description": "Scaffold a generator inside a workspace plugin project, wrapping @nx/plugin:generator with the workspace schema, naming, and barrel conventions."
+    },
     "nx-plugin": {
       "factory": "./src/lib/generators/plugin/generator",
       "schema": "./src/lib/generators/plugin/schema.json",

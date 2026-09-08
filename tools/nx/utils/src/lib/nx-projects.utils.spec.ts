@@ -1,5 +1,6 @@
 import { logger } from '@nx/devkit';
 import {
+  assertValidPathSegment,
   determineTopLevelProjectDir,
   normalizeProjectOptions,
   NX_PROJECT_SCOPES,
@@ -9,6 +10,40 @@ import {
   projectNameFromOpts,
   stripProjectTypeFromName
 } from './nx-projects.utils';
+
+describe('assertValidPathSegment', () => {
+  it('accepts a lowercase single word', () => {
+    expect(() => assertValidPathSegment('release', 'directory')).not.toThrow();
+  });
+
+  it('accepts lowercase words joined by single hyphens', () => {
+    expect(() => assertValidPathSegment('release-manifest', 'directory')).not.toThrow();
+  });
+
+  it('throws for an empty string, naming the option', () => {
+    expect(() => assertValidPathSegment('', 'directory')).toThrow(
+      '`directory` segment "" must be lowercase alphanumeric words joined by single hyphens.'
+    );
+  });
+
+  it('throws for an uppercase segment', () => {
+    expect(() => assertValidPathSegment('Release', 'directory')).toThrow(
+      '`directory` segment "Release" must be lowercase alphanumeric words joined by single hyphens.'
+    );
+  });
+
+  it('throws for a slash-separated value', () => {
+    expect(() => assertValidPathSegment('release/manifest', 'directory')).toThrow(
+      '`directory` segment "release/manifest" must be lowercase alphanumeric words joined by single hyphens.'
+    );
+  });
+
+  it('throws for leading, trailing, or doubled hyphens', () => {
+    expect(() => assertValidPathSegment('-release', 'directory')).toThrow();
+    expect(() => assertValidPathSegment('release-', 'directory')).toThrow();
+    expect(() => assertValidPathSegment('release--manifest', 'directory')).toThrow();
+  });
+});
 
 describe('projectDomainToName', () => {
   it('leaves a domain with no subdomains unchanged', () => {
