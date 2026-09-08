@@ -71,6 +71,17 @@ function fakeGeneratorGenerator(
     );
   }
 
+  // `@nx/plugin:generator` appends the new entry to `generators.json`.
+  const collectionPath = `${PLUGIN_ROOT}/generators.json`;
+  const collection = JSON.parse(tree.read(collectionPath, 'utf-8') ?? '{"generators":{}}') as {
+    generators: Record<string, unknown>;
+  };
+  collection.generators[options.name] = {
+    factory: `./src/lib/generators/${options.name}/generator`,
+    schema: `./src/lib/generators/${options.name}/schema.json`
+  };
+  tree.write(collectionPath, JSON.stringify(collection, null, 2));
+
   return Promise.resolve();
 }
 
@@ -84,6 +95,14 @@ function seedPlugin(tree: Tree): void {
   tree.write(
     `${PLUGIN_ROOT}/src/index.ts`,
     `export { default as pluginGenerator } from './lib/generators/plugin/generator';\n`
+  );
+  tree.write(
+    `${PLUGIN_ROOT}/generators.json`,
+    JSON.stringify(
+      { generators: { 'nx-plugin': { factory: './src/lib/generators/plugin/generator' } } },
+      null,
+      2
+    )
   );
 }
 
@@ -237,6 +256,30 @@ describe('nxGenGenerator', () => {
       const index = tree.read(indexPath, 'utf-8') ?? '';
       const occurrences = index.split('./lib/generators/release-manifest/generator').length - 1;
       expect(occurrences).toBe(1);
+    });
+  });
+
+  describe('plugin generators collection', () => {
+    const collectionPath = `${PLUGIN_ROOT}/generators.json`;
+
+    function collectionKeys(tree: Tree): string[] {
+      const collection = JSON.parse(tree.read(collectionPath, 'utf-8') ?? '{}') as {
+        generators: Record<string, unknown>;
+      };
+      return Object.keys(collection.generators);
+    }
+
+    it('alpha-sorts the collection after `@nx/plugin:generator` appends the new entry', async () => {
+      await run(tree, { name: 'aaa-first' });
+
+      expect(collectionKeys(tree)).toEqual(['aaa-first', 'nx-plugin']);
+    });
+
+    it('keeps the collection sorted across successive generators', async () => {
+      await run(tree, { name: 'zzz-last' });
+      await run(tree, { name: 'mmm-middle' });
+
+      expect(collectionKeys(tree)).toEqual(['mmm-middle', 'nx-plugin', 'zzz-last']);
     });
   });
 

@@ -4,8 +4,10 @@ import {
   generateFiles,
   joinPathFragments,
   names,
+  readJson,
   readProjectConfiguration,
-  Tree
+  Tree,
+  updateJson
 } from '@nx/devkit';
 import { generatorGenerator as nxGeneratorGenerator } from '@nx/plugin/generators';
 import { NxGenGeneratorOptions } from './schema';
@@ -21,8 +23,9 @@ const GENERATORS_DIR = 'src/lib/generators';
  * generator runs it aligns the output with the workspace conventions: the
  * ambient `schema.d.ts` becomes a type-checked `schema.ts` (conventions §8;
  * the `typecheck` target, issue #48), the `Schema` interface is renamed to
- * `Options`, the `libs/${name}` starter is replaced with a minimal one, and
- * the generator is re-exported from the plugin's `src/index.ts`.
+ * `Options`, the `libs/${name}` starter is replaced with a minimal one, the
+ * generator is re-exported from the plugin's `src/index.ts`, and the plugin's
+ * `generators.json` collection is alpha-sorted.
  */
 export async function nxGenGenerator(tree: Tree, options: NxGenGeneratorOptions): Promise<void> {
   const { name, project, description, skipLintChecks, skipFormat } = options;
@@ -63,6 +66,7 @@ export async function nxGenGenerator(tree: Tree, options: NxGenGeneratorOptions)
     directory,
     generatorFnName
   });
+  sortGeneratorsCollection(tree, projectConfig.root);
 
   if (!skipFormat) {
     await formatFiles(tree);
@@ -144,6 +148,43 @@ function appendPluginExports(
     `export type { ${parts.className}GeneratorOptions } from './lib/generators/${parts.directory}/schema';\n`;
 
   tree.write(indexPath, existing ? `${existing.trimEnd()}\n${additions}` : additions);
+}
+
+/**
+ * Alpha-sorts the target plugin's generator collection so `@nx/plugin`'s
+ * append-at-the-end entry lands in a stable position. Resolves the collection
+ * file the same way Nx does — the `package.json` `generators` / `schematics`
+ * field, falling back to `generators.json`.
+ */
+function sortGeneratorsCollection(tree: Tree, projectRoot: string): void {
+  const packageJsonPath = joinPathFragments(projectRoot, 'package.json');
+  const packageJson = tree.exists(packageJsonPath)
+    ? readJson<{ generators?: string; schematics?: string }>(tree, packageJsonPath)
+    : {};
+  const collectionPath = joinPathFragments(
+    projectRoot,
+    packageJson.generators ?? packageJson.schematics ?? 'generators.json'
+  );
+
+  if (!tree.exists(collectionPath)) {
+    return;
+  }
+
+  updateJson<Record<string, Record<string, unknown> | undefined>>(tree, collectionPath, json => {
+    for (const key of ['generators', 'schematics'] as const) {
+      const collection = json[key];
+
+      if (collection) {
+        const sorted: Record<string, unknown> = {};
+        for (const generatorName of Object.keys(collection).sort()) {
+          sorted[generatorName] = collection[generatorName];
+        }
+        json[key] = sorted;
+      }
+    }
+
+    return json;
+  });
 }
 
 export default nxGenGenerator;
