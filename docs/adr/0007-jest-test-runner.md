@@ -154,5 +154,26 @@ that threshold.
   No project carries a per-project override.
 - A new runtime project that scaffolds a `test` target must clear 80% or the `test` job
   fails. That is the intended pressure (review-priorities §3).
-- A merged workspace coverage number and a per-PR coverage comment are follow-up work
-  under #52 — the threshold gate does not depend on them.
+
+### Reporting layer (2026-09-08)
+
+The threshold gate above landed first; the reporting layer is the rest of #52. Built
+entirely inside GitHub Actions — no third-party service, consistent with the
+"no Codecov/Coveralls now" decision:
+
+- **`jest.preset.js`** emits `json` + `json-summary` + `lcov` per project (alongside
+  `text-summary`).
+- **`.github/scripts/coverage-report.cjs`** — a plain-Node script (not an Nx project;
+  it runs in the `actions/github-script` runtime, which wants CommonJS) invoked from
+  `ci.yml` after `nx run-many`. It sums the per-project `coverage-summary.json` totals
+  into one workspace number (`coverage/coverage-summary.merged.json` + the job summary),
+  and on a non-fork pull request computes **patch coverage** — the covered fraction of
+  the `src` lines the PR adds, from the merged `coverage-final.json` maps intersected
+  with `git diff` — then upserts a single PR comment (matched by an HTML marker). Its
+  pure helpers are unit-tested with `node --test` (`coverage-report.test.cjs`), run as
+  its own CI step.
+- **`ci.yml`** uploads the per-project `coverage/` tree as a build artifact and adds
+  `pull-requests: write` for the comment.
+- Nx hydrates each project's `coverage/{projectRoot}` output onto the main runner after
+  the distributed run (the inferred `test` target already declares it as an output), so
+  the script sees every report without a separate collection step.

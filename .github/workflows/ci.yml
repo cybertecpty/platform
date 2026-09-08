@@ -10,6 +10,9 @@ on:
 permissions:
   actions: read
   contents: read
+  # The coverage step upserts a single PR comment (skipped on forks, which get a
+  # read-only token anyway).
+  pull-requests: write
 
 env:
   # Read-write CI token for the Nx Cloud remote cache. Set the repo secret
@@ -39,6 +42,9 @@ jobs:
 
       - run: pnpm install --frozen-lockfile
 
+      # Unit-test the CI-only coverage reporter (plain Node, not an Nx project).
+      - run: node --test .github/scripts/*.test.cjs
+
       # Derive the diff base/head for format:check (and, later, `nx affected`):
       # on a PR, the merge-base with the target branch; on a push, the last
       # successful commit on this branch. Exposes $NX_BASE / $NX_HEAD. Needs
@@ -54,6 +60,33 @@ jobs:
       # $NX_BASE / $NX_HEAD come from nrwl/nx-set-shas above.
       - run: pnpm exec nx record -- pnpm exec nx format:check --base=$NX_BASE --head=$NX_HEAD
       - run: pnpm exec nx run-many -t lint test build typecheck e2e
+
+      # Coverage reporting (ADR 0007 amendment / issue #52). The `test` targets
+      # collect coverage in CI (jest.preset.js) and declare
+      # `coverage/{projectRoot}` as an output, so Nx hydrates every project's
+      # report onto this runner after the distributed run. This step merges them
+      # into one workspace number, writes the job summary, and — on a non-fork PR
+      # — upserts a single coverage comment. `always()` so a coverage-threshold
+      # failure above still produces the report.
+      - name: Coverage report
+        if: always()
+        # Reporting only — the coverage *gate* is the `test` run above. A broken
+        # reporter (or Nx not hydrating the coverage dirs) must not block a merge.
+        continue-on-error: true
+        uses: actions/github-script@v7
+        with:
+          script: |
+            const report = require(`${process.env.GITHUB_WORKSPACE}/.github/scripts/coverage-report.cjs`);
+            await report({ github, context, core });
+
+      - name: Upload coverage report
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: coverage
+          path: coverage/
+          if-no-files-found: warn
+
       # Nx Cloud recommends fixes for failures to help you get CI green faster. Learn more: https://nx.dev/docs/features/ci-features/self-healing-ci
       - run: pnpm exec nx fix-ci
         if: always()
