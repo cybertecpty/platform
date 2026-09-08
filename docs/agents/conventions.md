@@ -438,7 +438,11 @@ what it changed, so the commit lands clean.
   `nx test` stays fast and the threshold gates CI. Under `nx run-many` it is a
   per-project gate. New runtime projects must clear 80% — check with
   `nx test {project} --coverage` before opening the PR. `type:types` libs have no
-  `test` target and are exempt.
+  `test` target and are exempt. CI also merges the per-project reports into one
+  workspace number, uploads `coverage/` as an artifact, and posts a per-PR coverage
+  comment (per-project table + patch coverage for changed lines) — all inside GitHub
+  Actions, no third-party service (`.github/scripts/coverage-report.cjs`, unit-tested
+  with `node --test`).
 - **Spec files are type-checked by the `typecheck` target, not `test`.** `ts-jest` is
   transpile-only and `build` excludes `*.spec.ts`, so a spec-only type error (a bad
   cast, a `never`-typed arg) slips through both. Every lib/tool project carries a
