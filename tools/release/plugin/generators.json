@@ -1,0 +1,9 @@
+{
+  "generators": {
+    "release-manifest": {
+      "factory": "./src/lib/generators/release-manifest/generator",
+      "schema": "./src/lib/generators/release-manifest/schema.json",
+      "description": "Write a `release-manifest.json` for a project and wire it into the project's build output."
+    }
+  }
+}
