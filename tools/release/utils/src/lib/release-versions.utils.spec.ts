@@ -1,6 +1,6 @@
 import { gitTagsMatching } from '@cybertecpty/git-utils';
 
-import { getLatestProjectVersion, getProjectVersions } from './project-version.utils';
+import { getLatestProjectVersion, getProjectVersions } from './release-versions.utils';
 
 jest.mock('@cybertecpty/git-utils', () => ({
   gitTagsMatching: jest.fn()
