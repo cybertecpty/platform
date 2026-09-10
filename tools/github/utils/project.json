@@ -1,0 +1,19 @@
+{
+  "name": "github-utils",
+  "$schema": "../../../node_modules/nx/schemas/project-schema.json",
+  "sourceRoot": "tools/github/utils/src",
+  "projectType": "library",
+  "tags": ["scope:tools type:utils"],
+  "targets": {
+    "build": {
+      "executor": "@nx/js:tsc",
+      "outputs": ["{options.outputPath}"],
+      "options": {
+        "outputPath": "dist/tools/github/utils",
+        "main": "tools/github/utils/src/index.ts",
+        "tsConfig": "tools/github/utils/tsconfig.lib.json",
+        "assets": ["tools/github/utils/*.md"]
+      }
+    }
+  }
+}
