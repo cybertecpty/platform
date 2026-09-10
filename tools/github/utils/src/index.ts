@@ -1,1 +1,2 @@
-export * from './lib/github-utils';
+export * from './lib/github-cli.utils';
+export * from './lib/pull-request.utils';

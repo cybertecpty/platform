@@ -3,7 +3,7 @@
   "$schema": "../../../node_modules/nx/schemas/project-schema.json",
   "sourceRoot": "tools/github/utils/src",
   "projectType": "library",
-  "tags": ["scope:tools type:utils"],
+  "tags": ["scope:tools", "type:utils"],
   "targets": {
     "build": {
       "executor": "@nx/js:tsc",
@@ -14,6 +14,7 @@
         "tsConfig": "tools/github/utils/tsconfig.lib.json",
         "assets": ["tools/github/utils/*.md"]
       }
-    }
+    },
+    "typecheck": {}
   }
 }
