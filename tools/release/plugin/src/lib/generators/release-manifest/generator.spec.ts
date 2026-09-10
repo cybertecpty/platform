@@ -35,7 +35,7 @@ function seedApp(tree: Tree): void {
 function run(
   tree: Tree,
   options: Partial<ReleaseManifestGeneratorOptions> & { project: string }
-): Promise<void> {
+): Promise<string> {
   return releaseManifestGenerator(tree, {
     version: '1.2.3',
     releaseCommit: 'abc123def4',

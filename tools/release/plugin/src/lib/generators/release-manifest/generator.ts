@@ -21,11 +21,13 @@ const MANIFEST_FILENAME = 'release-manifest.json';
  * within the project. It is up to each project's build to copy the manifest into
  * its output (e.g. via the build target's `assets`). All inputs are validated
  * before anything is written.
+ *
+ * Returns the workspace-relative path the manifest was written to.
  */
 export async function releaseManifestGenerator(
   tree: Tree,
   options: ReleaseManifestGeneratorOptions
-): Promise<void> {
+): Promise<string> {
   const { project, version, releaseCommit, dirPath, skipFormat } = options;
 
   const projectConfig = readProjectConfiguration(tree, project);
@@ -56,6 +58,8 @@ export async function releaseManifestGenerator(
   if (!skipFormat) {
     await formatFiles(tree);
   }
+
+  return manifestPath;
 }
 
 /**
