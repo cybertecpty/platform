@@ -8,9 +8,13 @@
   "dependencies": {
     "@nx/devkit": "23.1.1",
     "@cybertecpty/git-utils": "0.0.1",
+    "@cybertecpty/nx-types": "0.0.1",
+    "@cybertecpty/nx-utils": "0.0.1",
+    "@cybertecpty/release-utils": "0.0.1",
     "@cybertecpty/shared-types": "0.0.1",
     "semver": "^7.8.5",
-    "tslib": "^2.3.0"
+    "tslib": "^2.3.0",
+    "type-fest": "^5.9.0"
   },
   "generators": "./generators.json"
 }
