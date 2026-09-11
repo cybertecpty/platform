@@ -1,6 +1,6 @@
 import simpleGit, { type SimpleGit } from 'simple-git';
 
-import { gitCommitsBetween, lastGitCommitHash } from './git-commits';
+import { gitCommitsBetween, gitMergeBase, lastGitCommitHash } from './git-commits';
 
 jest.mock('simple-git', () => ({ __esModule: true, default: jest.fn() }));
 
@@ -57,6 +57,27 @@ describe('gitCommitsBetween', () => {
   });
 });
 
+describe('gitMergeBase', () => {
+  it('runs `merge-base a b` and trims the result', async () => {
+    const raw = jest.fn(() => Promise.resolve('c0ffee\n'));
+
+    await expect(gitMergeBase('main', 'HEAD', fakeGit({ raw }))).resolves.toBe('c0ffee');
+    expect(raw).toHaveBeenCalledWith(['merge-base', 'main', 'HEAD']);
+  });
+
+  it('returns null when the revisions share no common ancestor', async () => {
+    const raw = jest.fn(() => Promise.reject(new Error('no merge base')));
+
+    await expect(gitMergeBase('main', 'orphan', fakeGit({ raw }))).resolves.toBeNull();
+  });
+
+  it('returns null when git produces empty output', async () => {
+    const raw = jest.fn(() => Promise.resolve('  \n'));
+
+    await expect(gitMergeBase('main', 'HEAD', fakeGit({ raw }))).resolves.toBeNull();
+  });
+});
+
 describe('lastGitCommitHash', () => {
   it('rev-parses HEAD and trims the result', async () => {
     const revparse = jest.fn(() => Promise.resolve('deadbeef\n'));
@@ -83,6 +104,14 @@ describe('default simple-git client', () => {
     mockSimpleGit.mockReturnValue(fakeGit({ log: () => Promise.resolve({ all: [] }) }));
 
     await expect(gitCommitsBetween('base', 'head')).resolves.toEqual([]);
+    expect(mockSimpleGit).toHaveBeenCalledTimes(1);
+  });
+
+  it('gitMergeBase falls back to simpleGit() when no client is passed', async () => {
+    const raw = jest.fn(() => Promise.resolve('c0ffee\n'));
+    mockSimpleGit.mockReturnValue(fakeGit({ raw }));
+
+    await expect(gitMergeBase('main', 'HEAD')).resolves.toBe('c0ffee');
     expect(mockSimpleGit).toHaveBeenCalledTimes(1);
   });
 

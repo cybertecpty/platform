@@ -11,7 +11,7 @@ import { ReleaseManifest } from './release.types';
 expectTypeOf<ReleaseManifest>().toEqualTypeOf<{
   readonly author?: string;
   readonly project: string;
-  readonly releaseCommit: string;
+  readonly sourceCommit: string;
   readonly releaseDate: string;
   readonly version: string;
 }>();
@@ -19,7 +19,7 @@ expectTypeOf<ReleaseManifest>().toEqualTypeOf<{
 // A plain object without `author` is assignable to the manifest.
 expectTypeOf<{
   project: string;
-  releaseCommit: string;
+  sourceCommit: string;
   releaseDate: string;
   version: string;
 }>().toExtend<ReleaseManifest>();

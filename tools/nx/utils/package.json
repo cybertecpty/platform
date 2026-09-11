@@ -10,6 +10,7 @@
     "@cybertecpty/shared-types": "0.0.1",
     "@cybertecpty/shared-utils": "0.0.1",
     "@nx/devkit": "23.1.1",
+    "nx": "23.1.1",
     "tslib": "^2.3.0",
     "type-fest": "^5.9.0"
   }

@@ -12,8 +12,13 @@ export interface ReleaseManifest {
   readonly author?: string;
   /** Name of the workspace project the release is for. */
   readonly project: string;
-  /** The released commit, verbatim as passed to the generator (usually a short hash). */
-  readonly releaseCommit: string;
+  /**
+   * The commit the release was built from, verbatim as passed to the generator
+   * (usually a short hash). Not the commit this manifest itself is committed
+   * in — that commit only adds release metadata, never application code, so
+   * this is the meaningful "what commit is this running" value.
+   */
+  readonly sourceCommit: string;
   /** Release timestamp as an ISO 8601 UTC string, e.g. `2026-04-22T15:30:00.000Z`. */
   readonly releaseDate: string;
   /** The released semantic version, verbatim as passed to the generator. */

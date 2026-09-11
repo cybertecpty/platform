@@ -1,0 +1,102 @@
+{
+  "$schema": "https://json-schema.org/schema",
+  "$id": "ReleaseGeneratorSchema",
+  "title": "Release Generator",
+  "description": "Custom Nx Release Generator",
+  "type": "object",
+  "properties": {
+    "affected": {
+      "description": "Release only affected projects from the nx.json release project set.",
+      "type": "boolean",
+      "default": false
+    },
+    "projects": {
+      "description": "List of projects to release.  Defaults to all projects defined in the nx.json file.",
+      "type": "array",
+      "items": {
+        "type": "string"
+      },
+      "$default": {
+        "$source": "argv",
+        "index": 0
+      },
+      "alias": "p"
+    },
+    "vers": {
+      "description": "Explicit version specifier to use, if overriding conventional commits.",
+      "type": "string",
+      "pattern": "^(?:\\d+\\.\\d+\\.\\d+(?:-[0-9A-Za-z-.]+)?(?:\\+[0-9A-Za-z-.]+)?|major|minor|patch|premajor|preminor|prepatch|prerelease)$",
+      "alias": "v"
+    },
+    "firstRelease": {
+      "description": "Whether this is the first release of the project.",
+      "type": "boolean",
+      "default": false
+    },
+    "baseBranch": {
+      "description": "The base branch to use for the release.  Defaults to the develop branch.",
+      "type": "string",
+      "default": "develop"
+    },
+    "base": {
+      "description": "Base git revision used by affected project detection.",
+      "type": "string"
+    },
+    "author": {
+      "description": "The author of the release.  Defaults to the local git user and email.",
+      "type": "string"
+    },
+    "releaseDate": {
+      "description": "The date of the release as an ISO string.  Defaults to the current date.",
+      "type": "string",
+      "format": "date-time"
+    },
+    "skipBranch": {
+      "description": "Skip creating a release branch.",
+      "type": "boolean",
+      "default": false
+    },
+    "skipManifest": {
+      "description": "Skip generating a release manifest for each project.",
+      "type": "boolean",
+      "default": false
+    },
+    "skipChangelog": {
+      "description": "Skip generating the changelog.",
+      "type": "boolean",
+      "default": false
+    },
+    "skipPullRequest": {
+      "description": "Skip opening (or updating) the GitHub release pull request.",
+      "type": "boolean",
+      "default": false
+    },
+    "targetBranch": {
+      "description": "The branch the release pull request merges into.  Defaults to the main branch.",
+      "type": "string",
+      "default": "main"
+    },
+    "skipPublish": {
+      "description": "Skip publishing the release.",
+      "type": "boolean",
+      "default": true
+    },
+    "skipTag": {
+      "description": "Skip creating a `<project>@<version>` git tag for each released project.",
+      "type": "boolean",
+      "default": false
+    },
+    "skipWorkspaceVersion": {
+      "description": "Skip bumping the workspace package.json version from released project version changes.",
+      "type": "boolean",
+      "default": false
+    },
+    "skipFormat": {
+      "description": "Skip formatting generated files.",
+      "type": "boolean",
+      "default": false,
+      "x-priority": "internal"
+    }
+  },
+  "required": []
+}

@@ -15,5 +15,14 @@ export default [
     languageOptions: {
       parser: await import('jsonc-eslint-parser')
     }
+  },
+  {
+    files: ['**/package.json'],
+    rules: {
+      '@nx/nx-plugin-checks': 'error'
+    },
+    languageOptions: {
+      parser: await import('jsonc-eslint-parser')
+    }
   }
 ];
