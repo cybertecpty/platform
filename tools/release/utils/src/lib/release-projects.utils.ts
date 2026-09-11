@@ -1,6 +1,7 @@
-import { gitMergeBase } from '@cybertecpty/git-utils';
+import { gitMergeBase, gitTagsMatching } from '@cybertecpty/git-utils';
+import { VersionData } from '@cybertecpty/nx-types';
 import { findMatchingProjects, getAffectedGraphNodes, type NxArgs } from '@cybertecpty/nx-utils';
-import { createProjectGraphAsync, readNxJson, Tree, type ProjectGraph } from '@nx/devkit';
+import { createProjectGraphAsync, logger, readNxJson, Tree, type ProjectGraph } from '@nx/devkit';
 import simpleGit, { type SimpleGit } from 'simple-git';
 
 /**
@@ -17,6 +18,22 @@ export interface AffectedReleaseProjectsOptions {
    * branch and `HEAD` marks the start of the release window.
    */
   readonly targetBranch: string;
+}
+
+/**
+ * Builds the `NxArgs` for {@link getAffectedGraphNodes}. `base` is resolved to a
+ * concrete revision ({@link resolveAffectedBase}); `head` is pinned to `HEAD` so
+ * the scan is the committed `base..HEAD` diff and ignores working-tree state —
+ * this runs before the release branch is cut, so the tree may still be dirty.
+ */
+async function createAffectedNxArgs(
+  opts: AffectedReleaseProjectsOptions,
+  git: SimpleGit
+): Promise<NxArgs> {
+  return {
+    base: await resolveAffectedBase(opts, git),
+    head: 'HEAD'
+  };
 }
 
 /**
@@ -69,22 +86,6 @@ export function selectAffectedReleaseProjects(
 }
 
 /**
- * Builds the `NxArgs` for {@link getAffectedGraphNodes}. `base` is resolved to a
- * concrete revision ({@link resolveAffectedBase}); `head` is pinned to `HEAD` so
- * the scan is the committed `base..HEAD` diff and ignores working-tree state —
- * this runs before the release branch is cut, so the tree may still be dirty.
- */
-async function createAffectedNxArgs(
-  opts: AffectedReleaseProjectsOptions,
-  git: SimpleGit
-): Promise<NxArgs> {
-  return {
-    base: await resolveAffectedBase(opts, git),
-    head: 'HEAD'
-  };
-}
-
-/**
  * Picks the commit that marks the start of this release's changes. Everything
  * between it and HEAD is "the work in this release"; the affected-project scan
  * uses it as its starting point.
@@ -129,8 +130,8 @@ export function readReleasePatterns(tree: Tree): string[] {
   const release = readNxJson(tree)?.release;
 
   const patterns = release?.groups
-    ? Object.values(release.groups).flatMap(group => toPatternArray(group.projects))
-    : toPatternArray(release?.projects);
+    ? Object.values(release.groups).flatMap(group => toProjectPatternArray(group.projects))
+    : toProjectPatternArray(release?.projects);
 
   if (patterns.length === 0) {
     throw new Error(
@@ -152,10 +153,57 @@ export function resolveReleaseProjects(tree: Tree, projectGraph: ProjectGraph): 
 }
 
 /**
+ * Creates an annotated `<project>@<version>` tag on the release commit for each
+ * project that received a new version. The tag format matches Nx's default
+ * `releaseTagPattern` for independently-released projects, so Nx uses these
+ * tags to resolve the previous release boundary when calculating
+ * conventional-commit version bumps and changelog commit ranges.
+ *
+ * @returns The names of the tags created in this run.
+ */
+export async function tagReleasedProjects(
+  versionData: VersionData,
+  skipTag: boolean | undefined,
+  git: SimpleGit = simpleGit()
+): Promise<string[]> {
+  if (skipTag) {
+    return [];
+  }
+
+  const createdTags: string[] = [];
+
+  for (const [project, projectVersionData] of Object.entries(versionData)) {
+    const newVersion = projectVersionData?.newVersion;
+
+    // Projects without a version change were not released in this run.
+    if (!newVersion) {
+      continue;
+    }
+
+    const tagName = `${project}@${newVersion}`;
+
+    // Same-day release re-runs must not fail on a tag created by an earlier run.
+    if ((await gitTagsMatching(tagName, git)).includes(tagName)) {
+      logger.warn(`Tag ${tagName} already exists. Skipping tag creation.`);
+      continue;
+    }
+
+    await git.addAnnotatedTag(tagName, tagName);
+    createdTags.push(tagName);
+  }
+
+  if (createdTags.length) {
+    logger.info(`Created release tags: ${createdTags.join(', ')}`);
+  }
+
+  return createdTags;
+}
+
+/**
  * Normalizes Nx's `string | string[] | undefined` project-pattern field into a
  * plain array.
  */
-function toPatternArray(patterns: string | string[] | undefined): string[] {
+function toProjectPatternArray(patterns: string | string[] | undefined): string[] {
   if (Array.isArray(patterns)) {
     return patterns;
   }
