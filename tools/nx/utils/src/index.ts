@@ -1,4 +1,3 @@
-export { releaseVersion } from 'nx/release';
 export {
   createProjectRootMappings,
   findProjectForPath

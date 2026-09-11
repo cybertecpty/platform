@@ -5,18 +5,17 @@ import {
   updatePullRequest
 } from '@cybertecpty/github-utils';
 import { NxReleaseChangelogResult, ProjectChangelogs, VersionData } from '@cybertecpty/nx-types';
-import { dryRunEnabled, releaseVersion, verboseEnabled } from '@cybertecpty/nx-utils';
-import {
-  buildReleasePrBody,
-  checkoutReleaseBranch,
-  releaseChangelog,
-  resolveAffectedReleaseProjects,
-  resolveReleaseBranchName,
-  resolveWorkspaceReleaseType,
-  tagReleasedProjects
-} from '@cybertecpty/release-utils';
+import { dryRunEnabled, verboseEnabled } from '@cybertecpty/nx-utils';
 import { formatFiles, logger, type Tree } from '@nx/devkit';
+import { releaseChangelog, releaseVersion } from 'nx/release';
 import simpleGit, { SimpleGit } from 'simple-git';
+import { checkoutReleaseBranch, resolveReleaseBranchName } from '../../utils/release-branch.utils';
+import { buildReleasePrBody } from '../../utils/release-pr.utils';
+import {
+  resolveAffectedReleaseProjects,
+  tagReleasedProjects
+} from '../../utils/release-projects.utils';
+import { resolveWorkspaceReleaseType } from '../../utils/release-versions.utils';
 import { packageVersionGenerator } from '../package-version/generator';
 import releaseManifestGenerator from '../release-manifest/generator';
 import type { NormalizedReleaseGeneratorOptions, ReleaseGeneratorOptions } from './schema';

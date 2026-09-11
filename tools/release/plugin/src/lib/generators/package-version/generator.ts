@@ -1,7 +1,7 @@
-import { isReleaseType } from '@cybertecpty/release-utils';
 import { formatFiles, readJson, Tree, writeJson } from '@nx/devkit';
 import { inc, RELEASE_TYPES, valid } from 'semver';
 import { PackageJson } from 'type-fest';
+import { isReleaseType } from '../../utils/release-versions.utils';
 import { PackageVersionGeneratorOptions } from './schema';
 
 export async function packageVersionGenerator(

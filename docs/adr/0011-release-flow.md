@@ -4,9 +4,9 @@
 - Date: 2026-09-11
 - Deciders: djmcgrath
 - Implemented by (in progress): `@cybertecpty/release-plugin`'s `release` generator
-  (`tools/release/plugin/src/lib/generators/release/`) and its supporting
-  `@cybertecpty/release-utils`, `@cybertecpty/git-utils`, `@cybertecpty/github-utils` libs, on
-  branch `feat/release-generator` (not yet merged)
+  (`tools/release/plugin/src/lib/generators/release/`, with its release-domain helpers in the
+  plugin's own `src/lib/utils/`) and the supporting `@cybertecpty/git-utils` and
+  `@cybertecpty/github-utils` libs, on branch `feat/release-generator` (not yet merged)
 
 ## Context and problem statement
 
@@ -122,6 +122,7 @@ Chosen option: **3**.
   for `main` promotion PRs this flow depends on to keep its release tags intact.
 - `docs/agents/conventions.md` §1–§2 — bot git identity, branch protection, and the no-bypass
   rule this flow is built around.
-- `@cybertecpty/release-plugin`'s `release` generator and its supporting `release-utils` /
-  `git-utils` / `github-utils` libs — the current implementation. Not authoritative for future
-  changes to the flow's shape; update this ADR if the shape itself changes, not just the code.
+- `@cybertecpty/release-plugin`'s `release` generator (including its internal `src/lib/utils/`
+  helpers) and the supporting `git-utils` / `github-utils` libs — the current implementation.
+  Not authoritative for future changes to the flow's shape; update this ADR if the shape itself
+  changes, not just the code.

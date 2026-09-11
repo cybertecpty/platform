@@ -5,20 +5,19 @@ import {
   updatePullRequest
 } from '@cybertecpty/github-utils';
 import type { ProjectChangelogs, VersionData } from '@cybertecpty/nx-types';
-import { dryRunEnabled, releaseVersion, verboseEnabled } from '@cybertecpty/nx-utils';
-import {
-  buildReleasePrBody,
-  checkoutReleaseBranch,
-  releaseChangelog,
-  resolveAffectedReleaseProjects,
-  resolveReleaseBranchName,
-  resolveWorkspaceReleaseType,
-  tagReleasedProjects
-} from '@cybertecpty/release-utils';
+import { dryRunEnabled, verboseEnabled } from '@cybertecpty/nx-utils';
 import { formatFiles, logger, type Tree } from '@nx/devkit';
 import { createTreeWithEmptyWorkspace } from '@nx/devkit/testing';
+import { releaseChangelog, releaseVersion } from 'nx/release';
 import simpleGit from 'simple-git';
 
+import { checkoutReleaseBranch, resolveReleaseBranchName } from '../../utils/release-branch.utils';
+import { buildReleasePrBody } from '../../utils/release-pr.utils';
+import {
+  resolveAffectedReleaseProjects,
+  tagReleasedProjects
+} from '../../utils/release-projects.utils';
+import { resolveWorkspaceReleaseType } from '../../utils/release-versions.utils';
 import { packageVersionGenerator } from '../package-version/generator';
 import releaseManifestGenerator from '../release-manifest/generator';
 import { releaseGenerator } from './generator';
@@ -36,18 +35,30 @@ jest.mock('@cybertecpty/github-utils', () => ({
 
 jest.mock('@cybertecpty/nx-utils', () => ({
   dryRunEnabled: jest.fn(),
-  releaseVersion: jest.fn(),
   verboseEnabled: jest.fn()
 }));
 
-jest.mock('@cybertecpty/release-utils', () => ({
-  buildReleasePrBody: jest.fn(),
-  checkoutReleaseBranch: jest.fn(),
+jest.mock('nx/release', () => ({
   releaseChangelog: jest.fn(),
+  releaseVersion: jest.fn()
+}));
+
+jest.mock('../../utils/release-branch.utils', () => ({
+  checkoutReleaseBranch: jest.fn(),
+  resolveReleaseBranchName: jest.fn()
+}));
+
+jest.mock('../../utils/release-pr.utils', () => ({
+  buildReleasePrBody: jest.fn()
+}));
+
+jest.mock('../../utils/release-projects.utils', () => ({
   resolveAffectedReleaseProjects: jest.fn(),
-  resolveReleaseBranchName: jest.fn(),
-  resolveWorkspaceReleaseType: jest.fn(),
   tagReleasedProjects: jest.fn()
+}));
+
+jest.mock('../../utils/release-versions.utils', () => ({
+  resolveWorkspaceReleaseType: jest.fn()
 }));
 
 jest.mock('@nx/devkit', () => ({
