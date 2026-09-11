@@ -28,7 +28,7 @@ export async function releaseManifestGenerator(
   tree: Tree,
   options: ReleaseManifestGeneratorOptions
 ): Promise<string> {
-  const { project, version, releaseCommit, dirPath, skipFormat } = options;
+  const { project, version, sourceCommit, dirPath, skipFormat } = options;
 
   const projectConfig = readProjectConfiguration(tree, project);
 
@@ -48,8 +48,8 @@ export async function releaseManifestGenerator(
   const manifest: ReleaseManifest = {
     ...(author === '' ? {} : { author }),
     project,
-    releaseCommit,
     releaseDate,
+    sourceCommit,
     version
   };
 

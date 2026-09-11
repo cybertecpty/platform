@@ -12,8 +12,6 @@ export interface ReleaseManifestGeneratorOptions {
   dirPath?: string;
   /** The workspace project to generate the manifest for. */
   project: string;
-  /** The commit being released. Written to the manifest verbatim. */
-  releaseCommit: string;
   /**
    * Release timestamp. Any value `Date` can parse is accepted and normalized to
    * an ISO 8601 UTC string. Defaults to the current date and time.
@@ -21,6 +19,11 @@ export interface ReleaseManifestGeneratorOptions {
   releaseDate?: string;
   /** Skip formatting files. */
   skipFormat?: boolean;
+  /**
+   * The commit the released code was built from. Written to the manifest
+   * verbatim; a short hash is recommended.
+   */
+  sourceCommit: string;
   /** Semantic version written to the manifest as `version`. */
   version: string;
 }

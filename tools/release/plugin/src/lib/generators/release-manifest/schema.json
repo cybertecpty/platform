@@ -3,15 +3,15 @@
   "cli": "nx",
   "$id": "ReleaseManifestGenerator",
   "title": "Create a release manifest for a project",
-  "description": "Write a `release-manifest.json` for a single project — author, project identity, release commit, date, and version. The file lands at the project root; it is up to each project's build to copy it into the output.",
+  "description": "Write a `release-manifest.json` for a single project — author, project identity, source commit, date, and version. The file lands at the project root; it is up to each project's build to copy it into the output.",
   "type": "object",
   "examples": [
     {
-      "command": "nx g @cybertecpty/release-plugin:release-manifest web 1.4.0 --releaseCommit=abc123def4",
+      "command": "nx g @cybertecpty/release-plugin:release-manifest web 1.4.0 --sourceCommit=abc123def4",
       "description": "Writes `<web-root>/release-manifest.json` using the local git user name and the current timestamp."
     },
     {
-      "command": "nx g @cybertecpty/release-plugin:release-manifest shared-types 2.0.0 --releaseCommit=abc123def4 --releaseDate=2026-04-22T15:30:00.000Z",
+      "command": "nx g @cybertecpty/release-plugin:release-manifest shared-types 2.0.0 --sourceCommit=abc123def4 --releaseDate=2026-04-22T15:30:00.000Z",
       "description": "Writes `<shared-types-root>/release-manifest.json` with an explicit release date."
     }
   ],
@@ -35,11 +35,11 @@
         "index": 1
       }
     },
-    "releaseCommit": {
+    "sourceCommit": {
       "type": "string",
-      "description": "The commit being released, written to the manifest verbatim. A short hash is recommended.",
+      "description": "The commit the released code was built from, written to the manifest verbatim. A short hash is recommended.",
       "x-priority": "important",
-      "x-prompt": "Which commit is being released? (short hash recommended)"
+      "x-prompt": "Which commit was this release built from? (short hash recommended)"
     },
     "releaseDate": {
       "type": "string",
@@ -60,5 +60,5 @@
       "x-priority": "internal"
     }
   },
-  "required": ["project", "version", "releaseCommit"]
+  "required": ["project", "version", "sourceCommit"]
 }
