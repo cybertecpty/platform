@@ -8,7 +8,7 @@
     "release": {
       "factory": "./src/lib/generators/release/generator",
       "schema": "./src/lib/generators/release/schema.json",
-      "description": "release generator"
+      "description": "Version, changelog, tag, and promote a release via a branch and pull request."
     },
     "release-manifest": {
       "factory": "./src/lib/generators/release-manifest/generator",
