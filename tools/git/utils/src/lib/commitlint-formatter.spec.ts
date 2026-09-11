@@ -1,6 +1,12 @@
-import type { FormattableProblem, FormattableReport } from '@commitlint/types';
+import type { FormattableProblem, FormattableReport, Formatter } from '@commitlint/types';
 
-import formatter from './commitlint-formatter';
+// The module under test is `module.exports = formatter` (see its header comment for
+// why), so it has no static export — neither `import formatter from '...'` nor TS's
+// own `import formatter = require(...)` can type it (the latter would type as the
+// module's namespace object, which `module.exports =` doesn't populate). Read it via
+// plain `require` and assert the shape instead.
+// eslint-disable-next-line @typescript-eslint/no-require-imports -- see comment above
+const formatter = require('./commitlint-formatter') as Formatter;
 
 const REFERENCE_URL =
   'https://github.com/cybertecpty/platform/blob/develop/docs/agents/conventions.md#commit-message-format';
