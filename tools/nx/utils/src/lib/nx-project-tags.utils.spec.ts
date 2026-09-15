@@ -27,6 +27,31 @@ describe('nx-project-tags.utils', () => {
       expect(result.toString()).toBe('domain:atlas,scope:shared,type:models');
     });
 
+    it('compounds a multi-segment (subdomain) domain into a single hyphenated domain tag', () => {
+      const options: NxProjectOptions = {
+        name: 'checkout',
+        type: 'services',
+        scope: 'backend',
+        domain: 'billing/checkout'
+      };
+
+      const result = createProjectTags(options);
+      expect(result.toString()).toBe('domain:billing-checkout,scope:backend,type:services');
+    });
+
+    it('throws for a malformed multi-segment domain, same as projectDomainToName', () => {
+      const options: NxProjectOptions = {
+        name: 'checkout',
+        type: 'services',
+        scope: 'backend',
+        domain: 'billing//checkout'
+      };
+
+      expect(() => createProjectTags(options)).toThrow(
+        '`domain` segment "" must be lowercase alphanumeric words joined by single hyphens.'
+      );
+    });
+
     it('does not add a domain tag for app projects when domain is unspecified', () => {
       const options: NxProjectOptions = {
         name: 'vault',
