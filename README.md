@@ -24,3 +24,10 @@ Windows installs.
 
 - `docs/adr/` — architecture decision records.
 - `docs/agents/` — how coding agents work in this repo (conventions, principles, issue tracker).
+
+## Releases
+
+Cutting a release (versioning, changelog, tagging, and opening the promotion PR into `main`) is
+done with the custom `release` generator — see
+[its README](tools/release/plugin/src/lib/generators/release/README.md) for usage and options,
+and [ADR 0011](docs/adr/0011-release-flow.md) for why the flow is shaped this way.
