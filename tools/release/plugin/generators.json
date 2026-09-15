@@ -1,5 +1,15 @@
 {
   "generators": {
+    "package-version": {
+      "factory": "./src/lib/generators/package-version/generator",
+      "schema": "./src/lib/generators/package-version/schema.json",
+      "description": "Set the version field of an existing package.json to an explicit semantic version or a release-type bump."
+    },
+    "release": {
+      "factory": "./src/lib/generators/release/generator",
+      "schema": "./src/lib/generators/release/schema.json",
+      "description": "Version, changelog, tag, and promote a release via a branch and pull request."
+    },
     "release-manifest": {
       "factory": "./src/lib/generators/release-manifest/generator",
       "schema": "./src/lib/generators/release-manifest/schema.json",

@@ -61,6 +61,32 @@ export async function gitCommitsBetween(
 }
 
 /**
+ * Finds the point where two branches diverged: the most recent commit that is
+ * an ancestor of both `a` and `b` (`git merge-base`).
+ *
+ * With `a` a base branch and `b` a branch taken off it, this returns the commit
+ * `b` was created from — even if `a` has had more commits since. Comparing
+ * against that commit rather than `a`'s current tip gives only `b`'s own
+ * changes, without the commits `a` picked up in the meantime.
+ *
+ * @param a One revision — a branch name, tag, or commit hash.
+ * @param b The other revision.
+ * @returns The shared commit's hash, or `null` when the two revisions have no
+ *   common ancestor or one of them doesn't exist.
+ */
+export async function gitMergeBase(
+  a: string,
+  b: string,
+  git: SimpleGit = simpleGit()
+): Promise<string | null> {
+  try {
+    return (await git.raw(['merge-base', a, b])).trim() || null;
+  } catch {
+    return null;
+  }
+}
+
+/**
  * Gets the hash of the commit at `HEAD` (the most recent commit on the current
  * branch, or the checked-out commit when `HEAD` is detached).
  *

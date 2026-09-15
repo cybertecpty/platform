@@ -1,7 +1,7 @@
 {
-  "name": "release-utils",
+  "name": "github-utils",
   "$schema": "../../../node_modules/nx/schemas/project-schema.json",
-  "sourceRoot": "tools/release/utils/src",
+  "sourceRoot": "tools/github/utils/src",
   "projectType": "library",
   "tags": ["scope:tools", "type:utils"],
   "targets": {
@@ -9,10 +9,10 @@
       "executor": "@nx/js:tsc",
       "outputs": ["{options.outputPath}"],
       "options": {
-        "outputPath": "dist/tools/release/utils",
-        "main": "tools/release/utils/src/index.ts",
-        "tsConfig": "tools/release/utils/tsconfig.lib.json",
-        "assets": []
+        "outputPath": "dist/tools/github/utils",
+        "main": "tools/github/utils/src/index.ts",
+        "tsConfig": "tools/github/utils/tsconfig.lib.json",
+        "assets": ["tools/github/utils/*.md"]
       }
     },
     "typecheck": {}

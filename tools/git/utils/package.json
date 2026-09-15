@@ -1,4 +1,13 @@
 {
   "name": "@cybertecpty/git-utils",
-  "version": "0.0.1"
+  "version": "0.0.1",
+  "private": true,
+  "type": "commonjs",
+  "main": "./src/index.js",
+  "types": "./src/index.d.ts",
+  "dependencies": {
+    "@commitlint/types": "^21.2.0",
+    "simple-git": "^3.36.0",
+    "tslib": "^2.3.0"
+  }
 }

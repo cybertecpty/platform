@@ -35,10 +35,10 @@ function seedApp(tree: Tree): void {
 function run(
   tree: Tree,
   options: Partial<ReleaseManifestGeneratorOptions> & { project: string }
-): Promise<void> {
+): Promise<string> {
   return releaseManifestGenerator(tree, {
     version: '1.2.3',
-    releaseCommit: 'abc123def4',
+    sourceCommit: 'abc123def4',
     ...options
   });
 }
@@ -110,11 +110,11 @@ describe('releaseManifestGenerator', () => {
     it('records project identity, commit and version', async () => {
       seedLib(tree);
 
-      await run(tree, { project: 'shared-thing', version: '1.4.0', releaseCommit: 'deadbeef' });
+      await run(tree, { project: 'shared-thing', version: '1.4.0', sourceCommit: 'deadbeef' });
 
       expect(readJson(tree, `${LIB_ROOT}/release-manifest.json`)).toMatchObject({
         project: 'shared-thing',
-        releaseCommit: 'deadbeef',
+        sourceCommit: 'deadbeef',
         version: '1.4.0'
       });
     });
@@ -127,8 +127,8 @@ describe('releaseManifestGenerator', () => {
       expect(Object.keys(readJson(tree, `${LIB_ROOT}/release-manifest.json`))).toEqual([
         'author',
         'project',
-        'releaseCommit',
         'releaseDate',
+        'sourceCommit',
         'version'
       ]);
     });

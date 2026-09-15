@@ -1,0 +1,36 @@
+{
+  "$schema": "https://json-schema.org/schema",
+  "$id": "PackageVersion",
+  "title": "PackageVersionGenerator",
+  "description": "Sets the version for a package.json file, either as a specific semantic version or a release type.",
+  "type": "object",
+  "properties": {
+    "path": {
+      "description": "Path to the package.json file, relative to the workspace root.",
+      "type": "string",
+      "$default": {
+        "$source": "argv",
+        "index": 0
+      },
+      "alias": "p"
+    },
+    "vers": {
+      "description": "The new package.json version, either as a specific semantic version or a release type.  The release type can be one of 'major', 'minor', 'patch', 'premajor', 'preminor', 'prepatch', 'prerelease'.  If a release type is specified, the version will be bumped in accordance with the specified type.",
+      "type": "string",
+      "$default": {
+        "$source": "argv",
+        "index": 1
+      },
+      "pattern": "^(?:\\d+\\.\\d+\\.\\d+(?:-[0-9A-Za-z-.]+)?(?:\\+[0-9A-Za-z-.]+)?|major|minor|patch|premajor|preminor|prepatch|prerelease)$",
+      "alias": "v"
+    },
+
+    "skipFormat": {
+      "description": "Skip formatting files.",
+      "type": "boolean",
+      "default": false,
+      "x-priority": "internal"
+    }
+  },
+  "required": ["path", "vers"]
+}

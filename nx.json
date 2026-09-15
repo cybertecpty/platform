@@ -3,6 +3,11 @@
   "cli": {
     "packageManager": "pnpm"
   },
+  "defaultBase": "develop",
+  "workspaceLayout": {
+    "libsDir": "libs",
+    "appsDir": "apps"
+  },
   "namedInputs": {
     "default": ["{projectRoot}/**/*", "sharedGlobals"],
     "production": [
@@ -64,6 +69,38 @@
       "inputs": ["default", "^default", { "externalDependencies": ["typescript"] }],
       "options": {
         "command": "tsc --noEmit -p {projectRoot}/tsconfig.spec.json"
+      }
+    }
+  },
+  "release": {
+    "projectsRelationship": "independent",
+    "groups": {
+      "packages": {
+        "projects": ["packages/*"]
+      },
+      "apps": {
+        "projects": ["apps/*"]
+      }
+    },
+    "version": {
+      "conventionalCommits": true,
+      "fallbackCurrentVersionResolver": "disk"
+    },
+    "conventionalCommits": {
+      "types": {
+        "perf": {
+          "semverBump": "patch"
+        }
+      }
+    },
+    "changelog": {
+      "automaticFromRef": true,
+      "workspaceChangelog": false,
+      "projectChangelogs": {
+        "createRelease": "github",
+        "renderOptions": {
+          "authors": false
+        }
       }
     }
   }
