@@ -1,5 +1,5 @@
 import * as devkit from '@nx/devkit';
-import { addProjectConfiguration, Tree } from '@nx/devkit';
+import { addProjectConfiguration, readJson, Tree, writeJson } from '@nx/devkit';
 import { createTreeWithEmptyWorkspace } from '@nx/devkit/testing';
 import { libraryGenerator as nxJsLibraryGenerator } from '@nx/js';
 import { libGenerator } from './generator';
@@ -14,15 +14,19 @@ const nxJsLibraryGeneratorMock = nxJsLibraryGenerator as jest.MockedFunction<
 >;
 
 /**
- * Stand-in for `@nx/js:library`: writes the minimal project config the real
- * generator would, so the wrapper's post-delegation edits have a project to
- * read, then returns a no-op task.
+ * Stand-in for `@nx/js:library`: writes the minimal project config and
+ * `tsconfig.lib.json` the real generator would, so the wrapper's
+ * post-delegation edits have a project (and a tsconfig) to read, then
+ * returns a no-op task.
  */
 function fakeNxJsLibraryGenerator(tree: Tree, options: { name: string; directory: string }) {
   addProjectConfiguration(tree, options.name, {
     root: options.directory,
     projectType: 'library',
     targets: { build: {} }
+  });
+  writeJson(tree, `${options.directory}/tsconfig.lib.json`, {
+    compilerOptions: { outDir: '../../../dist/out-tsc', declaration: true, types: ['node'] }
   });
 
   return Promise.resolve(jest.fn());
@@ -232,6 +236,22 @@ describe('libGenerator', () => {
       const { targets } = devkit.readProjectConfiguration(tree, 'billing-models');
 
       expect(targets?.typecheck).toBeUndefined();
+    });
+
+    it("adds `jest` to `tsconfig.lib.json`'s `compilerOptions.types` for a `type:testing` library", async () => {
+      await run(tree, { domain: 'billing', scope: 'backend', type: 'testing' });
+
+      const tsConfig = readJson(tree, 'libs/billing/testing/tsconfig.lib.json');
+
+      expect(tsConfig.compilerOptions.types).toEqual(['jest', 'node']);
+    });
+
+    it('does not touch `tsconfig.lib.json` types for a non-testing library', async () => {
+      await run(tree, { domain: 'billing', scope: 'backend', type: 'models' });
+
+      const tsConfig = readJson(tree, 'libs/billing/models/tsconfig.lib.json');
+
+      expect(tsConfig.compilerOptions.types).toEqual(['node']);
     });
 
     it('returns the delegated task wrapped in a serial runner', async () => {

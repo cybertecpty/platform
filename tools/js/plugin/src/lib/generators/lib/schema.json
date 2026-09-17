@@ -1,17 +1,17 @@
 {
   "$schema": "https://json-schema.org/schema",
   "cli": "nx",
-  "$id": "Lib",
+  "$id": "TsLibGenerator",
   "title": "Create a TypeScript Library",
   "description": "Create a TypeScript library under `libs/<domain>[/<subdomain>...]/[<group>/]<type>`, wrapping `@nx/js:library` with the workspace naming, directory, and tag conventions (ADR 0009). Restricted to the framework-agnostic `type:` values (`models`, `testing`, `types`, `utils`) — Angular-only, Nest-only, and backend-only types are out of scope for this generator.",
   "type": "object",
   "examples": [
     {
-      "command": "nx g js-plugin:lib utils --domain=billing --scope=backend --group=orchestration",
+      "command": "nx g ts-lib utils --domain=billing --scope=backend --group=orchestration",
       "description": "Generates `billing-orchestration-utils` at `libs/billing/orchestration/utils`."
     },
     {
-      "command": "nx g js-plugin:lib models --domain=billing/checkout --scope=shared",
+      "command": "nx g ts-lib models --domain=billing/checkout --scope=shared",
       "description": "Generates `billing-checkout-models` at `libs/billing/checkout/models`, tagged `domain:billing-checkout`."
     }
   ],

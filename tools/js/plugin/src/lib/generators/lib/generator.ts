@@ -1,17 +1,23 @@
-import { createProjectTags, projectDirFromOpts, projectNameFromOpts } from '@cybertecpty/nx-utils';
+import {
+  addTsConfigTypes,
+  addTypecheckTarget,
+  createProjectTags,
+  projectDirFromOpts,
+  projectNameFromOpts
+} from '@cybertecpty/nx-utils';
 import {
   formatFiles,
   GeneratorCallback,
+  joinPathFragments,
   readProjectConfiguration,
   runTasksInSerial,
-  Tree,
-  updateProjectConfiguration
+  Tree
 } from '@nx/devkit';
 import { libraryGenerator as nxJsLibraryGenerator } from '@nx/js';
 import { LibGeneratorOptions } from './schema';
 
 /**
- * Workspace `lib` generator — a thin wrapper over `@nx/js:library`.
+ * Workspace `ts-lib` generator — a thin wrapper over `@nx/js:library`.
  *
  * Derives the project's name, directory (`libs/<domain>[/<subdomain>...]/[<group>/]<type>`,
  * ADR 0009), and tags from the shared `nx-utils` helpers rather than taking a raw
@@ -47,18 +53,15 @@ export async function libGenerator(
     skipFormat: true
   });
 
-  const projectConfig = readProjectConfiguration(tree, name);
+  addTypecheckTarget(tree, name, unitTestRunner);
 
-  // Re-add the `typecheck` target the removed `@nx/js/typescript` inference
-  // plugin used to provide (dropped because Angular can't do `composite` —
-  // ADR 0005). The stub inherits its command from `targetDefaults.typecheck`
-  // in nx.json; it gives the library's `.spec.ts` files a real `tsc --noEmit`
-  // that `ts-jest` and `build` (lib sources only) both skip. See issue #48.
-  // Skipped without a unit-test runner: `@nx/js:library` writes no
-  // `tsconfig.spec.json` then, so the inherited command would have no project.
-  if (unitTestRunner !== 'none') {
-    projectConfig.targets = { ...projectConfig.targets, typecheck: {} };
-    updateProjectConfiguration(tree, name, projectConfig);
+  // A `type:testing` library's own source (mocks, builders, fixtures) commonly uses
+  // Jest globals (`jest.fn()`, `jest.Mock`) outside `*.spec.ts`, so `tsconfig.lib.json`
+  // needs `jest` in `compilerOptions.types` too — `@nx/js:library` only adds it to
+  // `tsconfig.spec.json`.
+  if (options.type === 'testing') {
+    const { root } = readProjectConfiguration(tree, name);
+    addTsConfigTypes(tree, joinPathFragments(root, 'tsconfig.lib.json'), ['jest']);
   }
 
   if (!options.skipFormat) {

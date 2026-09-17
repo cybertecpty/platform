@@ -1,4 +1,9 @@
-import { createProjectTags, projectDirFromOpts, projectNameFromOpts } from '@cybertecpty/nx-utils';
+import {
+  addTypecheckTarget,
+  createProjectTags,
+  projectDirFromOpts,
+  projectNameFromOpts
+} from '@cybertecpty/nx-utils';
 import {
   formatFiles,
   generateFiles,
@@ -6,8 +11,7 @@ import {
   joinPathFragments,
   readProjectConfiguration,
   runTasksInSerial,
-  Tree,
-  updateProjectConfiguration
+  Tree
 } from '@nx/devkit';
 import { pluginGenerator as nxPluginGenerator } from '@nx/plugin/generators';
 import { NxPluginGeneratorOptions } from './schema';
@@ -50,19 +54,9 @@ export async function pluginGenerator(
     skipFormat: true
   });
 
-  const projectConfig = readProjectConfiguration(tree, name);
+  addTypecheckTarget(tree, name, unitTestRunner);
 
-  // Re-add the `typecheck` target the removed `@nx/js/typescript` inference
-  // plugin used to provide (dropped because Angular can't do `composite` —
-  // ADR 0005). The stub inherits its command from `targetDefaults.typecheck`
-  // in nx.json; it gives the plugin's `.spec.ts` files a real `tsc --noEmit`
-  // that `ts-jest` and `build` (lib sources only) both skip. See issue #48.
-  // Skipped without a unit-test runner: `@nx/plugin:plugin` writes no
-  // `tsconfig.spec.json` then, so the inherited command would have no project.
-  if (unitTestRunner !== 'none') {
-    projectConfig.targets = { ...projectConfig.targets, typecheck: {} };
-    updateProjectConfiguration(tree, name, projectConfig);
-  }
+  const projectConfig = readProjectConfiguration(tree, name);
 
   generateFiles(tree, joinPathFragments(__dirname, 'files'), projectConfig.root, {
     tmpl: ''
