@@ -6,7 +6,7 @@ import {
   writeJson
 } from '@nx/devkit';
 import { createTreeWithEmptyWorkspace } from '@nx/devkit/testing';
-import { addTsConfigTypes, addTypecheckTarget } from './nx-generator.utils';
+import { addTsConfigTypes, addTypecheckTarget, sortTsConfigBasePaths } from './nx-generator.utils';
 
 describe('addTsConfigTypes', () => {
   let tree: Tree;
@@ -88,5 +88,92 @@ describe('addTypecheckTarget', () => {
 
     const { targets } = readProjectConfiguration(tree, 'demo');
     expect(targets?.['typecheck']).toBeUndefined();
+  });
+});
+
+describe('sortTsConfigBasePaths', () => {
+  let tree: Tree;
+
+  beforeEach(() => {
+    tree = createTreeWithEmptyWorkspace();
+  });
+
+  it('sorts an out-of-order paths map alphabetically by key', () => {
+    writeJson(tree, 'tsconfig.base.json', {
+      compilerOptions: {
+        paths: {
+          '@cybertecpty/nx-utils': ['./tools/nx/utils/src/index.ts'],
+          '@cybertecpty/git-utils': ['./tools/git/utils/src/index.ts'],
+          '@cybertecpty/js-plugin': ['./tools/js/plugin/src/index.ts']
+        }
+      }
+    });
+
+    sortTsConfigBasePaths(tree, 'tsconfig.base.json');
+
+    expect(Object.keys(readJson(tree, 'tsconfig.base.json').compilerOptions.paths)).toEqual([
+      '@cybertecpty/git-utils',
+      '@cybertecpty/js-plugin',
+      '@cybertecpty/nx-utils'
+    ]);
+  });
+
+  it('preserves each path entry’s value while reordering', () => {
+    writeJson(tree, 'tsconfig.base.json', {
+      compilerOptions: {
+        paths: {
+          '@cybertecpty/nx-utils': ['./tools/nx/utils/src/index.ts'],
+          '@cybertecpty/git-utils': ['./tools/git/utils/src/index.ts']
+        }
+      }
+    });
+
+    sortTsConfigBasePaths(tree, 'tsconfig.base.json');
+
+    expect(readJson(tree, 'tsconfig.base.json').compilerOptions.paths).toEqual({
+      '@cybertecpty/git-utils': ['./tools/git/utils/src/index.ts'],
+      '@cybertecpty/nx-utils': ['./tools/nx/utils/src/index.ts']
+    });
+  });
+
+  it('preserves other compilerOptions fields', () => {
+    writeJson(tree, 'tsconfig.base.json', {
+      compilerOptions: {
+        target: 'es2022',
+        paths: {
+          '@cybertecpty/nx-utils': ['./tools/nx/utils/src/index.ts'],
+          '@cybertecpty/git-utils': ['./tools/git/utils/src/index.ts']
+        }
+      }
+    });
+
+    sortTsConfigBasePaths(tree, 'tsconfig.base.json');
+
+    expect(readJson(tree, 'tsconfig.base.json').compilerOptions.target).toBe('es2022');
+  });
+
+  it('does nothing when there is no paths map', () => {
+    writeJson(tree, 'tsconfig.base.json', { compilerOptions: { target: 'es2022' } });
+
+    expect(() => sortTsConfigBasePaths(tree, 'tsconfig.base.json')).not.toThrow();
+    expect(readJson(tree, 'tsconfig.base.json').compilerOptions.paths).toBeUndefined();
+  });
+
+  it('defaults to `tsconfig.base.json` at the workspace root', () => {
+    writeJson(tree, 'tsconfig.base.json', {
+      compilerOptions: {
+        paths: {
+          '@cybertecpty/nx-utils': ['./tools/nx/utils/src/index.ts'],
+          '@cybertecpty/git-utils': ['./tools/git/utils/src/index.ts']
+        }
+      }
+    });
+
+    sortTsConfigBasePaths(tree);
+
+    expect(Object.keys(readJson(tree, 'tsconfig.base.json').compilerOptions.paths)).toEqual([
+      '@cybertecpty/git-utils',
+      '@cybertecpty/nx-utils'
+    ]);
   });
 });

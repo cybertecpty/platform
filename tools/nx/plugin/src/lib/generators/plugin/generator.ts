@@ -2,7 +2,8 @@ import {
   addTypecheckTarget,
   createProjectTags,
   projectDirFromOpts,
-  projectNameFromOpts
+  projectNameFromOpts,
+  sortTsConfigBasePaths
 } from '@cybertecpty/nx-utils';
 import {
   formatFiles,
@@ -54,6 +55,7 @@ export async function pluginGenerator(
     skipFormat: true
   });
 
+  sortTsConfigBasePaths(tree);
   addTypecheckTarget(tree, name, unitTestRunner);
 
   const projectConfig = readProjectConfiguration(tree, name);

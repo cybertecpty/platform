@@ -1,5 +1,5 @@
 import * as devkit from '@nx/devkit';
-import { addProjectConfiguration, readJson, Tree, writeJson } from '@nx/devkit';
+import { addProjectConfiguration, readJson, Tree, updateJson, writeJson } from '@nx/devkit';
 import { createTreeWithEmptyWorkspace } from '@nx/devkit/testing';
 import { libraryGenerator as nxJsLibraryGenerator } from '@nx/js';
 import { libGenerator } from './generator';
@@ -15,9 +15,10 @@ const nxJsLibraryGeneratorMock = nxJsLibraryGenerator as jest.MockedFunction<
 
 /**
  * Stand-in for `@nx/js:library`: writes the minimal project config and
- * `tsconfig.lib.json` the real generator would, so the wrapper's
- * post-delegation edits have a project (and a tsconfig) to read, then
- * returns a no-op task.
+ * `tsconfig.lib.json` the real generator would, appends the new project's
+ * path entry to `tsconfig.base.json` (unsorted, same as the real generator),
+ * so the wrapper's post-delegation edits have a project (and tsconfigs) to
+ * read, then returns a no-op task.
  */
 function fakeNxJsLibraryGenerator(tree: Tree, options: { name: string; directory: string }) {
   addProjectConfiguration(tree, options.name, {
@@ -27,6 +28,14 @@ function fakeNxJsLibraryGenerator(tree: Tree, options: { name: string; directory
   });
   writeJson(tree, `${options.directory}/tsconfig.lib.json`, {
     compilerOptions: { outDir: '../../../dist/out-tsc', declaration: true, types: ['node'] }
+  });
+  updateJson(tree, 'tsconfig.base.json', json => {
+    json.compilerOptions.paths = {
+      ...json.compilerOptions.paths,
+      [`@cybertecpty/${options.name}`]: [`./${options.directory}/src/index.ts`]
+    };
+
+    return json;
   });
 
   return Promise.resolve(jest.fn());
@@ -57,6 +66,11 @@ describe('libGenerator', () => {
   beforeEach(() => {
     jest.clearAllMocks();
     tree = createTreeWithEmptyWorkspace();
+    writeJson(tree, 'tsconfig.base.json', {
+      compilerOptions: {
+        paths: { '@cybertecpty/zzz-existing': ['./tools/zzz/existing/src/index.ts'] }
+      }
+    });
     formatFiles = jest.spyOn(devkit, 'formatFiles').mockResolvedValue();
     nxJsLibraryGeneratorMock.mockImplementation(
       fakeNxJsLibraryGenerator as unknown as typeof nxJsLibraryGenerator
@@ -214,6 +228,16 @@ describe('libGenerator', () => {
       await run(tree, { domain: 'billing', scope: 'backend', type: 'models', skipFormat: true });
 
       expect(formatFiles).not.toHaveBeenCalled();
+    });
+
+    it('re-sorts `tsconfig.base.json` paths alphabetically after delegating', async () => {
+      await run(tree, { domain: 'billing', scope: 'backend', type: 'models' });
+
+      const { paths } = readJson(tree, 'tsconfig.base.json').compilerOptions;
+      expect(Object.keys(paths)).toEqual([
+        '@cybertecpty/billing-models',
+        '@cybertecpty/zzz-existing'
+      ]);
     });
 
     it('adds a `typecheck` target stub that inherits from nx.json target defaults', async () => {

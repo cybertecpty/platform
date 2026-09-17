@@ -3,7 +3,8 @@ import {
   addTypecheckTarget,
   createProjectTags,
   projectDirFromOpts,
-  projectNameFromOpts
+  projectNameFromOpts,
+  sortTsConfigBasePaths
 } from '@cybertecpty/nx-utils';
 import {
   formatFiles,
@@ -53,6 +54,7 @@ export async function libGenerator(
     skipFormat: true
   });
 
+  sortTsConfigBasePaths(tree);
   addTypecheckTarget(tree, name, unitTestRunner);
 
   // A `type:testing` library's own source (mocks, builders, fixtures) commonly uses

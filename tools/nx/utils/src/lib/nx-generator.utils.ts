@@ -9,6 +9,15 @@ interface TsConfigWithTypes {
   [key: string]: unknown;
 }
 
+/** Minimal shape of the root tsconfig relevant to `sortTsConfigBasePaths`. */
+interface TsConfigWithPaths {
+  compilerOptions?: {
+    paths?: Record<string, string[]>;
+    [key: string]: unknown;
+  };
+  [key: string]: unknown;
+}
+
 /**
  * Merges `types` into a tsconfig file's `compilerOptions.types` array, deduping and
  * sorting alphabetically for a deterministic result regardless of what the underlying
@@ -49,4 +58,32 @@ export function addTypecheckTarget(
   const projectConfig = readProjectConfiguration(tree, projectName);
   projectConfig.targets = { ...projectConfig.targets, typecheck: {} };
   updateProjectConfiguration(tree, projectName, projectConfig);
+}
+
+/**
+ * Re-sorts the root tsconfig's `compilerOptions.paths` map alphabetically by key.
+ * The underlying `@nx/*:library` / `@nx/*:plugin` generators append a new project's
+ * path entry at the end rather than inserting it in order, so every wrapper generator
+ * that adds a project should call this afterward to keep the map scannable. A no-op
+ * when the file has no `paths` map yet.
+ */
+export function sortTsConfigBasePaths(tree: Tree, tsConfigBasePath = 'tsconfig.base.json'): void {
+  updateJson<TsConfigWithPaths, TsConfigWithPaths>(tree, tsConfigBasePath, json => {
+    const paths = json.compilerOptions?.paths;
+
+    if (!paths) {
+      return json;
+    }
+
+    const sortedPaths = Object.keys(paths)
+      .sort()
+      .reduce<Record<string, string[]>>((sorted, key) => {
+        sorted[key] = paths[key];
+        return sorted;
+      }, {});
+
+    json.compilerOptions = { ...json.compilerOptions, paths: sortedPaths };
+
+    return json;
+  });
 }
