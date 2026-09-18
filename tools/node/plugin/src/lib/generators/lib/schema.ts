@@ -1,4 +1,4 @@
-import { NormalizedNxProjectOptions, NxProjectOptions } from '@cybertecpty/nx-types';
+import { NxProjectOptions } from '@cybertecpty/nx-types';
 import type { libraryGenerator } from '@nx/node';
 import { Except, SetRequired } from 'type-fest';
 
@@ -62,14 +62,3 @@ export type LibGeneratorOptions = SetRequired<
     /** The compiler used by the build and test targets. Defaults to `tsc`. */
     compiler?: 'tsc' | 'swc';
   };
-
-/**
- * `LibGeneratorOptions` after the generator has resolved `name`, `directory`, and
- * `tags`, and pinned `scope`.
- *
- * `bundler` is omitted from the shared `NormalizedNxProjectOptions` shape: this
- * generator has no bundler — buildability is driven by the native `buildable`/
- * `compiler` fields already present on `LibGeneratorOptions`.
- */
-export type NormalizedLibGeneratorOptions = LibGeneratorOptions &
-  Except<NormalizedNxProjectOptions<'backend', NodeLibType>, 'bundler'>;
