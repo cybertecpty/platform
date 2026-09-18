@@ -57,6 +57,9 @@ importers:
       '@nx/nest':
         specifier: 23.1.1
         version: 23.1.1(63901af203e51130530370b65adfa96f)
+      '@nx/node':
+        specifier: 23.1.1
+        version: 23.1.1(4fcc0973f302e3670f40d015f1a55f36)
       '@nx/plugin':
         specifier: 23.1.1
         version: 23.1.1(012f72c3c05be0f55656689ac7699991)
