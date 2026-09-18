@@ -1,0 +1,9 @@
+{
+  "generators": {
+    "lib": {
+      "factory": "./src/lib/generators/lib/generator",
+      "schema": "./src/lib/generators/lib/schema.json",
+      "description": "Create a Node library under libs/<domain>[/<subdomain>...]/[<group>/]infra, wrapping @nx/node:library with the workspace naming, directory, and tag conventions (ADR 0009)."
+    }
+  }
+}
