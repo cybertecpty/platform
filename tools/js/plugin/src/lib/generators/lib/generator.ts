@@ -10,6 +10,7 @@ import {
   formatFiles,
   GeneratorCallback,
   joinPathFragments,
+  logger,
   readProjectConfiguration,
   runTasksInSerial,
   Tree
@@ -33,11 +34,24 @@ export async function libGenerator(
   const tags = createProjectTags(options).toString();
   const unitTestRunner = options.unitTestRunner ?? 'jest';
 
+  // A `type:testing` library is never buildable — the same invariant `nx-utils`'s
+  // `normalizeProjectOptions` enforces for the `buildable` flag, restated here because
+  // this generator forwards the native `bundler` enum directly instead of going through
+  // it. A production library that imported a buildable testing-helpers lib would
+  // otherwise pull it in as a real buildable dependency.
+  let bundler = options.bundler ?? 'none';
+  if (options.type === 'testing' && bundler !== 'none') {
+    logger.warn(
+      `The "testing" library type cannot be buildable. Setting bundler to "none" for project "${name}".`
+    );
+    bundler = 'none';
+  }
+
   const projectTask = await nxJsLibraryGenerator(tree, {
     name,
     directory,
     tags,
-    bundler: options.bundler ?? 'none',
+    bundler,
     linter: options.linter ?? 'eslint',
     unitTestRunner,
     publishable: options.publishable ?? false,

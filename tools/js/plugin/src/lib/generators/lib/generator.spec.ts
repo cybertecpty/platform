@@ -62,6 +62,7 @@ function forwardedOptions() {
 describe('libGenerator', () => {
   let tree: Tree;
   let formatFiles: jest.SpyInstance;
+  let loggerWarn: jest.SpyInstance;
 
   beforeEach(() => {
     jest.clearAllMocks();
@@ -72,6 +73,7 @@ describe('libGenerator', () => {
       }
     });
     formatFiles = jest.spyOn(devkit, 'formatFiles').mockResolvedValue();
+    loggerWarn = jest.spyOn(devkit.logger, 'warn').mockImplementation(() => undefined);
     nxJsLibraryGeneratorMock.mockImplementation(
       fakeNxJsLibraryGenerator as unknown as typeof nxJsLibraryGenerator
     );
@@ -276,6 +278,39 @@ describe('libGenerator', () => {
       const tsConfig = readJson(tree, 'libs/billing/models/tsconfig.lib.json');
 
       expect(tsConfig.compilerOptions.types).toEqual(['node']);
+    });
+
+    it('forces a `type:testing` library to `bundler: none` even when a buildable bundler is requested', async () => {
+      await run(tree, {
+        domain: 'billing',
+        scope: 'backend',
+        type: 'testing',
+        bundler: 'tsc'
+      });
+
+      expect(forwardedOptions().bundler).toBe('none');
+      expect(loggerWarn).toHaveBeenCalledWith(
+        expect.stringContaining('"testing" library type cannot be buildable')
+      );
+    });
+
+    it('does not warn when a `type:testing` library already requests `bundler: none`', async () => {
+      await run(tree, { domain: 'billing', scope: 'backend', type: 'testing' });
+
+      expect(forwardedOptions().bundler).toBe('none');
+      expect(loggerWarn).not.toHaveBeenCalled();
+    });
+
+    it('leaves a non-testing library’s requested bundler untouched', async () => {
+      await run(tree, {
+        domain: 'billing',
+        scope: 'backend',
+        type: 'models',
+        bundler: 'tsc'
+      });
+
+      expect(forwardedOptions().bundler).toBe('tsc');
+      expect(loggerWarn).not.toHaveBeenCalled();
     });
 
     it('returns the delegated task wrapped in a serial runner', async () => {
