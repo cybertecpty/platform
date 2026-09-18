@@ -3,9 +3,11 @@
 - Status: proposed
 - Date: 2026-09-04
 - Deciders: djmcgrath
-- Implemented by (planned): a workspace generator wrapping `@nx/angular:library` /
-  `@nx/js:library` / `@nx/nest:library`; a `workspaceDomains` map in `nx.json`;
-  `depConstraints` additions in `eslint.config.mjs` (extends ADR 0004)
+- Implemented by (planned): path/name/tag derivation and validation functions in
+  `nx-utils` (`tools/nx/utils`), imported directly by whichever plugin's generator(s)
+  need to scaffold a project under this layout; a `workspaceDomains` map in `nx.json`;
+  `depConstraints` additions in `eslint.config.mjs` (extends ADR 0004) — see the
+  2026-09-15 amendment
 
 ## Context and problem statement
 
@@ -263,3 +265,74 @@ a `domain:` tag, so they need no `workspaceDomains` entry.
 - ADR 0005 (`application-frameworks`) — Angular / NestJS, the frameworks whose libs this
   layout organizes.
 - `docs/agents/conventions.md` §11 — `nx g @nx/workspace:move` for relocating a project.
+
+## Amendment (2026-09-15): derivation logic lives in `nx-utils`, consumed directly by each plugin's own generators
+
+- Status: accepted
+- Deciders: djmcgrath
+- Implemented by (planned): path/name derivation, the `workspaceDomains` parse, and tag
+  computation as exported functions in `tools/nx/utils`, imported directly by whichever
+  plugin project's generator needs to scaffold a project under this layout
+
+As originally written, this ADR's "Implemented by" line described a single workspace
+generator — living in `nx-plugin` — that both derives the ADR 0009 layout (path, name,
+tags) from `--domain`/`--subdomain`/`--group`/`--type` (or the reverse, from a path) and
+performs the scaffolding by dispatching to `@nx/angular:library` / `@nx/js:library` /
+`@nx/nest:library`. This amendment removes that single generator: there is no
+ADR-0009-owned wrapper, and no requirement that library scaffolding be funneled through
+`nx-plugin` specifically.
+
+### Decision
+
+- **Derivation and validation are pure functions in `nx-utils`.** Given
+  `--domain`/`--subdomain`/`--group`/`--type`, compute the project path, derived name,
+  and `scope:`/`type:`/`domain:` tags; given a path, parse it against `workspaceDomains`
+  (right-to-left: `type` last, longest registered domain/subdomain prefix, remainder is
+  `group`) into the same. No Nx `Tree` access, no calls to other generators — plain
+  functions, testable the same way as `release-pr.utils` and `git-utils` already are in
+  this workspace.
+- **No single wrapper generator.** Any generator, in any `type:plugin` project —
+  `nx-plugin`, `release-plugin`, `node-plugin`, or a future plugin scaffolded via
+  `nx-gen` — that needs to create a project under the ADR 0009 layout imports these
+  functions directly from `nx-utils`, and is itself responsible for delegating to
+  whichever underlying `@nx/*:library` generator it needs and writing the computed tags
+  into the generated `project.json`. This ADR does not require a central lib-creation
+  entry point that every such generator must go through.
+- **No change to ADR 0004 module boundaries.** `type:plugin` is already permitted to
+  depend on `type:utils` (`eslint.config.mjs`), so any plugin's generator importing from
+  `nx-utils` needs no new `depConstraints` row, regardless of which plugin it lives in.
+
+### Rationale
+
+- Matches the pure/impure split this workspace already committed to elsewhere
+  (`release-pr.utils`, `git-utils`), and keeps that split generic — `nx-utils` is a
+  shared, framework-agnostic convention library, not something scoped to one plugin's
+  generator.
+- Avoids inventing a mandatory choke point. Nothing about the ADR 0009 layout rule
+  requires that every library be created through one entry point; plugins already
+  scaffold their own purpose-built generators (via `nx-gen`), and each is free to
+  consume `nx-utils` for layout/tag correctness independently.
+- Closes part of a gap this ADR already flagged under "Negative / risks": nothing
+  enforces `workspaceDomains`/tag consistency "beyond the generator reading it." Pure,
+  exported functions in `nx-utils` remain reusable by other tooling — a CI conformance
+  check (in the shape of `audit-drift`), a lint rule, or a future audit script — to
+  validate that an existing project's path matches its tags, independent of which (if
+  any) generator created it.
+- Easier to reach the ADR 0007 80%-coverage floor: pure derivation/parsing logic is
+  cheap to hit full branch coverage on in isolation, versus asserting it jointly with a
+  specific generator's `Tree` side effects.
+
+### Consequences
+
+- No new dependency edge beyond generator → `nx-utils`, already allowed by existing
+  `depConstraints`.
+- Removes the implicit assumption that `nx-plugin` is "the" home for ADR 0009
+  enforcement — it is one of potentially several plugins whose generators may consume
+  `nx-utils`, not a required intermediary.
+- Each generator that consumes `nx-utils` narrows its own tests to option-parsing and
+  delegation (mocking/spying the underlying `@nx/*:library` generator and the `nx-utils`
+  calls), while the derivation/validation logic gets one shared, focused spec file in
+  `nx-utils` rather than being re-tested per generator.
+- Which plugin(s) actually build a library-scaffolding generator first is left open —
+  this ADR no longer prescribes it, only the shared derivation logic those generators
+  must use.

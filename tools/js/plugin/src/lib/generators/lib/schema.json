@@ -1,0 +1,142 @@
+{
+  "$schema": "https://json-schema.org/schema",
+  "cli": "nx",
+  "$id": "TsLibGenerator",
+  "title": "Create a TypeScript Library",
+  "description": "Create a TypeScript library under `libs/<domain>[/<subdomain>...]/[<group>/]<type>`, wrapping `@nx/js:library` with the workspace naming, directory, and tag conventions (ADR 0009). Restricted to the framework-agnostic `type:` values (`models`, `testing`, `types`, `utils`) — Angular-only, Nest-only, and backend-only types are out of scope for this generator.",
+  "type": "object",
+  "examples": [
+    {
+      "command": "nx g ts-lib utils --domain=billing --scope=backend --group=orchestration",
+      "description": "Generates `billing-orchestration-utils` at `libs/billing/orchestration/utils`."
+    },
+    {
+      "command": "nx g ts-lib models --domain=billing/checkout --scope=shared",
+      "description": "Generates `billing-checkout-models` at `libs/billing/checkout/models`, tagged `domain:billing-checkout`."
+    }
+  ],
+  "properties": {
+    "type": {
+      "type": "string",
+      "description": "The project's `type:` tag and the final directory segment. Restricted to the types that are genuinely framework-agnostic — `core`/`feature`/`ui`/`data-access` are Angular-only, `api`/`services` are Nest-only, and `infra` is backend-only, so none of them belong behind this generator.",
+      "enum": ["models", "testing", "types", "utils"],
+      "x-priority": "important",
+      "$default": {
+        "$source": "argv",
+        "index": 0
+      }
+    },
+    "domain": {
+      "type": "string",
+      "description": "The product domain (and optional `/`-separated subdomains, e.g. `billing/checkout`) this library belongs to. Required — a `libs/` project is never domain-exempt (ADR 0009).",
+      "pattern": "^[a-z0-9]+(?:-[a-z0-9]+)*(?:/[a-z0-9]+(?:-[a-z0-9]+)*)*$",
+      "x-priority": "important"
+    },
+    "scope": {
+      "type": "string",
+      "description": "The project's `scope:` tag. Every allowed `type` here is scope-polymorphic (ADR 0009), so this must be given explicitly rather than inferred.",
+      "enum": ["backend", "frontend", "shared"],
+      "x-priority": "important"
+    },
+    "group": {
+      "type": "string",
+      "description": "An optional label distinguishing this library from siblings of the same type within its domain. Omittable for a domain-singleton type; expected from the first library for a type that's typically many-per-domain (`utils`, `testing`) to avoid a rename later (ADR 0009).",
+      "pattern": "^[a-z0-9]+(?:-[a-z0-9]+)*$"
+    },
+    "name": {
+      "type": "string",
+      "description": "Literal project-name override passed straight through to `@nx/js:library`. When given, it replaces the derived name; the directory is still derived from `domain`/`group`/`type`.",
+      "pattern": "^[a-z0-9]+(?:-[a-z0-9]+)*$"
+    },
+    "bundler": {
+      "description": "The bundler to use. Choosing 'none' means this library is not buildable.",
+      "type": "string",
+      "enum": ["swc", "tsc", "rollup", "vite", "esbuild", "none"],
+      "default": "none",
+      "x-priority": "important"
+    },
+    "linter": {
+      "description": "The tool to use for running lint checks.",
+      "type": "string",
+      "enum": ["none", "eslint"],
+      "default": "eslint",
+      "x-priority": "important"
+    },
+    "unitTestRunner": {
+      "description": "Test runner to use for unit tests. The workspace standardizes on Jest (ADR 0007).",
+      "type": "string",
+      "enum": ["none", "jest"],
+      "default": "jest",
+      "x-priority": "important"
+    },
+    "tags": {
+      "type": "string",
+      "description": "Additional freeform tags appended to the generated `scope:`/`type:`/`domain:` tags, comma-separated.",
+      "alias": "t"
+    },
+    "publishable": {
+      "type": "boolean",
+      "default": false,
+      "description": "Configure the library ready for use with `nx release`.",
+      "x-priority": "important"
+    },
+    "importPath": {
+      "type": "string",
+      "description": "The library name used to import it, like `@cybertecpty/my-lib`. Required for a publishable library.",
+      "x-priority": "important"
+    },
+    "useProjectJson": {
+      "type": "boolean",
+      "description": "Use a `project.json` configuration file instead of inlining the Nx configuration in the `package.json` file."
+    },
+    "enableTypedLinting": {
+      "type": "boolean",
+      "description": "Whether to enable typed linting. We do not enable this by default for lint performance reasons (ADR 0006).",
+      "default": false
+    },
+    "skipTsConfig": {
+      "type": "boolean",
+      "default": false,
+      "description": "Do not update `tsconfig.json` for development experience.",
+      "x-priority": "internal"
+    },
+    "skipPackageJson": {
+      "type": "boolean",
+      "default": false,
+      "description": "Do not add dependencies to `package.json`.",
+      "x-priority": "internal"
+    },
+    "skipTypeCheck": {
+      "type": "boolean",
+      "default": false,
+      "description": "Whether to skip TypeScript type checking for the SWC compiler."
+    },
+    "includeBabelRc": {
+      "type": "boolean",
+      "description": "Include a `.babelrc` configuration to compile TypeScript files."
+    },
+    "testEnvironment": {
+      "type": "string",
+      "enum": ["jsdom", "node"],
+      "description": "The test environment to use if `unitTestRunner` is `jest`.",
+      "default": "node"
+    },
+    "strict": {
+      "type": "boolean",
+      "description": "Whether to enable `tsconfig` strict mode.",
+      "default": true
+    },
+    "minimal": {
+      "type": "boolean",
+      "description": "Generate a library with a minimal setup. No `README.md` generated.",
+      "default": false
+    },
+    "skipFormat": {
+      "description": "Skip formatting files.",
+      "type": "boolean",
+      "default": false,
+      "x-priority": "internal"
+    }
+  },
+  "required": ["domain", "scope", "type"]
+}

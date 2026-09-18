@@ -2,6 +2,7 @@ import { NxProjectOptions } from '@cybertecpty/nx-types';
 import { MapPrimitivePropsToArrays, NonNullableProps } from '@cybertecpty/shared-types';
 import { UniqMultiMap } from '@cybertecpty/shared-utils';
 import { ArrayElement, Simplify } from 'type-fest';
+import { projectDomainToName } from './nx-domain.utils';
 import { NX_PROJECT_SCOPES, NX_PROJECT_TYPES } from './nx-projects.utils';
 
 /**
@@ -27,14 +28,18 @@ export type NxProjectTagOpts = Pick<NxProjectOptions, 'scope' | 'type'>;
  * matching their directory/name handling. For other library projects, domain defaults to `shared`
  * when not explicitly set so that domain-specific code (a consumer workspace's own product
  * domains) can import shared libraries. App projects should always provide an explicit domain.
+ * A multi-segment domain (a subdomain, e.g. `billing/checkout`) is compounded into the flattened
+ * `domain:billing-checkout` tag form ADR 0009 specifies, via the same join `projectDomainToName`
+ * already uses for naming — not passed through as the raw slash-separated string.
  */
 export function createProjectTags<T extends NxProjectOptions>(options: T): NxProjectTags {
   const { scope, type } = options;
   // Tools projects are domain-exempt (no domain:* tag). Otherwise default the domain to 'shared' for
   // library projects so they are reachable by domain-constrained projects via the ESLint boundary
   // rules; apps must set their own domain explicitly.
-  const domain =
+  const rawDomain =
     scope === 'tools' ? undefined : (options.domain ?? (type !== 'app' ? 'shared' : undefined));
+  const domain = rawDomain ? projectDomainToName(rawDomain) : undefined;
   const tagRecord: Record<string, string> = { scope, type };
 
   if (domain) {
