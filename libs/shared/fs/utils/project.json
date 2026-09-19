@@ -1,0 +1,10 @@
+{
+  "name": "shared-fs-utils",
+  "$schema": "../../../../node_modules/nx/schemas/project-schema.json",
+  "sourceRoot": "libs/shared/fs/utils/src",
+  "projectType": "library",
+  "tags": ["domain:shared", "scope:backend", "type:utils"],
+  "targets": {
+    "typecheck": {}
+  }
+}
