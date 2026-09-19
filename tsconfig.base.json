@@ -3,6 +3,7 @@
   "compilerOptions": {
     "rootDir": ".",
     "paths": {
+      "@cybertecpty/fs-utils": ["./libs/shared/fs/utils/src/index.ts"],
       "@cybertecpty/git-utils": ["./tools/git/utils/src/index.ts"],
       "@cybertecpty/github-utils": ["./tools/github/utils/src/index.ts"],
       "@cybertecpty/js-plugin": ["./tools/js/plugin/src/index.ts"],

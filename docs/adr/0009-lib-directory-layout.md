@@ -91,13 +91,17 @@ libs/<domain>[/<subdomain>...]/[<group>/]<type>
 Examples:
 
 ```
-libs/shared/design-system/ui                       domain=shared                          group=design-system        type=ui          → shared-design-system-ui
+libs/shared/design-system/ui                       domain=shared                          group=design-system        type=ui          → design-system-ui [^1]
 libs/game-collector/api                             domain=game-collector                  (no group)                 type=api         → game-collector-api
 libs/game-collector/collection-browser/feature      domain=game-collector                  group=collection-browser   type=feature     → game-collector-collection-browser-feature
 libs/billing/checkout/data-access                   domain=billing  subdomain=checkout     (no group)                 type=data-access → billing-checkout-data-access
 libs/billing/checkout/orchestration/services        domain=billing  subdomain=checkout     group=orchestration        type=services    → billing-checkout-orchestration-services
 libs/billing/invoices/api                           domain=billing  subdomain=invoices     (no group)                 type=api         → billing-invoices-api
 ```
+
+[^1]:
+    The `shared` domain drops from the _name_ here, though not from the directory —
+    see the 2026-09-19 amendment below.
 
 ### Group derivation vs. `--name`
 
@@ -336,3 +340,73 @@ ADR-0009-owned wrapper, and no requirement that library scaffolding be funneled 
 - Which plugin(s) actually build a library-scaffolding generator first is left open —
   this ADR no longer prescribes it, only the shared derivation logic those generators
   must use.
+
+## Amendment (2026-09-19): the `shared` domain drops from the name once a group is present
+
+- Status: accepted
+- Deciders: djmcgrath
+- Implemented by: `projectNameFromOpts` in `tools/nx/utils/src/lib/nx-projects.utils.ts`
+
+`shared-fs-utils` (the first grouped `shared`-domain library scaffolded since this ADR
+landed) read as noisier than it needed to: `shared` stacked in front of an
+already-specific group (`fs`) added a word without adding information — nothing in this
+workspace is ambiguous about whether `fs-utils` is shared, since `scope:`/`domain:` tags
+carry that, not the name. Domains with real product identity (`billing`, `game-collector`)
+don't have this problem — the domain name itself is the information a reader needs
+(`game-collector-collection-browser-feature`).
+
+### Decision
+
+- **`projectNameFromOpts` drops the `domain` segment from the derived name when, and
+  only when, `domain` is the literal string `shared` **and** a `group` is also
+  provided.** `libs/shared/fs/utils` → `fs-utils`, not `shared-fs-utils`.
+- **A group-less `shared` project is unaffected.** `libs/shared/utils` and
+  `libs/shared/types` keep their names (`shared-utils`, `shared-types`) exactly as
+  before — the domain-singleton case has nothing to disambiguate, so `shared` still
+  carries information there.
+- **Directory placement does not change.** `projectDirFromOpts` still places a grouped
+  `shared`-domain project under `libs/shared/<group>/<type>`, and its `domain:shared` tag
+  is unaffected — both are derived from the path, not the name, per the 2026-09-15
+  amendment above. This is the same kind of location/name divergence the base ADR
+  already allows via `--name`, just automatic for this one domain instead of requiring
+  an explicit override every time.
+- **Narrow and literal on purpose.** This does not extend to a future `shared`
+  subdomain (`domain:shared-<subdomain>` would still keep `shared` in the name) or to
+  any other domain that might feel similarly generic — either would need its own
+  decision, not an inferred generalization of this one.
+
+### Rationale
+
+- The whole point of a `<group>` is to be specific enough to stand on its own next to
+  a `<type>` (`fs-utils`, `design-system-ui`) — for every other domain, prefixing it
+  with the domain name adds real information (which product area). For `shared`
+  specifically, "shared" is closer to `scope:`/`type:`'s job than `domain:`'s: it says
+  "not product-specific," not "which thing." A reader scanning project names benefits
+  more from `fs-utils` reading like a self-contained utility than from a domain label
+  that's true of every sibling in `libs/shared/`.
+- Keeping this exception literal to the domain string `shared` (not "any single-word
+  domain," not "any domain the deciders find generic") avoids turning a specific,
+  reviewable call into an ambiguous general rule a future generator author would have
+  to interpret.
+
+### Consequences
+
+- **Positive:** shorter, less redundant names for the case this workspace already has
+  the most of — cross-cutting, grouped `shared` utilities are exactly the `type:utils`/
+  `type:testing` "many-per-domain" case ADR 0009 already expects `group` to be supplied
+  for from the first library.
+- **Negative / risk:** a grouped `shared` project's name no longer matches its directory
+  path segment-for-segment, which `projectDirFromOpts`'s docstring used to guarantee
+  ("the same options yield a directory and a name that agree") — now stated as the one
+  documented exception instead. A human skimming just the project name (not the `nx
+show project` output or the folder) could momentarily read `fs-utils` as a top-level
+  `libs/fs-utils`-style project rather than `libs/shared/fs/utils`.
+- **Negative / risk:** widens the name-collision surface described in the base ADR's
+  "Nx's own duplicate-project-name check is the backstop" note — a grouped `shared`
+  project's name (`<group>-<type>`) can now collide with a hypothetical future product
+  domain's _ungrouped_ singleton of the same type (e.g. a domain literally named `fs`
+  with an ungrouped `type:utils` lib would also want `fs-utils`). Caught at generation
+  time by Nx's duplicate-name check, not silently — but it is a new way for `nx g
+ts-lib`/equivalent to fail that didn't previously exist.
+- No change to tag derivation, `workspaceDomains` parsing, or any `depConstraints` row —
+  this amendment touches naming only.
