@@ -24,14 +24,24 @@ import { LibGeneratorOptions } from './schema';
  * Derives the project's name, directory (`libs/<domain>[/<subdomain>...]/[<group>/]<type>`,
  * ADR 0009), and tags from the shared `nx-utils` helpers rather than taking a raw
  * `directory`, then forwards every other option to `@nx/js:library` unchanged.
+ *
+ * `scope` is resolved before derivation: `type:infra` isn't scope-polymorphic (ADR
+ * 0004), so its `scope:` is always `backend` — a conflicting explicit `--scope` is
+ * rejected rather than silently overridden, since ignoring what the caller actually
+ * asked for would be more surprising than an error. Every other type requires
+ * `--scope` explicitly, and omitting it is a thrown error rather than an inferred
+ * default — unlike `domain`/`group`, there's no single sensible fallback across three
+ * possible scopes.
  */
 export async function libGenerator(
   tree: Tree,
   options: LibGeneratorOptions
 ): Promise<GeneratorCallback> {
-  const name = projectNameFromOpts(options);
-  const directory = projectDirFromOpts(options);
-  const tags = createProjectTags(options).toString();
+  const scope = resolveScope(options);
+  const projectOptions = { ...options, scope };
+  const name = projectNameFromOpts(projectOptions);
+  const directory = projectDirFromOpts(projectOptions);
+  const tags = createProjectTags(projectOptions).toString();
   const unitTestRunner = options.unitTestRunner ?? 'jest';
 
   // A `type:testing` library is never buildable — the same invariant `nx-utils`'s
@@ -85,6 +95,32 @@ export async function libGenerator(
   }
 
   return runTasksInSerial(projectTask);
+}
+
+/**
+ * Resolves the project's `scope:` tag from `options`. `type:infra` is not
+ * scope-polymorphic (ADR 0004) — its scope is always `backend`, and an explicit
+ * `--scope` that disagrees is rejected rather than silently overridden. Every other
+ * `type` requires `--scope` explicitly.
+ */
+function resolveScope(options: LibGeneratorOptions): NonNullable<LibGeneratorOptions['scope']> {
+  if (options.type === 'infra') {
+    if (options.scope && options.scope !== 'backend') {
+      throw new Error(
+        `\`scope\` cannot be "${options.scope}" for \`type:infra\` — it is always \`backend\`. Omit \`--scope\` entirely.`
+      );
+    }
+
+    return 'backend';
+  }
+
+  if (!options.scope) {
+    throw new Error(
+      '`scope` must be provided for every `type` except `infra`, which is always `scope:backend`.'
+    );
+  }
+
+  return options.scope;
 }
 
 export default libGenerator;

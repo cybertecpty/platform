@@ -12,20 +12,27 @@ type NxJsLibraryGeneratorSchema = Parameters<typeof libraryGenerator>[1];
 /**
  * The `type:` values this generator may scaffold — the framework-agnostic subset of
  * the ADR 0004 closed type set. `core`/`feature`/`ui`/`data-access` are Angular-only
- * (`@nx/angular:library`); `api`/`services` are Nest-only (`@nx/nest:library`);
- * `infra` is backend-only and reserved for a future generator of its own; `app`/
- * `plugin` don't apply to a library generator.
+ * (`@nx/angular:library`); `api`/`services` are Nest-only (`@nx/nest:library`); `app`/
+ * `plugin` don't apply to a library generator. `infra` is backend-only and non-Nest —
+ * `@nx/node:library` was considered for it but produces output functionally identical
+ * to `@nx/js:library` for a plain library (same `tsconfig.lib.json`, same default
+ * `testEnvironment: 'node'`), so it's scaffolded here too rather than through a second
+ * generator (see issue #64).
  */
-export type JsLibType = 'models' | 'testing' | 'types' | 'utils';
+export type JsLibType = 'infra' | 'models' | 'testing' | 'types' | 'utils';
 
 /**
  * Inputs to the `js-plugin` `lib` generator — a thin wrapper over `@nx/js:library`.
  *
  * `domain` is required: unlike a `tools/` project, a `libs/` project is never
  * domain-exempt (ADR 0009). `scope` excludes `tools` — this generator always places
- * projects under `libs/`, never `tools/`, and every allowed `type` is scope-polymorphic
- * (ADR 0009 "Scope on the polymorphic types") so it must stay an explicit input rather
- * than fixed. `type` is narrowed to `JsLibType`.
+ * projects under `libs/`, never `tools/`. It's optional here even though the
+ * generator requires it at runtime for every type except `infra`: four of the five
+ * allowed types are scope-polymorphic (ADR 0009 "Scope on the polymorphic types") and
+ * need it as an explicit input, but `infra` is not — its `scope:` is always `backend`,
+ * applied by the generator regardless of input; a conflicting explicit `--scope` for
+ * `type:infra` is a thrown error, not a silent override (see `generator.ts`). `type`
+ * is narrowed to `JsLibType`.
  *
  * `buildable` is dropped in favor of forwarding `@nx/js:library`'s native `bundler`
  * enum unchanged — unlike a plugin, a JS library's buildability isn't a simple
@@ -52,9 +59,14 @@ export type LibGeneratorOptions = SetRequired<
     | 'unitTestRunner'
     | 'linter'
   > & {
-    /** The project's `scope:` tag — always a `libs/` project, so never `tools`. */
-    scope: Exclude<NxProjectScope, 'tools'>;
-    /** The `type:` tag and final directory segment — restricted to the framework-agnostic subset. */
+    /**
+     * The project's `scope:` tag — always a `libs/` project, so never `tools`.
+     * Required for every `type` except `infra`, which is always `scope:backend`
+     * (enforced at runtime in `generator.ts`, not by this type — see the doc comment
+     * above).
+     */
+    scope?: Exclude<NxProjectScope, 'tools'>;
+    /** The `type:` tag and final directory segment — restricted to `JsLibType`. */
     type: JsLibType;
     /** Tool for running lint checks. */
     linter?: 'eslint' | 'none';
