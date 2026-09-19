@@ -34,8 +34,25 @@ describe('projectNameFromOpts', () => {
 
   it('derives `<domain>-<group>-<type>` when both domain and group are provided', () => {
     expect(
+      projectNameFromOpts({
+        domain: 'game-collector',
+        group: 'admin',
+        scope: 'frontend',
+        type: 'ui'
+      })
+    ).toBe('game-collector-admin-ui');
+  });
+
+  it('keeps the `shared` domain in the name when no group is provided', () => {
+    expect(projectNameFromOpts({ domain: 'shared', scope: 'shared', type: 'utils' })).toBe(
+      'shared-utils'
+    );
+  });
+
+  it('drops the `shared` domain from the name once a group is provided', () => {
+    expect(
       projectNameFromOpts({ domain: 'shared', group: 'design-system', scope: 'shared', type: 'ui' })
-    ).toBe('shared-design-system-ui');
+    ).toBe('design-system-ui');
   });
 
   it('returns `name` verbatim, bypassing the derivation formula entirely', () => {

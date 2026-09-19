@@ -1,5 +1,5 @@
 module.exports = {
-  displayName: 'shared-fs-utils',
+  displayName: 'fs-utils',
   preset: '../../../../jest.preset.js',
   testEnvironment: 'node',
   transform: {

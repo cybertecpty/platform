@@ -119,9 +119,11 @@ export function normalizeProjectOptions<T extends NxProjectOptions>(
  * `type` per ADR 0009 (`libs/<domain>[/<subdomain>...]/[<group>/]<type>` or
  * `tools/[<group>/]<type>`), or `apps/<name>` for app projects per ADR 0010.
  *
- * Mirrors `projectNameFromOpts`: the same options yield a directory and a
- * name that agree, and malformed `domain` / `group` input is rejected the
- * same way by both.
+ * Mirrors `projectNameFromOpts` for malformed `domain`/`group` input — both
+ * reject it the same way. Placement and naming otherwise agree, with one
+ * deliberate exception: a grouped `shared`-domain project still lives under
+ * `libs/shared/...` here even though `projectNameFromOpts` drops `shared`
+ * from its *name* (ADR 0009 amendment, 2026-09-19).
  */
 export function projectDirFromOpts(opts: NxProjectOptions): string {
   const { domain, group, name, type } = opts;
@@ -164,6 +166,13 @@ export function projectDirFromOpts(opts: NxProjectOptions): string {
  * `app` projects are a special case: their name consists exclusively of
  * `name`, so `domain`/`group` are ignored for naming purposes and `name` is
  * required.
+ *
+ * The literal `shared` domain is a second special case (ADR 0009 amendment,
+ * 2026-09-19): once a `group` disambiguates the lib, `shared` is dropped from
+ * the *name* (only the name — `projectDirFromOpts` still places it under
+ * `libs/shared/...`), since it reads as noise stacked in front of an already
+ * domain-specific group (`fs-utils`, not `shared-fs-utils`). A group-less
+ * `shared` project (`shared-utils`, `shared-types`) is unaffected.
  */
 export function projectNameFromOpts(opts: NxProjectOptions): string {
   const { domain, group, name: customName, type } = opts;
@@ -187,8 +196,9 @@ export function projectNameFromOpts(opts: NxProjectOptions): string {
   }
 
   let name = '';
+  const dropsSharedFromName = domain === 'shared' && Boolean(group);
 
-  if (domain) {
+  if (domain && !dropsSharedFromName) {
     name = projectDomainToName(domain);
   }
 
