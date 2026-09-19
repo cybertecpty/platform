@@ -142,5 +142,17 @@ describe('fileArchiveGenerator', () => {
         'assets/logo.svg': '<svg></svg>'
       });
     });
+
+    it('reports "already exists" rather than "no files found" when the only file under source is the archive itself', async () => {
+      tree.delete('dist/web/index.html');
+      tree.delete('dist/web/assets/logo.svg');
+      tree.write('dist/web/web.zip', 'stale archive bytes');
+
+      const archivePath = await run(tree, { source: 'dist/web' });
+
+      expect(tree.read(archivePath, 'utf-8')).toBe('stale archive bytes');
+      expect(warn).toHaveBeenCalledWith(expect.stringContaining('already exists'));
+      expect(warn).not.toHaveBeenCalledWith(expect.stringContaining('No files found'));
+    });
   });
 });

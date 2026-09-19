@@ -31,20 +31,24 @@ export async function fileArchiveGenerator(
     options.filename ?? `${basename(source)}.${format}`
   );
 
-  // Exclude the archive's own output path from the walk: `destination` defaults to
-  // `source`, so without this a re-run (especially with `--overwrite`) would embed
-  // the previous run's archive bytes inside the new one.
-  const filePaths = listFilesRecursively(tree, source).filter(filePath => filePath !== archivePath);
-
-  if (filePaths.length === 0) {
-    logger.warn(`No files found under "${source}"; skipping archive creation.`);
-    return archivePath;
-  }
-
+  // Checked ahead of the "no files" guard below (against `archivePath` directly,
+  // not the post-exclusion walk): otherwise, a `source` whose only file is a
+  // pre-existing archive at `archivePath` would report "no files found" instead
+  // of "already exists" — true but misleading about *why* nothing was written.
   if (tree.exists(archivePath) && !overwrite) {
     logger.warn(
       `"${archivePath}" already exists; pass --overwrite to replace it. Skipping archive creation.`
     );
+    return archivePath;
+  }
+
+  // Exclude the archive's own output path from the walk: `destination` defaults to
+  // `source`, so without this a re-run with `--overwrite` would embed the previous
+  // run's archive bytes inside the new one.
+  const filePaths = listFilesRecursively(tree, source).filter(filePath => filePath !== archivePath);
+
+  if (filePaths.length === 0) {
+    logger.warn(`No files found under "${source}"; skipping archive creation.`);
     return archivePath;
   }
 
