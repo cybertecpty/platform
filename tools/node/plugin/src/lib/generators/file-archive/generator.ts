@@ -1,4 +1,5 @@
 import { FileBufferArchiver, type FileArchiveSource } from '@cybertecpty/fs-utils';
+import { listFilesRecursively } from '@cybertecpty/nx-utils';
 import { joinPathFragments, logger, normalizePath, type Tree } from '@nx/devkit';
 import { basename, posix } from 'node:path';
 import type { FileArchiveGeneratorOptions } from './schema';
@@ -33,7 +34,7 @@ export async function fileArchiveGenerator(
   // Exclude the archive's own output path from the walk: `destination` defaults to
   // `source`, so without this a re-run (especially with `--overwrite`) would embed
   // the previous run's archive bytes inside the new one.
-  const filePaths = collectFiles(tree, source).filter(filePath => filePath !== archivePath);
+  const filePaths = listFilesRecursively(tree, source).filter(filePath => filePath !== archivePath);
 
   if (filePaths.length === 0) {
     logger.warn(`No files found under "${source}"; skipping archive creation.`);
@@ -64,21 +65,6 @@ export async function fileArchiveGenerator(
   logger.info(`Archive created: ${archivePath} (${buffer.length} bytes)`);
 
   return archivePath;
-}
-
-/**
- * Recursively lists every file under `dir`, workspace-relative, regardless of
- * `.gitignore` status. Deliberately not `@nx/devkit`'s `visitNotIgnoredFiles`,
- * which skips gitignored paths entirely — this generator must also work against
- * gitignored build output (e.g. `dist/`), which that helper would silently visit
- * zero files under.
- */
-function collectFiles(tree: Tree, dir: string): string[] {
-  return tree.children(dir).flatMap(child => {
-    const childPath = joinPathFragments(dir, child);
-
-    return tree.isFile(childPath) ? [childPath] : collectFiles(tree, childPath);
-  });
 }
 
 export default fileArchiveGenerator;
