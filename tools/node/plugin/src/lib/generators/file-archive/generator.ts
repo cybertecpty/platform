@@ -47,15 +47,21 @@ export async function fileArchiveGenerator(
     return archivePath;
   }
 
+  logger.info(`Creating archive file from source path: ${options.source} ...`);
+
   const sources: FileArchiveSource[] = filePaths.map(filePath => ({
     name: posix.relative(source, filePath),
     content: tree.read(filePath) as Buffer
   }));
 
+  logger.info(`Found ${sources.length} files to include in the archive.`);
+
   const archiver = new FileBufferArchiver(...sources);
   const buffer = format === 'tar' ? await archiver.tar({ gzip: false }) : await archiver.zip();
 
   tree.write(archivePath, buffer);
+
+  logger.info(`Archive created: ${archivePath} (${buffer.length} bytes)`);
 
   return archivePath;
 }
