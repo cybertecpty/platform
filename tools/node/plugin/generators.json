@@ -1,0 +1,9 @@
+{
+  "generators": {
+    "file-archive": {
+      "factory": "./src/lib/generators/file-archive/generator",
+      "schema": "./src/lib/generators/file-archive/schema.json",
+      "description": "Archive a directory's files into a zip or tar"
+    }
+  }
+}
