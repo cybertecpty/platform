@@ -5,6 +5,16 @@
   "projectType": "library",
   "tags": ["domain:shared", "scope:backend", "type:utils"],
   "targets": {
+    "build": {
+      "executor": "@nx/js:tsc",
+      "outputs": ["{options.outputPath}"],
+      "options": {
+        "outputPath": "dist/libs/shared/fs/utils",
+        "main": "libs/shared/fs/utils/src/index.ts",
+        "tsConfig": "libs/shared/fs/utils/tsconfig.lib.json",
+        "assets": ["libs/shared/fs/utils/*.md"]
+      }
+    },
     "typecheck": {}
   }
 }
