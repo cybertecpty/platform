@@ -1,1 +1,1 @@
-export * from './lib/file-archiver';
+export * from './lib/file-archiver.util';

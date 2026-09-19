@@ -5,7 +5,7 @@ import { join } from 'node:path';
 import { Readable } from 'node:stream';
 import * as tar from 'tar';
 
-import { FileArchiveSource, FileBufferArchiver, FileStreamArchiver } from './file-archiver';
+import { FileArchiveSource, FileBufferArchiver, FileStreamArchiver } from './file-archiver.util';
 
 const readableToBuffer = async (stream: Readable): Promise<Buffer> => {
   const chunks: Buffer[] = [];
