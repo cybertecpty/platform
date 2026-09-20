@@ -4,6 +4,11 @@
       "factory": "./src/lib/generators/file-archive/generator",
       "schema": "./src/lib/generators/file-archive/schema.json",
       "description": "Archive a directory's files into a zip or tar"
+    },
+    "package-json": {
+      "factory": "./src/lib/generators/package-json/generator",
+      "schema": "./src/lib/generators/package-json/schema.json",
+      "description": "Create a minimal package.json in a directory"
     }
   }
 }
