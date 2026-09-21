@@ -1,0 +1,79 @@
+{
+  "$schema": "https://json-schema.org/schema",
+  "cli": "nx",
+  "$id": "PackageJsonGenerator",
+  "title": "Create a minimal package.json in a directory",
+  "description": "Writes a minimal, workspace-scoped package.json into a target directory, with optional fields for deployable Node packages and dependency versions copied from the root package.json.",
+  "type": "object",
+  "examples": [
+    {
+      "command": "nx g node-plugin:package-json libs/tools --name widget",
+      "description": "Creates libs/tools/package.json with the workspace scope and default version."
+    },
+    {
+      "command": "nx g node-plugin:package-json libs/contracts --name api-contracts --private=false --vers=2.3.4",
+      "description": "Creates a public package.json with an explicit version."
+    },
+    {
+      "command": "nx g node-plugin:package-json apps/cybertecpty --name cybertecpty --main=server/server.mjs --nodeEngine=\"^20.19.0 || ^22.12.0 || ^24.0.0\" --startScript=\"node server/server.mjs\" --dependencies=@angular/common,@angular/core --overwrite",
+      "description": "Creates a deployable Angular SSR app's package.json, copying dependency versions from the root package.json."
+    }
+  ],
+  "properties": {
+    "dir": {
+      "type": "string",
+      "description": "Directory the package.json is created in, relative to the workspace root.",
+      "x-priority": "important",
+      "x-prompt": "Which directory should the package.json be created in?",
+      "$default": {
+        "$source": "argv",
+        "index": 0
+      }
+    },
+    "name": {
+      "type": "string",
+      "description": "Package name without the workspace npm scope. The final name is `<workspaceScope>/<name>`.",
+      "x-priority": "important",
+      "x-prompt": "What is the package name (without the workspace scope)?"
+    },
+    "dependencies": {
+      "type": "array",
+      "items": { "type": "string" },
+      "description": "Dependency names to copy from the root package.json's `dependencies`/`devDependencies` into the generated file's `dependencies`. Throws if any name isn't found in either map."
+    },
+    "main": {
+      "type": "string",
+      "description": "Entry point written to `main`. Omitted when not provided."
+    },
+    "nodeEngine": {
+      "type": "string",
+      "description": "Semver range written to `engines.node`. Omitted when not provided."
+    },
+    "overwrite": {
+      "type": "boolean",
+      "default": false,
+      "description": "Replace an existing package.json at the resolved path. Without this, an existing file is left untouched (with a warning). This is a full replace, not a merge."
+    },
+    "private": {
+      "type": "boolean",
+      "default": true,
+      "description": "Marks the package private. Omitted entirely (not written as false) when set to false."
+    },
+    "skipFormat": {
+      "type": "boolean",
+      "default": false,
+      "description": "Skip formatting generated files.",
+      "x-priority": "internal"
+    },
+    "startScript": {
+      "type": "string",
+      "description": "Command written to `scripts.start`. Omitted when not provided."
+    },
+    "vers": {
+      "type": "string",
+      "default": "0.0.1",
+      "description": "Explicit semantic version written to `version`."
+    }
+  },
+  "required": ["dir", "name"]
+}
