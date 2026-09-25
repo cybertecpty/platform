@@ -1,0 +1,167 @@
+@import 'tailwindcss';
+
+/* ============================================================================
+   Design tokens. Usable both as raw CSS variables and, through the @theme blocks
+   below, as Tailwind utilities (bg-ink, text-copper, font-display, rounded-md,
+   max-w-site, px-pad-x, py-section, …).
+   Usage ratio: ~Ink 60% / Paper 25% / Copper 10% / Brass+Blueprint+Steel 5%.
+   Copper is an accent only — never body-size text on Ink (fails AA).
+   ============================================================================ */
+:root {
+  /* color */
+  --ink: #14110d; /* primary bg (warm near-black) */
+  --paper: #e8e3d8; /* light sections; body text on dark */
+  --copper: #c66b3d; /* accent, links, CTAs, mark */
+  --copper-on-paper: #9a4a28; /* deeper copper for copper text on Paper (AA) */
+  --brass: #b8965a; /* hairlines, fine detail, secondary emphasis */
+  --blueprint: #273d4b; /* contact surface */
+  --steel: #857c6b; /* captions, mono labels, muted text (AA on Ink, ≥4.5:1) */
+  --body-on-ink: #c9c3b6; /* body text color on Ink (Paper-tinted) */
+
+  /* Channel form of --brass (184 150 90), for alpha compositing in the
+     blueprint grid and hairline primitives below without re-stating the hex. */
+  --brass-rgb: 184 150 90;
+
+  /* Channel form of --copper (198 107 61), for alpha compositing (e.g. the Hero
+     CTA glow) via rgb(var(--copper-rgb) / <a>) without re-stating the hex. */
+  --copper-rgb: 198 107 61;
+
+  /* Channel form of --ink (20 17 13), for alpha compositing (e.g. the sticky
+     header's translucent bar) via rgb(var(--ink-rgb) / <a>). */
+  --ink-rgb: 20 17 13;
+
+  /* Channel form of --paper (232 227 216), for alpha compositing (e.g. low-alpha
+     Paper labels, outline borders, and hairlines on the Blueprint contact surface)
+     via rgb(var(--paper-rgb) / <a>). */
+  --paper-rgb: 232 227 216;
+
+  /* layout */
+  --maxw: 1180px;
+  --pad-x: 28px;
+  --grid-texture: 46px;
+}
+
+/* Tokens whose names are also Tailwind theme namespaces (--font-*, --radius-*) are
+   defined here directly; Tailwind emits them on :root as well. */
+@theme {
+  /* type */
+  --font-display: 'Fraunces Variable', 'Fraunces', serif; /* headings, wordmark */
+  --font-body: 'IBM Plex Sans', sans-serif; /* body/UI */
+  --font-mono: 'IBM Plex Mono', monospace; /* eyebrows, labels, tagline */
+
+  /* radius */
+  --radius-sm: 2px; /* buttons, chips */
+  --radius-md: 3px; /* portrait, cards */
+
+  /* Standard section vertical rhythm (~104px top/bottom). */
+  --spacing-section: 6.5rem;
+}
+
+/* The remaining tokens map onto the :root variables above, so :root stays the single
+   source of their values. */
+@theme inline {
+  --color-ink: var(--ink);
+  --color-paper: var(--paper);
+  --color-copper: var(--copper);
+  --color-brass: var(--brass);
+  --color-blueprint: var(--blueprint);
+  --color-steel: var(--steel);
+  --color-body-on-ink: var(--body-on-ink);
+
+  --container-site: var(--maxw);
+  --spacing-pad-x: var(--pad-x);
+}
+
+@layer base {
+  /* Smooth in-page scrolling, but only for users who haven't asked for reduced
+     motion — honoring prefers-reduced-motion avoids triggering vestibular
+     discomfort (WCAG 2.3.3 Animation from Interactions). */
+  @media (prefers-reduced-motion: no-preference) {
+    html {
+      scroll-behavior: smooth;
+    }
+  }
+
+  /* Visible keyboard/AT focus ring on all interactive elements (copper, works on
+     every surface). The outline conforms to each element's own border-radius. */
+  :focus-visible {
+    outline: 2px solid var(--copper);
+    outline-offset: 2px;
+  }
+
+  /* Suppress the UA focus outline for mouse/touch focus in browsers that don't
+     already gate it behind :focus-visible. */
+  :focus:not(:focus-visible) {
+    outline: none;
+  }
+
+  body {
+    background-color: var(--ink);
+    color: var(--body-on-ink);
+    font-family: var(--font-body);
+    -webkit-font-smoothing: antialiased;
+  }
+
+  /* Copper text selection across the page. */
+  ::selection {
+    background: var(--copper);
+    color: var(--ink);
+  }
+}
+
+/* Centered content column — 1180px max width, 28px horizontal gutters. */
+@utility site-container {
+  @apply max-w-site px-pad-x mx-auto w-full;
+}
+
+/* Blueprint grid texture: two layered linear-gradients on a 46px grid.
+   --blueprint-grid-alpha controls line opacity — 0.05 on Hero (default),
+   0.04 on About (via .blueprint-grid-soft). */
+@utility blueprint-grid {
+  --blueprint-grid-alpha: 0.05;
+  background-image:
+    linear-gradient(rgb(var(--brass-rgb) / var(--blueprint-grid-alpha)) 1px, transparent 1px),
+    linear-gradient(90deg, rgb(var(--brass-rgb) / var(--blueprint-grid-alpha)) 1px, transparent 1px);
+  background-size: var(--grid-texture) var(--grid-texture);
+}
+
+@utility blueprint-grid-soft {
+  --blueprint-grid-alpha: 0.04;
+}
+
+/* Brass hairlines at the low-alpha range (0.14–0.22). */
+@utility hairline-t {
+  border-top: 1px solid rgb(var(--brass-rgb) / 0.18);
+}
+
+@utility hairline-b {
+  border-bottom: 1px solid rgb(var(--brass-rgb) / 0.18);
+}
+
+@utility hairline-strong-t {
+  border-top: 1px solid rgb(var(--brass-rgb) / 0.22);
+}
+
+/* 1px-gap hairline grid: lay cells (bg-ink) on this brass background; the 1px
+   grid gaps and surrounding border read as hairline dividers between cells.
+   Used by the Services and Experience-stats grids. */
+@utility hairline-grid {
+  gap: 1px;
+  background-color: rgb(var(--brass-rgb) / 0.18);
+  border: 1px solid rgb(var(--brass-rgb) / 0.18);
+}
+
+/* Italic-copper headline accent (e.g. Hero "made to last"). Hand-written
+   because it combines the display face's italic axis with the copper token at
+   a heavier optical weight than the surrounding 400-weight headline. */
+@utility accent-italic {
+  font-style: italic;
+  font-weight: 500;
+  color: var(--copper);
+}
+
+/* On the Paper surface, copper text must use the deeper --copper-on-paper to
+   meet AA; pair with .accent-italic. */
+@utility accent-italic-on-paper {
+  color: var(--copper-on-paper);
+}

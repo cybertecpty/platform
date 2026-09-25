@@ -1,0 +1,40 @@
+---
+const services = [
+  {
+    kicker: 'Build',
+    title: 'Full-stack contractor work',
+    body: 'Building scalable Angular frontends backed by Node.js, Express, Firebase, ASP.NET Core, and SQL databases. I take complete ownership of the full-stack slice, from architecture through deployment and long-term maintenance.'
+  },
+  {
+    kicker: 'Modernize',
+    title: 'AngularJS to Angular migration',
+    body: 'Moving legacy systems off AngularJS, outdated Angular versions, and older stacks onto modern Angular (Signals, Standalone Components) and Nx monorepos — incrementally, without freezing your product roadmap or disrupting active developer workflows.'
+  },
+  {
+    kicker: 'Consult',
+    title: 'Angular consulting & Nx monorepos',
+    body: 'Hands-on Angular consulting on architecture, Nx monorepo setup, NgRx state management, testing strategy, and accessibility. I also mentor developers new to Angular so the team establishes clean, maintainable patterns that outlast the engagement.'
+  }
+];
+---
+
+<section id="services">
+  <div class="site-container py-section">
+    {/* The section's only label, so it is the section heading (h2). */}
+    <h2 class="font-mono text-xs uppercase tracking-[0.16em] text-steel">01 — How I can help</h2>
+
+    {/* 1px-gap hairline grid: brass background shows through as dividers between
+        the ink cells. auto-fit + min() so it collapses cleanly on mobile. */}
+    <ul class="mt-12 grid grid-cols-[repeat(auto-fit,minmax(min(280px,100%),1fr))] hairline-grid">
+      {services.map(service => (
+        <li class="bg-ink px-[34px] py-[40px]">
+          <p class="font-mono text-xs uppercase tracking-[0.16em] text-copper">{service.kicker}</p>
+          <h3 class="mt-3 font-display text-2xl font-medium leading-snug text-paper">
+            {service.title}
+          </h3>
+          <p class="mt-3 text-[15px] leading-[1.6] text-body-on-ink">{service.body}</p>
+        </li>
+      ))}
+    </ul>
+  </div>
+</section>

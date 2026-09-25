@@ -1,9 +1,21 @@
 import eslintComments from '@eslint-community/eslint-plugin-eslint-comments/configs';
 import ngrx from '@ngrx/eslint-plugin';
 import nx from '@nx/eslint-plugin';
+import vitest from '@vitest/eslint-plugin';
 import eslintConfigPrettier from 'eslint-config-prettier';
+import astro from 'eslint-plugin-astro';
 import jest from 'eslint-plugin-jest';
+import playwright from 'eslint-plugin-playwright';
 import tseslint from 'typescript-eslint';
+
+// Projects that test with Vitest instead of Jest: Astro content sites only (ADR 0007,
+// 2026-09-23 amendment). Flat config globs can't read project tags, so they are listed
+// by path.
+const vitestSpecFiles = ['apps/cybertec-io/**/*.{spec,test}.ts'];
+
+// type:e2e projects (ADR 0010): Playwright, not Jest — same "list by path" reason as
+// vitestSpecFiles above.
+const playwrightSpecFiles = ['apps/*-e2e/**/*.spec.ts'];
 
 const lodashMessage =
   'Import from lodash-es instead so bundle builds can tree-shake lodash utilities.';
@@ -25,6 +37,7 @@ export default [
       '**/playwright-report',
       '**/__screenshots__',
       '**/.angular',
+      '**/.astro',
       '**/.remember',
       // Jest config files (root + per-project) are tooling, not lint targets; the
       // root `jest.config.ts` is also outside every tsconfig, which trips the
@@ -339,6 +352,7 @@ export default [
     // no-disabled-tests, valid-expect, ...); the overrides below relax
     // TS rules that are noise in test code.
     files: ['**/*.{spec,test}.ts', '**/*.{mock,mocks}.ts'],
+    ignores: [...vitestSpecFiles, ...playwrightSpecFiles],
     ...jest.configs['flat/recommended'],
     rules: {
       ...jest.configs['flat/recommended'].rules,
@@ -347,6 +361,43 @@ export default [
       '@typescript-eslint/no-explicit-any': 'off',
       '@typescript-eslint/no-non-null-assertion': 'off'
     }
+  },
+  {
+    // Vitest lint rules for the Vitest projects' spec files (see `vitestSpecFiles`), in
+    // place of the Jest block above. Same TS relaxations as the Jest block.
+    files: vitestSpecFiles,
+    ...vitest.configs.recommended,
+    rules: {
+      ...vitest.configs.recommended.rules,
+      '@nx/enforce-module-boundaries': 'off',
+      '@typescript-eslint/no-empty-function': 'off',
+      '@typescript-eslint/no-explicit-any': 'off',
+      '@typescript-eslint/no-non-null-assertion': 'off'
+    }
+  },
+  {
+    // Playwright lint rules for e2e spec files (see `playwrightSpecFiles`), in place of
+    // the Jest block above — no TS relaxation block needed, e2e specs don't lean on
+    // mock `any`s the way unit specs do.
+    files: playwrightSpecFiles,
+    ...playwright.configs['flat/recommended'],
+    rules: {
+      ...playwright.configs['flat/recommended'].rules,
+      '@nx/enforce-module-boundaries': 'off'
+    }
+  },
+  // Astro components (ADR 0012). `flat/recommended` parses `.astro` files and lints their
+  // frontmatter and `<script>` blocks as virtual `*.astro/*.{js,ts}` files. Its
+  // rules-only entry has no `files`, so it is scoped to `.astro` here to keep it off
+  // everything else.
+  ...astro.configs['flat/recommended'].map(config =>
+    config.files || config.plugins ? config : { ...config, files: ['**/*.astro'] }
+  ),
+  {
+    // Those virtual script files aren't in any tsconfig, so type-aware rules can't run
+    // on them (the same reason JS files are excluded above).
+    files: ['**/*.astro', '**/*.astro/*.{js,ts}'],
+    ...tseslint.configs.disableTypeChecked
   },
   {
     // A stale `eslint-disable` should not rot silently as the ruleset tightens.

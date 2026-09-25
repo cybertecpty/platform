@@ -1,12 +1,13 @@
 # 10. App physical layout — flat directory, explicit tags, exclusive naming
 
-- Status: proposed
+- Status: accepted
 - Date: 2026-09-04
 - Deciders: djmcgrath
-- Implemented by (planned): the same wrapper generator planned in ADR 0009; the
-  `type === 'app'` naming special case in `projectNameFromOpts`
-  (`tools/nx/utils/src/lib/nx-projects.ts`) already implements the naming half of this
-  ADR — directory placement and tag assignment do not yet have an implementation.
+- Implemented by: the `type === 'app'` naming special case in `projectNameFromOpts`
+  (`tools/nx/utils/src/lib/nx-projects.ts`), already shipped; `apps/cybertec-io-e2e`
+  (2026-09-24) as the first `type:e2e` project under this ADR's placement/naming rule,
+  hand-authored — the wrapper generator planned in ADR 0009 does not yet scaffold apps
+  or e2e projects (see Negative/risks below, unchanged by this acceptance).
 
 ## Context and problem statement
 
@@ -150,3 +151,5 @@ _decision_, not the code.
   covers.
 - `tools/nx/utils/src/lib/nx-projects.ts` — `projectNameFromOpts`'s `type === 'app'`
   branch, the already-shipped implementation of this ADR's naming decision.
+- ADR 0012 (`astro-content-sites`) — `apps/cybertec-io`, the app `apps/cybertec-io-e2e`
+  pairs with under this ADR's `type:e2e` placement rule.

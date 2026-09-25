@@ -1,0 +1,24 @@
+---
+const facts = [
+  {
+    label: 'Contracting entities',
+    value:
+      'CyberTec LLC (US) — C2C, W-9 · Cyber Technologies Development & Consulting, S.A. (Panama)'
+  },
+  { label: 'Hours', value: 'UTC-5 — full overlap with US Eastern and Central business hours' },
+  { label: 'Engagements', value: 'Long-term, full-time remote contracts' }
+];
+---
+
+<section class="hairline-t">
+  <div class="site-container py-12">
+    <dl class="grid grid-cols-[repeat(auto-fit,minmax(min(260px,100%),1fr))] gap-x-10 gap-y-6 font-mono text-xs">
+      {facts.map(fact => (
+        <div>
+          <dt class="uppercase tracking-[0.16em] text-brass">{fact.label}</dt>
+          <dd class="mt-1 text-body-on-ink">{fact.value}</dd>
+        </div>
+      ))}
+    </dl>
+  </div>
+</section>

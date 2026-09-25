@@ -1,0 +1,93 @@
+---
+const navLinks = [
+  { label: 'How I help', href: '#services' },
+  { label: 'Stack', href: '#skills' },
+  { label: 'How I work', href: '#principles' },
+  { label: 'Experience', href: '#experience' },
+  { label: 'About', href: '#about' }
+];
+
+const linkClass =
+  'font-mono text-xs uppercase tracking-[0.12em] text-[#b8b3a6] transition-colors hover:text-paper';
+const hireClass =
+  'rounded-sm border border-[rgb(var(--copper-rgb)/0.45)] px-4 py-[9px] font-mono text-xs uppercase text-copper transition-colors hover:border-copper hover:bg-copper hover:text-ink';
+---
+
+<header class="sticky top-0 z-50 backdrop-blur-[10px] hairline-b bg-[rgb(var(--ink-rgb)/0.82)]">
+  <div class="site-container flex items-center justify-between gap-4 py-[18px]">
+    {/* Brand lockup — copper mark + Paper wordmark, links to top. The mark is
+        decorative (alt=""); the adjacent wordmark names the link. */}
+    <a href="#top" class="flex items-center gap-3">
+      <img src="/brand/cybertec-mark-copper.svg" alt="" width="36" height="36" />
+      <span class="font-display text-[23px] font-medium tracking-[-0.01em] text-paper">
+        CyberTec
+      </span>
+    </a>
+
+    {/* Desktop nav (lg+) — inline. Below lg uses the disclosure so the brand +
+        five mono links + CTA never overflow the ~712px content row at md (768). */}
+    <nav class="hidden items-center gap-x-8 lg:flex" aria-label="Primary">
+      <ul class="flex items-center gap-x-8">
+        {navLinks.map(link => (
+          <li>
+            <a href={link.href} class={linkClass}>
+              {link.label}
+            </a>
+          </li>
+        ))}
+      </ul>
+      <a href="#contact" class={hireClass}>
+        Hire me
+      </a>
+    </nav>
+
+    {/* Mobile/tablet disclosure (below lg) — <details> hamburger; the script
+        below closes it after a nav link is tapped (the only JS, progressive). */}
+    <details class="relative lg:hidden">
+      <summary class="-mr-2 flex min-h-[44px] min-w-[44px] cursor-pointer list-none items-center justify-center text-paper [&::-webkit-details-marker]:hidden">
+        <span class="sr-only">Menu</span>
+        <svg
+          width="24"
+          height="24"
+          viewBox="0 0 24 24"
+          fill="none"
+          stroke="currentColor"
+          stroke-width="2"
+          stroke-linecap="round"
+          aria-hidden="true"
+        >
+          <path d="M3 6h18M3 12h18M3 18h18"></path>
+        </svg>
+      </summary>
+      <nav
+        class="absolute right-0 top-full mt-3 w-56 rounded-sm border border-[rgb(var(--brass-rgb)/0.22)] bg-ink p-5"
+        aria-label="Primary"
+      >
+        <ul class="flex flex-col gap-4">
+          {navLinks.map(link => (
+            <li>
+              <a href={link.href} class={linkClass}>
+                {link.label}
+              </a>
+            </li>
+          ))}
+        </ul>
+        <a href="#contact" class={`${hireClass} mt-5 inline-block`}>
+          Hire me
+        </a>
+      </nav>
+    </details>
+  </div>
+</header>
+
+<script>
+  // Closes the mobile disclosure after a nav link inside it is tapped. A typed
+  // listener (rather than an inline onclick) so the event parameter isn't
+  // resolved against the deprecated global `Window.event`.
+  const disclosure = document.querySelector<HTMLDetailsElement>('header details');
+  disclosure?.addEventListener('click', event => {
+    if ((event.target as HTMLElement).closest('a')) {
+      disclosure.removeAttribute('open');
+    }
+  });
+</script>
