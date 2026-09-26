@@ -1,0 +1,98 @@
+---
+import '@fontsource-variable/fraunces/opsz.css';
+import '@fontsource-variable/fraunces/opsz-italic.css';
+import '@fontsource/ibm-plex-sans/400.css';
+import '@fontsource/ibm-plex-sans/500.css';
+import '@fontsource/ibm-plex-mono/400.css';
+import '@fontsource/ibm-plex-mono/500.css';
+import '../styles/global.css';
+
+interface Props {
+  title?: string;
+  description?: string;
+}
+
+const {
+  title = 'CyberTec — Senior Full-Stack Engineer & Angular Consultant',
+  description = 'Daniel McGrath is a senior full-stack engineer and Angular consultant with 15+ years of experience, available for long-term, full-time remote contract engagements.'
+} = Astro.props;
+
+const canonical = Astro.site ? new URL(Astro.url.pathname, Astro.site).href : Astro.url.href;
+
+const ogImage = new URL('/og-image.png', Astro.site ?? Astro.url).href;
+
+const personLd = {
+  '@context': 'https://schema.org',
+  '@type': 'Person',
+  name: 'Daniel McGrath',
+  alternateName: 'CyberTec',
+  jobTitle: 'Senior Full-Stack Engineer & Angular Consultant',
+  description:
+    'Senior Full-Stack Engineer and Angular Consultant available for long-term, full-time remote contract engagements, with a focus on legacy Angular/AngularJS migrations and Nx monorepos.',
+  url: 'https://cybertec.io',
+  email: 'contact@cybertec.io',
+  knowsAbout: [
+    'Angular Development',
+    'Angular Consulting',
+    'Full-Stack Development',
+    'SQL Databases',
+    'Nx Monorepos',
+    'TypeScript',
+    'RxJS',
+    'NgRx',
+    'Node.js',
+    'Nx',
+    'Firebase',
+    'Azure'
+  ],
+  alumniOf: { '@type': 'CollegeOrUniversity', name: 'Florida State University' },
+  address: { '@type': 'PostalAddress', addressCountry: 'PA' },
+  sameAs: ['https://github.com/cybertecpty', 'https://linkedin.com/in/djmcgrath101']
+};
+---
+
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>{title}</title>
+    <meta name="description" content={description} />
+    <link rel="canonical" href={canonical} />
+    <meta name="theme-color" content="#14110d" />
+
+    {/* Open Graph / Twitter, with the 1200×630 brand social card. */}
+    <meta property="og:type" content="website" />
+    <meta property="og:site_name" content="CyberTec" />
+    <meta property="og:title" content={title} />
+    <meta property="og:description" content={description} />
+    <meta property="og:url" content={canonical} />
+    <meta property="og:image" content={ogImage} />
+    <meta property="og:image:width" content="1200" />
+    <meta property="og:image:height" content="630" />
+    <meta property="og:image:alt" content="CyberTec — Code, crafted with care." />
+    <meta name="twitter:card" content="summary_large_image" />
+    <meta name="twitter:title" content={title} />
+    <meta name="twitter:description" content={description} />
+    <meta name="twitter:image" content={ogImage} />
+
+    {/* Brand favicon: ink mark on a copper field. SVG for modern browsers, with
+        a multi-resolution .ico fallback (16/32/48) for those without SVG icon
+        support. */}
+    <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
+    <link rel="icon" href="/favicon.ico" sizes="any" />
+
+    <script type="application/ld+json" set:html={JSON.stringify(personLd)}></script>
+    {/* Brand fonts are self-hosted via @fontsource (imported above) — no
+        third-party font request. */}
+  </head>
+  <body>
+    {/*
+      Plain shell — no global content container. Each section applies
+      `.site-container` (1180px / 28px gutters) to its own inner wrapper so
+      full-bleed backgrounds (Hero blueprint grid, contact surface) can span the
+      full viewport while their content stays centered.
+    */}
+    <slot />
+  </body>
+</html>

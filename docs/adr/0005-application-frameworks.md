@@ -196,3 +196,18 @@ C. **Split the setup** — project references for backend libs, path-alias for f
   `nx migrate`.
 - angular/angular#37276 — Angular + TypeScript project references incompatibility.
 - nrwl/nx#29940, #30540 — `@nx/angular` generators reject the project-references setup.
+
+## Amendment (2026-09-23): Astro for static content sites
+
+- Status: accepted
+- Deciders: djmcgrath
+
+The "adding a third application stack requires a new ADR" rule above has its first case:
+ADR 0012 (`astro-content-sites`) allows **Astro for static or mostly static content
+sites** (marketing, docs, landing pages), starting with `apps/cybertec-io`.
+
+- **Product frontends are still Angular.** The exception covers content sites only.
+- **No new `type:` tag values.** An Astro site is `type:app` + `scope:frontend`, and ADR
+  0004's catalog is unchanged.
+- **Not plugin-managed.** Astro has no first-party Nx plugin, so the "framework tooling is
+  the Nx plugins" rule above does not apply to it. Upgrades are manual. See ADR 0012.

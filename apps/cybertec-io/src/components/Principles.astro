@@ -1,0 +1,53 @@
+---
+const principles = [
+  {
+    num: 'I',
+    title: 'Tame the complexity',
+    body: 'Complexity is the real enemy — not bug count. I build deep modules behind simple interfaces, keeping the system easy to reason about and safe to change as it grows.'
+  },
+  {
+    num: 'II',
+    title: 'Speak the language of the problem',
+    body: 'Good software starts with understanding the business, not the tech. I learn how your team actually talks about the domain and model it in that language — so the code and the conversation stay in sync.'
+  },
+  {
+    num: 'III',
+    title: 'No surprises',
+    body: "Clear communication, honest estimates, and steady updates. You'll always know where things stand — and you'll hear the hard truth before it becomes an expensive one."
+  },
+  {
+    num: 'IV',
+    title: 'Leave it better than I found it',
+    body: "I'm usually working in code someone else wrote, under real constraints. I improve what I touch — a little cleaner, a little safer each pass — without demanding a rewrite to do it."
+  },
+  {
+    num: 'V',
+    title: 'Pragmatism over dogma',
+    body: 'Principles serve the project, not the other way around. I know when good-enough is the right call and ship real value on real deadlines — the craft is in the judgment, not in gold-plating.'
+  }
+];
+---
+
+<section id="principles">
+  <div class="site-container py-section">
+    <p class="font-mono text-xs uppercase tracking-[0.16em] text-steel">03 — How I work</p>
+
+    <h2 class="mt-5 max-w-[20ch] font-display text-[clamp(30px,4.4vw,48px)] font-normal leading-[1.1] tracking-[-0.02em] text-paper">
+      What it's like to <span class="accent-italic">work with me</span>.
+    </h2>
+
+    <div class="mt-12 grid grid-cols-[repeat(auto-fit,minmax(min(300px,100%),1fr))] gap-x-[44px] gap-y-[48px]">
+      {principles.map(p => (
+        <article>
+          <p class="border-b border-[rgb(var(--brass-rgb)/0.22)] pb-3 font-mono text-xs tracking-[0.16em] text-brass">
+            {p.num}
+          </p>
+          <h3 class="mt-4 font-display text-[23px] font-medium leading-snug text-paper">
+            {p.title}
+          </h3>
+          <p class="mt-3 text-[15px] leading-[1.55] text-body-on-ink">{p.body}</p>
+        </article>
+      ))}
+    </div>
+  </div>
+</section>

@@ -1,0 +1,118 @@
+---
+const navLinks = [
+  { label: 'How I help', href: '#services' },
+  { label: 'Stack', href: '#skills' },
+  { label: 'How I work', href: '#principles' },
+  { label: 'Experience', href: '#experience' },
+  { label: 'About', href: '#about' }
+];
+
+const linkClass =
+  'font-mono text-xs uppercase tracking-[0.12em] text-[#b8b3a6] transition-colors hover:text-paper';
+const hireClass =
+  'rounded-sm border border-[rgb(var(--copper-rgb)/0.45)] px-4 py-[9px] font-mono text-xs uppercase text-copper transition-colors hover:border-copper hover:bg-copper hover:text-ink';
+const githubIconClass =
+  'inline-flex items-center text-[#b8b3a6] transition-colors hover:text-paper';
+const githubHref = 'https://github.com/cybertecpty';
+---
+
+<header class="sticky top-0 z-50 backdrop-blur-[10px] hairline-b bg-[rgb(var(--ink-rgb)/0.82)]">
+  <div class="site-container flex items-center justify-between gap-4 py-[18px]">
+    {/* Brand lockup — copper mark + Paper wordmark, links to top. The mark is
+        decorative (alt=""); the adjacent wordmark names the link. */}
+    <a href="#top" class="flex items-center gap-3">
+      <img src="/brand/cybertec-mark-copper.svg" alt="" width="36" height="36" />
+      <span class="font-display text-[23px] font-medium tracking-[-0.01em] text-paper">
+        CyberTec
+      </span>
+    </a>
+
+    {/* Desktop nav (lg+) — inline. Below lg uses the disclosure so the brand +
+        five mono links + CTA never overflow the ~712px content row at md (768). */}
+    <nav class="hidden items-center gap-x-8 lg:flex" aria-label="Primary">
+      <ul class="flex items-center gap-x-8">
+        {navLinks.map(link => (
+          <li>
+            <a href={link.href} class={linkClass}>
+              {link.label}
+            </a>
+          </li>
+        ))}
+      </ul>
+      <a href="#contact" class={hireClass}>
+        Hire me
+      </a>
+      <a href={githubHref} target="_blank" rel="noopener noreferrer" class={githubIconClass}>
+        <span class="sr-only">CyberTec on GitHub (opens in a new tab)</span>
+        <svg width="36" height="36" viewBox="0 0 16 16" fill="currentColor" aria-hidden="true">
+          <path
+            fill-rule="evenodd"
+            clip-rule="evenodd"
+            d="M8 0C3.58 0 0 3.58 0 8c0 3.54 2.29 6.53 5.47 7.59.4.07.55-.17.55-.38 0-.19-.01-.82-.01-1.49-2.01.37-2.53-.49-2.69-.94-.09-.23-.48-.94-.82-1.13-.28-.15-.68-.52-.01-.53.63-.01 1.08.58 1.23.82.72 1.21 1.87.87 2.33.66.07-.52.28-.87.51-1.07-1.78-.2-3.64-.89-3.64-3.95 0-.87.31-1.59.82-2.15-.08-.2-.36-1.02.08-2.12 0 0 .67-.21 2.2.82.64-.18 1.32-.27 2-.27.68 0 1.36.09 2 .27 1.53-1.04 2.2-.82 2.2-.82.44 1.1.16 1.92.08 2.12.51.56.82 1.27.82 2.15 0 3.07-1.87 3.75-3.65 3.95.29.25.54.73.54 1.48 0 1.07-.01 1.93-.01 2.2 0 .21.15.46.55.38A8.013 8.013 0 0 0 16 8c0-4.42-3.58-8-8-8z"
+          ></path>
+        </svg>
+      </a>
+    </nav>
+
+    {/* Mobile/tablet disclosure (below lg) — <details> hamburger; the script
+        below closes it after a nav link is tapped (the only JS, progressive). */}
+    <details class="relative lg:hidden">
+      <summary class="-mr-2 flex min-h-[44px] min-w-[44px] cursor-pointer list-none items-center justify-center text-paper [&::-webkit-details-marker]:hidden">
+        <span class="sr-only">Menu</span>
+        <svg
+          width="24"
+          height="24"
+          viewBox="0 0 24 24"
+          fill="none"
+          stroke="currentColor"
+          stroke-width="2"
+          stroke-linecap="round"
+          aria-hidden="true"
+        >
+          <path d="M3 6h18M3 12h18M3 18h18"></path>
+        </svg>
+      </summary>
+      <nav
+        class="absolute right-0 top-full mt-3 w-56 rounded-sm border border-[rgb(var(--brass-rgb)/0.22)] bg-ink p-5"
+        aria-label="Primary"
+      >
+        <ul class="flex flex-col gap-4">
+          {navLinks.map(link => (
+            <li>
+              <a href={link.href} class={linkClass}>
+                {link.label}
+              </a>
+            </li>
+          ))}
+        </ul>
+        <div class="mt-5 flex items-center gap-3">
+          <a href="#contact" class={hireClass}>
+            Hire me
+          </a>
+          <a href={githubHref} target="_blank" rel="noopener noreferrer" class={githubIconClass}>
+            <span class="sr-only">CyberTec on GitHub (opens in a new tab)</span>
+            <svg width="36" height="36" viewBox="0 0 16 16" fill="currentColor" aria-hidden="true">
+              <path
+                fill-rule="evenodd"
+                clip-rule="evenodd"
+                d="M8 0C3.58 0 0 3.58 0 8c0 3.54 2.29 6.53 5.47 7.59.4.07.55-.17.55-.38 0-.19-.01-.82-.01-1.49-2.01.37-2.53-.49-2.69-.94-.09-.23-.48-.94-.82-1.13-.28-.15-.68-.52-.01-.53.63-.01 1.08.58 1.23.82.72 1.21 1.87.87 2.33.66.07-.52.28-.87.51-1.07-1.78-.2-3.64-.89-3.64-3.95 0-.87.31-1.59.82-2.15-.08-.2-.36-1.02.08-2.12 0 0 .67-.21 2.2.82.64-.18 1.32-.27 2-.27.68 0 1.36.09 2 .27 1.53-1.04 2.2-.82 2.2-.82.44 1.1.16 1.92.08 2.12.51.56.82 1.27.82 2.15 0 3.07-1.87 3.75-3.65 3.95.29.25.54.73.54 1.48 0 1.07-.01 1.93-.01 2.2 0 .21.15.46.55.38A8.013 8.013 0 0 0 16 8c0-4.42-3.58-8-8-8z"
+              ></path>
+            </svg>
+          </a>
+        </div>
+      </nav>
+    </details>
+  </div>
+</header>
+
+<script>
+  // Closes the mobile disclosure after a nav link inside it is tapped. A typed
+  // listener (rather than an inline onclick) so the event parameter isn't
+  // resolved against the deprecated global `Window.event`.
+  const disclosure = document.querySelector<HTMLDetailsElement>('header details');
+  disclosure?.addEventListener('click', event => {
+    if ((event.target as HTMLElement).closest('a')) {
+      disclosure.removeAttribute('open');
+    }
+  });
+</script>
