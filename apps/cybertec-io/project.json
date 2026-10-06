@@ -32,6 +32,14 @@
         "cwd": "{projectRoot}"
       }
     },
+    "deploy": {
+      "executor": "nx:run-commands",
+      "dependsOn": ["build"],
+      "options": {
+        "command": "pnpm exec swa deploy dist/apps/cybertec-io --env production --no-use-keychain",
+        "cwd": "{workspaceRoot}"
+      }
+    },
     "test": {
       "executor": "nx:run-commands",
       "cache": true,

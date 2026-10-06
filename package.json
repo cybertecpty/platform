@@ -38,6 +38,7 @@
   "devDependencies": {
     "@angular-devkit/core": "~22.0.4",
     "@astrojs/check": "^0.9.10",
+    "@azure/static-web-apps-cli": "^2.0.10",
     "@commitlint/cli": "^21.2.2",
     "@commitlint/config-conventional": "^21.2.2",
     "@commitlint/types": "^21.2.0",

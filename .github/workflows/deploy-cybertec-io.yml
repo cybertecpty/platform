@@ -1,0 +1,56 @@
+name: Deploy cybertec.io
+
+# Production deploy for apps/cybertec-io (issue #76, ADR 0012 amendment). Runs on merge to
+# `main`, i.e. through the develop -> main promotion PR (ADR 0011). Hosting is Azure Static
+# Web Apps; the deploy token is the `AZURE_STATIC_WEB_APPS_API_TOKEN` secret on the
+# `production` GitHub environment.
+
+on:
+  push:
+    branches:
+      - main
+    paths:
+      - 'apps/cybertec-io/**'
+      - 'apps/cybertec-io-e2e/**'
+      - '.github/workflows/deploy-cybertec-io.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: deploy-cybertec-io
+  cancel-in-progress: false
+
+env:
+  SITE_URL: https://cybertec.io
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    environment: production
+    steps:
+      - uses: actions/checkout@v5
+
+      - uses: pnpm/action-setup@v4
+
+      - uses: actions/setup-node@v5
+        with:
+          node-version-file: '.nvmrc'
+          cache: 'pnpm'
+
+      - run: pnpm install --frozen-lockfile
+
+      - run: pnpm exec playwright install --with-deps chromium
+
+      # Gate: the same checks CI ran on the promotion PR, re-run against this exact commit.
+      - run: pnpm exec nx run-many -t test e2e -p cybertec-io cybertec-io-e2e
+
+      - run: pnpm exec nx deploy cybertec-io
+        env:
+          SWA_CLI_DEPLOYMENT_TOKEN: ${{ secrets.AZURE_STATIC_WEB_APPS_API_TOKEN }}
+
+      # Post-deploy smoke against the live URL (the webServer is skipped when BASE_URL is set).
+      - run: pnpm exec nx smoke cybertec-io-e2e
+        env:
+          BASE_URL: ${{ env.SITE_URL }}
