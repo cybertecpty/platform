@@ -11,6 +11,7 @@
     "christian-kohler.path-intellisense",
     "orta.vscode-jest",
     "anthropic.claude-code",
-    "astro-build.astro-vscode"
+    "astro-build.astro-vscode",
+    "ms-azuretools.vscode-azurestaticwebapps"
   ]
 }
