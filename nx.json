@@ -75,11 +75,8 @@
   "release": {
     "projectsRelationship": "independent",
     "groups": {
-      "packages": {
-        "projects": ["packages/*"]
-      },
       "apps": {
-        "projects": ["apps/*"]
+        "projects": ["apps/*", "!apps/*-e2e"]
       }
     },
     "version": {
