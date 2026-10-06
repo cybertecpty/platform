@@ -128,12 +128,15 @@ Chosen option: **1 — Astro, scoped to static or mostly static content sites.**
 
 - **Host: Azure Static Web Apps** (static output only, so any static host would have worked).
 - **Deploy trigger: merge to `main`,** which means the `develop` -> `main` promotion PR of
-  ADR 0011. Production only moves on release. `.github/workflows/deploy-cybertec-io.yml`
-  re-runs `cybertec-io:test` and `cybertec-io-e2e:e2e` on the merge commit, then runs the
-  `cybertec-io:deploy` target, which depends on `build` and wraps `swa deploy`
-  (`@azure/static-web-apps-cli`, a root devDependency per the single-version policy).
-- **Secret:** `AZURE_STATIC_WEB_APPS_API_TOKEN`, stored on the `production` GitHub
-  environment, so a reviewer rule on that environment can gate deploys. The repo owner
+  ADR 0011. Production only moves on release. `.github/workflows/deploy-affected.yml`
+  is the single deploy workflow for every app: it asks Nx for the affected apps with a
+  `deploy` target and deploys each in a matrix job, so a new deployable app needs no new
+  workflow. For `cybertec-io` it re-runs `cybertec-io:test` and `cybertec-io-e2e:e2e` on the
+  merge commit, then runs the `cybertec-io:deploy` target, which depends on `build` and wraps
+  `swa deploy` (`@azure/static-web-apps-cli`, a root devDependency per the single-version
+  policy).
+- **Secret:** `AZURE_STATIC_WEB_APPS_API_TOKEN`, stored on a GitHub environment named
+  after the Nx project (`cybertec-io`), so a reviewer rule on that environment can gate deploys. The repo owner
   provisions and rotates it.
 - **Domain:** `cybertec.io` (apex) is canonical and matches `site` in `astro.config.mjs`.
   `www.cybertec.io` redirects to it. That redirect and TLS are Static Web Apps custom-domain
@@ -141,6 +144,6 @@ Chosen option: **1 — Astro, scoped to static or mostly static content sites.**
 - **Security headers** (`X-Content-Type-Options`, `X-Frame-Options`, `Referrer-Policy`,
   `Permissions-Policy`) are set as `globalHeaders` in `public/staticwebapp.config.json`, which
   Astro copies into the build output.
-- **Post-deploy smoke:** `cybertec-io-e2e:smoke` runs the same specs against the live URL. When
+- **Post-deploy smoke:** `cybertec-io-e2e:smoke` runs the same specs against the live URL (`metadata.siteUrl` in the app's `project.json`). When
   `BASE_URL` is set, `playwright.config.ts` skips the local `astro preview` webServer. The
   `smoke` target is uncached and has no `build` dependency, since it tests what is deployed.

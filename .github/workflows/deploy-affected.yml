@@ -1,0 +1,125 @@
+name: Deploy Affected Apps
+
+# Single production deploy workflow for every app (issue #76, ADR 0012 amendment). On merge
+# to `main` (the develop -> main promotion of ADR 0011) it asks Nx which apps with a
+# `deploy` target are affected by the push and deploys each one in a matrix job. Adding a
+# deployable app is a project.json change (a `deploy` target), not a new workflow.
+#
+# Per-app contract:
+#   - a GitHub Environment named after the Nx project, holding that app's deploy secret
+#     (`AZURE_STATIC_WEB_APPS_API_TOKEN` for Azure Static Web Apps apps)
+#   - a `deploy` target (it dependsOn `build`)
+#   - optional: `test` target and a `<app>-e2e` project, run as the deploy gate
+#   - optional: `metadata.siteUrl` in project.json plus an `<app>-e2e:smoke` target, run
+#     against the live site after the deploy
+
+on:
+  push:
+    branches:
+      - main
+
+concurrency:
+  group: deploy-main
+  cancel-in-progress: false
+
+permissions:
+  contents: read
+
+jobs:
+  affected:
+    runs-on: ubuntu-latest
+    outputs:
+      apps: ${{ steps.affected.outputs.apps }}
+      has-apps: ${{ steps.affected.outputs.has-apps }}
+    steps:
+      - uses: actions/checkout@v5
+        with:
+          fetch-depth: 0
+
+      - uses: pnpm/action-setup@v4
+
+      - uses: actions/setup-node@v5
+        with:
+          node-version-file: '.nvmrc'
+          cache: 'pnpm'
+
+      - run: pnpm install --frozen-lockfile
+
+      - id: affected
+        shell: bash
+        run: |
+          base="${{ github.event.before }}"
+          # A zero or missing base SHA (first push, force-push) falls back to the parent.
+          if [[ -z "$base" || "$base" == "0000000000000000000000000000000000000000" ]]; then
+            base="HEAD~1"
+          fi
+
+          apps="$(pnpm exec nx show projects \
+            --affected \
+            --type app \
+            --withTarget deploy \
+            --base="$base" \
+            --head="${{ github.sha }}" \
+            --json)"
+
+          echo "apps=$apps" >> "$GITHUB_OUTPUT"
+          if [ "$apps" = "[]" ]; then
+            echo "has-apps=false" >> "$GITHUB_OUTPUT"
+          else
+            echo "has-apps=true" >> "$GITHUB_OUTPUT"
+          fi
+
+  deploy:
+    needs: affected
+    if: needs.affected.outputs.has-apps == 'true'
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        app: ${{ fromJson(needs.affected.outputs.apps) }}
+    environment:
+      name: ${{ matrix.app }}
+    steps:
+      - uses: actions/checkout@v5
+        with:
+          fetch-depth: 0
+
+      - uses: pnpm/action-setup@v4
+
+      - uses: actions/setup-node@v5
+        with:
+          node-version-file: '.nvmrc'
+          cache: 'pnpm'
+
+      - run: pnpm install --frozen-lockfile
+
+      - run: pnpm exec playwright install --with-deps chromium
+
+      # Gate: re-run the app's own checks on this exact commit. Targets an app doesn't
+      # have are skipped, so an app without tests or an e2e project still deploys.
+      - name: Gate (test, e2e)
+        shell: bash
+        run: |
+          has_target() { pnpm exec nx show project "$1" --json 2>/dev/null | jq -e ".targets.\"$2\"" >/dev/null; }
+          app="${{ matrix.app }}"
+          if has_target "$app" test; then pnpm exec nx run "$app:test"; fi
+          if has_target "$app-e2e" e2e; then pnpm exec nx run "$app-e2e:e2e"; fi
+
+      - name: Deploy
+        run: pnpm exec nx run ${{ matrix.app }}:deploy
+        env:
+          # Azure Static Web Apps CLI reads its token from this variable.
+          SWA_CLI_DEPLOYMENT_TOKEN: ${{ secrets.AZURE_STATIC_WEB_APPS_API_TOKEN }}
+
+      # Post-deploy smoke against the live site (the e2e webServer is skipped when
+      # BASE_URL is set).
+      - name: Smoke test live site
+        shell: bash
+        run: |
+          app="${{ matrix.app }}"
+          url="$(pnpm exec nx show project "$app" --json | jq -r '.metadata.siteUrl // empty')"
+          if [ -z "$url" ] || ! pnpm exec nx show project "$app-e2e" --json 2>/dev/null | jq -e '.targets.smoke' >/dev/null; then
+            echo "No siteUrl or ${app}-e2e:smoke target - skipping the smoke test."
+            exit 0
+          fi
+          BASE_URL="$url" pnpm exec nx run "$app-e2e:smoke"
