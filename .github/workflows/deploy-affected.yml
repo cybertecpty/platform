@@ -37,6 +37,8 @@ jobs:
   affected:
     if: github.ref == 'refs/heads/main'
     runs-on: ubuntu-latest
+    env:
+      NX_CLOUD_AUTH_TOKEN: ${{ secrets.NX_CLOUD_ACCESS_TOKEN }}
     outputs:
       apps: ${{ steps.affected.outputs.apps }}
       has-apps: ${{ steps.affected.outputs.has-apps }}
@@ -101,6 +103,8 @@ jobs:
         app: ${{ fromJson(needs.affected.outputs.apps) }}
     environment:
       name: ${{ matrix.app }}
+    env:
+      NX_CLOUD_AUTH_TOKEN: ${{ secrets.NX_CLOUD_ACCESS_TOKEN }}
     steps:
       - uses: actions/checkout@v5
         with:
