@@ -13,7 +13,6 @@ on:
       - 'apps/cybertec-io/**'
       - 'apps/cybertec-io-e2e/**'
       - '.github/workflows/deploy-cybertec-io.yml'
-  workflow_dispatch:
 
 permissions:
   contents: read

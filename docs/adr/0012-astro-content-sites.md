@@ -126,8 +126,7 @@ Chosen option: **1 — Astro, scoped to static or mostly static content sites.**
 
 ## Amendment (2026-10-06): hosting and deploy (issue #76)
 
-- **Host: Azure Static Web Apps** (static output only, so any static host would have worked;
-  this one keeps the site on the host it used before).
+- **Host: Azure Static Web Apps** (static output only, so any static host would have worked).
 - **Deploy trigger: merge to `main`,** which means the `develop` -> `main` promotion PR of
   ADR 0011. Production only moves on release. `.github/workflows/deploy-cybertec-io.yml`
   re-runs `cybertec-io:test` and `cybertec-io-e2e:e2e` on the merge commit, then runs the
