@@ -144,6 +144,6 @@ Chosen option: **1 — Astro, scoped to static or mostly static content sites.**
 - **Security headers** (`X-Content-Type-Options`, `X-Frame-Options`, `Referrer-Policy`,
   `Permissions-Policy`) are set as `globalHeaders` in `public/staticwebapp.config.json`, which
   Astro copies into the build output.
-- **Post-deploy smoke:** `cybertec-io-e2e:smoke` runs the same specs against the live URL (`metadata.siteUrl` in the app's `project.json`). When
+- **Post-deploy smoke:** `cybertec-io-e2e:smoke` runs the same specs against the deployed URL (`metadata.baseUrl` in the app's `project.json`). When
   `BASE_URL` is set, `playwright.config.ts` skips the local `astro preview` webServer. The
   `smoke` target is uncached and has no `build` dependency, since it tests what is deployed.

@@ -4,7 +4,7 @@
   "projectType": "application",
   "sourceRoot": "apps/cybertec-io/src",
   "metadata": {
-    "siteUrl": "https://cybertec.io"
+    "baseUrl": "https://cybertec.io"
   },
   "tags": ["scope:frontend", "type:app", "domain:shared"],
   "targets": {

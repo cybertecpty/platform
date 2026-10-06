@@ -9,7 +9,7 @@ import { defineConfig, devices } from '@playwright/test';
 // before this ever runs.
 //
 // Setting BASE_URL targets an already-running site (the post-deploy `smoke` target points it
-// at the live URL), so the local `astro preview` webServer is skipped entirely. Unset, the
+// at the deployed URL), so the local `astro preview` webServer is skipped entirely. Unset, the
 // suite serves the local build as above.
 //
 // `cwd` is the workspace root (not the app dir): `pnpm exec` resolves its "current
