@@ -17,6 +17,14 @@ on:
   push:
     branches:
       - main
+  # Manual redeploy (recovery, or a first deploy of an app). Deploys every app with a
+  # `deploy` target, or only `app` when given. Only runs from `main`.
+  workflow_dispatch:
+    inputs:
+      app:
+        description: 'Nx project to deploy. Leave empty to deploy every app with a deploy target.'
+        type: string
+        default: ''
 
 concurrency:
   group: deploy-main
@@ -27,6 +35,7 @@ permissions:
 
 jobs:
   affected:
+    if: github.ref == 'refs/heads/main'
     runs-on: ubuntu-latest
     outputs:
       apps: ${{ steps.affected.outputs.apps }}
@@ -47,21 +56,34 @@ jobs:
 
       - id: affected
         shell: bash
+        env:
+          EVENT_NAME: ${{ github.event_name }}
+          BASE_SHA: ${{ github.event.before }}
+          HEAD_SHA: ${{ github.sha }}
+          APP_INPUT: ${{ inputs.app }}
         run: |
-          base="${{ github.event.before }}"
-          # A zero or missing base SHA (first push, force-push) falls back to the parent.
-          if [[ -z "$base" || "$base" == "0000000000000000000000000000000000000000" ]]; then
-            base="HEAD~1"
+          all="$(pnpm exec nx show projects --type app --withTarget deploy --json)"
+
+          if [ "$EVENT_NAME" = "workflow_dispatch" ]; then
+            if [ -n "$APP_INPUT" ]; then
+              apps="$(jq -c --arg app "$APP_INPUT" 'map(select(. == $app))' <<< "$all")"
+              if [ "$apps" = "[]" ]; then
+                echo "::error::'$APP_INPUT' is not an app with a deploy target. Deployable apps: $all"
+                exit 1
+              fi
+            else
+              apps="$all"
+            fi
+          elif [ -z "$BASE_SHA" ] || [ "$BASE_SHA" = "0000000000000000000000000000000000000000" ]             || ! git cat-file -e "$BASE_SHA^{commit}" 2>/dev/null; then
+            # No usable base (first push, or a force-push dropped the old tip): affected
+            # detection can't be trusted, so deploy everything rather than guess.
+            echo "No usable base SHA - deploying every app with a deploy target."
+            apps="$all"
+          else
+            apps="$(pnpm exec nx show projects               --affected               --type app               --withTarget deploy               --base="$BASE_SHA"               --head="$HEAD_SHA"               --json)"
           fi
 
-          apps="$(pnpm exec nx show projects \
-            --affected \
-            --type app \
-            --withTarget deploy \
-            --base="$base" \
-            --head="${{ github.sha }}" \
-            --json)"
-
+          apps="$(jq -c . <<< "$apps")"
           echo "apps=$apps" >> "$GITHUB_OUTPUT"
           if [ "$apps" = "[]" ]; then
             echo "has-apps=false" >> "$GITHUB_OUTPUT"
@@ -99,15 +121,18 @@ jobs:
       # have are skipped, so an app without tests or an e2e project still deploys.
       - name: Gate (test, e2e)
         shell: bash
+        env:
+          APP: ${{ matrix.app }}
         run: |
           has_target() { pnpm exec nx show project "$1" --json 2>/dev/null | jq -e ".targets.\"$2\"" >/dev/null; }
-          app="${{ matrix.app }}"
+          app="$APP"
           if has_target "$app" test; then pnpm exec nx run "$app:test"; fi
           if has_target "$app-e2e" e2e; then pnpm exec nx run "$app-e2e:e2e"; fi
 
       - name: Deploy
-        run: pnpm exec nx run ${{ matrix.app }}:deploy
+        run: pnpm exec nx run "$APP:deploy"
         env:
+          APP: ${{ matrix.app }}
           # Azure Static Web Apps CLI reads its token from this variable.
           SWA_CLI_DEPLOYMENT_TOKEN: ${{ secrets.AZURE_STATIC_WEB_APPS_API_TOKEN }}
 
@@ -115,8 +140,10 @@ jobs:
       # BASE_URL is set).
       - name: Smoke test live site
         shell: bash
+        env:
+          APP: ${{ matrix.app }}
         run: |
-          app="${{ matrix.app }}"
+          app="$APP"
           url="$(pnpm exec nx show project "$app" --json | jq -r '.metadata.siteUrl // empty')"
           if [ -z "$url" ] || ! pnpm exec nx show project "$app-e2e" --json 2>/dev/null | jq -e '.targets.smoke' >/dev/null; then
             echo "No siteUrl or ${app}-e2e:smoke target - skipping the smoke test."
