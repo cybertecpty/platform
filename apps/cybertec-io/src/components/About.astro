@@ -1,0 +1,68 @@
+---
+import { Image } from 'astro:assets';
+import daniel from '../assets/daniel.jpg';
+
+const portrait = Math.min(daniel.width, daniel.height);
+
+const facts = [
+  { label: 'Location', value: 'Panama (Remote, UTC-5)' },
+  { label: 'Citizenship', value: 'United States' },
+  { label: 'Languages', value: 'English & Spanish' },
+  { label: 'Education', value: 'B.S. Information Studies, Florida State University' }
+];
+---
+
+<section id="about" class="blueprint-grid blueprint-grid-soft">
+  <div class="site-container grid gap-12 py-section md:grid-cols-[minmax(0,1fr)_minmax(0,1.5fr)] md:gap-16 md:items-start">
+    {/* Left: portrait + fact list */}
+    <div>
+      <Image
+        src={daniel}
+        alt="Daniel McGrath"
+        width={portrait}
+        height={portrait}
+        widths={[320, 480, 640]}
+        sizes="320px"
+        loading="lazy"
+        class="aspect-square w-full max-w-[320px] rounded-md border border-brass object-cover"
+      />
+      <dl class="mt-8 space-y-4 font-mono text-xs">
+        {facts.map(fact => (
+          <div>
+            <dt class="uppercase tracking-[0.16em] text-brass">{fact.label}</dt>
+            <dd class="mt-1 text-body-on-ink">{fact.value}</dd>
+          </div>
+        ))}
+      </dl>
+    </div>
+
+    {/* Right: eyebrow, headline, body */}
+    <div>
+      <p class="font-mono text-xs uppercase tracking-[0.16em] text-steel">05 — About me</p>
+
+      <h2 class="mt-5 max-w-[24ch] font-display text-[clamp(26px,3.6vw,38px)] font-normal leading-[1.15] tracking-[-0.01em] text-paper">
+        I'm <span class="accent-italic">Daniel McGrath</span> — the engineer you hire and the one
+        who does the work.
+      </h2>
+
+      <div class="mt-6 max-w-[58ch] space-y-4 text-[17px] leading-[1.6] text-body-on-ink">
+        <p>
+          Fifteen-plus years across growing teams and solo ownership taught me the same lesson both
+          ways: the cost of software shows up later, in the seams. So I work deliberately from the
+          first line — and I'd rather tell you the harder true thing than the easier comfortable
+          one.
+        </p>
+        <p>
+          When you hire me, you get one senior engineer accountable end to end — no account
+          managers, no handoffs to someone more junior. I operate remotely on US-friendly hours and
+          communicate like the people on the other end have a deadline, because usually they do.
+        </p>
+        <p>
+          I work as an independent contractor on long-term, full-time engagements, and I can
+          contract through a US LLC or a Panamanian company — whichever fits your procurement
+          process.
+        </p>
+      </div>
+    </div>
+  </div>
+</section>

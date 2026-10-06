@@ -1,0 +1,20 @@
+{
+  "name": "cybertec-io-e2e",
+  "$schema": "../../node_modules/nx/schemas/project-schema.json",
+  "projectType": "application",
+  "tags": ["scope:frontend", "type:e2e", "domain:shared"],
+  "implicitDependencies": ["cybertec-io"],
+  "targets": {
+    "e2e": {
+      "executor": "nx:run-commands",
+      "cache": true,
+      "dependsOn": ["cybertec-io:build"],
+      "inputs": ["default", "^production"],
+      "outputs": ["{projectRoot}/playwright-report", "{projectRoot}/test-results"],
+      "options": {
+        "command": "playwright test",
+        "cwd": "{projectRoot}"
+      }
+    }
+  }
+}

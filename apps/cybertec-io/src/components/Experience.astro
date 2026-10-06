@@ -1,0 +1,67 @@
+---
+const stats = [
+  { num: '15+', caption: 'Years building production software' },
+  { num: '100k+', caption: "Users on platforms I've built for" },
+  { num: 'End‑to‑end', caption: 'Ownership — architecture through upkeep' }
+];
+
+const roles = [
+  {
+    date: '2023–2026',
+    org: 'TeachTown · Frontend Engineer (Contract)',
+    summary:
+      'Full-time contract frontend engineer on an EdTech platform serving hundreds of thousands of students across thousands of schools.',
+    body: 'Engineered the redevelopment of a core curriculum navigation system with NgRx, architected a new observational assessment system, and pioneered the migration to an Nx monorepo. Migrated legacy AngularJS features to modern Angular and designed a custom router integration that let new Angular views run inside legacy ASP pages — without disrupting live workflows. Served as a primary frontend resource and mentored incoming engineers as the team grew from under 10 to over 20.',
+    tags: 'Angular · AngularJS · NgRx · Nx · TypeScript · Cypress · ASP.NET Core · Capacitor'
+  },
+  {
+    date: '2006–2022',
+    org: 'PEMCO · Full-Stack Developer & IT Manager',
+    summary: 'Sole developer and IT lead for a 35-person business, owning every system end to end.',
+    body: "Built a customer-facing e-commerce platform from scratch, then rebuilt it as an Angular SPA with Firebase, NgRx, PWA and SSR. Wrapped the on-premise POS system's API with an Express.js layer and built a Node.js sync service keeping customer, product, and quote data for a 3,000-item catalog consistent across SQL and NoSQL — containerized with Docker and maintained from requirements through long-term upkeep.",
+    tags: 'Angular · Node.js · Express · Firebase · TypeScript · MSSQL · Docker · PWA & SSR'
+  }
+];
+---
+
+<section id="experience">
+  <div class="site-container hairline-t py-section">
+    <p class="font-mono text-xs uppercase tracking-[0.16em] text-steel">04 — Experience</p>
+
+    <h2 class="mt-5 max-w-[20ch] font-display text-[clamp(30px,4.4vw,48px)] font-normal leading-[1.1] tracking-[-0.02em] text-paper">
+      A track record of <span class="accent-italic">shipped, maintained</span> software.
+    </h2>
+
+    {/* Stats — hairline grid of ink cells. */}
+    <div class="mt-12 grid grid-cols-[repeat(auto-fit,minmax(min(200px,100%),1fr))] hairline-grid">
+      {stats.map(stat => (
+        <div class="bg-ink px-[34px] py-8">
+          <p class="font-display text-[44px] font-medium leading-none text-copper">{stat.num}</p>
+          <p class="mt-3 font-mono text-xs uppercase tracking-[0.16em] text-steel">
+            {stat.caption}
+          </p>
+        </div>
+      ))}
+    </div>
+
+    {/* Role rows — each a 0.7fr / 2fr split with its own top hairline. */}
+    {roles.map(role => (
+      <div class="hairline-t grid gap-6 py-9 md:grid-cols-[minmax(0,0.7fr)_minmax(0,2fr)] md:gap-10">
+        <div>
+          <p class="font-mono text-sm text-brass">{role.date}</p>
+          <p class="mt-1 font-mono text-xs text-steel">{role.org}</p>
+        </div>
+        <div>
+          <h3 class="font-display text-[23px] font-medium leading-snug text-paper">
+            {role.summary}
+          </h3>
+          <p class="mt-3 max-w-[62ch] text-[15px] leading-[1.6] text-body-on-ink">{role.body}</p>
+          <p class="mt-4 font-mono text-xs">
+            <span class="text-brass">Worked across: </span>
+            <span class="text-steel">{role.tags}</span>
+          </p>
+        </div>
+      </div>
+    ))}
+  </div>
+</section>

@@ -177,3 +177,79 @@ entirely inside GitHub Actions — no third-party service, consistent with the
 - Nx hydrates each project's `coverage/{projectRoot}` output onto the main runner after
   the distributed run (the inferred `test` target already declares it as an output), so
   the script sees every report without a separate collection step.
+
+## Amendment (2026-09-23): Vitest for Astro projects
+
+- Status: accepted
+- Deciders: djmcgrath
+- Implemented by (planned): per-project `vitest.config.ts` in `apps/cybertec-io`; an
+  ESLint override scoping `eslint-plugin-jest` away from Vitest projects
+
+ADR 0012 adds Astro for content sites. Jest can't test Astro components: there is no
+maintained Jest transform for `.astro` files, and Astro's component-testing API (the
+Container API, `astro/container`) runs inside Vite through `getViteConfig` from
+`astro/config`, which means Vitest. This amendment makes a **scoped exception**.
+
+### Decision
+
+- **Vitest for Astro projects only.** Every other project stays on Jest. The rule is
+  "Jest everywhere, except Vite-native frameworks (Astro)". Using Vitest for an Angular,
+  Nest or plain TS project still requires reopening this ADR.
+- **Why the original reasoning doesn't apply:** Vitest was rejected because `@nx/nest`
+  can't scaffold it and Nest DI needs SWC glue for decorator metadata, and to avoid
+  maintaining two runners. Astro has no decorators and no Nx generator, and Jest can't test
+  it at all, so the second runner can't be avoided.
+- **Still no `@nx/vite` / `@nx/vitest` plugin in `nx.json`,** and no root
+  `vitest.config.ts`. The Astro app has its own `vitest.config.ts` and an explicit
+  `test` target in its `project.json` (`nx:run-commands` running `vitest run`), which
+  declares the `coverage/{projectRoot}` output when coverage applies. The
+  `unitTestRunner: jest` generator defaults are unchanged.
+- **Coverage applies to TypeScript logic, not markup.** An Astro project that has
+  TypeScript modules (`src/**/*.ts`: utilities, data transforms, island scripts) gets the
+  same gate as the Jest preset, configured as in the list below. An Astro project with
+  none is **exempt from the threshold**, the same way `type:types` libs are. Its `.astro`
+  files are markup and copy, and there's no logic for a line-coverage number to measure.
+  An exempt project still has a `test` target. Its suite is **build-output
+  assertions**: Vitest specs under `tests/` that read the built `dist/` HTML and check
+  section anchors, SEO and social meta, structured data, and that the static assets are
+  emitted. The `test` target `dependsOn` `build`. The exemption ends when the first
+  `src/**/*.ts` module lands, and coverage is then set up as below.
+- **Coverage config, when it applies,** matches the Jest preset:
+  - `coverage.provider: 'v8'` (`@vitest/coverage-v8`).
+  - `coverage.enabled: !!process.env.CI`, the same CI-gated collection as
+    `collectCoverage`.
+  - `coverage.thresholds` of 80 for `branches`, `functions`, `lines` and `statements`.
+  - `coverage.include: ['src/**/*.ts']`, excluding specs and `*.d.ts`.
+  - `coverage.reporter: ['text-summary', 'json', 'json-summary', 'lcov']`.
+  - `coverage.reportsDirectory` set to `<workspace>/coverage/apps/<name>`.
+
+  Vitest writes the same Istanbul `coverage-summary.json` and `coverage-final.json` files
+  as Jest, so `.github/scripts/coverage-report.cjs`, which finds them under `coverage/**`,
+  merges Astro coverage into the workspace number and PR patch coverage without changes.
+
+- **`passWithNoTests: true`** in the app's Vitest config, the same as the Jest preset.
+- **Lint:** `eslint-plugin-jest` is scoped away from Vitest projects, and
+  `@vitest/eslint-plugin` (recommended config) applies to their spec files instead. The
+  ADR 0008 plugin layer gets the matching override.
+- **What to test:** content sites carry little logic. Unit-test TypeScript modules.
+  Check the rendered output with build-output assertions. Interactive behaviour (such as
+  the mobile menu) belongs in Playwright e2e (`<app>-e2e`, ADR 0010), which is still out
+  of scope for this ADR.
+
+### Consequences
+
+- Two runners and two mock APIs (`jest` and `vi`) in the tree. This is the cost the
+  original decision avoided, and it is accepted here because only Astro projects use
+  Vitest.
+- Vitest and `@vitest/eslint-plugin` come back as root dev dependencies, plus
+  `@vitest/coverage-v8` once coverage applies. They were removed in #41 when they arrived
+  by accident. This time they are deliberate.
+- A coverage-exempt Astro site doesn't count toward the workspace coverage number or
+  PR patch coverage. That's intentional: its `.astro` changes are markup, and the
+  build-output tests guard them.
+- The exemption depends on reviewers noticing when the first `src/**/*.ts` module lands
+  and adding the coverage config at that point (review-priorities §3).
+- `.astro` files are left out of `coverage.include`. v8 coverage of compiled Astro
+  components doesn't map back to source reliably enough to gate on.
+- The Container API was still `experimental_`-prefixed when last checked. Confirm its
+  status before using it for component tests.

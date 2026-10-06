@@ -1,0 +1,85 @@
+---
+const groups = [
+  {
+    label: 'Frontend',
+    items: [
+      'Angular 5–21',
+      'AngularJS',
+      'Signals',
+      'Standalone Components',
+      'NgRx',
+      'RxJS',
+      'Angular Material',
+      'Angular CDK',
+      'Web Components',
+      'Accessibility (WCAG/ARIA)',
+      'Capacitor',
+      'PWA',
+      'Tailwind CSS',
+      'Bootstrap'
+    ]
+  },
+  {
+    label: 'Backend',
+    items: ['Node.js', 'Express.js', 'Firebase', 'ASP.NET Core', 'Azure', 'REST APIs']
+  },
+  {
+    label: 'Languages',
+    items: ['TypeScript', 'JavaScript', 'C#', 'SQL', 'PHP', 'HTML5', 'CSS3', 'SASS']
+  },
+  { label: 'Databases', items: ['Microsoft SQL Server', 'MySQL', 'NoSQL (Firebase)'] },
+  {
+    label: 'Tooling',
+    items: [
+      'Nx',
+      'Git / GitHub',
+      'GitHub Actions',
+      'Docker',
+      'Jest',
+      'Jasmine',
+      'Vitest',
+      'Cypress',
+      'Playwright',
+      'Postman',
+      'OpenAPI/Swagger',
+      'Figma',
+      'Jira',
+      'CI/CD',
+      'Agile / Scrum'
+    ]
+  },
+  {
+    label: 'AI Tools',
+    items: ['Claude Code', 'OpenAI Codex', 'GitHub Copilot', 'Google Gemini']
+  }
+];
+---
+
+<section id="skills" class="bg-paper text-ink">
+  <div class="site-container py-section">
+    <p class="font-mono text-xs uppercase tracking-[0.16em] text-[rgb(var(--ink-rgb)/0.65)]">
+      02 — Stack &amp; tooling
+    </p>
+
+    <h2 class="mt-5 max-w-[20ch] font-display text-[clamp(30px,4.4vw,48px)] font-normal leading-[1.1] tracking-[-0.02em]">
+      The tools I reach for, <span class="accent-italic accent-italic-on-paper">day to day</span>.
+    </h2>
+
+    <div class="mt-12 grid grid-cols-[repeat(auto-fit,minmax(min(230px,100%),1fr))] gap-x-[40px] gap-y-[44px]">
+      {groups.map(group => (
+        <div>
+          <h3 class="border-b border-[rgb(var(--ink-rgb)/0.2)] pb-2 font-mono text-xs uppercase tracking-[0.16em] text-[rgb(var(--ink-rgb)/0.65)]">
+            {group.label}
+          </h3>
+          <ul class="mt-4 flex flex-wrap gap-2">
+            {group.items.map(item => (
+              <li class="rounded-sm border border-[rgb(var(--ink-rgb)/0.14)] bg-[rgb(var(--ink-rgb)/0.06)] px-3 py-1.5 font-body text-sm">
+                {item}
+              </li>
+            ))}
+          </ul>
+        </div>
+      ))}
+    </div>
+  </div>
+</section>
