@@ -20,8 +20,8 @@ const githubHref = 'https://github.com/cybertecpty';
   <div class="site-container flex items-center justify-between gap-4 py-[18px]">
     {/* Brand lockup — copper mark + Paper wordmark, links to top. The mark is
         decorative (alt=""); the adjacent wordmark names the link. */}
-    <a href="#top" class="flex items-center gap-3">
-      <img src="/brand/cybertec-mark-copper.svg" alt="" width="36" height="36" />
+    <a href="#top" class="flex items-center gap-2">
+      <img src="/brand/cybertec-mark-copper.svg" alt="" width="40" height="40" />
       <span class="font-display text-[23px] font-medium tracking-[-0.01em] text-paper">
         CyberTec
       </span>
@@ -29,7 +29,7 @@ const githubHref = 'https://github.com/cybertecpty';
 
     {/* Desktop nav (lg+) — inline. Below lg uses the disclosure so the brand +
         five mono links + CTA never overflow the ~712px content row at md (768). */}
-    <nav class="hidden items-center gap-x-8 lg:flex" aria-label="Primary">
+    <nav class="hidden items-center gap-x-7 lg:flex" aria-label="Primary">
       <ul class="flex items-center gap-x-8">
         {navLinks.map(link => (
           <li>
@@ -44,7 +44,7 @@ const githubHref = 'https://github.com/cybertecpty';
       </a>
       <a href={githubHref} target="_blank" rel="noopener noreferrer" class={githubIconClass}>
         <span class="sr-only">CyberTec on GitHub (opens in a new tab)</span>
-        <svg width="36" height="36" viewBox="0 0 16 16" fill="currentColor" aria-hidden="true">
+        <svg width="24" height="24" viewBox="0 0 16 16" fill="currentColor" aria-hidden="true">
           <path
             fill-rule="evenodd"
             clip-rule="evenodd"
@@ -85,13 +85,13 @@ const githubHref = 'https://github.com/cybertecpty';
             </li>
           ))}
         </ul>
-        <div class="mt-5 flex items-center gap-3">
+        <div class="mt-5 flex items-center justify-between gap-3">
           <a href="#contact" class={hireClass}>
             Hire me
           </a>
           <a href={githubHref} target="_blank" rel="noopener noreferrer" class={githubIconClass}>
             <span class="sr-only">CyberTec on GitHub (opens in a new tab)</span>
-            <svg width="36" height="36" viewBox="0 0 16 16" fill="currentColor" aria-hidden="true">
+            <svg width="24" height="24" viewBox="0 0 16 16" fill="currentColor" aria-hidden="true">
               <path
                 fill-rule="evenodd"
                 clip-rule="evenodd"
