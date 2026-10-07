@@ -61,10 +61,10 @@ Chosen option: **1 — Astro, scoped to static or mostly static content sites.**
   of framework. Only the underlying shell command (`astro dev`) uses Astro's own
   vocabulary.
 - **Dependencies live in the root `package.json`,** under the single-version policy
-  (ADR 0001, ADR 0003) that every other project follows. That includes `astro`, `sharp`,
-  the `@fontsource` font packages and Tailwind. The app's own `package.json` is
-  a minimal stub (name, version, `private`, description) that exists only so Nx release can read and bump
-  its version; it declares no dependencies, and `pnpm-workspace.yaml` is unchanged (ADR 0005).
+  (ADR 0001, ADR 0003) that every other project follows. That includes `astro`, `sharp` and
+  Tailwind. The app's own `package.json` holds its version (so Nx release can read and bump
+  it), a description, and the dependencies only this app uses (the `@fontsource` font
+  packages); see the 2026-10-06 amendment below.
 - **Styling: Tailwind CSS v4,** wired through `@tailwindcss/vite` in `astro.config.mjs`
   (Astro's current setup, as `astro add tailwind` does it). Not the deprecated
   `@astrojs/tailwind` integration, and not Tailwind v3.
@@ -148,3 +148,11 @@ Chosen option: **1 — Astro, scoped to static or mostly static content sites.**
 - **Post-deploy smoke:** `cybertec-io-e2e:smoke` runs the same specs against the deployed URL (`metadata.baseUrl` in the app's `project.json`). When
   `BASE_URL` is set, `playwright.config.ts` skips the local `astro preview` webServer. The
   `smoke` target is uncached and has no `build` dependency, since it tests what is deployed.
+- **App-specific dependencies (amendment to the dependencies rule above).** The `@fontsource`
+  font packages are used only by `cybertec-io`, so they now live in
+  `apps/cybertec-io/package.json`, and `apps/cybertec-io` is listed in `pnpm-workspace.yaml`
+  so pnpm installs them. The rule going forward: a dependency used by exactly one app lives
+  in that app's `package.json`; anything shared between projects, or used by tooling, stays in
+  the root `package.json` under the single-version policy (ADR 0001, ADR 0003). `astro`,
+  `sharp` and Tailwind stay in the root for now. The workspace file lists the app explicitly
+  rather than `apps/*`, so other apps and the e2e projects stay out until they need it.

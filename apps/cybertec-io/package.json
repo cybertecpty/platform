@@ -2,5 +2,10 @@
   "name": "@cybertecpty/cybertec-io",
   "version": "0.0.0",
   "private": true,
-  "description": "CyberTec marketing homepage (cybertec.io) — static Astro site."
+  "description": "CyberTec marketing homepage (cybertec.io) — static Astro site.",
+  "dependencies": {
+    "@fontsource-variable/fraunces": "^5.3.0",
+    "@fontsource/ibm-plex-mono": "^5.3.0",
+    "@fontsource/ibm-plex-sans": "^5.3.0"
+  }
 }
