@@ -2,6 +2,7 @@ import { lastGitCommitHash } from '@cybertecpty/git-utils';
 import {
   createPullRequest,
   findOpenPullRequest,
+  getGithubAuthenticatedUser,
   updatePullRequest
 } from '@cybertecpty/github-utils';
 import { NxReleaseChangelogResult, ProjectChangelogs, VersionData } from '@cybertecpty/nx-types';
@@ -39,6 +40,13 @@ const git = simpleGit();
  * workspace-changes section.
  */
 const RELEASE_COMMIT_MESSAGE = 'chore(release): generate release artifacts';
+
+/**
+ * The `gh` account that must author the promotion PR. The maintainer cannot
+ * approve a PR they authored, so a maintainer-authored release PR is stuck
+ * behind the required review (docs/agents/conventions.md section 1).
+ */
+const RELEASE_PR_AUTHOR = 'cybertec-bot';
 
 /**
  * Cuts a release: versions and changelogs the configured projects via Nx's own release
@@ -326,9 +334,11 @@ async function openReleasePullRequest(
     return;
   }
 
-  const title = `Release/${releaseDate.split('T')[0]}`;
+  const title = `chore(release): ${releaseDate.split('T')[0]}`;
 
   try {
+    await warnIfNotBotAuthored();
+
     // Built inside the try because the workspace-changes section queries git;
     // a failure there must degrade to the manual-command warning, not throw.
     const body = await buildReleasePrBody({
@@ -366,6 +376,27 @@ async function openReleasePullRequest(
         `  gh pr create --base ${targetBranch} --head ${releaseBranch} --title "${title}"`
     );
   }
+}
+
+/**
+ * Warns when the authenticated `gh` account is not {@link RELEASE_PR_AUTHOR}.
+ * Warn rather than fail: the release branch is already pushed, and a PR's
+ * author cannot be changed afterward, so the fix is to switch accounts and
+ * close and recreate the PR. An unresolvable account is ignored; the PR call
+ * that follows surfaces any real `gh` problem.
+ */
+async function warnIfNotBotAuthored(): Promise<void> {
+  const user = await getGithubAuthenticatedUser().catch(() => null);
+
+  if (user === null || user === RELEASE_PR_AUTHOR) {
+    return;
+  }
+
+  logger.warn(
+    `The release pull request will be authored by \`${user}\`, not \`${RELEASE_PR_AUTHOR}\`, so ` +
+      `the maintainer cannot approve it. Run \`gh auth switch --user ${RELEASE_PR_AUTHOR}\` and ` +
+      `re-run the release. A PR already opened as \`${user}\` keeps that author: close and recreate it.`
+  );
 }
 
 export default releaseGenerator;

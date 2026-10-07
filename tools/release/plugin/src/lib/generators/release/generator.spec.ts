@@ -2,6 +2,7 @@ import { lastGitCommitHash } from '@cybertecpty/git-utils';
 import {
   createPullRequest,
   findOpenPullRequest,
+  getGithubAuthenticatedUser,
   updatePullRequest
 } from '@cybertecpty/github-utils';
 import type { ProjectChangelogs, VersionData } from '@cybertecpty/nx-types';
@@ -30,6 +31,7 @@ jest.mock('@cybertecpty/git-utils', () => ({
 jest.mock('@cybertecpty/github-utils', () => ({
   createPullRequest: jest.fn(),
   findOpenPullRequest: jest.fn(),
+  getGithubAuthenticatedUser: jest.fn(),
   updatePullRequest: jest.fn()
 }));
 
@@ -94,6 +96,7 @@ jest.mock('../release-manifest/generator', () => ({
 const mockLastGitCommitHash = jest.mocked(lastGitCommitHash);
 const mockCreatePullRequest = jest.mocked(createPullRequest);
 const mockFindOpenPullRequest = jest.mocked(findOpenPullRequest);
+const mockGetGithubAuthenticatedUser = jest.mocked(getGithubAuthenticatedUser);
 const mockUpdatePullRequest = jest.mocked(updatePullRequest);
 const mockDryRunEnabled = jest.mocked(dryRunEnabled);
 const mockReleaseVersion = jest.mocked(releaseVersion);
@@ -161,6 +164,7 @@ describe('releaseGenerator', () => {
 
   beforeEach(() => {
     jest.clearAllMocks();
+    mockGetGithubAuthenticatedUser.mockResolvedValue('cybertec-bot');
     tree = createTreeWithEmptyWorkspace();
     gitClient = jest.mocked(simpleGit)() as unknown as GitSpies;
 
@@ -598,10 +602,39 @@ describe('releaseGenerator', () => {
     beforeEach(() => {
       // A non-empty release commit is required to reach the PR step at all.
       mockResolveWorkspaceReleaseType.mockReturnValue('patch');
+      mockGetGithubAuthenticatedUser.mockResolvedValue('cybertec-bot');
     });
 
     const run = (over: Partial<ReleaseGeneratorOptions> = {}) =>
       releaseGenerator(tree, options({ skipManifest: true, ...over })).then(callback => callback());
+
+    describe('author guard', () => {
+      it('does not warn when authenticated as cybertec-bot', async () => {
+        await run();
+
+        expect(logger.warn).not.toHaveBeenCalled();
+      });
+
+      it('warns, but still opens the PR, when authenticated as another account', async () => {
+        mockGetGithubAuthenticatedUser.mockResolvedValue('djmcgrath101');
+
+        await run();
+
+        expect(logger.warn).toHaveBeenCalledWith(
+          expect.stringContaining('gh auth switch --user cybertec-bot')
+        );
+        expect(mockCreatePullRequest).toHaveBeenCalled();
+      });
+
+      it('stays quiet when the account cannot be resolved', async () => {
+        mockGetGithubAuthenticatedUser.mockRejectedValue(new Error('gh not logged in'));
+
+        await run();
+
+        expect(logger.warn).not.toHaveBeenCalled();
+        expect(mockCreatePullRequest).toHaveBeenCalled();
+      });
+    });
 
     it('skips the PR entirely when skipPullRequest is set', async () => {
       await run({ skipPullRequest: true });
@@ -633,7 +666,7 @@ describe('releaseGenerator', () => {
         base: 'main',
         body: 'pr body',
         head: 'release/2026-09-11',
-        title: 'Release/2026-09-11'
+        title: 'chore(release): 2026-09-11'
       });
       expect(mockUpdatePullRequest).not.toHaveBeenCalled();
       expect(logger.info).toHaveBeenCalledWith(
@@ -649,7 +682,7 @@ describe('releaseGenerator', () => {
       expect(mockUpdatePullRequest).toHaveBeenCalledWith({
         body: 'pr body',
         number: 42,
-        title: 'Release/2026-09-11'
+        title: 'chore(release): 2026-09-11'
       });
       expect(mockCreatePullRequest).not.toHaveBeenCalled();
     });
