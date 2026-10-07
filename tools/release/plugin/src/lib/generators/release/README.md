@@ -35,7 +35,10 @@ mechanics, not the rationale.
    - opens or updates the GitHub pull request from the release branch into `targetBranch`,
      unless `--skipPullRequest`, `--skipBranch`, or the release branch already equals
      `targetBranch`. A failure here is logged with a manual `gh pr create` fallback rather than
-     failing the release — the branch is already pushed by that point.
+     failing the release — the branch is already pushed by that point. Run the release as
+     `cybertec-bot` (`gh auth switch --user cybertec-bot`): the maintainer cannot approve a PR
+     they authored, and a PR's author cannot be changed later. The generator warns when the
+     authenticated `gh` account is not the bot.
    - Restores the branch that was checked out before the run, whether or not any of the above
      succeeds.
 
