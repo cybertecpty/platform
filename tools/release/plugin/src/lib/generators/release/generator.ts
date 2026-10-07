@@ -326,7 +326,7 @@ async function openReleasePullRequest(
     return;
   }
 
-  const title = `Release/${releaseDate.split('T')[0]}`;
+  const title = `chore(release): ${releaseDate.split('T')[0]}`;
 
   try {
     // Built inside the try because the workspace-changes section queries git;
