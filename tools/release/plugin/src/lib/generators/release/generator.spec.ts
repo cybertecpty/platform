@@ -633,7 +633,7 @@ describe('releaseGenerator', () => {
         base: 'main',
         body: 'pr body',
         head: 'release/2026-09-11',
-        title: 'Release/2026-09-11'
+        title: 'chore(release): 2026-09-11'
       });
       expect(mockUpdatePullRequest).not.toHaveBeenCalled();
       expect(logger.info).toHaveBeenCalledWith(
@@ -649,7 +649,7 @@ describe('releaseGenerator', () => {
       expect(mockUpdatePullRequest).toHaveBeenCalledWith({
         body: 'pr body',
         number: 42,
-        title: 'Release/2026-09-11'
+        title: 'chore(release): 2026-09-11'
       });
       expect(mockCreatePullRequest).not.toHaveBeenCalled();
     });

@@ -57,25 +57,25 @@ without touching git or the tree.
 
 ## Options
 
-| Option                 | Type     | Default   | Notes                                                                                      |
-| ---------------------- | -------- | --------- | ------------------------------------------------------------------------------------------ |
-| `affected`             | boolean  | `false`   | Narrow to projects both configured as releasable and affected since the release window.    |
-| `projects` / `-p`      | string[] | all       | Explicit project list. Ignored when `--affected` resolves its own list.                    |
-| `vers` / `-v`          | string   | —         | Explicit semver or release type, overriding conventional-commits detection.                |
-| `firstRelease`         | boolean  | `false`   | Passed through to Nx's `releaseVersion`/`releaseChangelog`.                                |
-| `baseBranch`           | string   | `develop` | Branch the release branch is cut from (or committed to, with `--skipBranch`).              |
-| `base`                 | string   | —         | Explicit git revision for the `--affected` scan, overriding the `targetBranch` merge-base. |
-| `author`               | string   | git user  | Author recorded in each release manifest.                                                  |
-| `releaseDate`          | string   | now       | ISO date-time. Names the release branch and titles the pull request.                       |
-| `skipBranch`           | boolean  | `false`   | Commit to `baseBranch` directly instead of cutting `release/<date>`.                       |
-| `skipChangelog`        | boolean  | `false`   | Skip `releaseChangelog` entirely.                                                          |
-| `skipManifest`         | boolean  | `false`   | Skip writing `release-manifest.json` for released projects.                                |
-| `skipPullRequest`      | boolean  | `false`   | Skip opening/updating the GitHub promotion pull request.                                   |
-| `skipPublish`          | boolean  | `true`    | Reserved — no publish step exists yet; this flag is currently a no-op.                     |
-| `skipTag`              | boolean  | `false`   | Skip creating the `<project>@<version>` git tag per released project.                      |
-| `skipWorkspaceVersion` | boolean  | `false`   | Skip bumping the root `package.json` version.                                              |
-| `skipFormat`           | boolean  | `false`   | Skip formatting generated files.                                                           |
-| `targetBranch`         | string   | `main`    | Branch the promotion pull request merges into.                                             |
+| Option                 | Type     | Default   | Notes                                                                                              |
+| ---------------------- | -------- | --------- | -------------------------------------------------------------------------------------------------- |
+| `affected`             | boolean  | `false`   | Narrow to projects both configured as releasable and affected since the release window.            |
+| `projects` / `-p`      | string[] | all       | Explicit project list. Ignored when `--affected` resolves its own list.                            |
+| `vers` / `-v`          | string   | —         | Explicit semver or release type, overriding conventional-commits detection.                        |
+| `firstRelease`         | boolean  | `false`   | Passed through to Nx's `releaseVersion`/`releaseChangelog`.                                        |
+| `baseBranch`           | string   | `develop` | Branch the release branch is cut from (or committed to, with `--skipBranch`).                      |
+| `base`                 | string   | —         | Explicit git revision for the `--affected` scan, overriding the `targetBranch` merge-base.         |
+| `author`               | string   | git user  | Author recorded in each release manifest.                                                          |
+| `releaseDate`          | string   | now       | ISO date-time. Names the release branch and dates the `chore(release): <date>` pull request title. |
+| `skipBranch`           | boolean  | `false`   | Commit to `baseBranch` directly instead of cutting `release/<date>`.                               |
+| `skipChangelog`        | boolean  | `false`   | Skip `releaseChangelog` entirely.                                                                  |
+| `skipManifest`         | boolean  | `false`   | Skip writing `release-manifest.json` for released projects.                                        |
+| `skipPullRequest`      | boolean  | `false`   | Skip opening/updating the GitHub promotion pull request.                                           |
+| `skipPublish`          | boolean  | `true`    | Reserved — no publish step exists yet; this flag is currently a no-op.                             |
+| `skipTag`              | boolean  | `false`   | Skip creating the `<project>@<version>` git tag per released project.                              |
+| `skipWorkspaceVersion` | boolean  | `false`   | Skip bumping the root `package.json` version.                                                      |
+| `skipFormat`           | boolean  | `false`   | Skip formatting generated files.                                                                   |
+| `targetBranch`         | string   | `main`    | Branch the promotion pull request merges into.                                                     |
 
 ## Examples
 
