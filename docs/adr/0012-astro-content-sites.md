@@ -62,8 +62,9 @@ Chosen option: **1 — Astro, scoped to static or mostly static content sites.**
   vocabulary.
 - **Dependencies live in the root `package.json`,** under the single-version policy
   (ADR 0001, ADR 0003) that every other project follows. That includes `astro`, `sharp`,
-  the `@fontsource` font packages and Tailwind. The app has no `package.json` of its own,
-  and `pnpm-workspace.yaml` is unchanged (ADR 0005).
+  the `@fontsource` font packages and Tailwind. The app's own `package.json` is
+  a minimal stub (name, version, `private`) that exists only so Nx release can read and bump
+  its version; it declares no dependencies, and `pnpm-workspace.yaml` is unchanged (ADR 0005).
 - **Styling: Tailwind CSS v4,** wired through `@tailwindcss/vite` in `astro.config.mjs`
   (Astro's current setup, as `astro add tailwind` does it). Not the deprecated
   `@astrojs/tailwind` integration, and not Tailwind v3.
