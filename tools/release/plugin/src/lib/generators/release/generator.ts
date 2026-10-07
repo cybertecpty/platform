@@ -2,7 +2,7 @@ import { lastGitCommitHash } from '@cybertecpty/git-utils';
 import {
   createPullRequest,
   findOpenPullRequest,
-  getAuthenticatedUser,
+  getGithubAuthenticatedUser,
   updatePullRequest
 } from '@cybertecpty/github-utils';
 import { NxReleaseChangelogResult, ProjectChangelogs, VersionData } from '@cybertecpty/nx-types';
@@ -386,7 +386,7 @@ async function openReleasePullRequest(
  * that follows surfaces any real `gh` problem.
  */
 async function warnIfNotBotAuthored(): Promise<void> {
-  const user = await getAuthenticatedUser().catch(() => null);
+  const user = await getGithubAuthenticatedUser().catch(() => null);
 
   if (user === null || user === RELEASE_PR_AUTHOR) {
     return;

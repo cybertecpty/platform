@@ -2,7 +2,7 @@ import { lastGitCommitHash } from '@cybertecpty/git-utils';
 import {
   createPullRequest,
   findOpenPullRequest,
-  getAuthenticatedUser,
+  getGithubAuthenticatedUser,
   updatePullRequest
 } from '@cybertecpty/github-utils';
 import type { ProjectChangelogs, VersionData } from '@cybertecpty/nx-types';
@@ -31,7 +31,7 @@ jest.mock('@cybertecpty/git-utils', () => ({
 jest.mock('@cybertecpty/github-utils', () => ({
   createPullRequest: jest.fn(),
   findOpenPullRequest: jest.fn(),
-  getAuthenticatedUser: jest.fn(),
+  getGithubAuthenticatedUser: jest.fn(),
   updatePullRequest: jest.fn()
 }));
 
@@ -96,7 +96,7 @@ jest.mock('../release-manifest/generator', () => ({
 const mockLastGitCommitHash = jest.mocked(lastGitCommitHash);
 const mockCreatePullRequest = jest.mocked(createPullRequest);
 const mockFindOpenPullRequest = jest.mocked(findOpenPullRequest);
-const mockGetAuthenticatedUser = jest.mocked(getAuthenticatedUser);
+const mockGetGithubAuthenticatedUser = jest.mocked(getGithubAuthenticatedUser);
 const mockUpdatePullRequest = jest.mocked(updatePullRequest);
 const mockDryRunEnabled = jest.mocked(dryRunEnabled);
 const mockReleaseVersion = jest.mocked(releaseVersion);
@@ -164,7 +164,7 @@ describe('releaseGenerator', () => {
 
   beforeEach(() => {
     jest.clearAllMocks();
-    mockGetAuthenticatedUser.mockResolvedValue('cybertec-bot');
+    mockGetGithubAuthenticatedUser.mockResolvedValue('cybertec-bot');
     tree = createTreeWithEmptyWorkspace();
     gitClient = jest.mocked(simpleGit)() as unknown as GitSpies;
 
@@ -602,7 +602,7 @@ describe('releaseGenerator', () => {
     beforeEach(() => {
       // A non-empty release commit is required to reach the PR step at all.
       mockResolveWorkspaceReleaseType.mockReturnValue('patch');
-      mockGetAuthenticatedUser.mockResolvedValue('cybertec-bot');
+      mockGetGithubAuthenticatedUser.mockResolvedValue('cybertec-bot');
     });
 
     const run = (over: Partial<ReleaseGeneratorOptions> = {}) =>
@@ -616,7 +616,7 @@ describe('releaseGenerator', () => {
       });
 
       it('warns, but still opens the PR, when authenticated as another account', async () => {
-        mockGetAuthenticatedUser.mockResolvedValue('djmcgrath101');
+        mockGetGithubAuthenticatedUser.mockResolvedValue('djmcgrath101');
 
         await run();
 
@@ -627,7 +627,7 @@ describe('releaseGenerator', () => {
       });
 
       it('stays quiet when the account cannot be resolved', async () => {
-        mockGetAuthenticatedUser.mockRejectedValue(new Error('gh not logged in'));
+        mockGetGithubAuthenticatedUser.mockRejectedValue(new Error('gh not logged in'));
 
         await run();
 

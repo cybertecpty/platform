@@ -6,7 +6,7 @@ import { runGh } from './github-cli.utils';
  * Passes `--jq` a filter with no string literals (Windows PowerShell strips
  * embedded double quotes from native-program arguments).
  */
-export async function getAuthenticatedUser(): Promise<string> {
+export async function getGithubAuthenticatedUser(): Promise<string> {
   const { stdout } = await runGh(['api', 'user', '--jq', '.login']);
 
   return stdout.trim();
