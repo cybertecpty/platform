@@ -1,10 +1,10 @@
 ---
 name: address-pr-feedback
 description: >
-  Work through an automated reviewer's comments on a platform PR (GitHub Copilot or Gemini
-  Code Assist) — triage each thread (fix or reasoned pushback), push accepted fixes, then
-  resolve ONLY the threads that were actually fixed. Declined/deferred threads stay open
-  with a reply. Use when asked to address PR review feedback / bot review comments.
+  Work through an automated reviewer's comments on a platform PR (GitHub Copilot) — triage
+  each thread (fix or reasoned pushback), push accepted fixes, then resolve ONLY the threads
+  that were actually fixed. Declined/deferred threads stay open with a reply. Use when asked
+  to address PR review feedback / bot review comments.
 ---
 
 # Address PR review feedback
@@ -18,13 +18,12 @@ GitHub thread-resolution writes; do them unless the user explicitly opts out.
 
 Reviewers seen on this repo:
 
-| Reviewer           | First comment `author.login`         |
-| ------------------ | ------------------------------------ |
-| GitHub Copilot     | `copilot-pull-request-reviewer[bot]` |
-| Gemini Code Assist | `gemini-code-assist[bot]`            |
+| Reviewer       | First comment `author.login`         |
+| -------------- | ------------------------------------ |
+| GitHub Copilot | `copilot-pull-request-reviewer[bot]` |
 
 Step 2 discovers the actual thread authors before filtering — surface any login not in this
-table rather than skipping it.
+table (e.g. a newly added review bot) rather than skipping it.
 
 ## Preconditions
 
@@ -36,10 +35,9 @@ table rather than skipping it.
 
 ## Workflow
 
-### 1. Resolve the PR and reviewer filter
+### 1. Resolve the PR
 
-Args: an all-digits token is the PR number (default: the current branch's PR); a token of
-`copilot` / `gemini` / `all` is the reviewer filter (default `all`).
+Args: an all-digits token is the PR number (default: the current branch's PR).
 
 ```bash
 PR="{n or $(gh pr view --json number --jq .number)}"
@@ -62,9 +60,8 @@ query($owner:String!,$repo:String!,$pr:Int!){
 ```
 
 Group **unresolved** threads by first-comment `author.login` and report counts. Keep threads
-whose author matches a known reviewer bot (prefix match tolerates `[bot]`), narrowed to the
-reviewer filter if one was given. Ignore human authors and non-reviewer bots. If zero
-matching open threads, say so and stop.
+whose author matches a known reviewer bot (prefix match tolerates `[bot]`). Ignore human
+authors and non-reviewer bots. If zero matching open threads, say so and stop.
 
 For each kept thread note: `id` (node ID for resolve), first comment `databaseId` (for the
 reply endpoint), `path`, `line`, `body`, reviewer. Flag `isOutdated`.
@@ -124,7 +121,7 @@ switch back to the maintainer at the end, even on failure.
 | #   | Reviewer | File:line | The point  | Action                           | Thread |
 | --- | -------- | --------- | ---------- | -------------------------------- | ------ |
 | 1   | Copilot  | foo.ts:42 | {one line} | Fixed (resolved)                 | {link} |
-| 2   | Gemini   | baz.ts:88 | {one line} | Deferred (open, replied) — {why} | {link} |
+| 2   | Copilot  | baz.ts:88 | {one line} | Deferred (open, replied) — {why} | {link} |
 
 **Verification:** {results}
 **Commit/push:** {short-sha} pushed to {branch} via cybertec-bot.

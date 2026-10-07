@@ -3,12 +3,16 @@ name: CI
 on:
   push:
     branches:
+      - develop
       - main
   pull_request:
 
 permissions:
   actions: read
   contents: read
+  # The coverage step upserts a single PR comment (skipped on forks, which get a
+  # read-only token anyway).
+  pull-requests: write
 
 env:
   # Read-write CI token for the Nx Cloud remote cache. Set the repo secret
@@ -19,7 +23,7 @@ env:
   NX_CLOUD_ACCESS_TOKEN: ${{ secrets.NX_CLOUD_ACCESS_TOKEN }}
 
 jobs:
-  main:
+  ci:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v5
@@ -27,22 +31,62 @@ jobs:
           filter: tree:0
           fetch-depth: 0
 
-      # This enables task distribution via Nx Cloud
-      # Run this command as early as possible, before dependencies are installed
-      # Learn more at https://nx.dev/docs/reference/nx-cloud-cli#npx-nxcloud-startcirun
-      - run: npx nx start-ci-run --distribute-on="3 linux-medium-js" --stop-agents-after="e2e"
+      # pnpm must be on PATH before setup-node so its cache logic can find the
+      # store. Version comes from package.json's "packageManager" field.
+      - uses: pnpm/action-setup@v4
 
-      # Cache node_modules
       - uses: actions/setup-node@v5
         with:
-          node-version: 24
-          cache: 'npm'
+          node-version-file: '.nvmrc'
+          cache: 'pnpm'
 
-      - run: npm ci
+      - run: pnpm install --frozen-lockfile
+
+      # Unit-test the CI-only coverage reporter (plain Node, not an Nx project).
+      - run: node --test .github/scripts/*.test.cjs
+
+      # Derive the diff base/head for format:check (and, later, `nx affected`):
+      # on a PR, the merge-base with the target branch; on a push, the last
+      # successful commit on this branch. Exposes $NX_BASE / $NX_HEAD. Needs
+      # `actions: read` + `fetch-depth: 0` (both set above).
+      - uses: nrwl/nx-set-shas@v5
+
+      # Enable Nx Cloud task distribution. Runs after install because it is
+      # invoked through the workspace's pinned Nx (pnpm exec).
+      # Learn more at https://nx.dev/docs/reference/nx-cloud-cli#npx-nxcloud-startcirun
+      - run: pnpm exec nx start-ci-run --distribute-on="3 linux-medium-js" --stop-agents-after="e2e"
 
       # Prepend any command with "nx record --" to record its logs to Nx Cloud
-      - run: npx nx record -- npx nx format:check --base="remotes/origin/main"
-      - run: npx nx run-many -t lint test build typecheck e2e
+      # $NX_BASE / $NX_HEAD come from nrwl/nx-set-shas above.
+      - run: pnpm exec nx record -- pnpm exec nx format:check --base=$NX_BASE --head=$NX_HEAD
+      - run: pnpm exec nx run-many -t lint test build typecheck e2e
+
+      # Coverage reporting (ADR 0007 amendment / issue #52). The `test` targets
+      # collect coverage in CI (jest.preset.js) and declare
+      # `coverage/{projectRoot}` as an output, so Nx hydrates every project's
+      # report onto this runner after the distributed run. This step merges them
+      # into one workspace number, writes the job summary, and — on a non-fork PR
+      # — upserts a single coverage comment. `always()` so a coverage-threshold
+      # failure above still produces the report.
+      - name: Coverage report
+        if: always()
+        # Reporting only — the coverage *gate* is the `test` run above. A broken
+        # reporter (or Nx not hydrating the coverage dirs) must not block a merge.
+        continue-on-error: true
+        uses: actions/github-script@v7
+        with:
+          script: |
+            const report = require(`${process.env.GITHUB_WORKSPACE}/.github/scripts/coverage-report.cjs`);
+            await report({ github, context, core });
+
+      - name: Upload coverage report
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: coverage
+          path: coverage/
+          if-no-files-found: warn
+
       # Nx Cloud recommends fixes for failures to help you get CI green faster. Learn more: https://nx.dev/docs/features/ci-features/self-healing-ci
-      - run: npx nx fix-ci
+      - run: pnpm exec nx fix-ci
         if: always()

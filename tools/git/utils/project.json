@@ -1,0 +1,20 @@
+{
+  "name": "git-utils",
+  "$schema": "../../../node_modules/nx/schemas/project-schema.json",
+  "sourceRoot": "tools/git/utils/src",
+  "projectType": "library",
+  "tags": ["scope:tools", "type:utils"],
+  "targets": {
+    "build": {
+      "executor": "@nx/js:tsc",
+      "outputs": ["{options.outputPath}"],
+      "options": {
+        "outputPath": "dist/tools/git/utils",
+        "main": "tools/git/utils/src/index.ts",
+        "tsConfig": "tools/git/utils/tsconfig.lib.json",
+        "assets": []
+      }
+    },
+    "typecheck": {}
+  }
+}

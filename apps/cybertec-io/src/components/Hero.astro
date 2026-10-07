@@ -1,0 +1,61 @@
+---
+const credibility = ['15+ Years', 'Remote · Panama (UTC-5)', 'US Citizen', 'English & Spanish'];
+---
+
+<section id="top" class="blueprint-grid hairline-b pb-24 pt-[108px]">
+  <div class="site-container">
+    {/* Availability pill: brass border, copper leading dot, mono uppercase. */}
+    <span class="inline-flex items-center gap-2 rounded-full border border-[rgb(var(--brass-rgb)/0.3)] px-4 py-[7px] font-mono text-xs uppercase tracking-wide text-brass">
+      <span class="h-[7px] w-[7px] rounded-full bg-copper" aria-hidden="true"></span>
+      Available for long-term remote contract engagements
+    </span>
+
+    {/* Eyebrow */}
+    <p class="mt-7 font-mono text-[12.5px] uppercase tracking-[0.22em] text-copper">
+      Senior Full-Stack Engineer · Angular Consultant &amp; Contractor
+    </p>
+
+    {/* Headline — single italic-copper accent on "made to last". */}
+    <h1 class="mt-5 max-w-[16ch] font-display text-[clamp(40px,6.6vw,82px)] font-normal leading-[1.04] tracking-[-0.02em] text-paper">
+      I build production software, <span class="accent-italic">made to last</span>.
+    </h1>
+
+    {/* Subhead — exact copy from the design. */}
+    <p class="mt-6 max-w-[48ch] text-[clamp(18px,2.2vw,22px)] leading-[1.5] text-body-on-ink">
+      I'm Daniel McGrath — a senior full-stack engineer and Angular consultant with 15+ years
+      shipping production applications, modernizing legacy frontends, and managing Nx monorepos.
+      Available for long-term, full-time remote contract engagements — from platforms serving
+      hundreds of thousands of users to systems I've owned end to end.
+    </p>
+
+    {/* CTAs */}
+    <div class="mt-9 flex flex-wrap items-center gap-7">
+      <a
+        href="#contact"
+        class="inline-flex items-center rounded-sm bg-copper px-[26px] py-[15px] font-mono text-[13px] font-medium uppercase text-ink transition-transform duration-200 motion-safe:hover:-translate-y-0.5 hover:shadow-[0_10px_30px_-10px_rgb(var(--copper-rgb)/0.6)]"
+      >
+        Get in touch <span aria-hidden="true">→</span>
+      </a>
+      <a
+        href="#experience"
+        class="font-mono text-[13px] uppercase text-brass underline decoration-brass underline-offset-4"
+      >
+        See my work
+      </a>
+    </div>
+
+    {/* Credibility strip — brass-slash-separated mono items. */}
+    <ul class="mt-12 flex flex-wrap items-center gap-3 font-mono text-[11px] uppercase tracking-[0.16em] text-steel">
+      {credibility.map((item, i) => (
+        <li class="flex items-center gap-3">
+          {i > 0 && (
+            <span class="text-brass" aria-hidden="true">
+              /
+            </span>
+          )}
+          <span>{item}</span>
+        </li>
+      ))}
+    </ul>
+  </div>
+</section>

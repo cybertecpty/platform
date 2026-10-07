@@ -1,0 +1,10 @@
+# Code owners for cybertecpty/platform
+#
+# GitHub auto-requests a review from the owner(s) listed here on every pull
+# request that touches a matching path (the PR author is never asked to review
+# their own PR). Branch protection on `develop` / `main` *requires* a maintainer
+# approval but does not request one — this file is what actually pings the
+# reviewer. See docs/agents/conventions.md §1.
+
+# Everything: the maintainer reviews all PRs, including bot-authored ones.
+* @djmcgrath101

@@ -1,0 +1,16 @@
+import { formatFiles, logger, type Tree } from '@nx/devkit';
+import type { <%= className %>GeneratorOptions } from './schema';
+
+/**
+ * TODO: describe what the `<%= name %>` generator scaffolds.
+ */
+export async function <%= generatorFnName %>(
+  tree: Tree,
+  options: <%= className %>GeneratorOptions
+): Promise<void> {
+  logger.info(`TODO: implement the "${options.name}" generator`);
+
+  await formatFiles(tree);
+}
+
+export default <%= generatorFnName %>;

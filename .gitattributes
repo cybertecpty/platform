@@ -1,0 +1,14 @@
+# Normalize line endings for all text-based files.
+# https://git-scm.com/docs/gitattributes#_end_of_line_conversion
+#
+# `text=auto` lets git auto-detect text vs binary; `eol=lf` then forces every
+# detected text file to LF in the working tree on all platforms (binary files
+# are left untouched). This matches .editorconfig (`end_of_line = lf`) and
+# Prettier's output, so text files never show up as phantom-"modified" from
+# CRLF round-tripping — regardless of a contributor's local `core.autocrlf`.
+
+* text=auto eol=lf
+
+# Lockfiles: generated — collapse in GitHub PR diffs, exclude from language stats.
+package-lock.json linguist-generated=true
+pnpm-lock.yaml    linguist-generated=true

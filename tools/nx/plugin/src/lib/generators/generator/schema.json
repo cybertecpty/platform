@@ -1,0 +1,66 @@
+{
+  "$schema": "https://json-schema.org/schema",
+  "cli": "nx",
+  "$id": "NxGenGenerator",
+  "title": "Scaffold a generator inside a workspace plugin",
+  "description": "Wrap `@nx/plugin:generator` with the workspace conventions: the generator lands at `src/lib/generators/<directory>/generator.ts` in the target plugin, with a type-checked `schema.ts` exporting an `Options` interface, a minimal starter function, and a re-export from the plugin's `src/index.ts`.",
+  "type": "object",
+  "examples": [
+    {
+      "command": "nx g nx-gen release-manifest --project=release-plugin",
+      "description": "Adds a `release-manifest` generator at `tools/release/plugin/src/lib/generators/release-manifest/generator.ts`."
+    },
+    {
+      "command": "nx g nx-gen nx-gen --project=nx-plugin --directory=generator",
+      "description": "Adds a generator whose folder (`generator/`) differs from its collection key (`nx-gen`)."
+    }
+  ],
+  "properties": {
+    "name": {
+      "type": "string",
+      "description": "The generator name — its key in the target plugin's generators collection and, unless `directory` overrides it, its folder under `src/lib/generators/`. Lowercase alphanumeric words joined by single hyphens.",
+      "pattern": "^[a-z0-9]+(?:-[a-z0-9]+)*$",
+      "x-priority": "important",
+      "$default": {
+        "$source": "argv",
+        "index": 0
+      }
+    },
+    "project": {
+      "type": "string",
+      "description": "The plugin project to add the generator to. Must be tagged `type:plugin`.",
+      "x-priority": "important",
+      "x-prompt": "Which plugin project should the generator be added to?",
+      "$default": {
+        "$source": "projectName"
+      }
+    },
+    "directory": {
+      "type": "string",
+      "description": "Folder segment under the plugin's `src/lib/generators/`. Defaults to `name`; set it when the folder should differ from the collection key.",
+      "pattern": "^[a-z0-9]+(?:-[a-z0-9]+)*$"
+    },
+    "description": {
+      "type": "string",
+      "description": "Generator description, recorded against the entry in the plugin's `generators.json`."
+    },
+    "unitTestRunner": {
+      "type": "string",
+      "enum": ["jest", "none"],
+      "default": "jest",
+      "description": "Test runner for the generated generator's spec. The workspace standardizes on Jest (ADR 0007)."
+    },
+    "skipLintChecks": {
+      "type": "boolean",
+      "default": false,
+      "description": "Do not add an eslint configuration for the plugin's json files."
+    },
+    "skipFormat": {
+      "type": "boolean",
+      "default": false,
+      "description": "Skip formatting files.",
+      "x-priority": "internal"
+    }
+  },
+  "required": ["name", "project"]
+}

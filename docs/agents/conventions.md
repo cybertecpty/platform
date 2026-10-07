@@ -21,16 +21,19 @@ The repo is a fresh rebuild (`dfc4c32 chore: first commit`, 2026-08-31). Some ru
 below describe the **intended** setup and are **not wired yet** — treated here as
 policy so they're in place when the tooling lands, but don't assume they're active:
 
-| Area                                                   | Now                                                   | Planned  |
-| ------------------------------------------------------ | ----------------------------------------------------- | -------- |
-| Bot PR flow (`cybertec-bot`, `cybertecpty/bots` team)  | ✅ live                                               | —        |
-| CI (`ci.yml`) + Nx Cloud distribution / self-healing   | ✅ live                                               | —        |
-| Nx Cloud remote cache (`NX_CLOUD_ACCESS_TOKEN` secret) | ✅ live                                               | —        |
-| Branch protection on `develop` / `main`                | ✅ live — rulesets `protect-develop` / `protect-main` | —        |
-| Commitlint / format-on-save hook                       | ❌ not configured                                     | §3, §8   |
-| `@cybertecpty/*` publish on merge to `main`            | ❌ no release flow, no packages                       | §2       |
-| `cybertec-back-merge` app                              | app installed, not driving anything                   | §2       |
-| pnpm                                                   | ❌ npm today                                          | ADR 0001 |
+| Area                                                      | Now                                                            | Planned |
+| --------------------------------------------------------- | -------------------------------------------------------------- | ------- |
+| Bot PR flow (`cybertec-bot`, `cybertecpty/bots` team)     | ✅ live                                                        | —       |
+| CI (`ci.yml`) + Nx Cloud distribution / self-healing      | ✅ live                                                        | —       |
+| Nx Cloud remote cache (`NX_CLOUD_ACCESS_TOKEN` secret)    | ✅ live                                                        | —       |
+| Branch protection on `develop` / `main`                   | ✅ live — rulesets `protect-develop` / `protect-main`          | —       |
+| Reviewer routing (`.github/CODEOWNERS` → `@djmcgrath101`) | ✅ live — auto-requests maintainer review on every PR          | —       |
+| Pre-commit hook (`husky` + `lint-staged`)                 | ✅ live — formats/`eslint --fix`es staged files (#24)          | —       |
+| Commitlint / `commit-msg` hook                            | ✅ live — `commit-msg` hook + CI PR-title check (#32)          | §3      |
+| `@cybertecpty/*` publish on merge to `main`               | ❌ no release flow, no packages                                | §2      |
+| `cybertec-back-merge` app                                 | app installed, not driving anything                            | §2      |
+| pnpm (`pnpm-lock.yaml`, `pnpm exec nx`)                   | ✅ live — pnpm@10.34.5, `node-linker=isolated` (PR #17)        | —       |
+| Application frameworks (Angular 22, NestJS 11)            | ✅ live — `@nx/angular` / `@nx/nest`, path-alias TS (ADR 0005) | —       |
 
 Where a rule depends on unwired tooling, it says so inline.
 
@@ -73,6 +76,11 @@ manual git is unaffected.
   `gh pr create --repo cybertecpty/platform --base develop --head {branch} ...`.
 - Use `--body-file {path}` for multi-line bodies — never inline `--body` (PowerShell
   strips embedded quotes) and never `--body @-`.
+- Request the maintainer's review: pass `--reviewer djmcgrath101` to `gh pr create`.
+  `.github/CODEOWNERS` (`* @djmcgrath101`) already auto-requests it, and the branch
+  protection rule _requires_ a maintainer approval — but "required" is not
+  "requested", so without CODEOWNERS or the flag a PR just sits `BLOCKED` with
+  nobody pinged. Keep both.
 - Switch to the maintainer account only for actions that genuinely need a seated
   account (e.g. requesting a Copilot review, approving). Switch **back** to
   `cybertec-bot` before bot-owned maintenance (arming auto-merge, bot comments,
@@ -83,7 +91,7 @@ manual git is unaffected.
 
 - Branch protection is live (§2), so auto-merge is safe: as `cybertec-bot`,
   `gh pr merge {n} --auto --squash` for PRs into `develop`. It pre-arms the merge
-  and then waits for the required `main` check **and** the maintainer's approval —
+  and then waits for the required `ci` check **and** the maintainer's approval —
   it will not merge unreviewed code.
 - Only the human maintainer approves and merges protected branches. Do not grant
   the bot bypass rights to force a self-merge.
@@ -111,8 +119,13 @@ not proof. Prefer `git branch -d` (refuses unmerged work).
 
 ## 2. Branch model & protection
 
-- **`develop`** — integration branch. All feature/fix/chore PRs target `develop`.
-- **`main`** — release / published-package branch.
+- **`develop`** — integration branch and the **GitHub default branch** (ADR 0002). All
+  feature/fix/chore PRs target `develop`; `gh pr create` with no `--base` and the web
+  compare/PR UI default to it. Because it's the default branch, `Closes #N` / `Fixes #N`
+  in a PR body closes the issue on merge to `develop` — no manual close step.
+- **`main`** — release / published-package branch. Promotion PRs must pass `--base main`
+  explicitly (the default is now `develop`), and carry **no** closing keywords — the issues
+  they promote were already closed when the work merged to `develop`.
 - Never push directly to `develop` or `main`. Never force-push a shared branch — add
   a new commit.
 
@@ -120,9 +133,10 @@ not proof. Prefer `git branch -d` (refuses unmerged work).
 on both branches:
 
 - a pull request is required — no direct pushes;
-- one approving review, from the maintainer (`require_code_owner_review` off; approvals
-  dismissed on any new push);
-- the `main` GitHub Actions check must pass (non-strict — the branch need not be up to
+- one approving review, from the maintainer (`require_code_owner_review` off, so a
+  CODEOWNERS review is requested but not itself gating; approvals dismissed on any new
+  push);
+- the `ci` GitHub Actions check must pass (non-strict — the branch need not be up to
   date first);
 - all review threads resolved before merge;
 - no force-push, no branch deletion;
@@ -165,18 +179,48 @@ review has not accepted.
   conventional-commit subject: `type(scope): message (#123)`. Optional — only when an
   issue actually exists; don't fabricate one.
 - The subject parenthetical is a scan reference, not a closer. GitHub auto-closes
-  only from body/footer keywords (`Closes #123`) **and** only on merge to `main` —
-  so a PR merged to `develop` typically leaves its issue open until the work ships.
+  only from body/footer keywords (`Closes #123`) on merge to the **default branch**,
+  which is `develop` (ADR 0002) — so a feature PR's `Closes #123` fires when it merges
+  to `develop`. Keep closing keywords out of `develop → main` promotion PRs.
 
 ### Commit message format
 
-Conventional Commits: `type(scope): subject`. When commitlint is configured (see
-§0), these are enforced by a `commit-msg` hook — write the message to a file and
-`git commit -F {file}`:
+[Conventional Commits](https://www.conventionalcommits.org/en/v1.0.0/):
+`type(scope): subject`. Enforced two ways (§0) from `@commitlint/config-conventional`
+plus a terse custom formatter: the `.husky/commit-msg` hook locally, and a CI check
+on the **PR title** — the subject that lands, since `develop` squash-merges. Write
+the message to a file and `git commit -F {file}`.
 
-- subject **lowercase** (acronyms too);
-- body lines ≤ 100 characters (blocking);
-- blank line before any footer (warning only — the commit still lands).
+- subject **lowercase** (acronyms too), no trailing period;
+- header ≤ 100 characters; body / footer lines ≤ 100 (blocking);
+- blank line before any footer (warning only — the commit still lands);
+- breaking change: `!` after the type/scope — `feat(api)!: drop v1 endpoints`.
+
+`--no-verify` skips the hook, but the CI check on the PR title still gates the merge.
+
+The custom formatter lives in the `git-utils` project
+(`tools/git/utils/src/lib/commitlint-formatter.ts`). It is a `.ts` file loaded by
+**bare `node`** — no ts-jest, no bundler — so: `import type` only (a value import of a
+type throws at load), erasable syntax only (no enums / namespaces / parameter
+properties), and `NODE_OPTIONS=--disable-warning=MODULE_TYPELESS_PACKAGE_JSON` in
+`.husky/commit-msg` and `commitlint.yml` silences node's reparse notice. `engines.node`
+is `>=22.18.0` because that is where native type stripping became unflagged.
+
+**Types** (scope is optional and free-form):
+
+| type       | for                                                       |
+| ---------- | --------------------------------------------------------- |
+| `feat`     | a user-facing feature                                     |
+| `fix`      | a bug fix                                                 |
+| `docs`     | documentation only                                        |
+| `refactor` | a code change that neither fixes a bug nor adds a feature |
+| `perf`     | a code change that improves performance                   |
+| `test`     | adding or correcting tests                                |
+| `build`    | build system, dependencies, or tooling config             |
+| `ci`       | CI workflows and scripts                                  |
+| `chore`    | anything that doesn't touch `src` or tests                |
+| `style`    | formatting only — whitespace, semicolons (not CSS)        |
+| `revert`   | reverts a previous commit                                 |
 
 ---
 
@@ -185,7 +229,7 @@ Conventional Commits: `type(scope): subject`. When commitlint is configured (see
 A monitor event can re-surface any new PR comment. Before acting, confirm it is
 genuine reviewer feedback.
 
-**Actionable:** humans, `copilot-pull-request-reviewer[bot]`, `gemini-code-assist[bot]`.
+**Actionable:** humans, `copilot-pull-request-reviewer[bot]`.
 
 **Noise — skip:** CI-status bots, comments authored by `cybertec-bot`, comments with
 an "addressed by" signature from the same workflow, already-resolved/outdated threads
@@ -255,7 +299,12 @@ _using_ one.
 ## 8. Coding standards
 
 - Prefer minimal diffs and existing helpers.
-- Use template files with `generateFiles` for generator output whenever viable.
+- Use template files with `generateFiles` for generator output whenever viable. Name
+  those files with a `__tmpl__` suffix (e.g. `generator.ts__tmpl__`) and pass
+  `{ tmpl: '' }` in the substitutions — not the `.template` suffix Nx also strips.
+  `__tmpl__` is what the workspace already uses (`generators/plugin/files/src/lib/.gitkeep__tmpl__`),
+  and a `__tmpl__` name falls outside the `src/**/*.ts` / `**/!(*.ts)` globs that lint,
+  typecheck, and asset-copy would otherwise apply to it.
 - Keep generator/executor folders to actual implementations; supporting constants,
   helpers, and types go in sibling `src/lib/defaults/`, `src/lib/utils/`, etc.
 - General-purpose helpers default to `utils/` unless a more specific concept owns
@@ -268,6 +317,49 @@ _using_ one.
 - No `any` without an inline comment explaining why.
 - Don't swallow errors — rethrow or return a structured failure.
 - Exported functions have explicit return types.
+- Typed linting is on workspace-wide (ADR 0006): `typescript-eslint`'s
+  `recommendedTypeChecked` runs against every `.ts` / `.cts` / `.mts` file via the base
+  `eslint.config.mjs`, so `no-floating-promises`, `no-misused-promises`,
+  `no-unnecessary-condition` and the rest fail `nx lint`. Per-project
+  `enableTypedLinting` stays **off** (generator default) — the parser wiring is central,
+  not copied into each lib. A lib that genuinely can't be type-linted adds a local
+  `tseslint.configs.disableTypeChecked` override rather than the workspace opting out. A
+  stray `.ts` file outside every project `tsconfig` fails project-service resolution —
+  add it to a `tsconfig`, the `ignores` list, or `projectService.allowDefaultProject`.
+- On top of that base ruleset, `eslint.config.mjs` carries a **plugin layer** (ADR
+  0008): `@ngrx/eslint-plugin` `configs.signals` on `{apps,libs}/**/*.ts` (SignalStore
+  footguns), `eslint-plugin-jest` `flat/recommended` on spec / mock files (see §9),
+  `@typescript-eslint/no-deprecated` on all TS (flags `@deprecated` symbols — the one
+  `strictTypeChecked` rule promoted), and `@eslint-community/eslint-plugin-eslint-comments`.
+  Adding or removing a whole plugin, or swapping its preset, is an ADR 0008 change;
+  promoting or demoting an individual rule is a normal config edit.
+- **Every `eslint-disable` must name specific rules and carry a reason** —
+  `require-description` and `no-unlimited-disable` are errors, and ESLint's
+  `reportUnusedDisableDirectives` flags stale ones. Write
+  `// eslint-disable-next-line some-rule -- why this is safe here`, never a bare
+  `// eslint-disable-next-line`. A block `/* eslint-disable rule */` needs a matching
+  `/* eslint-enable rule */`.
+
+### Dependency reuse
+
+Before adding a runtime or dev dependency, check whether the workspace already
+covers it — an existing dependency, an Nx plugin, or a shared helper.
+
+- Prefer a well-supported third-party package over a custom implementation when it
+  meaningfully cuts risk, maintenance, or complexity. Prefer a few lines of our
+  own code over a dependency for trivial logic.
+- Vet a candidate before adding it: maintenance and release cadence, adoption,
+  security posture (open advisories, `pnpm audit`), license compatibility,
+  TypeScript support, and runtime / bundle impact.
+- Add or update tests for the integration behavior and failure modes the new
+  dependency introduces — don't lean on its own test suite.
+- Some packages ship an import entry point that defeats bundler tree-shaking.
+  Before adding a utility or validation library, check
+  `docs/adr/0003-frontend-bundle-hygiene.md` for the entry-point rules — `lodash`
+  → `lodash-es` workspace-wide, `zod` → `zod/mini` in `scope:frontend` and
+  `scope:shared` code, both lint-enforced.
+- Adding a dependency is a `build` change (`build(deps): ...`); if it sets a
+  durable technical direction, it may also warrant an ADR (§7).
 
 ### Documentation placeholders
 
@@ -277,10 +369,38 @@ placeholder style consistent across a block.
 
 ### Formatting
 
-Run `nx format:write --files={paths}` after editing. If a format-on-save /
-import-organizer hook is configured (see §0), it **strips an import added without its
-usage in the same edit** — so add an import and its first use atomically, in one
-edit, not as two.
+Run `nx format:write --files={paths}` after editing, and actually run it before
+ticking a "prettier clean" box in a PR body — CI runs `nx format:check` and a stray
+marker fails the required check.
+
+Prettier owns Markdown too, and its normalization is **not** configurable:
+
+- Emphasis (italic) uses single underscores; strong (bold) uses double asterisks.
+  Write `_word_`, not `*word*` — `*word*` gets rewritten to `_word_` on the next
+  format run. (Prettier keeps `*` only for mid-word emphasis like `a*b*c`, which
+  prose rarely wants.)
+- Unordered list bullets are `-` (Prettier rewrites `*` / `+`).
+
+If a format-on-save / import-organizer hook is configured (see §0), it **strips an
+import added without its usage in the same edit** — so add an import and its first
+use atomically, in one edit, not as two.
+
+### Pre-commit hook
+
+A `husky` `pre-commit` hook runs `lint-staged` on every `git commit` (#24): staged
+`*.{ts,tsx,cts,mts,js,jsx,cjs,mjs}` get `eslint --fix` then `nx format:write`; staged
+`*.{json,md,mdx,html,css,scss,yml,yaml}` get `nx format:write`. lint-staged re-stages
+what it changed, so the commit lands clean.
+
+- It's a **convenience backstop**, not the gate. CI (`nx format:check`,
+  `nx run-many -t lint`) stays authoritative — `git commit --no-verify` bypasses the
+  hook entirely.
+- Installed by the `prepare` script on `pnpm install`; the hook shells out through
+  `sh` (Git for Windows provides it). If `.husky/_/` is missing, run `pnpm install`.
+- It fires on **bot commits** too. When the working tree is already formatted (per the
+  rule above, the bot runs `nx format:write` before committing) the hook is a no-op.
+  Don't reach for `--no-verify` in the bot flow unless the hook is actively breaking a
+  commit — see `.claude/skills/commit-push-pr`.
 
 ### Windows / PowerShell
 
@@ -300,18 +420,43 @@ edit, not as two.
 
 ## 9. Testing & verification
 
+- Jest is the workspace test runner for every project — Angular, NestJS, and plain libs
+  (ADR 0007). Generators are defaulted to `unitTestRunner: jest` in `nx.json`; there is
+  no `@nx/vitest` plugin. Run tests through `nx test {project}`, never `jest` directly.
 - Unit tests are `*.spec.ts`, beside the implementation.
 - Name the top-level `describe` after the exported unit; write `it(...)` names as
   behavior statements.
+- `eslint-plugin-jest` `flat/recommended` lints spec / mock files (`*.{spec,test}.ts`,
+  `*.{mock,mocks}.ts`) — a left-in `fit` / `fdescribe` / `.only`, an `expect()` with no
+  matcher, or a duplicated `it()` title fails `nx lint` (ADR 0008). The same block
+  relaxes `@nx/enforce-module-boundaries` and a few TS rules for test code.
 - Prefer direct assertions over snapshots.
 - For Nx generators / workspace utilities, use `createTreeWithEmptyWorkspace()` and
   assert against the in-memory `Tree`, generated files, and project config.
+- **Coverage: an 80% floor, CI-enforced** (ADR 0007 amendment). `jest.preset.js` sets
+  `coverageThreshold.global` to 80 and `collectCoverage: !!process.env.CI`, so local
+  `nx test` stays fast and the threshold gates CI. Under `nx run-many` it is a
+  per-project gate. New runtime projects must clear 80% — check with
+  `nx test {project} --coverage` before opening the PR. `type:types` libs have no
+  `test` target and are exempt. CI also merges the per-project reports into one
+  workspace number, uploads `coverage/` as an artifact, and posts a per-PR coverage
+  comment (per-project table + patch coverage for changed lines) — all inside GitHub
+  Actions, no third-party service (`.github/scripts/coverage-report.cjs`, unit-tested
+  with `node --test`).
+- **Spec files are type-checked by the `typecheck` target, not `test`.** `ts-jest` is
+  transpile-only and `build` excludes `*.spec.ts`, so a spec-only type error (a bad
+  cast, a `never`-typed arg) slips through both. Every lib/tool project carries a
+  `"typecheck": {}` stub in its `project.json` that inherits
+  `tsc --noEmit -p {projectRoot}/tsconfig.spec.json` from `nx.json`
+  `targetDefaults.typecheck`; CI runs it via `nx run-many -t ... typecheck`. A new
+  project needs both the stub and a `tsconfig.spec.json` (spec-less projects are
+  fine — `files: []` in the base `tsconfig.json` suppresses `TS18003`). The
+  `nx-plugin` generator emits the stub for scaffolded plugins. See issue #48.
 
 ### Verification defaults
 
 - Run through Nx: `nx test {project}`, `nx lint {project}`, `nx run-many ...`,
-  `nx affected ...`. Prefix with the repo package manager (`npm exec nx …` today;
-  `pnpm nx …` if ADR 0001's pnpm migration lands).
+  `nx affected ...`. Prefix with pnpm: `pnpm exec nx …`.
 - After TS/config/schema/barrel/generator changes, run targeted tests first, then a
   build check (`nx run-many -t build -p {affected}` or the narrowest equivalent) when
   declaration emit or compilation could be affected.
@@ -347,10 +492,22 @@ an ADR.
 
 ## 11. Nx workspace rules
 
-- Run Nx through the repo package manager, not a global CLI.
-- Prefer Nx targets over underlying tools (`nx test` over `vitest` directly).
+- Run Nx through pnpm (`pnpm exec nx`), not a global CLI.
+- Prefer Nx targets over underlying tools (`nx test` over `jest` directly).
 - Use the Nx MCP server / `nx-workspace` / `nx-generate` skills when available.
 - Don't guess generator flags — check `schema.json`, `--help`, or Nx docs.
 - To move a project, use `nx g @nx/workspace:move --project={name}
 --destination={new/path}` — never `git mv` (the generator also fixes
   `tsconfig.base.json` aliases, `project.json` roots, and workspace references).
+- **TypeScript layout is path-alias, not project references** (ADR 0005). Projects are
+  wired through `tsconfig.base.json` `compilerOptions.paths`; there is no `composite`
+  setup and no `@nx/js/typescript` plugin. Angular cannot use project references — don't
+  re-introduce them. Let generators add `paths` entries; don't hand-edit unless fixing a
+  generator gap.
+- **No `baseUrl` in `tsconfig.base.json`.** `moduleResolution: "bundler"` resolves
+  `paths` relative to the config file, so `baseUrl` is redundant — and TS 6.0 makes it a
+  hard error (`TS5101`) under full-diagnostic consumers like `ts-jest`. If a generator
+  re-adds it, remove it.
+- Angular and NestJS are the only application stacks (ADR 0005). Add framework capability
+  through `@nx/angular` / `@nx/nest` generators and `nx add`, not hand-installed
+  `@angular/*` / `@nestjs/*` packages. Framework upgrades run through `nx migrate`.

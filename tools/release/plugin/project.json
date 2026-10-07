@@ -1,0 +1,42 @@
+{
+  "name": "release-plugin",
+  "$schema": "../../../node_modules/nx/schemas/project-schema.json",
+  "sourceRoot": "tools/release/plugin/src",
+  "projectType": "library",
+  "tags": ["scope:tools", "type:plugin"],
+  "targets": {
+    "build": {
+      "executor": "@nx/js:tsc",
+      "outputs": ["{options.outputPath}"],
+      "options": {
+        "outputPath": "dist/tools/release/plugin",
+        "main": "tools/release/plugin/src/index.ts",
+        "tsConfig": "tools/release/plugin/tsconfig.lib.json",
+        "assets": [
+          "tools/release/plugin/*.md",
+          {
+            "input": "./tools/release/plugin/src",
+            "glob": "**/!(*.ts)",
+            "output": "./src"
+          },
+          {
+            "input": "./tools/release/plugin/src",
+            "glob": "**/*.d.ts",
+            "output": "./src"
+          },
+          {
+            "input": "./tools/release/plugin",
+            "glob": "generators.json",
+            "output": "."
+          },
+          {
+            "input": "./tools/release/plugin",
+            "glob": "executors.json",
+            "output": "."
+          }
+        ]
+      }
+    },
+    "typecheck": {}
+  }
+}

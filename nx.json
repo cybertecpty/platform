@@ -1,24 +1,104 @@
 {
   "$schema": "./node_modules/nx/schemas/nx-schema.json",
+  "cli": {
+    "packageManager": "pnpm"
+  },
+  "defaultBase": "develop",
+  "workspaceLayout": {
+    "libsDir": "libs",
+    "appsDir": "apps"
+  },
   "namedInputs": {
     "default": ["{projectRoot}/**/*", "sharedGlobals"],
-    "production": ["default"],
+    "production": [
+      "default",
+      "!{projectRoot}/.eslintrc.json",
+      "!{projectRoot}/eslint.config.mjs",
+      "!{projectRoot}/**/?(*.)+(spec|test).[jt]s?(x)?(.snap)",
+      "!{projectRoot}/tsconfig.spec.json",
+      "!{projectRoot}/src/test-setup.[jt]s",
+      "!{projectRoot}/jest.config.[jt]s",
+      "!{projectRoot}/test-setup.[jt]s"
+    ],
     "sharedGlobals": []
   },
   "plugins": [
     {
-      "plugin": "@nx/js/typescript",
+      "plugin": "@nx/eslint/plugin",
       "options": {
-        "typecheck": { "targetName": "typecheck" },
-        "build": {
-          "targetName": "build",
-          "configName": "tsconfig.lib.json",
-          "buildDepsName": "build-deps",
-          "watchDepsName": "watch-deps"
-        }
+        "targetName": "lint"
+      }
+    },
+    {
+      "plugin": "@nx/jest/plugin",
+      "options": {
+        "targetName": "test"
       }
     }
   ],
+  "generators": {
+    "@nx/angular:library": {
+      "style": "scss",
+      "unitTestRunner": "jest"
+    },
+    "@nx/js:library": {
+      "bundler": "none",
+      "linter": "eslint",
+      "unitTestRunner": "jest"
+    },
+    "@nx/nest:library": {
+      "linter": "eslint",
+      "unitTestRunner": "jest"
+    },
+    "@nx/plugin:plugin": {
+      "linter": "eslint",
+      "unitTestRunner": "jest"
+    }
+  },
   "nxCloudId": "6a95fdc6e0d4baed8e2bbe46",
-  "analytics": true
+  "analytics": true,
+  "targetDefaults": {
+    "@nx/js:tsc": {
+      "cache": true,
+      "dependsOn": ["^build"],
+      "inputs": ["production", "^production"]
+    },
+    "typecheck": {
+      "executor": "nx:run-commands",
+      "cache": true,
+      "inputs": ["default", "^default", { "externalDependencies": ["typescript"] }],
+      "options": {
+        "command": "tsc --noEmit -p {projectRoot}/tsconfig.spec.json"
+      }
+    }
+  },
+  "release": {
+    "projectsRelationship": "independent",
+    "groups": {
+      "apps": {
+        "projects": ["apps/*", "!apps/*-e2e"]
+      }
+    },
+    "version": {
+      "conventionalCommits": true,
+      "fallbackCurrentVersionResolver": "disk"
+    },
+    "conventionalCommits": {
+      "types": {
+        "perf": {
+          "semverBump": "patch"
+        }
+      }
+    },
+    "changelog": {
+      "automaticFromRef": true,
+      "workspaceChangelog": false,
+      "projectChangelogs": {
+        "createRelease": "github",
+        "renderOptions": {
+          "authors": false
+        }
+      }
+    }
+  }
 }

@@ -25,10 +25,10 @@ ESLint-specific guidance for `nx import`. For generic import issues (root deps, 
 
 ### Duplicate `lint` and `eslint:lint` Targets
 
-After import, projects will have **two** lint-related targets if the source `package.json` has a `"lint"` npm script:
+After import, projects will have **two** lint-related targets if the source `package.json` has a `"lint"` script:
 
 - `eslint:lint` — inferred by `@nx/eslint/plugin`; has proper caching and input/output tracking
-- `lint` — created by Nx from the npm script via `nx:run-script`; no caching intelligence, just wraps `npm run lint`
+- `lint` — created by Nx from the `package.json` script via `nx:run-script`; no caching intelligence, just wraps `pnpm run lint`
 
 **Fix**: Remove the `"lint"` script from each project's `package.json`. Keep `"lint:fix"` if present — there is no plugin-inferred equivalent for auto-fixing.
 
@@ -72,7 +72,7 @@ When a project uses `eslint.config.cjs` (CJS flat config), `eslint .` lints the 
 module.exports = tseslint.config(
   {
     ignores: ['dist/**', 'node_modules/**', 'eslint.config.cjs'],
-  }
+  },
   // ...
 );
 ```

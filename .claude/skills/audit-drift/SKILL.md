@@ -58,7 +58,7 @@ Extract claims, verify each with a **read-only** probe, group findings by type:
    contradicts is drift.
 
 4. **Policy / workflow claims.** "Branch off `develop`, PR into `develop`", "auto-merge
-   armed", "publish on merge to `main`", "branch protection requires the `main` check".
+   armed", "publish on merge to `main`", "branch protection requires the `ci` check".
    Verify what is read-only checkable (does `develop` exist? is there a publish workflow
    under `.github/workflows`? `gh api repos/cybertecpty/platform/rulesets`) and explicitly
    mark the rest **asserted but not verifiable from here** rather than guessing.

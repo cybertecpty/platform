@@ -1,0 +1,27 @@
+{
+  "name": "cybertec-io-e2e",
+  "$schema": "../../node_modules/nx/schemas/project-schema.json",
+  "projectType": "application",
+  "tags": ["scope:frontend", "type:e2e", "domain:shared"],
+  "implicitDependencies": ["cybertec-io"],
+  "targets": {
+    "e2e": {
+      "executor": "nx:run-commands",
+      "cache": true,
+      "dependsOn": ["cybertec-io:build"],
+      "inputs": ["default", "^production"],
+      "outputs": ["{projectRoot}/playwright-report", "{projectRoot}/test-results"],
+      "options": {
+        "command": "playwright test",
+        "cwd": "{projectRoot}"
+      }
+    },
+    "smoke": {
+      "executor": "nx:run-commands",
+      "options": {
+        "command": "node -e \"if (!process.env.BASE_URL) { console.error('smoke needs BASE_URL (the deployed app's URL)'); process.exit(1); }\" && playwright test",
+        "cwd": "{projectRoot}"
+      }
+    }
+  }
+}

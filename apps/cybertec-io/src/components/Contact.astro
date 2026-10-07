@@ -1,0 +1,47 @@
+---
+const links = [
+  { label: 'GitHub', href: 'https://github.com/cybertecpty' },
+  { label: 'LinkedIn', href: 'https://linkedin.com/in/djmcgrath101' }
+];
+---
+
+<section id="contact" class="bg-blueprint">
+  <div class="site-container py-section">
+    {/* Eyebrow — low-alpha Paper mono. */}
+    <p class="font-mono text-xs uppercase tracking-[0.16em] text-[rgb(var(--paper-rgb)/0.7)]">
+      06 — Get in touch
+    </p>
+
+    {/* Headline — single italic-copper accent on "building well". */}
+    <h2 class="mt-5 max-w-[18ch] font-display text-[clamp(32px,5.4vw,64px)] font-normal leading-[1.05] tracking-[-0.02em] text-paper">
+      Have a project worth <span class="accent-italic">building well</span>?
+    </h2>
+
+    {/* Sub */}
+    <p class="mt-6 max-w-[52ch] text-[clamp(17px,2vw,20px)] leading-[1.5] text-paper">
+      Tell me what you're building and where it's stuck. I'll be straight about whether I'm the
+      right fit and how I'd approach it.
+    </p>
+
+    {/* Buttons — primary mailto + outline outbound links. */}
+    <div class="mt-9 flex flex-wrap items-center gap-4">
+      <a
+        href="mailto:contact@cybertec.io"
+        class="inline-flex items-center rounded-sm bg-copper px-[26px] py-[15px] font-mono text-[13px] text-ink transition-transform duration-200 motion-safe:hover:-translate-y-0.5"
+      >
+        contact@cybertec.io
+      </a>
+      {links.map(link => (
+        <a
+          href={link.href}
+          target="_blank"
+          rel="noopener noreferrer"
+          class="inline-flex items-center gap-1 rounded-sm border border-[rgb(var(--paper-rgb)/0.3)] px-[22px] py-[15px] font-mono text-[13px] tracking-[0.08em] text-paper transition-colors hover:border-copper"
+        >
+          {link.label}
+          <span class="sr-only"> (opens in a new tab)</span> <span aria-hidden="true">↗</span>
+        </a>
+      ))}
+    </div>
+  </div>
+</section>

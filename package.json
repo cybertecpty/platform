@@ -1,22 +1,103 @@
 {
   "name": "@cybertecpty/platform",
-  "version": "0.0.0",
+  "version": "0.0.1",
   "license": "MIT",
-  "scripts": {},
+  "scripts": {
+    "affected:format": "pnpm exec nx format:write --affected",
+    "affected:lint": "pnpm exec nx affected -t lint",
+    "affected:test": "pnpm exec nx affected -t test",
+    "format": "pnpm exec nx format:write",
+    "format:check": "pnpm exec nx format:check",
+    "lint": "pnpm exec nx run-many -t lint",
+    "preinstall": "npx only-allow pnpm",
+    "prepare": "husky",
+    "test": "pnpm exec nx run-many -t test"
+  },
   "private": true,
-  "dependencies": {},
+  "packageManager": "pnpm@10.34.5",
+  "engines": {
+    "node": ">=22.18.0"
+  },
+  "pnpm": {
+    "onlyBuiltDependencies": [
+      "@swc/core",
+      "nx"
+    ]
+  },
+  "dependencies": {
+    "archiver": "7.0.1",
+    "astro": "^7.3.4",
+    "lodash-es": "^4.18.1",
+    "sharp": "^0.35.4",
+    "tar": "^7.5.22",
+    "zod": "^4.5.4"
+  },
   "devDependencies": {
+    "@angular-devkit/core": "~22.0.4",
+    "@astrojs/check": "^0.9.10",
+    "@azure/static-web-apps-cli": "^2.0.10",
+    "@commitlint/cli": "^21.2.2",
+    "@commitlint/config-conventional": "^21.2.2",
+    "@commitlint/types": "^21.2.0",
+    "@eslint-community/eslint-plugin-eslint-comments": "^4.7.2",
+    "@nestjs/schematics": "^11.0.0",
+    "@ngrx/eslint-plugin": "^22.0.0",
+    "@nx/angular": "23.1.1",
+    "@nx/devkit": "23.1.1",
+    "@nx/eslint": "23.1.1",
+    "@nx/eslint-plugin": "23.1.1",
+    "@nx/jest": "23.1.1",
     "@nx/js": "23.1.1",
+    "@nx/nest": "23.1.1",
+    "@nx/plugin": "23.1.1",
+    "@playwright/test": "^1.63.0",
     "@swc-node/register": "1.11.1",
+    "@swc/cli": "~0.8.1",
     "@swc/core": "1.15.8",
-    "@swc/helpers": "0.5.18",
+    "@swc/helpers": "0.5.23",
+    "@tailwindcss/vite": "^4.3.3",
+    "@types/archiver": "6.0.4",
+    "@types/jest": "~30.0.0",
+    "@types/lodash-es": "^4.17.12",
     "@types/node": "^24.0.0",
+    "@types/semver": "^7.8.0",
+    "@vitest/eslint-plugin": "^1.6.27",
+    "adm-zip": "^0.6.1",
+    "eslint": "^9.8.0",
+    "eslint-config-prettier": "^10.1.8",
+    "eslint-plugin-astro": "^3.2.1",
+    "eslint-plugin-jest": "^29.16.6",
+    "eslint-plugin-playwright": "^2.12.0",
+    "expect-type": "^1.4.0",
+    "husky": "^9.1.7",
+    "jest": "~30.3.0",
+    "jest-environment-node": "~30.3.0",
+    "jest-util": "~30.3.0",
+    "jsonc-eslint-parser": "^2.1.0",
+    "lint-staged": "^17.4.1",
     "nx": "23.1.1",
     "prettier": "^3.8.1",
+    "prettier-plugin-astro": "^1.0.1",
+    "prettier-plugin-organize-imports": "^4.3.0",
+    "prettier-plugin-tailwindcss": "^0.8.1",
+    "semver": "^7.8.5",
+    "simple-git": "^3.36.0",
+    "tailwindcss": "^4.3.3",
+    "ts-jest": "^29.4.7",
+    "ts-node": "10.9.1",
     "tslib": "^2.3.0",
-    "typescript": "~6.0.3"
+    "type-fest": "^5.9.0",
+    "typescript": "~6.0.3",
+    "typescript-eslint": "^8.69.0",
+    "vitest": "^5.0.1"
   },
-  "workspaces": [
-    "packages/*"
-  ]
+  "lint-staged": {
+    "*.{ts,tsx,cts,mts,js,jsx,cjs,mjs}": [
+      "eslint --fix --no-warn-ignored",
+      "nx format:write --files"
+    ],
+    "*.{json,md,mdx,html,css,scss,yml,yaml}": [
+      "nx format:write --files"
+    ]
+  }
 }

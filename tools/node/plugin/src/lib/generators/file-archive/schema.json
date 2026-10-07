@@ -1,0 +1,54 @@
+{
+  "$schema": "https://json-schema.org/schema",
+  "cli": "nx",
+  "$id": "FileArchiveGenerator",
+  "title": "Archive a directory's files into a zip or tar",
+  "description": "Walks `source` and writes every file under it into a single `.zip` or `.tar` archive, preserving the directory's internal structure.",
+  "type": "object",
+  "examples": [
+    {
+      "command": "nx g node-plugin:file-archive dist/web",
+      "description": "Writes `dist/web/web.zip` from every file under `dist/web`."
+    },
+    {
+      "command": "nx g node-plugin:file-archive dist/web dist/archives --filename=web-build.tar --format=tar",
+      "description": "Writes an uncompressed `dist/archives/web-build.tar` instead."
+    }
+  ],
+  "properties": {
+    "source": {
+      "type": "string",
+      "description": "Directory to archive, relative to the workspace root.",
+      "x-priority": "important",
+      "x-prompt": "Which directory would you like to archive?",
+      "$default": {
+        "$source": "argv",
+        "index": 0
+      }
+    },
+    "destination": {
+      "type": "string",
+      "description": "Directory the archive is written into, relative to the workspace root. Defaults to `source`.",
+      "$default": {
+        "$source": "argv",
+        "index": 1
+      }
+    },
+    "filename": {
+      "type": "string",
+      "description": "Archive filename, written under `destination`. Defaults to `<basename(source)>.<format>`."
+    },
+    "format": {
+      "type": "string",
+      "enum": ["zip", "tar"],
+      "default": "zip",
+      "description": "Output archive format."
+    },
+    "overwrite": {
+      "type": "boolean",
+      "default": false,
+      "description": "Replace an existing archive at the resolved output path. Without this, an existing archive is left untouched (with a warning)."
+    }
+  },
+  "required": ["source"]
+}
