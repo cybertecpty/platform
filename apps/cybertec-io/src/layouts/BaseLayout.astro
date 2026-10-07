@@ -6,6 +6,8 @@ import '@fontsource/ibm-plex-sans/500.css';
 import '@fontsource/ibm-plex-mono/400.css';
 import '@fontsource/ibm-plex-mono/500.css';
 import '../styles/global.css';
+import frauncesNormal from '@fontsource-variable/fraunces/files/fraunces-latin-opsz-normal.woff2?url';
+import frauncesItalic from '@fontsource-variable/fraunces/files/fraunces-latin-opsz-italic.woff2?url';
 
 interface Props {
   title?: string;
@@ -60,6 +62,10 @@ const personLd = {
     <meta name="description" content={description} />
     <link rel="canonical" href={canonical} />
     <meta name="theme-color" content="#14110d" />
+
+    {/* Preload the hero headline fonts (normal + italic accent) to avoid a swap-induced layout shift. */}
+    <link rel="preload" href={frauncesNormal} as="font" type="font/woff2" crossorigin />
+    <link rel="preload" href={frauncesItalic} as="font" type="font/woff2" crossorigin />
 
     {/* Open Graph / Twitter, with the 1200×630 brand social card. */}
     <meta property="og:type" content="website" />
