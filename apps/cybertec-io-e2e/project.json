@@ -19,7 +19,7 @@
     "smoke": {
       "executor": "nx:run-commands",
       "options": {
-        "command": "node -e \"if (!process.env.BASE_URL) { console.error('smoke needs BASE_URL (the deployed app's URL)'); process.exit(1); }\" && playwright test",
+        "command": "node -e \"if (!process.env.BASE_URL) { console.error('smoke needs BASE_URL (the URL of the deployed app)'); process.exit(1); }\" && playwright test",
         "cwd": "{projectRoot}"
       }
     }
