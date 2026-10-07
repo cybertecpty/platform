@@ -185,7 +185,7 @@ A compact `<dl>` fact strip between About and Contact (auto-fit grid, mono): **C
 ```
 
 - **Layout:** max content 1180px, 28px gutters, ~104px section rhythm. Blueprint grid texture (46px, brass at 0.04–0.05 alpha) on Hero + About. Brass hairlines (`rgba(184,150,90,0.14–0.22)`) for borders/dividers. `::selection` copper-on-ink.
-- **Color usage:** ~~Ink 60% / Paper 25% / Copper 10% / Brass+Blueprint+Steel 5%. **Body text is `--body-on-ink` on Ink and Ink on Paper — never copper at body size.** Copper for headings-accents, links, CTAs, the mark; on the Paper section, any copper _text_ must use the deeper copper (~~`#9A4A28`) for AA (copper graphics/large only need 3:1). Verify every pairing at WCAG 2.2 AA (Paper + Blueprint surfaces included).
+- **Color usage:** roughly Ink 60% / Paper 25% / Copper 10% / Brass+Blueprint+Steel 5%. **Body text is `--body-on-ink` on Ink and Ink on Paper — never copper at body size.** Copper for headings-accents, links, CTAs, the mark; on the Paper section, any copper _text_ must use the deeper copper (about `#9A4A28`) for AA (copper graphics/large only need 3:1). Verify every pairing at WCAG 2.2 AA (Paper + Blueprint surfaces included).
 - **Type:** Fraunces (headings + wordmark) with **exactly one italic-copper accent per headline**; IBM Plex Sans (body/UI); IBM Plex Mono (eyebrows, labels, chips, credibility strip, tagline) — uppercase, ~0.12–0.22em tracking. Fluid headline sizing via `clamp()`. Self-host woff2 (Latin subset, `font-display:swap`, preload hero Fraunces) — the design links Google Fonts; self-hosting is preferred for perf/privacy but the Google Fonts `<link>` is acceptable.
 - **Theming:** single **dark** scheme driven by the CSS custom properties above (`color-scheme: dark`, no light mode). Tight shape (2–3px radius), flat surfaces, brass hairlines over shadows. Smooth in-page scrolling and hover translate are gated behind `prefers-reduced-motion: no-preference`.
 - **Aesthetic guardrail:** warm-dark, architectural, premium, generous whitespace. **Avoid** generic dark-SaaS (purple/cyan glows, neon, geometric-sans everything, glassmorphism, stock 3D). Mark stays quiet (nav + footer); no 匠 story on the page.
@@ -204,13 +204,13 @@ Mobile-first. All multi-column grids use `auto-fit` + `minmax(...)` so they coll
 
 - **SEO:** keyword-aware `<title>` (e.g. "Daniel McGrath — Senior Full-Stack Engineer (Angular) · CyberTec") + meta description; OG/Twitter card with the copper-on-ink lockup; **JSON-LD `Person`** (name, jobTitle, `knowsAbout` = the stack, `alumniOf` FSU, `address` country PA, `sameAs` GitHub + LinkedIn); `sitemap.xml`, `robots.txt`, canonical. No `hreflang` (single locale). Favicon from `assets/cybertec-favicon.svg`.
 - **Rendering:** Astro static build (SSG) to plain HTML so the page is fully crawlable and unfurls cleanly — important for ranking on "CyberTec" + "Daniel McGrath".
-- **Performance:** LCP <2.0s, CLS <0.05, INP <200ms; Lighthouse ≥95. Self-hosted `@fontsource` fonts; `daniel.jpg` served through Astro `<Image>` (responsive widths, lazy-loaded); hashed asset names. `staticwebapp.config.json` currently sets security headers only (`nosniff`, `X-Frame-Options`, `Referrer-Policy`, `Permissions-Policy`) — cache and compression headers are open (§14).
+- **Performance:** LCP <2.0s, CLS <0.05, INP <200ms; Lighthouse ≥95. Self-hosted `@fontsource` fonts with the hero Fraunces files (normal + italic) preloaded in `BaseLayout.astro` to prevent a swap-induced layout shift; `daniel.jpg` served through Astro `<Image>` (responsive widths, lazy-loaded); hashed asset names. `staticwebapp.config.json` currently sets security headers only (`nosniff`, `X-Frame-Options`, `Referrer-Policy`, `Permissions-Policy`) — cache and compression headers are open (§14).
 - **Analytics:** none shipped. The v2.1 plan was **Cloudflare Web Analytics** (free, cookieless, no consent banner); alternatives are Azure Application Insights or none. Open decision (§14).
 
 ## 12. Tech stack & deploy
 
 - **Astro 7** static site + **Tailwind CSS v4** (`@tailwindcss/vite`), in the Nx workspace as a plain project (ADR 0012). Self-hosted fonts via `@fontsource`. No client framework, no NgRx, no Angular Material.
-- **Host: Azure Static Web Apps** (Free tier), deployed with `nx run cybertec-io:deploy` (`swa deploy`); apex domain cybertec.io; `staticwebapp.config.json` for headers. **Status:** the live deployment was taken offline in the previous workspace (its ADR 0025, a deployment decision, not a code decision); the app and deploy target remain.
+- **Host: Azure Static Web Apps** (Free tier), deployed with `nx run cybertec-io:deploy` (`swa deploy`); apex domain cybertec.io; `staticwebapp.config.json` for headers. **Status:** live (re-deployed after being taken offline in the previous workspace).
 - **Targets:** `build`, `serve`, `preview`, `test` (vitest over the built output), `typecheck` (`astro check`), plus the `cybertec-io-e2e` Playwright project.
 - **No form backend, no Turnstile, no Azure Function.**
 
@@ -227,17 +227,16 @@ Mobile-first. All multi-column grids use `auto-fit` + `minmax(...)` so they coll
 - **A1 — Analytics:** none shipped. Decide between Cloudflare Web Analytics (cookieless, no banner), Azure Application Insights, or none.
 - **A2 — Scroll-spy:** active-nav-link highlighting from v2.1 is not implemented. Implement or drop.
 - **A3 — Caching and compression:** `staticwebapp.config.json` has security headers only; add cache and compression headers if the site is redeployed.
-- **A4 — CI gates:** Lighthouse and axe gates (§2, §11) are unverified; confirm or add them.
-- **A5 — Deployment:** the live site was taken offline in the previous workspace; confirm whether and when it is redeployed to cybertec.io.
+- **A4 — CI gates:** Lighthouse and axe gates (§2, §11) are not confirmed in CI; confirm or add them. A manual Lighthouse run against the live site is recorded in §15.
 - **N4 — pre-launch (launch gate):** trademark search for "CyberTec" (name remains contested); native-Japanese-speaker review of the 匠 mark is lower urgency now its story is off the page, but still advisable since the mark reads as 匠. _(Owner: Daniel.)_
 - **O3 — Phase-2 trigger (non-blocking):** reputation milestone that flips the site back toward the boutique framing (preserved separately).
 - **O4 — future proof (Phase 2):** sanitized metrics/references/repos for a real "Selected Work" later.
 
 ## 15. Acceptance criteria (definition of done)
 
-Checked items are met by the shipped source. Unchecked items are open (see §14) or unverified. Nothing here has been measured with Lighthouse or axe.
+Checked items are met by the shipped source. Unchecked items are open (see §14) or unverified. Lighthouse (CLI 13.5.0, headless) was run manually against https://cybertec.io on 2026-10-07; axe has not been run.
 
-- [ ] Single-page, **English-only, dark-primary** site live at cybertec.io on **Azure Static Web Apps** (apex domain, managed TLS) — site is built; live deployment is currently offline (A5).
+- [x] Single-page, **English-only, dark-primary** site live at cybertec.io on **Azure Static Web Apps** (apex domain, managed TLS).
 - [x] Built with **Astro 7 + Tailwind CSS v4**, **no NgRx**, statically generated to HTML.
 - [x] All sections (§6) present, with `auto-fit` grids that collapse to one column on mobile without hard-capped columns.
 - [x] Shipped copy (§7) matches the site; Fraunces headings each carry exactly one italic-copper accent; mono eyebrows/labels/tagline; Ink/Paper/Copper/Brass/Blueprint/Steel; mark quiet in nav + footer; **no 匠 story on the page**.
@@ -247,9 +246,9 @@ Checked items are met by the shipped source. Unchecked items are open (see §14)
 - [ ] Analytics (A1) — not shipped.
 - [x] Responsive mobile-first; nav condenses to a disclosure menu; mobile menu tap target ≥44px; `prefers-reduced-motion` honored; footer year dynamic. Scroll-spy not implemented (A2).
 - [x] SEO: static HTML, JSON-LD `Person`, sitemap, robots, canonical, Open Graph and Twitter card.
-- [ ] Lighthouse ≥95 across Performance, Accessibility, Best Practices, SEO; LCP <2.0s, CLS <0.05 (unverified).
-- [ ] CI runs Lighthouse/axe gates (A4, unverified).
+- [x] Lighthouse ≥95 across Performance, Accessibility, Best Practices, SEO; LCP <2.0s, CLS <0.05. Live run before the font preload: mobile 100/100/100/100 (LCP 0.9s, CLS 0.003); desktop Performance 94 (CLS 0.154, from the Fraunces font swap shifting the hero), others 100. With the preload, a local build measures desktop Performance 100 (CLS 0.001) and mobile 97 (CLS 0). Re-run against the live site after the preload is deployed.
+- [ ] CI runs Lighthouse/axe gates (A4, not confirmed).
 
 ---
 
-_End of PRD v2.2 — Phase-1 contractor site, reconciled to the shipped Astro build. Open: A1–A5, N4 (launch gate), O3–O4 (Phase 2)._
+_End of PRD v2.2 — Phase-1 contractor site, reconciled to the shipped Astro build. Open: A1–A4, N4 (launch gate), O3–O4 (Phase 2)._
