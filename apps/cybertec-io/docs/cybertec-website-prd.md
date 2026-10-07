@@ -234,7 +234,7 @@ Mobile-first. All multi-column grids use `auto-fit` + `minmax(...)` so they coll
 
 ## 15. Acceptance criteria (definition of done)
 
-Checked items are met by the shipped source. Unchecked items are open (see §14) or unverified. Lighthouse (CLI 13.5.0, headless) was run manually against https://cybertec.io on 2026-10-07; axe has not been run.
+Checked items are met by the shipped source. Unchecked items are open (see §14) or unverified. Lighthouse (CLI 13.5.0, headless) was run manually against https://cybertec.io on 2026-10-07 (before and after the font preload); axe has not been run.
 
 - [x] Single-page, **English-only, dark-primary** site live at cybertec.io on **Azure Static Web Apps** (apex domain, managed TLS).
 - [x] Built with **Astro 7 + Tailwind CSS v4**, **no NgRx**, statically generated to HTML.
@@ -246,7 +246,7 @@ Checked items are met by the shipped source. Unchecked items are open (see §14)
 - [ ] Analytics (A1) — not shipped.
 - [x] Responsive mobile-first; nav condenses to a disclosure menu; mobile menu tap target ≥44px; `prefers-reduced-motion` honored; footer year dynamic. Scroll-spy not implemented (A2).
 - [x] SEO: static HTML, JSON-LD `Person`, sitemap, robots, canonical, Open Graph and Twitter card.
-- [x] Lighthouse ≥95 across Performance, Accessibility, Best Practices, SEO; LCP <2.0s, CLS <0.05. Live run before the font preload: mobile 100/100/100/100 (LCP 0.9s, CLS 0.003); desktop Performance 94 (CLS 0.154, from the Fraunces font swap shifting the hero), others 100. With the preload, a local build measures desktop Performance 100 (CLS 0.001) and mobile 97 (CLS 0). Re-run against the live site after the preload is deployed.
+- [x] Lighthouse ≥95 across Performance, Accessibility, Best Practices, SEO; LCP <2.0s, CLS <0.05. Live run on 2026-10-07 after the hero font preload shipped (1.0.0): mobile 99/100/100/100 (LCP 1.8s, CLS 0); desktop 100/100/100/100 (LCP 0.4s, CLS 0.001). Before the preload, desktop Performance was 94 (CLS 0.154).
 - [ ] CI runs Lighthouse/axe gates (A4, not confirmed).
 
 ---
