@@ -3,6 +3,9 @@
   "$schema": "../../node_modules/nx/schemas/project-schema.json",
   "projectType": "application",
   "sourceRoot": "apps/cybertec-io/src",
+  "metadata": {
+    "baseUrl": "https://cybertec.io"
+  },
   "tags": ["scope:frontend", "type:app", "domain:shared"],
   "targets": {
     "build": {
@@ -30,6 +33,14 @@
       "options": {
         "command": "astro preview",
         "cwd": "{projectRoot}"
+      }
+    },
+    "deploy": {
+      "executor": "nx:run-commands",
+      "dependsOn": ["build"],
+      "options": {
+        "command": "pnpm exec swa deploy dist/apps/cybertec-io --env production --no-use-keychain",
+        "cwd": "{workspaceRoot}"
       }
     },
     "test": {

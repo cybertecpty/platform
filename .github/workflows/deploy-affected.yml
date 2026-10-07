@@ -1,0 +1,156 @@
+name: Deploy Affected Apps
+
+# Single production deploy workflow for every app (issue #76, ADR 0012 amendment). On merge
+# to `main` (the develop -> main promotion of ADR 0011) it asks Nx which apps with a
+# `deploy` target are affected by the push and deploys each one in a matrix job. Adding a
+# deployable app is a project.json change (a `deploy` target), not a new workflow.
+#
+# Per-app contract:
+#   - a GitHub Environment named after the Nx project, holding that app's deploy secret
+#     (`AZURE_STATIC_WEB_APPS_API_TOKEN` for Azure Static Web Apps apps)
+#   - a `deploy` target (it dependsOn `build`)
+#   - optional: `test` target and a `<app>-e2e` project, run as the deploy gate
+#   - optional: `metadata.baseUrl` in project.json plus an `<app>-e2e:smoke` target, run
+#     against the deployed app after the deploy
+
+on:
+  push:
+    branches:
+      - main
+  # Manual redeploy (recovery, or a first deploy of an app). Deploys every app with a
+  # `deploy` target, or only `app` when given. Only runs from `main`.
+  workflow_dispatch:
+    inputs:
+      app:
+        description: 'Nx project to deploy. Leave empty to deploy every app with a deploy target.'
+        type: string
+        default: ''
+
+concurrency:
+  group: deploy-main
+  cancel-in-progress: false
+
+permissions:
+  contents: read
+
+jobs:
+  affected:
+    if: github.ref == 'refs/heads/main'
+    runs-on: ubuntu-latest
+    env:
+      NX_CLOUD_AUTH_TOKEN: ${{ secrets.NX_CLOUD_ACCESS_TOKEN }}
+    outputs:
+      apps: ${{ steps.affected.outputs.apps }}
+      has-apps: ${{ steps.affected.outputs.has-apps }}
+    steps:
+      - uses: actions/checkout@v7
+        with:
+          fetch-depth: 0
+
+      - uses: pnpm/action-setup@v6
+
+      - uses: actions/setup-node@v7
+        with:
+          node-version-file: '.nvmrc'
+          cache: 'pnpm'
+
+      - run: pnpm install --frozen-lockfile
+
+      - id: affected
+        shell: bash
+        env:
+          EVENT_NAME: ${{ github.event_name }}
+          BASE_SHA: ${{ github.event.before }}
+          HEAD_SHA: ${{ github.sha }}
+          APP_INPUT: ${{ inputs.app }}
+        run: |
+          all="$(pnpm exec nx show projects --type app --withTarget deploy --json)"
+
+          if [ "$EVENT_NAME" = "workflow_dispatch" ]; then
+            if [ -n "$APP_INPUT" ]; then
+              apps="$(jq -c --arg app "$APP_INPUT" 'map(select(. == $app))' <<< "$all")"
+              if [ "$apps" = "[]" ]; then
+                echo "::error::'$APP_INPUT' is not an app with a deploy target. Deployable apps: $all"
+                exit 1
+              fi
+            else
+              apps="$all"
+            fi
+          elif [ -z "$BASE_SHA" ] || [ "$BASE_SHA" = "0000000000000000000000000000000000000000" ]             || ! git cat-file -e "$BASE_SHA^{commit}" 2>/dev/null; then
+            # No usable base (first push, or a force-push dropped the old tip): affected
+            # detection can't be trusted, so deploy everything rather than guess.
+            echo "No usable base SHA - deploying every app with a deploy target."
+            apps="$all"
+          else
+            apps="$(pnpm exec nx show projects               --affected               --type app               --withTarget deploy               --base="$BASE_SHA"               --head="$HEAD_SHA"               --json)"
+          fi
+
+          apps="$(jq -c . <<< "$apps")"
+          echo "apps=$apps" >> "$GITHUB_OUTPUT"
+          if [ "$apps" = "[]" ]; then
+            echo "has-apps=false" >> "$GITHUB_OUTPUT"
+          else
+            echo "has-apps=true" >> "$GITHUB_OUTPUT"
+          fi
+
+  deploy:
+    needs: affected
+    if: needs.affected.outputs.has-apps == 'true'
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        app: ${{ fromJson(needs.affected.outputs.apps) }}
+    environment:
+      name: ${{ matrix.app }}
+    env:
+      NX_CLOUD_AUTH_TOKEN: ${{ secrets.NX_CLOUD_ACCESS_TOKEN }}
+    steps:
+      - uses: actions/checkout@v7
+        with:
+          fetch-depth: 0
+
+      - uses: pnpm/action-setup@v6
+
+      - uses: actions/setup-node@v7
+        with:
+          node-version-file: '.nvmrc'
+          cache: 'pnpm'
+
+      - run: pnpm install --frozen-lockfile
+
+      - run: pnpm exec playwright install --with-deps chromium
+
+      # Gate: re-run the app's own checks on this exact commit. Targets an app doesn't
+      # have are skipped, so an app without tests or an e2e project still deploys.
+      - name: Gate (test, e2e)
+        shell: bash
+        env:
+          APP: ${{ matrix.app }}
+        run: |
+          has_target() { pnpm exec nx show project "$1" --json 2>/dev/null | jq -e ".targets.\"$2\"" >/dev/null; }
+          app="$APP"
+          if has_target "$app" test; then pnpm exec nx run "$app:test"; fi
+          if has_target "$app-e2e" e2e; then pnpm exec nx run "$app-e2e:e2e"; fi
+
+      - name: Deploy
+        run: pnpm exec nx run "$APP:deploy"
+        env:
+          APP: ${{ matrix.app }}
+          # Azure Static Web Apps CLI reads its token from this variable.
+          SWA_CLI_DEPLOYMENT_TOKEN: ${{ secrets.AZURE_STATIC_WEB_APPS_API_TOKEN }}
+
+      # Post-deploy smoke against the deployed app (the e2e webServer is skipped when
+      # BASE_URL is set).
+      - name: Smoke test
+        shell: bash
+        env:
+          APP: ${{ matrix.app }}
+        run: |
+          app="$APP"
+          url="$(pnpm exec nx show project "$app" --json | jq -r '.metadata.baseUrl // empty')"
+          if [ -z "$url" ] || ! pnpm exec nx show project "$app-e2e" --json 2>/dev/null | jq -e '.targets.smoke' >/dev/null; then
+            echo "No baseUrl or ${app}-e2e:smoke target - skipping the smoke test."
+            exit 0
+          fi
+          BASE_URL="$url" pnpm exec nx run "$app-e2e:smoke"

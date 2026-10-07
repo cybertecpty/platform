@@ -61,9 +61,10 @@ Chosen option: **1 — Astro, scoped to static or mostly static content sites.**
   of framework. Only the underlying shell command (`astro dev`) uses Astro's own
   vocabulary.
 - **Dependencies live in the root `package.json`,** under the single-version policy
-  (ADR 0001, ADR 0003) that every other project follows. That includes `astro`, `sharp`,
-  the `@fontsource` font packages and Tailwind. The app has no `package.json` of its own,
-  and `pnpm-workspace.yaml` is unchanged (ADR 0005).
+  (ADR 0001, ADR 0003) that every other project follows. That includes `astro`, `sharp` and
+  Tailwind. The app's own `package.json` holds its version (so Nx release can read and bump
+  it), a description, and the dependencies only this app uses (the `@fontsource` font
+  packages); see the 2026-10-06 amendment below.
 - **Styling: Tailwind CSS v4,** wired through `@tailwindcss/vite` in `astro.config.mjs`
   (Astro's current setup, as `astro add tailwind` does it). Not the deprecated
   `@astrojs/tailwind` integration, and not Tailwind v3.
@@ -89,8 +90,8 @@ Chosen option: **1 — Astro, scoped to static or mostly static content sites.**
 - **Linting:** add `eslint-plugin-astro` to the root flat config, scoped to `**/*.astro`,
   with typed linting (ADR 0006) where the Astro parser supports it.
 - **Testing:** Vitest. See the ADR 0007 amendment of the same date.
-- **Deployment is out of scope.** No hosting target is decided. The archived repo's deploy
-  workflows and infra files are not carried over, and hosting gets its own issue or ADR.
+- **Deployment is out of scope of this decision.** The archived repo's deploy workflows and
+  infra files were not carried over. Hosting is decided in the 2026-10-06 amendment below.
 
 ## Consequences
 
@@ -123,3 +124,35 @@ Chosen option: **1 — Astro, scoped to static or mostly static content sites.**
 - ADR 0004 (`nx-module-boundaries`) and ADR 0010 (`app-directory-layout`): tags and
   placement.
 - ADR 0003 (`frontend-bundle-hygiene`): applies to the site through `scope:frontend`.
+
+## Amendment (2026-10-06): hosting and deploy (issue #76)
+
+- **Host: Azure Static Web Apps** (static output only, so any static host would have worked).
+- **Deploy trigger: merge to `main`,** which means the `develop` -> `main` promotion PR of
+  ADR 0011. Production only moves on release. `.github/workflows/deploy-affected.yml`
+  is the single deploy workflow for every app: it asks Nx for the affected apps with a
+  `deploy` target and deploys each in a matrix job, so a new deployable app needs no new
+  workflow. For `cybertec-io` it re-runs `cybertec-io:test` and `cybertec-io-e2e:e2e` on the
+  merge commit, then runs the `cybertec-io:deploy` target, which depends on `build` and wraps
+  `swa deploy` (`@azure/static-web-apps-cli`, a root devDependency per the single-version
+  policy).
+- **Secret:** `AZURE_STATIC_WEB_APPS_API_TOKEN`, stored on a GitHub environment named
+  after the Nx project (`cybertec-io`), so a reviewer rule on that environment can gate deploys. The repo owner
+  provisions and rotates it.
+- **Domain:** `cybertec.io` (apex) is canonical and matches `site` in `astro.config.mjs`.
+  `www.cybertec.io` redirects to it. That redirect and TLS are Static Web Apps custom-domain
+  settings, not repo config.
+- **Security headers** (`X-Content-Type-Options`, `X-Frame-Options`, `Referrer-Policy`,
+  `Permissions-Policy`) are set as `globalHeaders` in `public/staticwebapp.config.json`, which
+  Astro copies into the build output.
+- **Post-deploy smoke:** `cybertec-io-e2e:smoke` runs the same specs against the deployed URL (`metadata.baseUrl` in the app's `project.json`). When
+  `BASE_URL` is set, `playwright.config.ts` skips the local `astro preview` webServer. The
+  `smoke` target is uncached and has no `build` dependency, since it tests what is deployed.
+- **App-specific dependencies (amendment to the dependencies rule above).** The `@fontsource`
+  font packages are used only by `cybertec-io`, so they now live in
+  `apps/cybertec-io/package.json`, and `apps/cybertec-io` is listed in `pnpm-workspace.yaml`
+  so pnpm installs them. The rule going forward: a dependency used by exactly one app lives
+  in that app's `package.json`; anything shared between projects, or used by tooling, stays in
+  the root `package.json` under the single-version policy (ADR 0001, ADR 0003). `astro`,
+  `sharp` and Tailwind stay in the root for now. The workspace file lists the app explicitly
+  rather than `apps/*`, so other apps and the e2e projects stay out until they need it.

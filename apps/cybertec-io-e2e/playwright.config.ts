@@ -8,11 +8,16 @@ import { defineConfig, devices } from '@playwright/test';
 // project.json `e2e` target dependsOn cybertec-io:build, so the build output exists
 // before this ever runs.
 //
+// Setting BASE_URL targets an already-running site (the post-deploy `smoke` target points it
+// at the deployed URL), so the local `astro preview` webServer is skipped entirely. Unset, the
+// suite serves the local build as above.
+//
 // `cwd` is the workspace root (not the app dir): `pnpm exec` resolves its "current
 // project" from cwd, and only the root has a package.json (ADR 0012 — the app itself
 // doesn't). `astro`'s own `--root` flag points it at the app instead.
 const baseURL = process.env['BASE_URL'] || 'http://localhost:4321';
 const isCI = !!process.env['CI'];
+const targetsDeployedSite = !!process.env['BASE_URL'];
 
 export default defineConfig({
   testDir: './e2e',
@@ -24,13 +29,15 @@ export default defineConfig({
     baseURL,
     trace: 'on-first-retry'
   },
-  webServer: {
-    command: 'pnpm exec astro preview --root apps/cybertec-io',
-    cwd: '../..',
-    url: baseURL,
-    reuseExistingServer: !isCI,
-    timeout: 120_000
-  },
+  webServer: targetsDeployedSite
+    ? undefined
+    : {
+        command: 'pnpm exec astro preview --root apps/cybertec-io',
+        cwd: '../..',
+        url: baseURL,
+        reuseExistingServer: !isCI,
+        timeout: 120_000
+      },
   // Chromium only — this is a responsive-behaviour smoke, not cross-browser QA.
   projects: [{ name: 'chromium', use: { ...devices['Desktop Chrome'] } }]
 });
