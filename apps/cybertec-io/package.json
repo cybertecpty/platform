@@ -1,5 +1,6 @@
 {
   "name": "@cybertecpty/cybertec-io",
   "version": "0.0.0",
-  "private": true
+  "private": true,
+  "description": "CyberTec marketing homepage (cybertec.io) — static Astro site."
 }
