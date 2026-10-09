@@ -1,11 +1,11 @@
 # 10. App physical layout — flat directory, explicit tags, exclusive naming
 
-- Status: accepted
+- Status: accepted (amended 2026-10-09: `type:e2e` placement)
 - Date: 2026-09-04
 - Deciders: djmcgrath
 - Implemented by: the `type === 'app'` naming special case in `projectNameFromOpts`
-  (`tools/nx/utils/src/lib/nx-projects.ts`), already shipped; `apps/cybertec-io-e2e`
-  (2026-09-24) as the first `type:e2e` project under this ADR's placement/naming rule,
+  (`tools/nx/utils/src/lib/nx-projects.ts`), already shipped; `apps/cybertec-io/e2e`
+  (2026-09-24, moved there 2026-10-09 — see the amendment) as the first `type:e2e` project under this ADR's placement/naming rule,
   hand-authored — the wrapper generator planned in ADR 0009 does not yet scaffold apps
   or e2e projects (see Negative/risks below, unchanged by this acceptance).
 
@@ -107,6 +107,15 @@ An e2e project sits beside the app it tests, in the same flat `apps/` directory,
 ```
 apps/game-collector-e2e         (pairs with apps/game-collector)
 ```
+
+> **Amendment (2026-10-09, issue #95):** an e2e project is nested inside the app folder
+> instead of sitting as a flat sibling: `apps/<app-name>/e2e`, e.g.
+> `apps/cybertec-io/e2e` (pairs with `apps/cybertec-io`). The Nx project name stays
+> `<app-name>-e2e`, because `.github/workflows/deploy-affected.yml` looks up
+> `<app>-e2e` by name, not by path. The nested root does not match the `apps/*` release
+> group glob, so the old `!apps/*-e2e` exclusion was dropped. The flat example above is
+> the superseded placement; the naming rule is unchanged. The larger alternative (moving
+> the app itself to `apps/<app-name>/app`) was not adopted.
 
 Implementing this in `projectNameFromOpts` is follow-up work — `NxProjectType` and
 `NX_PROJECT_TYPES` don't yet include `'e2e'`; this ADR fixes the placement/naming

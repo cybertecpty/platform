@@ -1,6 +1,6 @@
 {
   "name": "cybertec-io-e2e",
-  "$schema": "../../node_modules/nx/schemas/project-schema.json",
+  "$schema": "../../../node_modules/nx/schemas/project-schema.json",
   "projectType": "application",
   "tags": ["scope:frontend", "type:e2e", "domain:shared"],
   "implicitDependencies": ["cybertec-io"],
@@ -19,7 +19,7 @@
     "smoke": {
       "executor": "nx:run-commands",
       "options": {
-        "command": "node -e \"if (!process.env.BASE_URL) { console.error('smoke needs BASE_URL (the deployed app's URL)'); process.exit(1); }\" && playwright test",
+        "command": "node -e \"if (!process.env.BASE_URL) { console.error('smoke needs BASE_URL (the deployed URL)'); process.exit(1); }\" && playwright test",
         "cwd": "{projectRoot}"
       }
     }
