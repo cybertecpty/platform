@@ -21,7 +21,7 @@ pnpm nx e2e cybertec-io-e2e        # playwright header-menu smoke (builds first)
 ```
 
 `test` and `e2e` both depend on `build`, so they assert over and drive the real static
-output. The e2e suite lives in the sibling [`cybertec-io-e2e`](../cybertec-io-e2e) project
+output. The e2e suite lives in the nested [`cybertec-io-e2e`](e2e) project
 and needs the Playwright browser once locally: `pnpm exec playwright install chromium`.
 
 To regenerate the brand raster assets (OG image and `favicon.ico`) after a brand-asset
@@ -64,7 +64,7 @@ in `project.json`. To redeploy manually, use the workflow's `workflow_dispatch` 
   banner in each for what supersedes them.
 - `astro.config.mjs` — Astro config (Tailwind via `@tailwindcss/vite`); build output is
   redirected to the root `dist/`.
-- `vitest.config.mts` — the unit test runner. Playwright config lives in `cybertec-io-e2e`.
+- `vitest.config.mts` — the unit test runner. Playwright config lives in `e2e/` (the `cybertec-io-e2e` project).
 - `eslint.config.mjs` — the project's lint config.
 
 ## Conventions

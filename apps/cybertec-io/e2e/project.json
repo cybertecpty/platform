@@ -1,6 +1,6 @@
 {
   "name": "cybertec-io-e2e",
-  "$schema": "../../node_modules/nx/schemas/project-schema.json",
+  "$schema": "../../../node_modules/nx/schemas/project-schema.json",
   "projectType": "application",
   "tags": ["scope:frontend", "type:e2e", "domain:shared"],
   "implicitDependencies": ["cybertec-io"],
