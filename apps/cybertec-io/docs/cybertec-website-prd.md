@@ -1,5 +1,10 @@
 # CyberTec Website — Product Requirements Document
 
+> **Superseded for page content.** `apps/cybertec-io` is now a minimal one-screen personal
+> page (portrait, name, intro, current project, links). The sections, copy and acceptance
+> criteria below describe the earlier multi-section site and no longer match what ships.
+> The brand tokens, type and visual style remain current.
+
 > ⚠️ **Vendored design-phase artifact — architecture superseded by [ADR 0012](../../../docs/adr/0012-astro-content-sites.md).**
 > This PRD is kept in-repo for its **structure, final copy, design tokens, and
 > acceptance criteria** — not its stack/build guidance. The marketing site ships as
