@@ -115,9 +115,11 @@ Chosen option: **3**.
   Tree-based writes is not yet verified safe against a mid-run failure.
 - CI/automation-only by design. Run against a real, shared clone, it carries the same
   concurrent-session hazards as any other git-mutating agent work (conventions.md §5).
-- The generator must run as `cybertec-bot` (`gh auth switch --user cybertec-bot`): the maintainer
-  cannot approve a PR they authored, and a PR's author cannot be changed after creation. The
-  generator warns, but does not fail, when the authenticated `gh` account is anyone else.
+- The release PR must be authored by `cybertec-bot`: the maintainer cannot approve a PR they
+  authored, and a PR's author cannot be changed after creation. The generator therefore opens and
+  updates the PR with the bot's stored `gh` token (`gh auth token --user cybertec-bot`, scoped to
+  those calls) regardless of the active account. It falls back to the active account, warning when
+  that is not the bot, only when the bot's token is unavailable (e.g. CI).
 
 ## More information
 
