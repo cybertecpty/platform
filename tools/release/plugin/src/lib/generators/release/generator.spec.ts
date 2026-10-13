@@ -2,6 +2,7 @@ import { lastGitCommitHash } from '@cybertecpty/git-utils';
 import {
   createPullRequest,
   findOpenPullRequest,
+  getGithubAccountToken,
   getGithubAuthenticatedUser,
   updatePullRequest
 } from '@cybertecpty/github-utils';
@@ -31,6 +32,7 @@ jest.mock('@cybertecpty/git-utils', () => ({
 jest.mock('@cybertecpty/github-utils', () => ({
   createPullRequest: jest.fn(),
   findOpenPullRequest: jest.fn(),
+  getGithubAccountToken: jest.fn(),
   getGithubAuthenticatedUser: jest.fn(),
   updatePullRequest: jest.fn()
 }));
@@ -96,6 +98,7 @@ jest.mock('../release-manifest/generator', () => ({
 const mockLastGitCommitHash = jest.mocked(lastGitCommitHash);
 const mockCreatePullRequest = jest.mocked(createPullRequest);
 const mockFindOpenPullRequest = jest.mocked(findOpenPullRequest);
+const mockGetGithubAccountToken = jest.mocked(getGithubAccountToken);
 const mockGetGithubAuthenticatedUser = jest.mocked(getGithubAuthenticatedUser);
 const mockUpdatePullRequest = jest.mocked(updatePullRequest);
 const mockDryRunEnabled = jest.mocked(dryRunEnabled);
@@ -164,6 +167,7 @@ describe('releaseGenerator', () => {
 
   beforeEach(() => {
     jest.clearAllMocks();
+    mockGetGithubAccountToken.mockResolvedValue('bot-token');
     mockGetGithubAuthenticatedUser.mockResolvedValue('cybertec-bot');
     tree = createTreeWithEmptyWorkspace();
     gitClient = jest.mocked(simpleGit)() as unknown as GitSpies;
@@ -609,13 +613,34 @@ describe('releaseGenerator', () => {
       releaseGenerator(tree, options({ skipManifest: true, ...over })).then(callback => callback());
 
     describe('author guard', () => {
-      it('does not warn when authenticated as cybertec-bot', async () => {
+      it("opens the PR with the bot's token, whichever account is active", async () => {
         await run();
 
+        expect(mockGetGithubAccountToken).toHaveBeenCalledWith('cybertec-bot');
+        expect(mockGetGithubAuthenticatedUser).toHaveBeenCalledWith('bot-token');
+        expect(mockCreatePullRequest).toHaveBeenCalledWith(
+          expect.objectContaining({ token: 'bot-token' })
+        );
         expect(logger.warn).not.toHaveBeenCalled();
       });
 
-      it('warns, but still opens the PR, when authenticated as another account', async () => {
+      it("looks up and updates an existing PR with the bot's token", async () => {
+        mockFindOpenPullRequest.mockResolvedValue(7);
+
+        await run();
+
+        expect(mockFindOpenPullRequest).toHaveBeenCalledWith(
+          expect.any(String),
+          expect.any(String),
+          'bot-token'
+        );
+        expect(mockUpdatePullRequest).toHaveBeenCalledWith(
+          expect.objectContaining({ number: 7, token: 'bot-token' })
+        );
+      });
+
+      it('falls back to the active account, warning, when the bot is not logged in', async () => {
+        mockGetGithubAccountToken.mockRejectedValue(new Error('no token found'));
         mockGetGithubAuthenticatedUser.mockResolvedValue('djmcgrath101');
 
         await run();
@@ -623,10 +648,33 @@ describe('releaseGenerator', () => {
         expect(logger.warn).toHaveBeenCalledWith(
           expect.stringContaining('gh auth switch --user cybertec-bot')
         );
+        expect(mockCreatePullRequest).toHaveBeenCalledWith(
+          expect.objectContaining({ token: undefined })
+        );
+      });
+
+      it('falls back when the stored token does not belong to the bot', async () => {
+        mockGetGithubAuthenticatedUser.mockResolvedValue('djmcgrath101');
+
+        await run();
+
+        expect(logger.warn).toHaveBeenCalled();
+        expect(mockCreatePullRequest).toHaveBeenCalledWith(
+          expect.objectContaining({ token: undefined })
+        );
+      });
+
+      it('stays quiet in the fallback when the active account is the bot (CI)', async () => {
+        mockGetGithubAccountToken.mockRejectedValue(new Error('no stored accounts'));
+
+        await run();
+
+        expect(logger.warn).not.toHaveBeenCalled();
         expect(mockCreatePullRequest).toHaveBeenCalled();
       });
 
-      it('stays quiet when the account cannot be resolved', async () => {
+      it('stays quiet when no account can be resolved at all', async () => {
+        mockGetGithubAccountToken.mockRejectedValue(new Error('gh not logged in'));
         mockGetGithubAuthenticatedUser.mockRejectedValue(new Error('gh not logged in'));
 
         await run();
@@ -666,7 +714,8 @@ describe('releaseGenerator', () => {
         base: 'main',
         body: 'pr body',
         head: 'release/2026-09-11',
-        title: 'chore(release): 2026-09-11'
+        title: 'chore(release): 2026-09-11',
+        token: 'bot-token'
       });
       expect(mockUpdatePullRequest).not.toHaveBeenCalled();
       expect(logger.info).toHaveBeenCalledWith(
@@ -682,7 +731,8 @@ describe('releaseGenerator', () => {
       expect(mockUpdatePullRequest).toHaveBeenCalledWith({
         body: 'pr body',
         number: 42,
-        title: 'chore(release): 2026-09-11'
+        title: 'chore(release): 2026-09-11',
+        token: 'bot-token'
       });
       expect(mockCreatePullRequest).not.toHaveBeenCalled();
     });

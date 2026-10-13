@@ -38,6 +38,28 @@ describe('runGh', () => {
     expect(mockExecFile).toHaveBeenCalledWith('gh', ['pr', 'view', '123'], expect.any(Function));
   });
 
+  it('authenticates the call with the given token through GH_TOKEN, not the args', async () => {
+    mockExecFile.mockImplementation(((
+      _file: string,
+      _args: readonly string[],
+      _options: unknown,
+      callback: ExecFileCallback
+    ) => {
+      callback(null, '', '');
+
+      return undefined as unknown as ReturnType<typeof execFile>;
+    }) as typeof execFile);
+
+    await runGh(['pr', 'view', '1'], { token: 'bot-token' });
+
+    expect(mockExecFile).toHaveBeenCalledWith(
+      'gh',
+      ['pr', 'view', '1'],
+      { env: expect.objectContaining({ GH_TOKEN: 'bot-token' }) },
+      expect.any(Function)
+    );
+  });
+
   it('passes a defensive copy of the args, not the caller-owned array', async () => {
     let received: readonly string[] | undefined;
     whenGhRuns((args, callback) => {
