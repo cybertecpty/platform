@@ -37,18 +37,35 @@ describe('createPullRequest', () => {
     });
 
     expect(url).toBe('https://github.com/o/r/pull/7');
-    expect(mockRunGh).toHaveBeenCalledWith([
-      'pr',
-      'create',
-      '--base',
-      'main',
-      '--head',
-      'release/1.2.0',
-      '--title',
-      'Release 1.2.0',
-      '--body-file',
-      expect.any(String)
-    ]);
+    expect(mockRunGh).toHaveBeenCalledWith(
+      [
+        'pr',
+        'create',
+        '--base',
+        'main',
+        '--head',
+        'release/1.2.0',
+        '--title',
+        'Release 1.2.0',
+        '--body-file',
+        expect.any(String)
+      ],
+      { token: undefined }
+    );
+  });
+
+  it('authenticates the call with the given token', async () => {
+    mockRunGh.mockResolvedValue(ghOutput('https://github.com/o/r/pull/7'));
+
+    await createPullRequest({
+      base: 'main',
+      body: 'b',
+      head: 'release/1.2.0',
+      title: 'Release 1.2.0',
+      token: 'bot-token'
+    });
+
+    expect(mockRunGh).toHaveBeenCalledWith(expect.any(Array), { token: 'bot-token' });
   });
 
   it('passes the body through a temp file that holds the body and is removed afterwards', async () => {
@@ -87,18 +104,29 @@ describe('findOpenPullRequest', () => {
     mockRunGh.mockResolvedValue(ghOutput(JSON.stringify([{ number: 42 }, { number: 43 }])));
 
     await expect(findOpenPullRequest('release/1.2.0', 'main')).resolves.toBe(42);
-    expect(mockRunGh).toHaveBeenCalledWith([
-      'pr',
-      'list',
-      '--head',
-      'release/1.2.0',
-      '--base',
-      'main',
-      '--state',
-      'open',
-      '--json',
-      'number'
-    ]);
+    expect(mockRunGh).toHaveBeenCalledWith(
+      [
+        'pr',
+        'list',
+        '--head',
+        'release/1.2.0',
+        '--base',
+        'main',
+        '--state',
+        'open',
+        '--json',
+        'number'
+      ],
+      { token: undefined }
+    );
+  });
+
+  it('authenticates the lookup with the given token', async () => {
+    mockRunGh.mockResolvedValue(ghOutput('[]'));
+
+    await findOpenPullRequest('release/1.2.0', 'main', 'bot-token');
+
+    expect(mockRunGh).toHaveBeenCalledWith(expect.any(Array), { token: 'bot-token' });
   });
 
   it('returns null when no open PR exists', async () => {
@@ -115,15 +143,18 @@ describe('updatePullRequest', () => {
     const url = await updatePullRequest({ body: 'new body', number: 7, title: 'new title' });
 
     expect(url).toBe('https://github.com/o/r/pull/7');
-    expect(mockRunGh).toHaveBeenCalledWith([
-      'pr',
-      'edit',
-      '7',
-      '--title',
-      'new title',
-      '--body-file',
-      expect.any(String)
-    ]);
+    expect(mockRunGh).toHaveBeenCalledWith(
+      ['pr', 'edit', '7', '--title', 'new title', '--body-file', expect.any(String)],
+      { token: undefined }
+    );
+  });
+
+  it('authenticates the edit with the given token', async () => {
+    mockRunGh.mockResolvedValue(ghOutput('https://github.com/o/r/pull/7'));
+
+    await updatePullRequest({ body: 'b', number: 7, title: 't', token: 'bot-token' });
+
+    expect(mockRunGh).toHaveBeenCalledWith(expect.any(Array), { token: 'bot-token' });
   });
 
   it('writes the updated body to the temp file', async () => {
