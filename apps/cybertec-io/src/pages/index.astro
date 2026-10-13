@@ -1,32 +1,78 @@
 ---
+import { Image } from 'astro:assets';
+import daniel from '../assets/daniel.jpg';
 import BaseLayout from '../layouts/BaseLayout.astro';
-import Header from '../components/Header.astro';
-import Hero from '../components/Hero.astro';
-import Services from '../components/Services.astro';
-import Stack from '../components/Stack.astro';
-import Principles from '../components/Principles.astro';
-import Experience from '../components/Experience.astro';
-import About from '../components/About.astro';
-import WorkingWithMe from '../components/WorkingWithMe.astro';
-import Contact from '../components/Contact.astro';
 import Footer from '../components/Footer.astro';
+
+const links = [
+  { label: 'GitHub', href: 'https://github.com/cybertecpty', external: true },
+  { label: 'LinkedIn', href: 'https://linkedin.com/in/djmcgrath101', external: true },
+  { label: 'contact@cybertec.io', href: 'mailto:contact@cybertec.io', external: false }
+];
 ---
 
 <BaseLayout>
-  {/*
-    The sticky <header> is its own banner landmark, outside <main>; the page
-    sections live inside <main> so assistive tech has a single primary landmark.
-  */}
-  <Header />
-  <main>
-    <Hero />
-    <Services />
-    <Stack />
-    <Principles />
-    <Experience />
-    <About />
-    <WorkingWithMe />
-    <Contact />
+  <main class="blueprint-grid flex flex-1 items-center py-16">
+    <div class="site-container">
+      <Image
+        src={daniel}
+        alt="Daniel McGrath"
+        width={200}
+        height={200}
+        widths={[200, 400]}
+        sizes="200px"
+        loading="eager"
+        class="mb-8 size-[200px] rounded-full border-4 border-brass object-cover"
+      />
+      <h1 class="font-display text-[clamp(40px,6.6vw,82px)] font-normal leading-[1.04] tracking-[-0.02em] text-paper">
+        Daniel McGrath
+      </h1>
+      <p class="mt-4 font-mono text-[clamp(13px,1.6vw,16px)] uppercase tracking-[0.22em] text-copper">
+        Senior Software Engineer
+      </p>
+      <p class="mt-8 max-w-[52ch] text-[clamp(18px,2.2vw,22px)] leading-[1.5] text-body-on-ink">
+        I've spent 15+ years building web applications, mostly with Angular and TypeScript, and
+        these days I'm working in Nx monorepos with a .NET backend. I'm based in Panama.
+      </p>
+
+      <h2 class="mt-12 font-mono text-[12.5px] uppercase tracking-[0.22em] text-copper">
+        What I'm working on
+      </h2>
+      <p class="mt-4 max-w-[52ch] text-[17px] leading-[1.6] text-body-on-ink">
+        I'm building an open-source video game collection manager called Gamer's Source inside the
+        CyberTec platform monorepo (Angular, .NET, Nx). I started in October 2026, and I'll write up
+        what I learn along the way here.
+      </p>
+      <p class="mt-3">
+        <a
+          href="https://github.com/cybertecpty/platform"
+          target="_blank"
+          rel="noopener noreferrer"
+          class="font-mono text-[13px] text-brass underline decoration-brass underline-offset-4"
+        >
+          github.com/cybertecpty/platform<span class="sr-only"> (opens in a new tab)</span>
+          <span aria-hidden="true"> ↗</span>
+        </a>
+      </p>
+
+      <h2 class="mt-12 font-mono text-[12.5px] uppercase tracking-[0.22em] text-copper">
+        Let's connect
+      </h2>
+      <ul class="mt-4 flex flex-wrap items-center gap-3 font-mono text-[13px]">
+        {links.map(link => (
+          <li>
+            <a
+              href={link.href}
+              {...(link.external && { target: '_blank', rel: 'noopener noreferrer' })}
+              class="inline-flex min-h-[44px] items-center rounded-full border border-[rgb(var(--paper-rgb)/0.3)] px-5 text-paper transition-colors hover:border-copper hover:text-copper"
+            >
+              {link.label}
+              {link.external && <span class="sr-only"> (opens in a new tab)</span>}
+            </a>
+          </li>
+        ))}
+      </ul>
+    </div>
   </main>
   <Footer />
 </BaseLayout>

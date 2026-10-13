@@ -15,6 +15,8 @@ export interface CreatePullRequestOptions {
   readonly head: string;
   /** PR title. */
   readonly title: string;
+  /** Token to author the PR with instead of the active `gh` account. */
+  readonly token?: string;
 }
 
 /**
@@ -27,6 +29,8 @@ export interface UpdatePullRequestOptions {
   readonly number: number;
   /** PR title. */
   readonly title: string;
+  /** Token to edit the PR with instead of the active `gh` account. */
+  readonly token?: string;
 }
 
 /** Shape of a single PR record returned by `gh pr list --json number`. */
@@ -44,18 +48,21 @@ export interface GithubPullRequestRef {
  */
 export async function createPullRequest(options: CreatePullRequestOptions): Promise<string> {
   return withPullRequestBodyFile(options.body, async bodyFile => {
-    const { stdout } = await runGh([
-      'pr',
-      'create',
-      '--base',
-      options.base,
-      '--head',
-      options.head,
-      '--title',
-      options.title,
-      '--body-file',
-      bodyFile
-    ]);
+    const { stdout } = await runGh(
+      [
+        'pr',
+        'create',
+        '--base',
+        options.base,
+        '--head',
+        options.head,
+        '--title',
+        options.title,
+        '--body-file',
+        bodyFile
+      ],
+      { token: options.token }
+    );
 
     return stdout.trim();
   });
@@ -66,19 +73,15 @@ export async function createPullRequest(options: CreatePullRequestOptions): Prom
  *
  * @returns The PR number, or `null` when no open PR exists.
  */
-export async function findOpenPullRequest(head: string, base: string): Promise<number | null> {
-  const { stdout } = await runGh([
-    'pr',
-    'list',
-    '--head',
-    head,
-    '--base',
-    base,
-    '--state',
-    'open',
-    '--json',
-    'number'
-  ]);
+export async function findOpenPullRequest(
+  head: string,
+  base: string,
+  token?: string
+): Promise<number | null> {
+  const { stdout } = await runGh(
+    ['pr', 'list', '--head', head, '--base', base, '--state', 'open', '--json', 'number'],
+    { token }
+  );
 
   const pullRequests = JSON.parse(stdout) as GithubPullRequestRef[];
 
@@ -92,15 +95,10 @@ export async function findOpenPullRequest(head: string, base: string): Promise<n
  */
 export async function updatePullRequest(options: UpdatePullRequestOptions): Promise<string> {
   return withPullRequestBodyFile(options.body, async bodyFile => {
-    const { stdout } = await runGh([
-      'pr',
-      'edit',
-      String(options.number),
-      '--title',
-      options.title,
-      '--body-file',
-      bodyFile
-    ]);
+    const { stdout } = await runGh(
+      ['pr', 'edit', String(options.number), '--title', options.title, '--body-file', bodyFile],
+      { token: options.token }
+    );
 
     return stdout.trim();
   });

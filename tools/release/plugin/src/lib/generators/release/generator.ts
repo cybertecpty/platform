@@ -2,6 +2,7 @@ import { lastGitCommitHash } from '@cybertecpty/git-utils';
 import {
   createPullRequest,
   findOpenPullRequest,
+  getGithubAccountToken,
   getGithubAuthenticatedUser,
   updatePullRequest
 } from '@cybertecpty/github-utils';
@@ -337,7 +338,7 @@ async function openReleasePullRequest(
   const title = `chore(release): ${releaseDate.split('T')[0]}`;
 
   try {
-    await warnIfNotBotAuthored();
+    const token = await resolveBotToken();
 
     // Built inside the try because the workspace-changes section queries git;
     // a failure there must degrade to the manual-command warning, not throw.
@@ -348,19 +349,25 @@ async function openReleasePullRequest(
       releaseCommitMessage: RELEASE_COMMIT_MESSAGE,
       targetBranch
     });
-    const existingNumber = await findOpenPullRequest(releaseBranch, targetBranch);
+    const existingNumber = await findOpenPullRequest(releaseBranch, targetBranch, token);
     let pullRequestUrl: string;
 
     if (existingNumber !== null) {
       logger.info(`Updating existing release pull request #${existingNumber}...`);
-      pullRequestUrl = await updatePullRequest({ body, number: existingNumber, title });
+      pullRequestUrl = await updatePullRequest({
+        body,
+        number: existingNumber,
+        title,
+        token
+      });
     } else {
       logger.info(`Opening release pull request from ${releaseBranch} into ${targetBranch}...`);
       pullRequestUrl = await createPullRequest({
         base: targetBranch,
         body,
         head: releaseBranch,
-        title
+        title,
+        token
       });
     }
 
@@ -379,10 +386,39 @@ async function openReleasePullRequest(
 }
 
 /**
- * Warns when the authenticated `gh` account is not {@link RELEASE_PR_AUTHOR}.
- * Warn rather than fail: the release branch is already pushed, and a PR's
- * author cannot be changed afterward, so the fix is to switch accounts and
- * close and recreate the PR. An unresolvable account is ignored; the PR call
+ * Resolves the token the PR calls authenticate with, so the PR is authored by
+ * {@link RELEASE_PR_AUTHOR} whichever `gh` account is active (the maintainer
+ * cannot approve a PR they authored, and the author cannot be changed after
+ * creation). Reads the bot's stored `gh` token without switching accounts, and
+ * confirms it really belongs to the bot.
+ *
+ * Falls back to the active account, with a warning, when the bot's token is
+ * unavailable (e.g. in CI, where `gh` authenticates through `GH_TOKEN` and
+ * holds no stored accounts).
+ *
+ * @returns The bot's token, or `undefined` to use the active account.
+ */
+async function resolveBotToken(): Promise<string | undefined> {
+  try {
+    const token = await getGithubAccountToken(RELEASE_PR_AUTHOR);
+
+    if (token && (await getGithubAuthenticatedUser(token)) === RELEASE_PR_AUTHOR) {
+      return token;
+    }
+  } catch {
+    // Not logged in as the bot on this machine; fall through to the active account.
+  }
+
+  await warnIfNotBotAuthored();
+
+  return undefined;
+}
+
+/**
+ * Warns when the active `gh` account is not {@link RELEASE_PR_AUTHOR}, used only
+ * when the bot's own token could not be resolved. Warn rather than fail: the
+ * release branch is already pushed, and a PR's author cannot be changed
+ * afterward, so the fix is to switch accounts and close and recreate the PR. An unresolvable account is ignored; the PR call
  * that follows surfaces any real `gh` problem.
  */
 async function warnIfNotBotAuthored(): Promise<void> {

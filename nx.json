@@ -76,7 +76,7 @@
     "projectsRelationship": "independent",
     "groups": {
       "apps": {
-        "projects": ["apps/*", "!apps/*-e2e"]
+        "projects": ["apps/*"]
       }
     },
     "version": {

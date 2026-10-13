@@ -6,9 +6,6 @@ import { beforeAll, describe, expect, it } from 'vitest';
 // Asserts over the built static output (the `test` target dependsOn `build`).
 const distDir = join(dirname(fileURLToPath(import.meta.url)), '../../../dist/apps/cybertec-io');
 
-// Section anchors in page order (header nav and CTAs target these).
-const SECTIONS = ['top', 'services', 'skills', 'principles', 'experience', 'about', 'contact'];
-
 describe('cybertec-io build output', () => {
   let html = '';
 
@@ -24,17 +21,27 @@ describe('cybertec-io build output', () => {
     html = readFileSync(indexPath, 'utf8');
   });
 
-  it('renders all seven section ids', () => {
-    for (const id of SECTIONS) {
-      expect(html, `missing section id="${id}"`).toContain(`id="${id}"`);
+  it('renders the page copy and no in-page anchors', () => {
+    expect(html).toContain('<title>CyberTec</title>');
+    expect(html).toContain('<h1');
+    expect(html).toMatch(/What I.m working on/);
+    expect(html).toContain('© 2026 CyberTec');
+    expect(html).not.toMatch(/href="#/);
+  });
+
+  it('links GitHub, LinkedIn, the platform repo and email', () => {
+    for (const href of [
+      'https://github.com/cybertecpty"',
+      'https://linkedin.com/in/djmcgrath101"',
+      'https://github.com/cybertecpty/platform"',
+      'mailto:contact@cybertec.io"'
+    ]) {
+      expect(html, `missing link ${href}`).toContain(`href="${href}`);
     }
   });
 
-  it('has no dangling in-page anchors (every #href has a matching id)', () => {
-    const hrefs = [...html.matchAll(/href="#([a-z0-9-]+)"/gi)].map(m => m[1].toLowerCase());
-    const ids = new Set([...html.matchAll(/id="([a-z0-9-]+)"/gi)].map(m => m[1].toLowerCase()));
-    const dangling = [...new Set(hrefs)].filter(h => !ids.has(h));
-    expect(dangling, `anchors with no matching section: ${dangling.join(', ')}`).toEqual([]);
+  it('avoids retired positioning language', () => {
+    expect(html).not.toMatch(/consultant|contractor|full-stack|coming soon|under construction/i);
   });
 
   it('includes the core SEO and social meta', () => {
@@ -54,9 +61,9 @@ describe('cybertec-io build output', () => {
     expect(html).toContain('content="summary_large_image"');
   });
 
-  it('serves a responsive, optimized portrait (Sharp <Image> srcset)', () => {
-    // astro:assets emits hashed, re-encoded variants with a width descriptor.
+  it('serves the optimized portrait above the name (Sharp <Image> srcset)', () => {
     expect(html).toMatch(/srcset="[^"]*\.webp \d+w/);
+    expect(html.indexOf('alt="Daniel McGrath"')).toBeLessThan(html.indexOf('<h1'));
   });
 
   it('emits robots.txt, sitemap.xml, and the favicon and og raster assets', () => {

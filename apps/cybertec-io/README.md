@@ -1,7 +1,7 @@
 # cybertec-io
 
-The CyberTec marketing homepage ([cybertec.io](https://cybertec.io)) — a single-page,
-static **Astro** site styled with **Tailwind CSS v4**.
+The personal site of Daniel McGrath at [cybertec.io](https://cybertec.io) — a minimal
+one-screen, static **Astro** site styled with **Tailwind CSS v4**.
 
 See [ADR 0012](../../docs/adr/0012-astro-content-sites.md) for why Astro is allowed for
 static content sites and how it fits into the Nx workspace.
@@ -17,11 +17,11 @@ pnpm nx preview cybertec-io        # preview the production build
 pnpm nx lint cybertec-io           # eslint (incl. @nx/dependency-checks)
 pnpm nx typecheck cybertec-io      # astro check
 pnpm nx test cybertec-io           # vitest assertions over the built output (builds first)
-pnpm nx e2e cybertec-io-e2e        # playwright header-menu smoke (builds first)
+pnpm nx e2e cybertec-io-e2e        # playwright page smoke (builds first)
 ```
 
 `test` and `e2e` both depend on `build`, so they assert over and drive the real static
-output. The e2e suite lives in the sibling [`cybertec-io-e2e`](../cybertec-io-e2e) project
+output. The e2e suite lives in the nested [`cybertec-io-e2e`](e2e) project
 and needs the Playwright browser once locally: `pnpm exec playwright install chromium`.
 
 To regenerate the brand raster assets (OG image and `favicon.ico`) after a brand-asset
@@ -44,8 +44,9 @@ in `project.json`. To redeploy manually, use the workflow's `workflow_dispatch` 
 
 - `src/pages/` — routes (the homepage is `index.astro`).
 - `src/layouts/` — the base document shell (`<head>`, fonts and their preloads, SEO and
-  social meta, JSON-LD, favicons); each section owns its own `.site-container`.
-- `src/components/` — page section components (`Hero.astro`, `Services.astro`, …).
+  social meta, JSON-LD, favicons); the page applies `.site-container` to its own inner wrapper.
+- `src/components/` — shared components (currently just `Footer.astro`; the page content
+  lives in `src/pages/index.astro`).
 - `src/styles/global.css` — Tailwind v4 entry: design tokens as CSS custom properties,
   `@theme` blocks mirroring them as utilities, and `@utility` primitives.
 - `src/assets/` — build-processed assets (the portrait `daniel.jpg`, optimized and
@@ -64,7 +65,7 @@ in `project.json`. To redeploy manually, use the workflow's `workflow_dispatch` 
   banner in each for what supersedes them.
 - `astro.config.mjs` — Astro config (Tailwind via `@tailwindcss/vite`); build output is
   redirected to the root `dist/`.
-- `vitest.config.mts` — the unit test runner. Playwright config lives in `cybertec-io-e2e`.
+- `vitest.config.mts` — the unit test runner. Playwright config lives in `e2e/` (the `cybertec-io-e2e` project).
 - `eslint.config.mjs` — the project's lint config.
 
 ## Conventions
@@ -73,8 +74,6 @@ in `project.json`. To redeploy manually, use the workflow's `workflow_dispatch` 
   reserved for art-directed primitives that utilities can't express (blueprint grid,
   hairlines). No inline styles. For token colors at partial alpha, use the `--x-rgb`
   channel token (`rgb(var(--x-rgb)/<alpha>)`) rather than a hardcoded hex.
-- Multi-column layouts use `auto-fit` + `minmax(...)` arbitrary-value grids so they
-  collapse to one column on phones without media queries — never fixed column counts.
-- Copy lives in each component's frontmatter arrays and mirrors
-  [`docs/cybertec-website-prd.md`](docs/cybertec-website-prd.md) §7; update the PRD when
-  the copy changes.
+- Copy lives in `src/pages/index.astro`. The PRD and design handoff in `docs/` describe the
+  earlier multi-section site and are superseded for page content; keep their brand tokens
+  in sync with `src/styles/global.css` if a token changes.

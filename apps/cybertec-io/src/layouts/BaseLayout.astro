@@ -15,8 +15,8 @@ interface Props {
 }
 
 const {
-  title = 'CyberTec — Senior Full-Stack Engineer & Angular Consultant',
-  description = 'Daniel McGrath is a senior full-stack engineer and Angular consultant with 15+ years of experience, available for long-term, full-time remote contract engagements.'
+  title = 'CyberTec',
+  description = 'Personal site of Daniel McGrath, a senior software engineer working mostly with Angular, .NET and Nx monorepos.'
 } = Astro.props;
 
 const canonical = Astro.site ? new URL(Astro.url.pathname, Astro.site).href : Astro.url.href;
@@ -27,28 +27,11 @@ const personLd = {
   '@context': 'https://schema.org',
   '@type': 'Person',
   name: 'Daniel McGrath',
-  alternateName: 'CyberTec',
-  jobTitle: 'Senior Full-Stack Engineer & Angular Consultant',
-  description:
-    'Senior Full-Stack Engineer and Angular Consultant available for long-term, full-time remote contract engagements, with a focus on legacy Angular/AngularJS migrations and Nx monorepos.',
+  jobTitle: 'Senior Software Engineer',
+  description: 'Senior software engineer working mostly with Angular, .NET and Nx monorepos.',
   url: 'https://cybertec.io',
   email: 'contact@cybertec.io',
-  knowsAbout: [
-    'Angular Development',
-    'Angular Consulting',
-    'Full-Stack Development',
-    'SQL Databases',
-    'Nx Monorepos',
-    'TypeScript',
-    'RxJS',
-    'NgRx',
-    'Node.js',
-    'Nx',
-    'Firebase',
-    'Azure'
-  ],
-  alumniOf: { '@type': 'CollegeOrUniversity', name: 'Florida State University' },
-  address: { '@type': 'PostalAddress', addressCountry: 'PA' },
+  knowsAbout: ['Angular', 'TypeScript', '.NET', 'Nx'],
   sameAs: ['https://github.com/cybertecpty', 'https://linkedin.com/in/djmcgrath101']
 };
 ---
@@ -63,7 +46,7 @@ const personLd = {
     <link rel="canonical" href={canonical} />
     <meta name="theme-color" content="#14110d" />
 
-    {/* Preload the hero headline fonts (normal + italic accent) to avoid a swap-induced layout shift. */}
+    {/* Preload the headline fonts (normal + italic accent) to avoid a swap-induced layout shift. */}
     <link rel="preload" href={frauncesNormal} as="font" type="font/woff2" crossorigin />
     <link rel="preload" href={frauncesItalic} as="font" type="font/woff2" crossorigin />
 
@@ -92,12 +75,11 @@ const personLd = {
     {/* Brand fonts are self-hosted via @fontsource (imported above) — no
         third-party font request. */}
   </head>
-  <body>
+  <body class="flex min-h-dvh flex-col">
     {/*
-      Plain shell — no global content container. Each section applies
+      Plain shell — no global content container. The page applies
       `.site-container` (1180px / 28px gutters) to its own inner wrapper so
-      full-bleed backgrounds (Hero blueprint grid, contact surface) can span the
-      full viewport while their content stays centered.
+      the full-bleed blueprint grid can span the viewport while content stays centered.
     */}
     <slot />
   </body>

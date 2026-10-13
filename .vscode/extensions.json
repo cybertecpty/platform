@@ -12,6 +12,7 @@
     "orta.vscode-jest",
     "anthropic.claude-code",
     "astro-build.astro-vscode",
-    "ms-azuretools.vscode-azurestaticwebapps"
+    "ms-azuretools.vscode-azurestaticwebapps",
+    "bradlc.vscode-tailwindcss"
   ]
 }
