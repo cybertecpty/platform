@@ -1,7 +1,7 @@
 {
   "name": "@cybertecpty/platform",
   "version": "1.1.0",
-  "license": "MIT",
+  "license": "PolyForm-Noncommercial-1.0.0",
   "scripts": {
     "affected:format": "pnpm exec nx format:write --affected",
     "affected:lint": "pnpm exec nx affected -t lint",
