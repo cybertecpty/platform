@@ -12,11 +12,6 @@
 
 # Agent / tooling config
 .claude
-.codex
-.cursor
-.gemini
-.opencode
-.agents
 .remember
 .editorconfig
 .prettierrc*

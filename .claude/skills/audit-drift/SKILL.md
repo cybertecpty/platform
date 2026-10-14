@@ -1,7 +1,7 @@
 ---
 name: audit-drift
 description: >
-  Read-only audit of this repo's agent-facing docs (CLAUDE.md, AGENTS.md, README.md,
+  Read-only audit of this repo's agent-facing docs (CLAUDE.md, README.md,
   docs/agents/*, docs/adr/, memory) for documentation drift — claims that no longer match
   reality. Flags vanished file/path references, documented commands/remotes/accounts that no
   longer resolve, structural or policy claims the repo contradicts, and catalogs that have
@@ -28,7 +28,7 @@ never inline from an audit.
 Locate and read whichever exist (skip and say so for any that don't). If an argument was
 given, scope to that path.
 
-- `CLAUDE.md`, `AGENTS.md` at the repo root.
+- `CLAUDE.md` at the repo root.
 - `docs/agents/*.md` — `conventions.md`, `principles.md`, `issue-tracker.md`,
   `triage-labels.md`, `domain.md`.
 - `docs/adr/*.md` and any `docs/adr/README` / index.
@@ -64,8 +64,8 @@ Extract claims, verify each with a **read-only** probe, group findings by type:
    mark the rest **asserted but not verifiable from here** rather than guessing.
 
 5. **Catalog / manifest consistency.** A doc that _enumerates_ something must match what
-   ships: `AGENTS.md` / `CLAUDE.md`'s list of skills vs. the real `.claude/skills/` +
-   `.agents/skills/` contents; `package.json` version vs. any version named in docs; the ADR
+   ships: `CLAUDE.md`'s list of skills vs. the real `.claude/skills/`;
+   `package.json` version vs. any version named in docs; the ADR
    index vs. the files in `docs/adr/`. A list that names a removed item — or omits an added
    one — is drift.
 
