@@ -1,6 +1,6 @@
 # 14. Agentic development workflow
 
-- Status: proposed
+- Status: accepted
 - Date: 2026-10-14
 - Deciders: djmcgrath
 - Implemented by: `docs/agents/conventions.md`, `docs/agents/principles.md`, `.claude/skills/`,
