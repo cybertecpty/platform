@@ -18,8 +18,7 @@ This ADR records the model as it exists today so it can be challenged or changed
 
 **Scope assumption: a solo maintainer.** The repo has one human, `djmcgrath101`, who directs the
 agents, is the sole approver, the sole CODEOWNER, and the only admin. There are no other
-maintainers or human reviewers. Copilot review is supported but is not automated (see Review
-loop). The model is built for that setting, and several of its trade-offs (below) follow from it.
+maintainers or human reviewers. Copilot review is automated but advisory (see Review loop). The model is built for that setting, and several of its trade-offs (below) follow from it.
 
 ## Decision drivers
 
@@ -81,8 +80,9 @@ approver.**
 - Only humans and `copilot-pull-request-reviewer[bot]` feedback is actionable. Bot-authored
   comments and CI-status noise are skipped. Fixes are pushed, and only threads that were actually
   fixed are resolved (`address-pr-feedback` skill).
-- Copilot review is **opt-in, not enforced**: no ruleset rule or workflow requests it, so it runs
-  only when the maintainer requests it on a PR (a seated-account action).
+- Copilot review is **automatic but advisory**: a ruleset rule on `protect-develop` and
+  `protect-main` requests it on every PR. It is not a required check; the maintainer's approval
+  remains the only gate.
 
 **Backlog**
 
@@ -122,8 +122,8 @@ approver.**
   subtle, and the MCP boundary is convention, not enforcement.
 - **Single point of failure:** the maintainer is the only approver and only bypass actor.
 - **No independent human check.** The approver is also the person directing the agents, so the
-  gate catches agent mistakes but not the maintainer's own blind spots. Copilot review could
-  partly substitute, but it is opt-in and, as of this ADR, no merged PR has received one.
+  gate catches agent mistakes but not the maintainer's own blind spots. Automatic Copilot review
+  partly mitigates this as a second, non-blocking check.
 
 ### If a second maintainer or reviewer joins
 
