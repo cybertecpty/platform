@@ -1,7 +1,7 @@
 ---
 name: address-pr-feedback
 description: >
-  Work through an automated reviewer's comments on a platform PR (GitHub Copilot) — triage
+  Work through an automated reviewer's comments on a platform PR (e.g. GitHub Copilot, if enabled) — triage
   each thread (fix or reasoned pushback), push accepted fixes, then resolve ONLY the threads
   that were actually fixed. Declined/deferred threads stay open with a reply. Use when asked
   to address PR review feedback / bot review comments.
@@ -16,7 +16,7 @@ mark **only the fixed threads** resolved. Declined/deferred threads stay **open*
 reply for the human — nothing gets silently dismissed. "Address PR feedback" includes the
 GitHub thread-resolution writes; do them unless the user explicitly opts out.
 
-Reviewers seen on this repo:
+Known review bots (none is enabled by default; see conventions §4):
 
 | Reviewer       | First comment `author.login`         |
 | -------------- | ------------------------------------ |

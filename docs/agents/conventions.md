@@ -21,20 +21,20 @@ The repo is a fresh rebuild (`dfc4c32 chore: first commit`, 2026-08-31). Some ru
 below describe the **intended** setup and are **not wired yet** — treated here as
 policy so they're in place when the tooling lands, but don't assume they're active:
 
-| Area                                                       | Now                                                                         | Planned |
-| ---------------------------------------------------------- | --------------------------------------------------------------------------- | ------- |
-| Bot PR flow (`cybertec-bot`, `cybertecpty/bots` team)      | ✅ live                                                                     | —       |
-| CI (`ci.yml`) + Nx Cloud distribution / self-healing       | ✅ live                                                                     | —       |
-| Nx Cloud remote cache (`NX_CLOUD_ACCESS_TOKEN` secret)     | ✅ live                                                                     | —       |
-| Branch protection on `develop` / `main`                    | ✅ live — rulesets `protect-develop` / `protect-main`                       | —       |
-| Reviewer routing (`.github/CODEOWNERS` → `@djmcgrath101`)  | ✅ live — auto-requests maintainer review on every PR                       | —       |
-| Automatic Copilot code review on PRs to `develop` / `main` | ✅ live — ruleset rule on `protect-develop` / `protect-main`, advisory only | —       |
-| Pre-commit hook (`husky` + `lint-staged`)                  | ✅ live — formats/`eslint --fix`es staged files (#24)                       | —       |
-| Commitlint / `commit-msg` hook                             | ✅ live — `commit-msg` hook + CI PR-title check (#32)                       | §3      |
-| `@cybertecpty/*` publish on merge to `main`                | ❌ no release flow, no packages                                             | §2      |
-| `cybertec-back-merge` app                                  | app installed, not driving anything                                         | §2      |
-| pnpm (`pnpm-lock.yaml`, `pnpm exec nx`)                    | ✅ live — pnpm@10.34.5, `node-linker=isolated` (PR #17)                     | —       |
-| Application frameworks (Angular 22, NestJS 11)             | ✅ live — `@nx/angular` / `@nx/nest`, path-alias TS (ADR 0005)              | —       |
+| Area                                                      | Now                                                            | Planned |
+| --------------------------------------------------------- | -------------------------------------------------------------- | ------- |
+| Bot PR flow (`cybertec-bot`, `cybertecpty/bots` team)     | ✅ live                                                        | —       |
+| CI (`ci.yml`) + Nx Cloud distribution / self-healing      | ✅ live                                                        | —       |
+| Nx Cloud remote cache (`NX_CLOUD_ACCESS_TOKEN` secret)    | ✅ live                                                        | —       |
+| Branch protection on `develop` / `main`                   | ✅ live — rulesets `protect-develop` / `protect-main`          | —       |
+| Reviewer routing (`.github/CODEOWNERS` → `@djmcgrath101`) | ✅ live — auto-requests maintainer review on every PR          | —       |
+| Automated PR reviewer (e.g. Copilot code review)          | ❌ none — needs a paid plan; maintainer review only (#110)     | later   |
+| Pre-commit hook (`husky` + `lint-staged`)                 | ✅ live — formats/`eslint --fix`es staged files (#24)          | —       |
+| Commitlint / `commit-msg` hook                            | ✅ live — `commit-msg` hook + CI PR-title check (#32)          | §3      |
+| `@cybertecpty/*` publish on merge to `main`               | ❌ no release flow, no packages                                | §2      |
+| `cybertec-back-merge` app                                 | app installed, not driving anything                            | §2      |
+| pnpm (`pnpm-lock.yaml`, `pnpm exec nx`)                   | ✅ live — pnpm@10.34.5, `node-linker=isolated` (PR #17)        | —       |
+| Application frameworks (Angular 22, NestJS 11)            | ✅ live — `@nx/angular` / `@nx/nest`, path-alias TS (ADR 0005) | —       |
 
 Where a rule depends on unwired tooling, it says so inline.
 
@@ -83,7 +83,7 @@ manual git is unaffected.
   "requested", so without CODEOWNERS or the flag a PR just sits `BLOCKED` with
   nobody pinged. Keep both.
 - Switch to the maintainer account only for actions that genuinely need a seated
-  account (e.g. approving, re-requesting a Copilot review). Switch **back** to
+  account (e.g. approving). Switch **back** to
   `cybertec-bot` before bot-owned maintenance (arming auto-merge, bot comments,
   resolving bot-addressed threads), and leave `gh` resting at `djmcgrath101` at
   session end.
@@ -230,11 +230,12 @@ is `>=22.18.0` because that is where native type stripping became unflagged.
 A monitor event can re-surface any new PR comment. Before acting, confirm it is
 genuine reviewer feedback.
 
-**Actionable:** humans, `copilot-pull-request-reviewer[bot]`.
+**Actionable:** humans, and any review bot the maintainer later enables.
 
-Copilot reviews every PR to `develop` / `main` automatically (ruleset rule). It is
-**advisory only**: it is not a required check and never replaces the maintainer's
-approval, which stays the gate.
+No automated reviewer is configured today: Copilot code review needs a paid plan and the
+maintainer chose not to buy one (#110). Maintainer approval is the only review gate. If a
+review bot is added later, treat it as advisory (never a required check) and list it in the
+`address-pr-feedback` skill's reviewer table.
 
 **Noise — skip:** CI-status bots, comments authored by `cybertec-bot`, comments with
 an "addressed by" signature from the same workflow, already-resolved/outdated threads

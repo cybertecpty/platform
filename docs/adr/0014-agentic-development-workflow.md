@@ -18,7 +18,8 @@ This ADR records the model as it exists today so it can be challenged or changed
 
 **Scope assumption: a solo maintainer.** The repo has one human, `djmcgrath101`, who directs the
 agents, is the sole approver, the sole CODEOWNER, and the only admin. There are no other
-maintainers or human reviewers. Copilot review is automated but advisory (see Review loop). The model is built for that setting, and several of its trade-offs (below) follow from it.
+maintainers or human reviewers. No automated reviewer is configured (see Review loop). The model is built for that setting,
+and several of its trade-offs (below) follow from it.
 
 ## Decision drivers
 
@@ -77,12 +78,12 @@ approver.**
 
 **Review loop**
 
-- Only humans and `copilot-pull-request-reviewer[bot]` feedback is actionable. Bot-authored
-  comments and CI-status noise are skipped. Fixes are pushed, and only threads that were actually
+- Only human feedback, and feedback from any review bot the maintainer later enables, is
+  actionable. Bot-authored comments and CI-status noise are skipped. Fixes are pushed, and only threads that were actually
   fixed are resolved (`address-pr-feedback` skill).
-- Copilot review is **automatic but advisory**: a ruleset rule on `protect-develop` and
-  `protect-main` requests it on every PR. It is not a required check; the maintainer's approval
-  remains the only gate.
+- **No automated reviewer.** Copilot code review needs a paid plan, which the maintainer chose
+  not to buy for a solo repo (#110). It can be added later as an advisory ruleset rule; the
+  maintainer's approval stays the only gate either way.
 
 **Backlog**
 
@@ -122,8 +123,8 @@ approver.**
   subtle, and the MCP boundary is convention, not enforcement.
 - **Single point of failure:** the maintainer is the only approver and only bypass actor.
 - **No independent human check.** The approver is also the person directing the agents, so the
-  gate catches agent mistakes but not the maintainer's own blind spots. Automatic Copilot review
-  partly mitigates this as a second, non-blocking check.
+  gate catches agent mistakes but not the maintainer's own blind spots. An advisory automated
+  reviewer (e.g. Copilot) could partly mitigate this, and can be added once the project matures.
 
 ### If a second maintainer or reviewer joins
 
