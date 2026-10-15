@@ -18,8 +18,8 @@
 > handoff are **canonical** and the shipped app mirrors them — a token change lands
 > here first (e.g. `--blueprint` was revised to `#273D4B`). The app is authoritative
 > only for non-branding **implementation detail**. WCAG AA conformance for specific
-> token pairings (copper-on-Blueprint, Steel-on-Ink) is an open item tracked in the
-> accessibility pass (#61).
+> token pairings (copper-on-Blueprint, Steel-on-Ink) is verified on the
+> shipped page by the axe check in CI (#94).
 
 **Version:** 2.2 — **Phase-1 contractor site, reconciled to the shipped Astro build**
 **Date:** June 2026 (v2.2 reconciled to the shipped site, October 2026)
@@ -176,7 +176,7 @@ A compact `<dl>` fact strip between About and Contact (auto-fit grid, mono): **C
 --copper: #c66b3d;
 --brass: #b8965a;
 --blueprint: #273d4b; /* revised 2026-06-25 from #2d4a5c */
---steel: #857c6b; /* lightened for AA on Ink (#61) */
+--steel: #857c6b; /* lightened for AA on Ink */
 --copper-on-paper: #9a4a28; /* deeper copper for copper text on Paper (AA) */
 --body-on-ink: #c9c3b6;
 --font-display: 'Fraunces', serif;
@@ -209,8 +209,8 @@ Mobile-first. All multi-column grids use `auto-fit` + `minmax(...)` so they coll
 
 - **SEO:** keyword-aware `<title>` (e.g. "Daniel McGrath — Senior Full-Stack Engineer (Angular) · CyberTec") + meta description; OG/Twitter card with the copper-on-ink lockup; **JSON-LD `Person`** (name, jobTitle, `knowsAbout` = the stack, `alumniOf` FSU, `address` country PA, `sameAs` GitHub + LinkedIn); `sitemap.xml`, `robots.txt`, canonical. No `hreflang` (single locale). Favicon from `assets/cybertec-favicon.svg`.
 - **Rendering:** Astro static build (SSG) to plain HTML so the page is fully crawlable and unfurls cleanly — important for ranking on "CyberTec" + "Daniel McGrath".
-- **Performance:** LCP <2.0s, CLS <0.05, INP <200ms; Lighthouse ≥95. Self-hosted `@fontsource` fonts with the hero Fraunces files (normal + italic) preloaded in `BaseLayout.astro` to prevent a swap-induced layout shift; `daniel.jpg` served through Astro `<Image>` (responsive widths, lazy-loaded); hashed asset names. `staticwebapp.config.json` currently sets security headers only (`nosniff`, `X-Frame-Options`, `Referrer-Policy`, `Permissions-Policy`) — cache and compression headers are open (§14).
-- **Analytics:** none shipped. The v2.1 plan was **Cloudflare Web Analytics** (free, cookieless, no consent banner); alternatives are Azure Application Insights or none. Open decision (§14).
+- **Performance:** LCP <2.0s, CLS <0.05, INP <200ms; Lighthouse ≥95. Self-hosted `@fontsource` fonts with the hero Fraunces file (normal; the italic face is no longer loaded because no page uses it) preloaded in `BaseLayout.astro` to prevent a swap-induced layout shift; `daniel.jpg` served through Astro `<Image>` (responsive widths, lazy-loaded); hashed asset names. `staticwebapp.config.json` currently sets security headers only (`nosniff`, `X-Frame-Options`, `Referrer-Policy`, `Permissions-Policy`) — cache and compression headers are open (§14).
+- **Analytics:** **Cloudflare Web Analytics** (free, cookieless, no consent banner), shipped in #91. The beacon runs in manual JS-snippet mode, since DNS isn't proxied through Cloudflare, and loads as a deferred module from `BaseLayout.astro`. Azure Application Insights was rejected for this site: its browser SDK sets cookies by default, it is much heavier, and it needs a billable Log Analytics workspace. It stays the choice for the product apps.
 
 ## 12. Tech stack & deploy
 
@@ -229,31 +229,31 @@ Mobile-first. All multi-column grids use `auto-fit` + `minmax(...)` so they coll
 ## 14. Open items
 
 - **Resolved by the build:** copy (§7, as shipped), Experience outcomes (O2), rates (O1 — availability pill only, no rate shown), stack named, dark-only, English-only, mailto contact, contact@cybertec.io.
-- **A1 — Analytics:** none shipped. Decide between Cloudflare Web Analytics (cookieless, no banner), Azure Application Insights, or none.
+- ~~**A1 — Analytics:**~~ **Resolved (#91).** Cloudflare Web Analytics (cookieless, no banner); see §11.
 - **A2 — Scroll-spy:** active-nav-link highlighting from v2.1 is not implemented. Implement or drop.
 - **A3 — Caching and compression:** `staticwebapp.config.json` has security headers only; add cache and compression headers if the site is redeployed.
-- **A4 — CI gates:** Lighthouse and axe gates (§2, §11) are not confirmed in CI; confirm or add them. A manual Lighthouse run against the live site is recorded in §15.
+- ~~**A4 — CI gates:**~~ **Resolved (#94).** CI now runs an axe check (WCAG 2.0/2.1/2.2 A and AA, desktop and mobile; `cybertec-io-e2e:e2e`) and a Lighthouse gate (`cybertec-io-e2e:lighthouse`: ≥ 95 in all four categories, LCP < 2.0s, CLS < 0.05, mobile and desktop). Both run against the production build in `ci.yml`.
 - **N4 — pre-launch (launch gate):** trademark search for "CyberTec" (name remains contested); native-Japanese-speaker review of the 匠 mark is lower urgency now its story is off the page, but still advisable since the mark reads as 匠. _(Owner: Daniel.)_
 - **O3 — Phase-2 trigger (non-blocking):** reputation milestone that flips the site back toward the boutique framing (preserved separately).
 - **O4 — future proof (Phase 2):** sanitized metrics/references/repos for a real "Selected Work" later.
 
 ## 15. Acceptance criteria (definition of done)
 
-Checked items are met by the shipped source. Unchecked items are open (see §14) or unverified. Lighthouse (CLI 13.5.0, headless) was run manually against https://cybertec.io on 2026-10-07 (before and after the font preload); axe has not been run.
+Checked items are met by the shipped source. Unchecked items are open (see §14) or unverified. Lighthouse (CLI 13.5.0, headless) was last run on 2026-10-14 against the production build of the one-screen page, after dropping the unused Fraunces italic preload (#94); axe passes with zero violations on the same build. CI enforces both on every PR.
 
 - [x] Single-page, **English-only, dark-primary** site live at cybertec.io on **Azure Static Web Apps** (apex domain, managed TLS).
 - [x] Built with **Astro 7 + Tailwind CSS v4**, **no NgRx**, statically generated to HTML.
 - [x] All sections (§6) present, with `auto-fit` grids that collapse to one column on mobile without hard-capped columns.
 - [x] Shipped copy (§7) matches the site; Fraunces headings each carry exactly one italic-copper accent; mono eyebrows/labels/tagline; Ink/Paper/Copper/Brass/Blueprint/Steel; mark quiet in nav + footer; **no 匠 story on the page**.
-- [ ] Body text never copper; copper text on Paper uses the deeper copper (done); every pairing passes WCAG 2.2 AA (not yet verified).
+- [x] Body text never copper; copper text on Paper uses the deeper copper (done); every pairing on the shipped page passes WCAG 2.2 AA (axe, zero violations at desktop and mobile widths, enforced in CI). Pairings that appear only on the superseded multi-section site were not checked.
 - [x] **Contact = mailto + links:** `contact@cybertec.io` (mailto), GitHub, LinkedIn. "Hire me" and "Get in touch" CTAs land on `#contact`. **No form anywhere.**
 - [x] Portrait in About, responsive and lazy-loaded with alt text. Favicon set from the SVG.
-- [ ] Analytics (A1) — not shipped.
+- [x] Analytics (A1): Cloudflare Web Analytics beacon, cookieless with no consent banner (#91).
 - [x] Responsive mobile-first; nav condenses to a disclosure menu; mobile menu tap target ≥44px; `prefers-reduced-motion` honored; footer year dynamic. Scroll-spy not implemented (A2).
 - [x] SEO: static HTML, JSON-LD `Person`, sitemap, robots, canonical, Open Graph and Twitter card.
-- [x] Lighthouse ≥95 across Performance, Accessibility, Best Practices, SEO; LCP <2.0s, CLS <0.05. Live run on 2026-10-07 after the hero font preload shipped (1.0.0): mobile 99/100/100/100 (LCP 1.8s, CLS 0); desktop 100/100/100/100 (LCP 0.4s, CLS 0.001). Before the preload, desktop Performance was 94 (CLS 0.154).
-- [ ] CI runs Lighthouse/axe gates (A4, not confirmed).
+- [x] Lighthouse ≥95 across Performance, Accessibility, Best Practices, SEO; LCP <2.0s, CLS <0.05. Production build of the one-screen page, 2026-10-14: mobile 99/100/100/100 (LCP 1.8s, CLS 0); desktop 100/100/100/100 (LCP 0.4s, CLS 0). Dropping the unused Fraunces italic preload took mobile LCP from 2.1s to under 2.0s. An earlier live run on 2026-10-07 (before the hero font preload) had desktop Performance at 94 (CLS 0.154).
+- [x] CI runs the Lighthouse and axe gates (A4, #94): `cybertec-io-e2e:e2e` (axe) and `cybertec-io-e2e:lighthouse`, both in `ci.yml`.
 
 ---
 
-_End of PRD v2.2 — Phase-1 contractor site, reconciled to the shipped Astro build. Open: A1–A4, N4 (launch gate), O3–O4 (Phase 2)._
+_End of PRD v2.2 — Phase-1 contractor site, reconciled to the shipped Astro build. Open: A2–A3, N4 (launch gate), O3–O4 (Phase 2)._

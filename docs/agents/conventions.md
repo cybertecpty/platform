@@ -28,6 +28,7 @@ policy so they're in place when the tooling lands, but don't assume they're acti
 | Nx Cloud remote cache (`NX_CLOUD_ACCESS_TOKEN` secret)    | ✅ live                                                        | —       |
 | Branch protection on `develop` / `main`                   | ✅ live — rulesets `protect-develop` / `protect-main`          | —       |
 | Reviewer routing (`.github/CODEOWNERS` → `@djmcgrath101`) | ✅ live — auto-requests maintainer review on every PR          | —       |
+| Automated PR reviewer (e.g. Copilot code review)          | ❌ none — needs a paid plan; maintainer review only (#110)     | later   |
 | Pre-commit hook (`husky` + `lint-staged`)                 | ✅ live — formats/`eslint --fix`es staged files (#24)          | —       |
 | Commitlint / `commit-msg` hook                            | ✅ live — `commit-msg` hook + CI PR-title check (#32)          | §3      |
 | `@cybertecpty/*` publish on merge to `main`               | ❌ no release flow, no packages                                | §2      |
@@ -82,7 +83,7 @@ manual git is unaffected.
   "requested", so without CODEOWNERS or the flag a PR just sits `BLOCKED` with
   nobody pinged. Keep both.
 - Switch to the maintainer account only for actions that genuinely need a seated
-  account (e.g. requesting a Copilot review, approving). Switch **back** to
+  account (e.g. approving). Switch **back** to
   `cybertec-bot` before bot-owned maintenance (arming auto-merge, bot comments,
   resolving bot-addressed threads), and leave `gh` resting at `djmcgrath101` at
   session end.
@@ -229,7 +230,12 @@ is `>=22.18.0` because that is where native type stripping became unflagged.
 A monitor event can re-surface any new PR comment. Before acting, confirm it is
 genuine reviewer feedback.
 
-**Actionable:** humans, `copilot-pull-request-reviewer[bot]`.
+**Actionable:** humans, and any review bot the maintainer later enables.
+
+No automated reviewer is configured today: Copilot code review needs a paid plan and the
+maintainer chose not to buy one (#110). Maintainer approval is the only review gate. If a
+review bot is added later, treat it as advisory (never a required check) and list it in the
+`address-pr-feedback` skill's reviewer table.
 
 **Noise — skip:** CI-status bots, comments authored by `cybertec-bot`, comments with
 an "addressed by" signature from the same workflow, already-resolved/outdated threads
@@ -293,6 +299,23 @@ tagging, **use them directly** — don't re-derive the same answer from generato
 source, schemas, or existing packages (high token cost, and you risk generalizing an
 exception). Source exploration is for _extending or debugging_ a convention, not
 _using_ one.
+
+### When a decision needs an ADR
+
+Write a new ADR, or amend an existing one, when a decision meets **all three** of these:
+
+1. **It's a real choice.** There were credible alternatives and one was picked
+   (Jest over Vitest, the flat `apps/` layout).
+2. **It's costly to reverse, or many projects depend on it.** Changing it later
+   means touching many projects or people's habits.
+3. **The reason won't be obvious from the code.** Someone reading the code later
+   would ask "why this?" and could undo it without knowing.
+
+An issue tracks a piece of work and is closed when the work is done. An ADR records
+why something is done a certain way and stays in force afterwards. Work that only
+applies existing ADRs (e.g. a generator that enforces ADR 0009/0010 placement)
+needs no new ADR: cite the ADRs it applies in the issue. When an issue makes a
+decision that meets the test, say in the issue which ADR records it.
 
 ---
 

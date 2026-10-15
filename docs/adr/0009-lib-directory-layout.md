@@ -1,13 +1,14 @@
 # 9. Lib physical layout — domain-first folders, subdomains, and derived names
 
-- Status: proposed
+- Status: accepted
 - Date: 2026-09-04
 - Deciders: djmcgrath
-- Implemented by (planned): path/name/tag derivation and validation functions in
-  `nx-utils` (`tools/nx/utils`), imported directly by whichever plugin's generator(s)
-  need to scaffold a project under this layout; a `workspaceDomains` map in `nx.json`;
-  `depConstraints` additions in `eslint.config.mjs` (extends ADR 0004) — see the
-  2026-09-15 amendment
+- Implemented by: path/name/tag derivation functions in `nx-utils` (`tools/nx/utils`),
+  imported directly by whichever plugin's generator(s) need to scaffold a project under
+  this layout (see the 2026-09-15 amendment). Still planned: generated `depConstraints`
+  rows for product domains in `eslint.config.mjs` (extends ADR 0004) — see the
+  2026-10-14 amendment, which replaces the originally planned `workspaceDomains` map in
+  `nx.json`
 
 ## Context and problem statement
 
@@ -187,6 +188,9 @@ that later needs peer isolation gets its own explicit constraint row, or graduat
 top-level domain.
 
 ### Domain registry
+
+> **Superseded by the 2026-10-14 amendment below** — no `workspaceDomains` map is
+> introduced; domains are collected from project tags instead. Kept for the record.
 
 `nx.json` gains a `workspaceDomains` map — the machine-readable companion to ADR 0004's
 "each domain is added by its own ADR":
@@ -410,3 +414,68 @@ show project` output or the folder) could momentarily read `fs-utils` as a top-l
 ts-lib`/equivalent to fail that didn't previously exist.
 - No change to tag derivation, `workspaceDomains` parsing, or any `depConstraints` row —
   this amendment touches naming only.
+
+## Amendment (2026-10-14): domains are collected from project tags — no `workspaceDomains` registry
+
+- Status: accepted
+- Deciders: djmcgrath
+- Implemented by (planned): a `collectTags(prefix)` helper in `tools/nx/utils` and its use
+  in `eslint.config.mjs` to generate the per-domain `depConstraints` rows; a conformance
+  check that every collected `domain:` family has an ADR (see "Decision")
+
+The base ADR's "Domain registry" proposed a hand-maintained `workspaceDomains` map in
+`nx.json`. It was never built: only `shared` exists as a domain, and the 2026-09-15
+amendment's `nx-utils` functions shipped without a `workspaceDomains` parse. The base ADR
+already named the cost of that map — it is "a second place… that must stay in sync with
+reality" with nothing enforcing it. This amendment removes the second place.
+
+### Decision
+
+- **No `workspaceDomains` map.** The `domain:` tags on projects are the only registry. A
+  domain exists when at least one project carries its tag.
+- **Collect, don't list.** A `collectTags(prefix)` helper in `nx-utils` reads every
+  project's tags from the Nx project graph and returns the distinct tags starting with
+  `prefix` (`domain:`). `eslint.config.mjs` spreads generated `depConstraints` rows from
+  it: one family-scoped row per top-level product domain (the glob shape from
+  "Subdomains: tag semantics"), each allowed to depend on its own family and
+  `domain:shared`. `domain:shared`'s own row, the `type:` rows, and the `scope:` rows stay
+  hand-written — they are fixed by ADR 0004, not discovered.
+- **Path parsing resolves group vs. subdomain from the tag, not a registry.** The
+  ambiguity the registry existed for (is `collection-browser` in
+  `libs/game-collector/collection-browser/feature` a subdomain or a group?) is settled by
+  the project's own `domain:` tag: the tag's flattened value (`billing-checkout`) names
+  how many leading path segments are the domain path (`billing/checkout`). Parsing a path
+  that has a tag is therefore: last segment is `type`, the segments whose `-`-joined form
+  equals the `domain:` value are the domain path, the remainder is `group`. Generators
+  never need to parse a path for a project that does not exist yet — they take
+  `--domain` / `--subdomain` explicitly.
+- **Keep ADR 0004's "a new domain needs its own ADR" gate, and enforce it separately.**
+  Generating constraints from tags means a mistyped tag (`domain:biling`) would silently
+  become a new domain with its own row. A conformance check in the shape of `audit-drift`
+  must flag any collected `domain:` family (other than `shared`) that no ADR names. Until
+  that check exists, a new `domain:` tag is reviewed by hand in the PR that introduces it.
+
+### Rationale
+
+- One source of truth. Tags already determine enforcement; deriving the constraint rows
+  from them removes a list nobody would remember to update.
+- The registry's one real job — disambiguating path segments — is done by the tag.
+- Approach follows Roberto Heckers, ["Four dimensions of Nx
+  tags"](https://www.heckerssoftware.com/blog/four-dimensions-of-nx-tags/): a small
+  `collectTags` helper feeding generated `depConstraints`, with generators writing the
+  tags so they stay correct.
+
+### Consequences
+
+- **Positive:** no registry to maintain; adding a domain is "scaffold a project with the
+  new `--domain`" plus its ADR, with no config edit in `nx.json` or `eslint.config.mjs`.
+- **Negative / risk:** the new-domain gate is no longer implicit in a config edit; it
+  rests on review until the conformance check exists. A hand-edited, mistyped tag is a
+  silent new domain (generated constraints fail closed against the real one, so a
+  mis-tagged project gets a lint error when it imports across domains, but not before).
+- **Negative / risk:** `eslint.config.mjs` now depends on the Nx project graph at lint
+  time, so `collectTags` must be fast and tolerate an empty workspace; if the graph
+  cannot be read it should fail loudly rather than emit zero domain rows.
+- Supersedes the "Domain registry" section above and the `workspaceDomains` bullet under
+  "Negative / risks". Tools projects are unaffected: they carry `scope:tools` and no
+  `domain:` tag.

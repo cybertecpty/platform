@@ -99,6 +99,9 @@
           "authors": false
         }
       }
+    },
+    "releaseTag": {
+      "pattern": "{projectName}@{version}"
     }
   }
 }

@@ -84,4 +84,16 @@ describe('cybertec-io build output', () => {
     expect(css).toMatch(/\.bg-ink\b/);
     expect(css).toMatch(/\.site-container\b/);
   });
+
+  it('loads the Cloudflare Web Analytics beacon as a deferred module', () => {
+    const beacon =
+      /<script\b[^>]*src="https:\/\/static\.cloudflareinsights\.com\/beacon\.min\.js"[^>]*>/.exec(
+        html
+      )?.[0];
+    expect(beacon, 'missing Cloudflare beacon script').toBeDefined();
+    expect(beacon).toContain('type="module"');
+    // Astro entity-encodes the JSON attribute value; decode it as a browser would.
+    const config = /data-cf-beacon="([^"]*)"/.exec(beacon ?? '')?.[1]?.replaceAll('&quot;', '"');
+    expect(JSON.parse(config ?? '{}')).toEqual({ token: expect.stringMatching(/^[0-9a-f]{32}$/) });
+  });
 });

@@ -1,6 +1,7 @@
 # 10. App physical layout — flat directory, explicit tags, exclusive naming
 
-- Status: accepted (amended 2026-10-09: `type:e2e` placement)
+- Status: accepted (amended 2026-10-09: `type:e2e` placement; 2026-10-15: `--domain`
+  validation against tag-collected domains)
 - Date: 2026-09-04
 - Deciders: djmcgrath
 - Implemented by: the `type === 'app'` naming special case in `projectNameFromOpts`
@@ -55,7 +56,8 @@ placement and how `domain:`/`scope:`/`type:` get assigned.
    `workspaceDomains` registry and right-to-left parsing exactly as libs do. Rejected —
    this is the option originally drafted for this ADR; it recreates 0009's location↔tag
    coupling for a project type whose name deliberately never had that coupling, which is
-   the asymmetry called out above.
+   the asymmetry called out above. (The `workspaceDomains` registry was itself dropped
+   by ADR 0009's 2026-10-14 amendment — see this ADR's 2026-10-15 amendment.)
 4. No convention — decide per app. Rejected for the same reason 0009 rejected it for
    libs: it's the status-quo drift this whole effort exists to close.
 
@@ -90,6 +92,10 @@ outright instead of inferred. The generator may still validate `--domain` agains
 `workspaceDomains` (catching a typo'd domain the same way a lib's path-parse would), but
 that's a validation nicety, not a derivation — the value still comes from the flag, not
 from where the project lands on disk.
+
+> **Superseded by the 2026-10-15 amendment below** — there is no `workspaceDomains`
+> registry; `--domain` is validated against the domains collected from project tags.
+> Kept for the record.
 
 ### `--group` has no effect for app projects
 
@@ -139,7 +145,8 @@ _decision_, not the code.
   and nothing about `apps/checkout-api` on disk will ever confirm or contradict that,
   unlike a lib where a mis-tag and a mis-placement are the same mistake. A hand-edited
   `project.json` tag drifts from reality with nothing to catch it beyond the same
-  `workspaceDomains` validation 0009 relies on for libs.
+  `workspaceDomains` validation 0009 relies on for libs. (Superseded: that validation now
+  runs against tag-collected domains — see the 2026-10-15 amendment.)
 - A domain that ships both a frontend and a backend app (e.g. a web app and its API, both
   conceptually "game-collector") will collide on `<name>` in the flat `apps/` folder
   unless the caller chooses distinguishing names (`game-collector-web` /
@@ -162,3 +169,23 @@ _decision_, not the code.
   branch, the already-shipped implementation of this ADR's naming decision.
 - ADR 0012 (`astro-content-sites`) — `apps/cybertec-io`, the app `apps/cybertec-io-e2e`
   pairs with under this ADR's `type:e2e` placement rule.
+
+## Amendment (2026-10-15): `--domain` is validated against tag-collected domains
+
+- Status: accepted
+- Deciders: djmcgrath
+- Implemented by (planned): the app generator's `--domain` check, using the
+  `collectTags(prefix)` helper planned in `tools/nx/utils` by ADR 0009's 2026-10-14
+  amendment
+
+ADR 0009's 2026-10-14 amendment dropped the planned `workspaceDomains` map in `nx.json`:
+the `domain:` tags on projects are the only domain registry. The app generator's optional
+`--domain` validation (see "`domain:`/`scope:`/`type:` are explicit generator inputs")
+therefore runs against `collectTags('domain:')` — the distinct `domain:` tags already on
+projects in the Nx project graph — instead of `workspaceDomains`. It stays a validation
+nicety: the value still comes from the flag, and an unknown domain is a new domain, which
+still needs its own ADR (ADR 0004), enforced by the conformance check that amendment plans.
+
+Supersedes the `workspaceDomains` references in "Considered options" (option 3),
+"`domain:`/`scope:`/`type:` are explicit generator inputs", and "Negative / risks". The
+original text is kept for the record.
