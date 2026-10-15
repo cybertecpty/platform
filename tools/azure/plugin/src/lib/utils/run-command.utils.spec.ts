@@ -134,4 +134,13 @@ describe('runCommand', () => {
     await expect(execution).resolves.toEqual({ success: false });
     expect(logger.error).toHaveBeenCalledWith('Failed to run "az": spawn EACCES');
   });
+
+  it('reports a spawn that throws synchronously instead of rejecting', async () => {
+    spawnMock.mockImplementation(() => {
+      throw Object.assign(new Error('spawn EINVAL'), { code: 'EINVAL' });
+    });
+
+    await expect(runCommand(baseOptions)).resolves.toEqual({ success: false });
+    expect(logger.error).toHaveBeenCalledWith('Failed to run "az": spawn EINVAL');
+  });
 });

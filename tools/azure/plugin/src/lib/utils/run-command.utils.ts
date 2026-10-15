@@ -44,20 +44,30 @@ export const runCommand = (options: RunCommandOptions): Promise<{ success: boole
       }
     };
 
-    const childProcess = spawn(command, [...args], {
-      cwd,
-      stdio: options.stdio ?? 'inherit',
-      windowsHide: true
-    });
-
-    childProcess.on('error', (error: NodeJS.ErrnoException) => {
+    const fail = (error: NodeJS.ErrnoException): void => {
       logger.error(
         error.code === 'ENOENT'
           ? [`"${command}" was not found on PATH.`, notFoundHint].filter(Boolean).join(' ')
           : `Failed to run "${command}": ${error.message}`
       );
       settle(false);
-    });
+    };
+
+    let childProcess: ReturnType<typeof spawn>;
+    try {
+      childProcess = spawn(command, [...args], {
+        cwd,
+        stdio: options.stdio ?? 'inherit',
+        windowsHide: true
+      });
+    } catch (error) {
+      // Most spawn failures arrive as an `error` event, but invalid arguments (e.g.
+      // EINVAL on Windows) throw synchronously.
+      fail(error as NodeJS.ErrnoException);
+      return;
+    }
+
+    childProcess.on('error', fail);
 
     childProcess.on('close', (code: number | null, signal: NodeJS.Signals | null) => {
       if (signal) {
