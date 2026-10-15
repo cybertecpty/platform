@@ -54,12 +54,14 @@ jobs:
       # Enable Nx Cloud task distribution. Runs after install because it is
       # invoked through the workspace's pinned Nx (pnpm exec).
       # Learn more at https://nx.dev/docs/reference/nx-cloud-cli#npx-nxcloud-startcirun
-      - run: pnpm exec nx start-ci-run --distribute-on="3 linux-medium-js" --stop-agents-after="e2e"
+      - run: pnpm exec nx start-ci-run --distribute-on="3 linux-medium-js" --stop-agents-after="e2e,lighthouse"
 
       # Prepend any command with "nx record --" to record its logs to Nx Cloud
       # $NX_BASE / $NX_HEAD come from nrwl/nx-set-shas above.
       - run: pnpm exec nx record -- pnpm exec nx format:check --base=$NX_BASE --head=$NX_HEAD
-      - run: pnpm exec nx run-many -t lint test build typecheck e2e
+      # `lighthouse` is the cybertec-io-e2e performance/accessibility gate;
+      # `e2e` also runs the axe check.
+      - run: pnpm exec nx run-many -t lint test build typecheck e2e lighthouse
 
       # Coverage reporting (ADR 0007 amendment / issue #52). The `test` targets
       # collect coverage in CI (jest.preset.js) and declare

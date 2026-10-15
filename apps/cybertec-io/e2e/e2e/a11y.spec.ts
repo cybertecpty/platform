@@ -1,9 +1,9 @@
 import AxeBuilder from '@axe-core/playwright';
 import { expect, test } from '@playwright/test';
 
-// WCAG 2.2 AA gate for the one-screen personal page (PRD sections 2, 11, 15; issue #94).
-// axe-core scans the rendered DOM; it catches roughly a third of real accessibility
-// problems (contrast, names, landmarks, target size), so this is a floor, not an audit.
+// WCAG 2.2 AA gate for a web app's production build. axe-core scans the rendered DOM;
+// it catches roughly a third of real accessibility problems (contrast, names,
+// landmarks, target size), so this is a floor, not an audit.
 const WCAG_TAGS = ['wcag2a', 'wcag2aa', 'wcag21a', 'wcag21aa', 'wcag22aa'];
 
 for (const viewport of [
