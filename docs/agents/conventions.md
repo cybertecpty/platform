@@ -6,7 +6,25 @@ It was seeded from the `cybertecpty` Claude Code plugin's injected `conventions.
 applies here. Some rules describe tooling that isn't wired up yet — §0 says which.
 This file supersedes the plugin's copy, which is being removed.
 
-Companion docs in this folder:
+This file holds the rules every session needs. Detail that only matters for one activity or
+one part of the repo lives next to it and loads on demand:
+
+| Detail                                               | Lives in                             | Loads when                                   |
+| ---------------------------------------------------- | ------------------------------------ | -------------------------------------------- |
+| PR mechanics, remotes, commit message format & types | `.claude/skills/commit-push-pr`      | committing / opening a PR                    |
+| What counts as review feedback                       | `.claude/skills/address-pr-feedback` | addressing PR comments                       |
+| Review priorities & comment style                    | `.claude/skills/review-pr`           | reviewing a PR or diff                       |
+| When a decision needs an ADR, how to write one       | `.claude/skills/write-adr`           | a decision picks between real alternatives   |
+| Vetting a new dependency                             | `.claude/skills/add-dependency`      | before `pnpm add`                            |
+| Generator templates & the five generator surfaces    | `.claude/rules/generators.md`        | working in `tools/*/plugin/**`               |
+| Spec style, coverage mechanics                       | `.claude/rules/testing.md`           | editing specs / Jest config                  |
+| `tsconfig` layout, `baseUrl`, `typecheck` stub       | `.claude/rules/project-config.md`    | editing `project.json` / `tsconfig*.json`    |
+| Typed linting & the ESLint plugin layer              | `.claude/rules/linting.md`           | editing an `eslint.config.mjs`               |
+| Commitlint formatter internals                       | `.claude/rules/commitlint.md`        | working on `tools/git/utils/**`, `.husky/**` |
+| Doc placeholders, Prettier's Markdown normalization  | `.claude/rules/markdown.md`          | editing `*.md`                               |
+
+`.claude/rules/*.md` are Claude Code path-scoped rules (`paths:` frontmatter); other agents should
+read the relevant file directly. Companion docs in this folder:
 
 - [`principles.md`](principles.md) — cross-cutting agent working principles
 - [`issue-tracker.md`](issue-tracker.md) — GitHub Issues workflow
@@ -44,32 +62,27 @@ Where a rule depends on unwired tooling, it says so inline.
 ## 1. Git identity & PR mechanics
 
 Applies when an agent commits, pushes, or opens PRs in this repo. A developer's own
-manual git is unaffected.
-
-### Accounts
+manual git is unaffected. **Ship through the `commit-push-pr` skill** — it is the executable
+checklist and holds the mechanics (remotes, `gh` flags, account switching, commit format).
 
 - **Maintainer:** `djmcgrath101` — `gh` rests here between sessions.
 - **Bot:** `cybertec-bot` — authors agent commits and PRs. Member of the
   `cybertecpty/bots` team, which has `write` on this repo.
 
-### Commit identity
+The invariants:
 
-- Author agent commits as the bot. Do **not** change the repo's `.git/config` user.
-- Use explicit flags:
-  `git -c user.name="cybertec-bot" -c user.email="cybertec-bot@cybertec.io" commit ...`
-- End the commit message with the model trailer
+- Author agent commits as the bot with explicit
+  `git -c user.name="cybertec-bot" -c user.email="cybertec-bot@cybertec.io" commit ...` flags.
+  Do **not** change the repo's `.git/config` user. End the message with the model trailer
   (`Co-Authored-By: Claude <model> <noreply@anthropic.com>`).
-
-### Push remote
-
 - Push agent work via the **`cybertec-bot`** remote, never `origin`.
-  - `cybertec-bot` → `git@github-cybertec-bot:cybertecpty/platform.git`
-  - SSH host alias `github-cybertec-bot` in `~/.ssh/config`, key
-    `~/.ssh/id_ed25519_cybertec_bot`.
-  - `origin` → `https://github.com/cybertecpty/platform.git` (HTTPS via GCM,
-    authenticates as the maintainer).
-- `git push cybertec-bot HEAD` or `git push cybertec-bot {branch}`.
-- Prefer shipping a committed branch without checking it out (see §6).
+- Switch `gh` to `cybertec-bot` **before** the first GitHub write, and leave it resting at
+  `djmcgrath101` at session end.
+- As the bot, arm `gh pr merge {n} --auto --squash` for PRs into `develop`. It waits for the
+  required `ci` check **and** the maintainer's approval — it will not merge unreviewed code.
+- Only the human maintainer approves and merges protected branches. Do not grant the bot
+  bypass rights to force a self-merge. If the bot loses authorization for a protected branch,
+  report that rather than working around it.
 
 **Enforced by a hook.** In Claude Code, `.claude/hooks/guard-bot-identity.cjs` (PreToolUse on
 Bash / PowerShell) denies `git push origin …`, and denies bot-owned `gh pr` writes (`create`,
@@ -77,35 +90,6 @@ Bash / PowerShell) denies `git push origin …`, and denies bot-owned `gh pr` wr
 same command switches to it first. `gh pr review` (maintainer approval) is not touched. Set
 `CLAUDE_BOT_GUARD=off` (e.g. in `.claude/settings.local.json` `env`) to bypass. Tests:
 `node --test .claude/hooks/*.test.cjs`.
-
-### Pull requests
-
-- Switch the `gh` account **before** the first GitHub write:
-  `gh auth switch --user cybertec-bot`, then
-  `gh pr create --repo cybertecpty/platform --base develop --head {branch} ...`.
-- Use `--body-file {path}` for multi-line bodies — never inline `--body` (PowerShell
-  strips embedded quotes) and never `--body @-`.
-- Request the maintainer's review: pass `--reviewer djmcgrath101` to `gh pr create`.
-  `.github/CODEOWNERS` (`* @djmcgrath101`) already auto-requests it, and the branch
-  protection rule _requires_ a maintainer approval — but "required" is not
-  "requested", so without CODEOWNERS or the flag a PR just sits `BLOCKED` with
-  nobody pinged. Keep both.
-- Switch to the maintainer account only for actions that genuinely need a seated
-  account (e.g. approving). Switch **back** to
-  `cybertec-bot` before bot-owned maintenance (arming auto-merge, bot comments,
-  resolving bot-addressed threads), and leave `gh` resting at `djmcgrath101` at
-  session end.
-
-### Auto-merge
-
-- Branch protection is live (§2), so auto-merge is safe: as `cybertec-bot`,
-  `gh pr merge {n} --auto --squash` for PRs into `develop`. It pre-arms the merge
-  and then waits for the required `ci` check **and** the maintainer's approval —
-  it will not merge unreviewed code.
-- Only the human maintainer approves and merges protected branches. Do not grant
-  the bot bypass rights to force a self-merge.
-- If the bot loses authorization for a protected branch, report that rather than
-  working around it.
 
 ### Post-merge cleanup
 
@@ -182,74 +166,27 @@ review has not accepted.
   code in an open, unmerged PR. If so, wait for the _merge_ (not just approval)
   before proceeding.
 
-### Commit subjects & issue references
+### Commit messages
 
-- When a commit addresses a tracked issue, append the number to the
-  conventional-commit subject: `type(scope): message (#123)`. Optional — only when an
-  issue actually exists; don't fabricate one.
-- The subject parenthetical is a scan reference, not a closer. GitHub auto-closes
-  only from body/footer keywords (`Closes #123`) on merge to the **default branch**,
-  which is `develop` (ADR 0002) — so a feature PR's `Closes #123` fires when it merges
-  to `develop`. Keep closing keywords out of `develop → main` promotion PRs.
+[Conventional Commits](https://www.conventionalcommits.org/en/v1.0.0/) — `type(scope): subject`,
+lowercase subject, header and body lines ≤ 100 — enforced by the `.husky/commit-msg` hook and a
+CI check on the **PR title** (the subject that lands, since `develop` squash-merges). The full
+rules and the type table are in the `commit-push-pr` skill; the formatter internals in
+`.claude/rules/commitlint.md`.
 
-### Commit message format
-
-[Conventional Commits](https://www.conventionalcommits.org/en/v1.0.0/):
-`type(scope): subject`. Enforced two ways (§0) from `@commitlint/config-conventional`
-plus a terse custom formatter: the `.husky/commit-msg` hook locally, and a CI check
-on the **PR title** — the subject that lands, since `develop` squash-merges. Write
-the message to a file and `git commit -F {file}`.
-
-- subject **lowercase** (acronyms too), no trailing period;
-- header ≤ 100 characters; body / footer lines ≤ 100 (blocking);
-- blank line before any footer (warning only — the commit still lands);
-- breaking change: `!` after the type/scope — `feat(api)!: drop v1 endpoints`.
-
-`--no-verify` skips the hook, but the CI check on the PR title still gates the merge.
-
-The custom formatter lives in the `git-utils` project
-(`tools/git/utils/src/lib/commitlint-formatter.ts`). It is a `.ts` file loaded by
-**bare `node`** — no ts-jest, no bundler — so: `import type` only (a value import of a
-type throws at load), erasable syntax only (no enums / namespaces / parameter
-properties), and `NODE_OPTIONS=--disable-warning=MODULE_TYPELESS_PACKAGE_JSON` in
-`.husky/commit-msg` and `commitlint.yml` silences node's reparse notice. `engines.node`
-is `>=22.18.0` because that is where native type stripping became unflagged.
-
-**Types** (scope is optional and free-form):
-
-| type       | for                                                       |
-| ---------- | --------------------------------------------------------- |
-| `feat`     | a user-facing feature                                     |
-| `fix`      | a bug fix                                                 |
-| `docs`     | documentation only                                        |
-| `refactor` | a code change that neither fixes a bug nor adds a feature |
-| `perf`     | a code change that improves performance                   |
-| `test`     | adding or correcting tests                                |
-| `build`    | build system, dependencies, or tooling config             |
-| `ci`       | CI workflows and scripts                                  |
-| `chore`    | anything that doesn't touch `src` or tests                |
-| `style`    | formatting only — whitespace, semicolons (not CSS)        |
-| `revert`   | reverts a previous commit                                 |
+The subject parenthetical `(#123)` is a scan reference, not a closer. GitHub auto-closes
+only from body/footer keywords (`Closes #123`) on merge to the **default branch**,
+which is `develop` (ADR 0002) — so a feature PR's `Closes #123` fires when it merges
+to `develop`. Keep closing keywords out of `develop → main` promotion PRs.
 
 ---
 
 ## 4. Reviews & monitor events
 
-A monitor event can re-surface any new PR comment. Before acting, confirm it is
-genuine reviewer feedback.
-
-**Actionable:** humans, and any review bot the maintainer later enables.
-
-No automated reviewer is configured today: Copilot code review needs a paid plan and the
-maintainer chose not to buy one (#110). Maintainer approval is the only review gate. If a
-review bot is added later, treat it as advisory (never a required check) and list it in the
-`address-pr-feedback` skill's reviewer table.
-
-**Noise — skip:** CI-status bots, comments authored by `cybertec-bot`, comments with
-an "addressed by" signature from the same workflow, already-resolved/outdated threads
-(unless the underlying feedback still applies).
-
-If nothing qualifies, say so and stop — do not fabricate a no-op fix.
+Maintainer approval is the only review gate; no automated reviewer is configured (#110). Before
+acting on a PR comment or monitor event, confirm it is genuine reviewer feedback — the
+actionable / noise split is in the `address-pr-feedback` skill. If nothing qualifies, say so and
+stop — do not fabricate a no-op fix.
 
 ---
 
@@ -294,8 +231,9 @@ the context.
 Memory is per-machine and invisible to fresh clones and CI. It must never be the only
 record of anything the repo depends on.
 
-- Repo conventions → checked-in agent docs (this folder).
-- Architecture decisions → ADRs in `docs/adr/`.
+- Repo conventions → checked-in agent docs (this folder, `.claude/rules/`, `.claude/skills/`).
+- Architecture decisions → ADRs in `docs/adr/` (`write-adr` skill: when one is needed, how to
+  write it).
 - Pending implementation work → GitHub issues on the matching project board.
 - Memory → a short pointer to the durable source. Committed docs win on conflict.
 - Don't memorialize values with live sources (versions, branch names, remotes,
@@ -308,109 +246,40 @@ source, schemas, or existing packages (high token cost, and you risk generalizin
 exception). Source exploration is for _extending or debugging_ a convention, not
 _using_ one.
 
-### When a decision needs an ADR
-
-Write a new ADR, or amend an existing one, when a decision meets **all three** of these:
-
-1. **It's a real choice.** There were credible alternatives and one was picked
-   (Jest over Vitest, the flat `apps/` layout).
-2. **It's costly to reverse, or many projects depend on it.** Changing it later
-   means touching many projects or people's habits.
-3. **The reason won't be obvious from the code.** Someone reading the code later
-   would ask "why this?" and could undo it without knowing.
-
-An issue tracks a piece of work and is closed when the work is done. An ADR records
-why something is done a certain way and stays in force afterwards. Work that only
-applies existing ADRs (e.g. a generator that enforces ADR 0009/0010 placement)
-needs no new ADR: cite the ADRs it applies in the issue. When an issue makes a
-decision that meets the test, say in the issue which ADR records it.
-
 ---
 
 ## 8. Coding standards
 
 - Prefer minimal diffs and existing helpers.
-- Use template files with `generateFiles` for generator output whenever viable. Name
-  those files with a `__tmpl__` suffix (e.g. `generator.ts__tmpl__`) and pass
-  `{ tmpl: '' }` in the substitutions — not the `.template` suffix Nx also strips.
-  `__tmpl__` is what the workspace already uses (`generators/plugin/files/src/lib/.gitkeep__tmpl__`),
-  and a `__tmpl__` name falls outside the `src/**/*.ts` / `**/!(*.ts)` globs that lint,
-  typecheck, and asset-copy would otherwise apply to it.
-- Keep generator/executor folders to actual implementations; supporting constants,
-  helpers, and types go in sibling `src/lib/defaults/`, `src/lib/utils/`, etc.
 - General-purpose helpers default to `utils/` unless a more specific concept owns
   them.
 - Group files by functional cohesion — one honest reason to change per file.
 - New/substantially-reorganized TS files: type declarations before runtime
   implementation; alphabetize within groups when it aids scanning.
 - Don't hand-sort imports — the formatter handles it.
-- `tsconfig*.json` must be plain JSON, no comments.
 - No `any` without an inline comment explaining why.
 - Don't swallow errors — rethrow or return a structured failure.
 - Exported functions have explicit return types.
-- Typed linting is on workspace-wide (ADR 0006): `typescript-eslint`'s
-  `recommendedTypeChecked` runs against every `.ts` / `.cts` / `.mts` file via the base
-  `eslint.config.mjs`, so `no-floating-promises`, `no-misused-promises`,
-  `no-unnecessary-condition` and the rest fail `nx lint`. Per-project
-  `enableTypedLinting` stays **off** (generator default) — the parser wiring is central,
-  not copied into each lib. A lib that genuinely can't be type-linted adds a local
-  `tseslint.configs.disableTypeChecked` override rather than the workspace opting out. A
-  stray `.ts` file outside every project `tsconfig` fails project-service resolution —
-  add it to a `tsconfig`, the `ignores` list, or `projectService.allowDefaultProject`.
-- On top of that base ruleset, `eslint.config.mjs` carries a **plugin layer** (ADR
-  0008): `@ngrx/eslint-plugin` `configs.signals` on `{apps,libs}/**/*.ts` (SignalStore
-  footguns), `eslint-plugin-jest` `flat/recommended` on spec / mock files (see §9),
-  `@typescript-eslint/no-deprecated` on all TS (flags `@deprecated` symbols — the one
-  `strictTypeChecked` rule promoted), and `@eslint-community/eslint-plugin-eslint-comments`.
-  Adding or removing a whole plugin, or swapping its preset, is an ADR 0008 change;
-  promoting or demoting an individual rule is a normal config edit.
-- **Every `eslint-disable` must name specific rules and carry a reason** —
-  `require-description` and `no-unlimited-disable` are errors, and ESLint's
-  `reportUnusedDisableDirectives` flags stale ones. Write
+- Typed linting is on workspace-wide (ADR 0006) with an ESLint plugin layer on top (ADR 0008) —
+  details in `.claude/rules/linting.md`.
+- **Every `eslint-disable` must name specific rules and carry a reason** — write
   `// eslint-disable-next-line some-rule -- why this is safe here`, never a bare
-  `// eslint-disable-next-line`. A block `/* eslint-disable rule */` needs a matching
-  `/* eslint-enable rule */`.
+  `// eslint-disable-next-line`.
+- Generator and executor work: `.claude/rules/generators.md`. Config files:
+  `.claude/rules/project-config.md`. Markdown: `.claude/rules/markdown.md`.
 
 ### Dependency reuse
 
-Before adding a runtime or dev dependency, check whether the workspace already
-covers it — an existing dependency, an Nx plugin, or a shared helper.
-
-- Prefer a well-supported third-party package over a custom implementation when it
-  meaningfully cuts risk, maintenance, or complexity. Prefer a few lines of our
-  own code over a dependency for trivial logic.
-- Vet a candidate before adding it: maintenance and release cadence, adoption,
-  security posture (open advisories, `pnpm audit`), license compatibility,
-  TypeScript support, and runtime / bundle impact.
-- Add or update tests for the integration behavior and failure modes the new
-  dependency introduces — don't lean on its own test suite.
-- Some packages ship an import entry point that defeats bundler tree-shaking.
-  Before adding a utility or validation library, check
-  `docs/adr/0003-frontend-bundle-hygiene.md` for the entry-point rules — `lodash`
-  → `lodash-es` workspace-wide, `zod` → `zod/mini` in `scope:frontend` and
-  `scope:shared` code, both lint-enforced.
-- Adding a dependency is a `build` change (`build(deps): ...`); if it sets a
-  durable technical direction, it may also warrant an ADR (§7).
-
-### Documentation placeholders
-
-In shell/bash code blocks, use `{placeholder}` or `[placeholder]`, **not** `<...>` —
-shells read `<`/`>` as redirection and a copy-paste can error or clobber a file. Keep
-placeholder style consistent across a block.
+Before adding a runtime or dev dependency, check whether the workspace already covers it — an
+existing dependency, an Nx plugin, or a shared helper. The full vetting checklist (and the ADR
+0003 entry-point bans: `lodash` → `lodash-es`, `zod` → `zod/mini` in frontend/shared code) is in
+the `add-dependency` skill.
 
 ### Formatting
 
 Run `nx format:write --files={paths}` after editing, and actually run it before
 ticking a "prettier clean" box in a PR body — CI runs `nx format:check` and a stray
 marker fails the required check.
-
-Prettier owns Markdown too, and its normalization is **not** configurable:
-
-- Emphasis (italic) uses single underscores; strong (bold) uses double asterisks.
-  Write `_word_`, not `*word*` — `*word*` gets rewritten to `_word_` on the next
-  format run. (Prettier keeps `*` only for mid-word emphasis like `a*b*c`, which
-  prose rarely wants.)
-- Unordered list bullets are `-` (Prettier rewrites `*` / `+`).
 
 In Claude Code, `.claude/hooks/format-edited.cjs` formats for you: a PostToolUse hook records
 each file the session writes or edits, and a Stop hook runs Prettier over that list once at
@@ -421,20 +290,10 @@ shared clone is untouched. Other agents without the hook still run `nx format:wr
 
 ### Pre-commit hook
 
-A `husky` `pre-commit` hook runs `lint-staged` on every `git commit` (#24): staged
-`*.{ts,tsx,cts,mts,js,jsx,cjs,mjs}` get `eslint --fix` then `nx format:write`; staged
-`*.{json,md,mdx,html,css,scss,yml,yaml}` get `nx format:write`. lint-staged re-stages
-what it changed, so the commit lands clean.
-
-- It's a **convenience backstop**, not the gate. CI (`nx format:check`,
-  `nx run-many -t lint`) stays authoritative — `git commit --no-verify` bypasses the
-  hook entirely.
-- Installed by the `prepare` script on `pnpm install`; the hook shells out through
-  `sh` (Git for Windows provides it). If `.husky/_/` is missing, run `pnpm install`.
-- It fires on **bot commits** too. When the working tree is already formatted (per the
-  rule above, the bot runs `nx format:write` before committing) the hook is a no-op.
-  Don't reach for `--no-verify` in the bot flow unless the hook is actively breaking a
-  commit — see `.claude/skills/commit-push-pr`.
+A `husky` `pre-commit` hook runs `lint-staged` (`eslint --fix` + `nx format:write` on staged
+files) on every `git commit` (#24). It's a **convenience backstop**, not the gate — CI stays
+authoritative. Details (what it touches, install, `--no-verify`) are in the `commit-push-pr`
+skill.
 
 ### Windows / PowerShell
 
@@ -445,11 +304,6 @@ what it changed, so the commit lands clean.
 - Avoid the UTF-8 BOM when writing files other tools parse — prefer the editor tools
   or `node` over `Set-Content -Encoding utf8`.
 
-### Generator changes — update all surfaces together
-
-1. `generator.ts` (runtime) 2. `schema.ts` (option types) 3. `schema.json` (CLI
-   schema) 4. `generator.spec.ts` (unit coverage) 5. generator-local `README.md`.
-
 ---
 
 ## 9. Testing & verification
@@ -457,35 +311,10 @@ what it changed, so the commit lands clean.
 - Jest is the workspace test runner for every project — Angular, NestJS, and plain libs
   (ADR 0007). Generators are defaulted to `unitTestRunner: jest` in `nx.json`; there is
   no `@nx/vitest` plugin. Run tests through `nx test {project}`, never `jest` directly.
-- Unit tests are `*.spec.ts`, beside the implementation.
-- Name the top-level `describe` after the exported unit; write `it(...)` names as
-  behavior statements.
-- `eslint-plugin-jest` `flat/recommended` lints spec / mock files (`*.{spec,test}.ts`,
-  `*.{mock,mocks}.ts`) — a left-in `fit` / `fdescribe` / `.only`, an `expect()` with no
-  matcher, or a duplicated `it()` title fails `nx lint` (ADR 0008). The same block
-  relaxes `@nx/enforce-module-boundaries` and a few TS rules for test code.
-- Prefer direct assertions over snapshots.
-- For Nx generators / workspace utilities, use `createTreeWithEmptyWorkspace()` and
-  assert against the in-memory `Tree`, generated files, and project config.
-- **Coverage: an 80% floor, CI-enforced** (ADR 0007 amendment). `jest.preset.js` sets
-  `coverageThreshold.global` to 80 and `collectCoverage: !!process.env.CI`, so local
-  `nx test` stays fast and the threshold gates CI. Under `nx run-many` it is a
-  per-project gate. New runtime projects must clear 80% — check with
-  `nx test {project} --coverage` before opening the PR. `type:types` libs have no
-  `test` target and are exempt. CI also merges the per-project reports into one
-  workspace number, uploads `coverage/` as an artifact, and posts a per-PR coverage
-  comment (per-project table + patch coverage for changed lines) — all inside GitHub
-  Actions, no third-party service (`.github/scripts/coverage-report.cjs`, unit-tested
-  with `node --test`).
-- **Spec files are type-checked by the `typecheck` target, not `test`.** `ts-jest` is
-  transpile-only and `build` excludes `*.spec.ts`, so a spec-only type error (a bad
-  cast, a `never`-typed arg) slips through both. Every lib/tool project carries a
-  `"typecheck": {}` stub in its `project.json` that inherits
-  `tsc --noEmit -p {projectRoot}/tsconfig.spec.json` from `nx.json`
-  `targetDefaults.typecheck`; CI runs it via `nx run-many -t ... typecheck`. A new
-  project needs both the stub and a `tsconfig.spec.json` (spec-less projects are
-  fine — `files: []` in the base `tsconfig.json` suppresses `TS18003`). The
-  `nx-plugin` generator emits the stub for scaffolded plugins. See issue #48.
+- **Coverage: an 80% floor, CI-enforced** (ADR 0007 amendment). New runtime projects must
+  clear 80% — check with `nx test {project} --coverage` before opening the PR.
+- **Spec files are type-checked by the `typecheck` target, not `test`** — run it too.
+- Spec style and coverage mechanics: `.claude/rules/testing.md`.
 
 ### Verification defaults
 
@@ -503,24 +332,9 @@ what it changed, so the commit lands clean.
 
 ## 10. Review priorities
 
-When reviewing a PR, in order:
-
-1. Architecture / module-boundary violations — changes that don't fit the Nx
-   workspace structure, cross-boundary imports that violate scope/tag rules, new
-   top-level packages that bypass placement conventions, duplicated helper logic
-   where a shared helper should be extended.
-2. Correctness, security, trust-boundary bugs — bad conditionals, off-by-one,
-   unhandled edge cases, unhandled rejections, swallowed exceptions, missing
-   validation of external input. Extra scrutiny on auth, query construction, and
-   secrets. Prefer the repo's Zod request contracts at the API edge.
-3. Missing/inadequate test coverage for changed behavior.
-4. Generator changes that update only part of the required surface (§8).
-5. Maintainability — anything that leaves a confusing handoff.
-
-Comment style: point at the exact line, explain why it matters, match severity to
-impact. Skip formatting/import-order/quote-style trivia handled by Prettier/ESLint.
-If a change establishes a new durable pattern or tradeoff, ask whether it belongs in
-an ADR.
+Architecture / module boundaries first, then correctness and trust-boundary bugs, then test
+coverage, then partial generator changes, then maintainability. The full list and comment style
+are in the `review-pr` skill.
 
 ---
 
@@ -533,15 +347,8 @@ an ADR.
 - To move a project, use `nx g @nx/workspace:move --project={name}
 --destination={new/path}` — never `git mv` (the generator also fixes
   `tsconfig.base.json` aliases, `project.json` roots, and workspace references).
-- **TypeScript layout is path-alias, not project references** (ADR 0005). Projects are
-  wired through `tsconfig.base.json` `compilerOptions.paths`; there is no `composite`
-  setup and no `@nx/js/typescript` plugin. Angular cannot use project references — don't
-  re-introduce them. Let generators add `paths` entries; don't hand-edit unless fixing a
-  generator gap.
-- **No `baseUrl` in `tsconfig.base.json`.** `moduleResolution: "bundler"` resolves
-  `paths` relative to the config file, so `baseUrl` is redundant — and TS 6.0 makes it a
-  hard error (`TS5101`) under full-diagnostic consumers like `ts-jest`. If a generator
-  re-adds it, remove it.
+- TypeScript layout is path-alias, not project references, and `tsconfig.base.json` has no
+  `baseUrl` (ADR 0005) — details in `.claude/rules/project-config.md`.
 - Angular and NestJS are the only application stacks (ADR 0005). Add framework capability
   through `@nx/angular` / `@nx/nest` generators and `nx add`, not hand-installed
   `@angular/*` / `@nestjs/*` packages. Framework upgrades run through `nx migrate`.
