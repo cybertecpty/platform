@@ -32,6 +32,9 @@ const personLd = {
   knowsAbout: ['Angular', 'TypeScript', '.NET', 'Nx'],
   sameAs: ['https://github.com/cybertecpty', 'https://linkedin.com/in/djmcgrath101']
 };
+
+// Cloudflare Web Analytics site token for cybertec.io (public; it ships in the HTML).
+const cfBeacon = JSON.stringify({ token: 'f87a67456f0049c19f08b13ea2a7b8f3' });
 ---
 
 <!doctype html>
@@ -71,6 +74,16 @@ const personLd = {
     <script type="application/ld+json" set:html={JSON.stringify(personLd)}></script>
     {/* Brand fonts are self-hosted via @fontsource (imported above) — no
         third-party font request. */}
+
+    {/* Cloudflare Web Analytics (#91): cookieless, so no consent banner. Manual
+        snippet mode because DNS isn't proxied through Cloudflare. The token is
+        public by design. `type="module"` defers it off the critical path;
+        `is:inline` stops Astro from bundling the external script. */}
+    <script
+      is:inline
+      type="module"
+      src="https://static.cloudflareinsights.com/beacon.min.js"
+      data-cf-beacon={cfBeacon}></script>
   </head>
   <body class="flex min-h-dvh flex-col">
     {/*
