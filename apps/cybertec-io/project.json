@@ -39,7 +39,11 @@
       "executor": "nx:run-commands",
       "dependsOn": ["build"],
       "options": {
-        "command": "pnpm exec swa deploy dist/apps/cybertec-io --env production --no-use-keychain",
+        "commands": [
+          "node apps/cybertec-io/scripts/require-deploy-token.mjs",
+          "pnpm exec swa deploy dist/apps/cybertec-io --env production --no-use-keychain"
+        ],
+        "parallel": false,
         "cwd": "{workspaceRoot}"
       }
     },
