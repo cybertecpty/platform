@@ -210,7 +210,7 @@ Mobile-first. All multi-column grids use `auto-fit` + `minmax(...)` so they coll
 - **SEO:** keyword-aware `<title>` (e.g. "Daniel McGrath — Senior Full-Stack Engineer (Angular) · CyberTec") + meta description; OG/Twitter card with the copper-on-ink lockup; **JSON-LD `Person`** (name, jobTitle, `knowsAbout` = the stack, `alumniOf` FSU, `address` country PA, `sameAs` GitHub + LinkedIn); `sitemap.xml`, `robots.txt`, canonical. No `hreflang` (single locale). Favicon from `assets/cybertec-favicon.svg`.
 - **Rendering:** Astro static build (SSG) to plain HTML so the page is fully crawlable and unfurls cleanly — important for ranking on "CyberTec" + "Daniel McGrath".
 - **Performance:** LCP <2.0s, CLS <0.05, INP <200ms; Lighthouse ≥95. Self-hosted `@fontsource` fonts with the hero Fraunces file (normal; the italic face is no longer loaded because no page uses it) preloaded in `BaseLayout.astro` to prevent a swap-induced layout shift; `daniel.jpg` served through Astro `<Image>` (responsive widths, lazy-loaded); hashed asset names. `staticwebapp.config.json` currently sets security headers only (`nosniff`, `X-Frame-Options`, `Referrer-Policy`, `Permissions-Policy`) — cache and compression headers are open (§14).
-- **Analytics:** none shipped. The v2.1 plan was **Cloudflare Web Analytics** (free, cookieless, no consent banner); alternatives are Azure Application Insights or none. Open decision (§14).
+- **Analytics:** **Cloudflare Web Analytics** (free, cookieless, no consent banner), shipped in #91. The beacon runs in manual JS-snippet mode, since DNS isn't proxied through Cloudflare, and loads as a deferred module from `BaseLayout.astro`. Azure Application Insights was rejected for this site: its browser SDK sets cookies by default, it is much heavier, and it needs a billable Log Analytics workspace. It stays the choice for the product apps.
 
 ## 12. Tech stack & deploy
 
@@ -229,7 +229,7 @@ Mobile-first. All multi-column grids use `auto-fit` + `minmax(...)` so they coll
 ## 14. Open items
 
 - **Resolved by the build:** copy (§7, as shipped), Experience outcomes (O2), rates (O1 — availability pill only, no rate shown), stack named, dark-only, English-only, mailto contact, contact@cybertec.io.
-- **A1 — Analytics:** none shipped. Decide between Cloudflare Web Analytics (cookieless, no banner), Azure Application Insights, or none.
+- ~~**A1 — Analytics:**~~ **Resolved (#91).** Cloudflare Web Analytics (cookieless, no banner); see §11.
 - **A2 — Scroll-spy:** active-nav-link highlighting from v2.1 is not implemented. Implement or drop.
 - **A3 — Caching and compression:** `staticwebapp.config.json` has security headers only; add cache and compression headers if the site is redeployed.
 - ~~**A4 — CI gates:**~~ **Resolved (#94).** CI now runs an axe check (WCAG 2.0/2.1/2.2 A and AA, desktop and mobile; `cybertec-io-e2e:e2e`) and a Lighthouse gate (`cybertec-io-e2e:lighthouse`: ≥ 95 in all four categories, LCP < 2.0s, CLS < 0.05, mobile and desktop). Both run against the production build in `ci.yml`.
@@ -248,7 +248,7 @@ Checked items are met by the shipped source. Unchecked items are open (see §14)
 - [x] Body text never copper; copper text on Paper uses the deeper copper (done); every pairing on the shipped page passes WCAG 2.2 AA (axe, zero violations at desktop and mobile widths, enforced in CI). Pairings that appear only on the superseded multi-section site were not checked.
 - [x] **Contact = mailto + links:** `contact@cybertec.io` (mailto), GitHub, LinkedIn. "Hire me" and "Get in touch" CTAs land on `#contact`. **No form anywhere.**
 - [x] Portrait in About, responsive and lazy-loaded with alt text. Favicon set from the SVG.
-- [ ] Analytics (A1) — not shipped.
+- [x] Analytics (A1): Cloudflare Web Analytics beacon, cookieless with no consent banner (#91).
 - [x] Responsive mobile-first; nav condenses to a disclosure menu; mobile menu tap target ≥44px; `prefers-reduced-motion` honored; footer year dynamic. Scroll-spy not implemented (A2).
 - [x] SEO: static HTML, JSON-LD `Person`, sitemap, robots, canonical, Open Graph and Twitter card.
 - [x] Lighthouse ≥95 across Performance, Accessibility, Best Practices, SEO; LCP <2.0s, CLS <0.05. Production build of the one-screen page, 2026-10-14: mobile 99/100/100/100 (LCP 1.8s, CLS 0); desktop 100/100/100/100 (LCP 0.4s, CLS 0). Dropping the unused Fraunces italic preload took mobile LCP from 2.1s to under 2.0s. An earlier live run on 2026-10-07 (before the hero font preload) had desktop Performance at 94 (CLS 0.154).
@@ -256,4 +256,4 @@ Checked items are met by the shipped source. Unchecked items are open (see §14)
 
 ---
 
-_End of PRD v2.2 — Phase-1 contractor site, reconciled to the shipped Astro build. Open: A1–A3, N4 (launch gate), O3–O4 (Phase 2)._
+_End of PRD v2.2 — Phase-1 contractor site, reconciled to the shipped Astro build. Open: A2–A3, N4 (launch gate), O3–O4 (Phase 2)._
