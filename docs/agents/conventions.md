@@ -30,6 +30,7 @@ policy so they're in place when the tooling lands, but don't assume they're acti
 | Reviewer routing (`.github/CODEOWNERS` → `@djmcgrath101`) | ✅ live — auto-requests maintainer review on every PR          | —       |
 | Automated PR reviewer (e.g. Copilot code review)          | ❌ none — needs a paid plan; maintainer review only (#110)     | later   |
 | Pre-commit hook (`husky` + `lint-staged`)                 | ✅ live — formats/`eslint --fix`es staged files (#24)          | —       |
+| Claude Code hooks (`.claude/hooks/`, `settings.json`)     | ✅ live — bot-identity guard, end-of-turn format (§1, §8)      | —       |
 | Commitlint / `commit-msg` hook                            | ✅ live — `commit-msg` hook + CI PR-title check (#32)          | §3      |
 | `@cybertecpty/*` publish on merge to `main`               | ❌ no release flow, no packages                                | §2      |
 | `cybertec-back-merge` app                                 | app installed, not driving anything                            | §2      |
@@ -69,6 +70,13 @@ manual git is unaffected.
     authenticates as the maintainer).
 - `git push cybertec-bot HEAD` or `git push cybertec-bot {branch}`.
 - Prefer shipping a committed branch without checking it out (see §6).
+
+**Enforced by a hook.** In Claude Code, `.claude/hooks/guard-bot-identity.cjs` (PreToolUse on
+Bash / PowerShell) denies `git push origin …`, and denies bot-owned `gh pr` writes (`create`,
+`merge`, `comment`, `edit`, `close`, `reopen`, `ready`) unless `gh` is on `cybertec-bot` or the
+same command switches to it first. `gh pr review` (maintainer approval) is not touched. Set
+`CLAUDE_BOT_GUARD=off` (e.g. in `.claude/settings.local.json` `env`) to bypass. Tests:
+`node --test .claude/hooks/*.test.cjs`.
 
 ### Pull requests
 
@@ -404,9 +412,12 @@ Prettier owns Markdown too, and its normalization is **not** configurable:
   prose rarely wants.)
 - Unordered list bullets are `-` (Prettier rewrites `*` / `+`).
 
-If a format-on-save / import-organizer hook is configured (see §0), it **strips an
-import added without its usage in the same edit** — so add an import and its first
-use atomically, in one edit, not as two.
+In Claude Code, `.claude/hooks/format-edited.cjs` formats for you: a PostToolUse hook records
+each file the session writes or edits, and a Stop hook runs Prettier over that list once at
+the end of the turn. It runs per turn, not per edit, because `prettier-plugin-organize-imports`
+**strips an import whose usage isn't written yet** — formatting after every edit would eat
+imports mid-change. Only this session's files are formatted, so another session's work in a
+shared clone is untouched. Other agents without the hook still run `nx format:write` themselves.
 
 ### Pre-commit hook
 
