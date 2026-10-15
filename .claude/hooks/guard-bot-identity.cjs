@@ -20,6 +20,21 @@ const GH_SWITCH_TO_BOT = new RegExp(
 );
 const GIT_PUSH = /\bgit\s+(?:-C\s+\S+\s+|-c\s+\S+\s+)*push\b([^;&|\n]*)/g;
 
+// Text that is data, not commands: heredoc bodies, PowerShell here-strings, quoted strings.
+// A PR body that mentions `git push origin` must not trip the guard.
+const LITERALS = [
+  /<<-?\s*(['"]?)(\w+)\1[^\n]*\n[\s\S]*?\n\s*\2[ \t]*(?=\n|$)/g,
+  /@'\r?\n[\s\S]*?\n'@/g,
+  /@"\r?\n[\s\S]*?\n"@/g,
+  /'[^'\n]*'/g,
+  /"(?:\\.|[^"\\\n])*"/g
+];
+
+/** Blanks out heredocs, here-strings and quoted strings so only command text is matched. */
+function stripLiterals(command) {
+  return LITERALS.reduce((text, pattern) => text.replace(pattern, '""'), command);
+}
+
 /** Returns the remote a `git push` argument string targets, or undefined if implicit. */
 function pushRemote(args) {
   return args
@@ -34,7 +49,8 @@ function pushRemote(args) {
  * @param {() => string | undefined} getActiveAccount lazily resolves the active gh account
  * @returns {{ decision: 'allow' | 'deny' | 'ask', reason?: string }}
  */
-function evaluate(command, getActiveAccount) {
+function evaluate(rawCommand, getActiveAccount) {
+  const command = stripLiterals(rawCommand);
   for (const match of command.matchAll(GIT_PUSH)) {
     if (pushRemote(match[1]) === 'origin') {
       return {

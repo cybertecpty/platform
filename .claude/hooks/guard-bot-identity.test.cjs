@@ -63,6 +63,31 @@ describe('evaluate', () => {
     assert.equal(evaluate('gh pr comment 12 --body-file b.md', unknown).decision, 'ask');
   });
 
+  it('ignores commands mentioned inside a heredoc body', () => {
+    const command = [
+      "cat > body.txt << 'EOF'",
+      '- denies `git push origin …` and `gh pr create` as the maintainer',
+      'EOF',
+      'git status'
+    ].join('\n');
+    assert.equal(evaluate(command, unreachable).decision, 'allow');
+  });
+
+  it('ignores commands mentioned inside a PowerShell here-string', () => {
+    const command = "git commit -m @'\nnever git push origin\n'@";
+    assert.equal(evaluate(command, unreachable).decision, 'allow');
+  });
+
+  it('ignores commands mentioned inside quoted arguments', () => {
+    const command = 'gh issue create --title "stop running git push origin"';
+    assert.equal(evaluate(command, unreachable).decision, 'allow');
+  });
+
+  it('still checks commands that follow a heredoc', () => {
+    const command = "cat > m.txt << 'EOF'\nhello\nEOF\ngit push origin x";
+    assert.equal(evaluate(command, unreachable).decision, 'deny');
+  });
+
   it('leaves maintainer-only gh pr actions alone', () => {
     assert.equal(evaluate('gh pr review 12 --approve', unreachable).decision, 'allow');
   });
