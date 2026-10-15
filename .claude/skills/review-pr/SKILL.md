@@ -10,7 +10,14 @@ description: >
 
 Moved here from `docs/agents/conventions.md` §10.
 
-When reviewing a PR, in order:
+First, check the PR against its issue's acceptance criteria (`conventions.md` §3) —
+`gh issue view {n} --comments` for the issue the PR closes. Every criterion is ticked in the PR
+body with evidence the diff actually provides, unticked ones carry a reason or a follow-up issue,
+and the diff does not wander into the issue's "Out of scope". A criterion ticked without evidence,
+or scope creep, is a finding. If the issue has no testable criteria, say so — the PR's scope
+can't be checked.
+
+Then, in order:
 
 1. Architecture / module-boundary violations — changes that don't fit the Nx
    workspace structure, cross-boundary imports that violate scope/tag rules, new

@@ -166,6 +166,25 @@ review has not accepted.
   code in an open, unmerged PR. If so, wait for the _merge_ (not just approval)
   before proceeding.
 
+### Acceptance criteria — spec before code
+
+The issue's acceptance criteria are the contract for the PR. The `ready-for-agent` bar is in
+[`triage-labels.md`](triage-labels.md).
+
+1. **Before coding, restate the criteria** — list them back (in the session, or as the first
+   step of the plan) so a misreading surfaces before any code exists.
+2. **If they are missing or vague** — untestable, contradictory, or open questions remain — do
+   not guess and do not start coding. Run `mattpocock-skills:grilling` with the maintainer (or,
+   with no one to grill, draft the questions yourself), then post the proposed criteria,
+   out-of-scope list and answers to the issue as a comment and label it `needs-info`. Start
+   coding only after the maintainer confirms (a reply, or relabelling `ready-for-agent`), then
+   fold the confirmed criteria into the issue body.
+3. **In the PR body, tick each criterion** — copy the checklist under an "Acceptance criteria"
+   heading and tick each item with a pointer to its evidence (test, file, command output). An
+   item not met stays unticked with a reason, or moves to a follow-up issue named in the PR.
+
+Issues without the template (pre-template backlog, quick chores) follow the same steps.
+
 ### Commit messages
 
 [Conventional Commits](https://www.conventionalcommits.org/en/v1.0.0/) — `type(scope): subject`,

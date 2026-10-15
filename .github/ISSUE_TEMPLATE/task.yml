@@ -1,0 +1,61 @@
+name: Task / feature
+description: A unit of work for an agent or a human — spec it before anyone writes code.
+labels: ['needs-triage']
+body:
+  - type: markdown
+    attributes:
+      value: |
+        An issue is `ready-for-agent` only when every criterion below is testable, open questions
+        are resolved, and the ADR question is answered — see `docs/agents/triage-labels.md`.
+  - type: textarea
+    id: problem
+    attributes:
+      label: Problem
+      description: What is wrong or missing, and why it matters. Describe the need, not the fix.
+    validations:
+      required: true
+  - type: textarea
+    id: acceptance-criteria
+    attributes:
+      label: Acceptance criteria
+      description: >
+        A checklist a reviewer can tick from the diff, a test, or a command's output. Each item is
+        observable — "`nx test foo` covers X", not "works well".
+      value: |
+        - [ ]
+    validations:
+      required: true
+  - type: textarea
+    id: out-of-scope
+    attributes:
+      label: Out of scope
+      description: What this issue deliberately does not cover. Write "None" if nothing.
+    validations:
+      required: true
+  - type: textarea
+    id: open-questions
+    attributes:
+      label: Open questions
+      description: >
+        Anything undecided. Write "None" when resolved — an issue with open questions is
+        `needs-info`, not `ready-for-agent`.
+    validations:
+      required: true
+  - type: dropdown
+    id: adr
+    attributes:
+      label: ADR
+      description: Does this pick between real alternatives? (`write-adr` skill has the test.)
+      options:
+        - Not needed — applies existing ADRs only
+        - Needed — a new ADR or amendment is part of this issue
+        - Undecided
+    validations:
+      required: true
+  - type: textarea
+    id: context
+    attributes:
+      label: Context
+      description: Related issues, PRs, ADRs, files, or prior discussion.
+    validations:
+      required: false
