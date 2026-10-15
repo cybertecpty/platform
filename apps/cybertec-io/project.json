@@ -36,12 +36,8 @@
       }
     },
     "deploy": {
-      "executor": "nx:run-commands",
-      "dependsOn": ["build"],
-      "options": {
-        "command": "pnpm exec swa deploy dist/apps/cybertec-io --env production --no-use-keychain",
-        "cwd": "{workspaceRoot}"
-      }
+      "executor": "@cybertecpty/azure-plugin:swa-deploy",
+      "dependsOn": ["build"]
     },
     "test": {
       "executor": "nx:run-commands",

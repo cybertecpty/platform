@@ -34,17 +34,18 @@ node apps/cybertec-io/scripts/generate-brand-rasters.mjs
 ## Deploy
 
 Deploys to **Azure Static Web Apps** on push to `main`, through the shared affected-deploy
-pipeline (`.github/workflows/deploy-affected.yml`): the `deploy` target runs the SWA CLI
-against the built `dist/apps/cybertec-io`, authenticated by the `AZURE_STATIC_WEB_APPS_API_TOKEN`
+pipeline (`.github/workflows/deploy-affected.yml`): the `deploy` target uses the shared
+`@cybertecpty/azure-plugin:swa-deploy` executor, which runs the SWA CLI against the built
+`dist/apps/cybertec-io`, authenticated by the `AZURE_STATIC_WEB_APPS_API_TOKEN`
 secret of the `cybertec-io` GitHub Environment. The deploy is gated on `nx test cybertec-io`,
 and a post-deploy smoke (`cybertec-io-e2e:smoke`) runs against the `metadata.baseUrl`
 in `project.json`. To redeploy manually, use the workflow's `workflow_dispatch` from `main`.
 
 To deploy from your machine (`pnpm exec nx deploy cybertec-io`), copy `.env.deploy.example`
 to `.env.deploy` in this folder and fill in the deployment token. Nx loads that file for the
-`deploy` target only, and it is gitignored. Without the token, the SWA CLI falls back to an
-interactive login that offers to create a new Static Web App. Decline it: the fix is to set
-the token. Note that a local deploy goes straight to production.
+`deploy` target only, and it is gitignored. Without the token, the deploy fails before
+calling the SWA CLI and says where to get one. Note that a local deploy goes straight to
+production.
 
 ## Structure
 
