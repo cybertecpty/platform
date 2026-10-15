@@ -108,8 +108,8 @@ Fixed threads: an optional "Fixed in {short-sha}." Declined/deferred: a reply is
 ### 5. Commit, verify, push (only if step 3 produced code changes)
 
 ```bash
-npm exec nx test {project}
-npm exec nx run-many -t build -p {affected}   # when compilation could be affected; CI doesn't run build on PRs to develop only if... check conventions §9
+pnpm exec nx test {project}
+pnpm exec nx run-many -t build -p {affected}   # when compilation could be affected; CI also builds every project on each PR
 git -c user.name="cybertec-bot" -c user.email="cybertec-bot@cybertec.io" commit -F /tmp/msg.txt
 git push cybertec-bot HEAD
 ```
