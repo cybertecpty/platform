@@ -322,6 +322,9 @@ skill.
 
 ### Verification defaults
 
+- **Run `pnpm verify` before every push.** It mirrors the required `ci` check on affected
+  projects (vs `origin/develop`; fetch first): the `node --test` suites, `nx format:check`, and
+  `nx affected -t lint test build typecheck`. CI additionally runs `e2e` and `lighthouse`.
 - Run through Nx: `nx test {project}`, `nx lint {project}`, `nx run-many ...`,
   `nx affected ...`. Prefix with pnpm: `pnpm exec nx …`.
 - After TS/config/schema/barrel/generator changes, run targeted tests first, then a

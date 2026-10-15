@@ -89,11 +89,16 @@ before staging, it's a no-op. If it changes files, they're re-staged into this c
 re-check `git show HEAD` and amend the PR body if a "prettier clean" box needs it. Only add
 `--no-verify` if the hook is actively failing the commit (say so in the PR).
 
-### 6. Push via the bot remote
+### 6. Run verify, then push via the bot remote
 
 ```bash
+git fetch origin
+pnpm verify
 git push cybertec-bot HEAD
 ```
+
+`pnpm verify` mirrors the required `ci` check on affected projects (conventions §9). Don't push
+until it passes; on Windows, prefix `NX_NO_CLOUD=true` if Nx Cloud teardown fails with `EISDIR`.
 
 Never `origin` for bot work — `origin` is HTTPS via GCM (maintainer), not the bot's key.
 
