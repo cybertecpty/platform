@@ -362,6 +362,11 @@ Architecture / module boundaries first, then correctness and trust-boundary bugs
 coverage, then partial generator changes, then maintainability. The full list and comment style
 are in the `review-pr` skill.
 
+**Scale review effort to risk.** Pick a tier (None / Light / Standard / Deep) from the riskiest
+path the diff touches and state it in the PR's Test plan. Light is the default; multi-agent review
+is reserved for generators, CI, agent hooks, lint/boundary config, release tooling and secrets. The
+path → tier table is in the `review-pr` skill.
+
 ---
 
 ## 11. Nx workspace rules
