@@ -14,5 +14,93 @@
     "network": {
       "allowedDomains": ["www.google-analytics.com"]
     }
+  },
+  "permissions": {
+    "allow": [
+      "Bash(git status *)",
+      "Bash(git log *)",
+      "Bash(git diff *)",
+      "Bash(git show *)",
+      "Bash(git branch --show-current)",
+      "Bash(git rev-parse *)",
+      "Bash(git remote -v)",
+      "Bash(git worktree list *)",
+      "Bash(gh auth status *)",
+      "Bash(gh pr view *)",
+      "Bash(gh pr list *)",
+      "Bash(gh pr checks *)",
+      "Bash(gh pr diff *)",
+      "Bash(gh issue view *)",
+      "Bash(gh issue list *)",
+      "Bash(gh run view *)",
+      "Bash(gh run list *)",
+      "Bash(pnpm exec nx show *)",
+      "Bash(pnpm exec nx test *)",
+      "Bash(pnpm exec nx lint *)",
+      "Bash(pnpm exec nx typecheck *)",
+      "Bash(pnpm exec nx build *)",
+      "Bash(pnpm exec nx format:check *)",
+      "PowerShell(git status *)",
+      "PowerShell(git log *)",
+      "PowerShell(git diff *)",
+      "PowerShell(git show *)",
+      "PowerShell(git branch --show-current)",
+      "PowerShell(git rev-parse *)",
+      "PowerShell(git remote -v)",
+      "PowerShell(git worktree list *)",
+      "PowerShell(gh auth status *)",
+      "PowerShell(gh pr view *)",
+      "PowerShell(gh pr list *)",
+      "PowerShell(gh pr checks *)",
+      "PowerShell(gh pr diff *)",
+      "PowerShell(gh issue view *)",
+      "PowerShell(gh issue list *)",
+      "PowerShell(gh run view *)",
+      "PowerShell(gh run list *)",
+      "PowerShell(pnpm exec nx show *)",
+      "PowerShell(pnpm exec nx test *)",
+      "PowerShell(pnpm exec nx lint *)",
+      "PowerShell(pnpm exec nx typecheck *)",
+      "PowerShell(pnpm exec nx build *)",
+      "PowerShell(pnpm exec nx format:check *)"
+    ]
+  },
+  "hooks": {
+    "PreToolUse": [
+      {
+        "matcher": "Bash|PowerShell",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "node \"$CLAUDE_PROJECT_DIR/.claude/hooks/guard-bot-identity.cjs\"",
+            "timeout": 15
+          }
+        ]
+      }
+    ],
+    "PostToolUse": [
+      {
+        "matcher": "Write|Edit",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "node \"$CLAUDE_PROJECT_DIR/.claude/hooks/format-edited.cjs\" track",
+            "timeout": 10
+          }
+        ]
+      }
+    ],
+    "Stop": [
+      {
+        "hooks": [
+          {
+            "type": "command",
+            "command": "node \"$CLAUDE_PROJECT_DIR/.claude/hooks/format-edited.cjs\" flush",
+            "timeout": 90,
+            "statusMessage": "Formatting edited files"
+          }
+        ]
+      }
+    ]
   }
 }
