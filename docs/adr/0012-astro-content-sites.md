@@ -156,3 +156,39 @@ Chosen option: **1 — Astro, scoped to static or mostly static content sites.**
   the root `package.json` under the single-version policy (ADR 0001, ADR 0003). `astro`,
   `sharp` and Tailwind stay in the root for now. The workspace file lists the app explicitly
   rather than `apps/*`, so other apps and the e2e projects stay out until they need it.
+
+## Amendment (2026-10-15): analytics (issue #91)
+
+- Status: accepted
+- Deciders: djmcgrath
+- Implemented by: the beacon in `apps/cybertec-io/src/layouts/BaseLayout.astro`; PR #121
+
+### Decision
+
+- **Astro content sites use Cloudflare Web Analytics,** not Azure Application Insights, even
+  though they are hosted on Azure. Use the manual JS-snippet mode: DNS isn't proxied through
+  Cloudflare, and the snippet works on any host. Each site gets its own Cloudflare site
+  token. The token is public, so it lives in the layout source, not in a secret.
+- **Cookieless, no consent banner.** A content site must not add analytics that set cookies
+  or need consent. The beacon loads as a deferred `type="module"` script, so the Lighthouse
+  gate (≥ 95, LCP < 2.0s, CLS < 0.05) still applies.
+
+### Considered options
+
+1. **Cloudflare Web Analytics.** Free, cookieless, about a 5 KB beacon, no infrastructure.
+2. **Azure Application Insights.** Matches the hosting provider. But its browser SDK sets
+   `ai_user` and `ai_session` cookies by default, and `disableCookiesUsage` gives up the
+   user and session counts that are most of its value. It is much heavier, which puts the
+   Lighthouse gate at risk. It also needs a billable Log Analytics workspace. Its strengths
+   are distributed tracing, dependency tracking and exception correlation, and a static
+   page uses none of them.
+3. **No analytics.** Reasonable for a one-screen site, but it leaves no way to see whether
+   the site is reached at all.
+
+### Scope
+
+- This covers static content sites only. Observability for the Angular and NestJS product
+  apps (ADR 0005) is a separate, undecided choice. Application Insights is the likely
+  candidate there, but that needs its own ADR.
+- Swapping this for a cookie-setting tool, or one that needs a consent banner, needs a
+  further amendment.
