@@ -1,3 +1,9 @@
 {
-  "executors": {}
+  "executors": {
+    "swa-deploy": {
+      "implementation": "./src/lib/executors/swa-deploy/executor",
+      "schema": "./src/lib/executors/swa-deploy/schema.json",
+      "description": "Deploy a project's build output to Azure Static Web Apps."
+    }
+  }
 }
