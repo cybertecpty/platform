@@ -1,5 +1,9 @@
 ## Summary
 
+## Acceptance criteria
+
+<!-- Copy the issue's checklist; tick each item with its evidence. Unmet items stay unticked with a reason or a follow-up issue. -->
+
 ## Test plan
 
 ## Checklist
