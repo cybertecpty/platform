@@ -42,8 +42,9 @@ in `project.json`. To redeploy manually, use the workflow's `workflow_dispatch` 
 
 To deploy from your machine (`pnpm exec nx deploy cybertec-io`), copy `.env.deploy.example`
 to `.env.deploy` in this folder and fill in the deployment token. Nx loads that file for the
-`deploy` target only, and it is gitignored. Without the token the target fails before
-calling the SWA CLI. Note that a local deploy goes straight to production.
+`deploy` target only, and it is gitignored. Without the token, the SWA CLI falls back to an
+interactive login that offers to create a new Static Web App. Decline it: the fix is to set
+the token. Note that a local deploy goes straight to production.
 
 ## Structure
 
