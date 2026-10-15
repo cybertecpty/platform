@@ -7,7 +7,13 @@
   "properties": {
     "outputPath": {
       "type": "string",
-      "description": "Folder to deploy, relative to the workspace root. Defaults to the project's build output, dist/{projectRoot}.",
+      "description": "Folder to deploy, relative to the workspace root. Defaults to the single output the build target declares; the deploy fails if it declares none or several.",
+      "minLength": 1
+    },
+    "buildTarget": {
+      "type": "string",
+      "description": "Target whose declared output is deployed when outputPath is not set.",
+      "default": "build",
       "minLength": 1
     },
     "env": {

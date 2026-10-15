@@ -136,9 +136,9 @@ Chosen option: **1 — Astro, scoped to static or mostly static content sites.**
   merge commit, then runs the `cybertec-io:deploy` target, which depends on `build` and uses
   the shared `@cybertecpty/azure-plugin:swa-deploy` executor (issue #123). The executor runs
   `swa deploy` (`@azure/static-web-apps-cli`, a root devDependency per the single-version
-  policy) against `dist/{projectRoot}`, and fails before calling it when
-  `SWA_CLI_DEPLOYMENT_TOKEN` is missing, so every Static Web Apps app gets the same deploy
-  target.
+  policy) against the single output folder the `build` target declares (`outputs`), and
+  fails before calling it when that folder can't be resolved or `SWA_CLI_DEPLOYMENT_TOKEN`
+  is missing, so every Static Web Apps app gets the same deploy target.
 - **Secret:** `AZURE_STATIC_WEB_APPS_API_TOKEN`, stored on a GitHub environment named
   after the Nx project (`cybertec-io`), so a reviewer rule on that environment can gate deploys. The repo owner
   provisions and rotates it.
