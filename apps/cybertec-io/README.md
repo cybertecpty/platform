@@ -40,6 +40,12 @@ secret of the `cybertec-io` GitHub Environment. The deploy is gated on `nx test 
 and a post-deploy smoke (`cybertec-io-e2e:smoke`) runs against the `metadata.baseUrl`
 in `project.json`. To redeploy manually, use the workflow's `workflow_dispatch` from `main`.
 
+To deploy from your machine (`pnpm exec nx deploy cybertec-io`), copy `.env.deploy.example`
+to `.env.deploy` in this folder and fill in the deployment token. Nx loads that file for the
+`deploy` target only, and it is gitignored. Without the token, the SWA CLI falls back to an
+interactive login that offers to create a new Static Web App. Decline it: the fix is to set
+the token. Note that a local deploy goes straight to production.
+
 ## Structure
 
 - `src/pages/` — routes (the homepage is `index.astro`).

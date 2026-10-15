@@ -53,8 +53,12 @@ vitest.config.*.timestamp*
 .nx/self-healing
 __screenshots__/
 
-# Sensitive files
+# Sensitive files (every dotenv variant Nx loads, e.g. a project's `.env.deploy`),
+# keeping the committed `*.example` templates
 .env
+.env.*
+*.env
+!*.example
 
 .claude/worktrees
 
