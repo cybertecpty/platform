@@ -311,8 +311,12 @@ skill.
 - Jest is the workspace test runner for every project — Angular, NestJS, and plain libs
   (ADR 0007). Generators are defaulted to `unitTestRunner: jest` in `nx.json`; there is
   no `@nx/vitest` plugin. Run tests through `nx test {project}`, never `jest` directly.
+  - **Exception: Astro content sites use Vitest** via a per-project `vitest.config.ts`
+    (ADR 0007 2026-09-23 amendment, ADR 0012).
 - **Coverage: an 80% floor, CI-enforced** (ADR 0007 amendment). New runtime projects must
   clear 80% — check with `nx test {project} --coverage` before opening the PR.
+  - **Exception: an Astro site with no `src/**/*.ts`** is exempt; its `test` target
+    asserts on the built output instead (ADR 0007 2026-09-23 amendment).
 - **Spec files are type-checked by the `typecheck` target, not `test`** — run it too.
 - Spec style and coverage mechanics: `.claude/rules/testing.md`.
 
@@ -349,6 +353,7 @@ are in the `review-pr` skill.
   `tsconfig.base.json` aliases, `project.json` roots, and workspace references).
 - TypeScript layout is path-alias, not project references, and `tsconfig.base.json` has no
   `baseUrl` (ADR 0005) — details in `.claude/rules/project-config.md`.
-- Angular and NestJS are the only application stacks (ADR 0005). Add framework capability
-  through `@nx/angular` / `@nx/nest` generators and `nx add`, not hand-installed
+- Angular and NestJS are the only application stacks (ADR 0005), except Astro for static
+  content sites such as `apps/cybertec-io` (ADR 0005 amendment, ADR 0012). Add framework
+  capability through `@nx/angular` / `@nx/nest` generators and `nx add`, not hand-installed
   `@angular/*` / `@nestjs/*` packages. Framework upgrades run through `nx migrate`.
