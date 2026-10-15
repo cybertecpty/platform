@@ -13,9 +13,17 @@ import tseslint from 'typescript-eslint';
 // by path.
 const vitestSpecFiles = ['apps/cybertec-io/**/*.{spec,test}.ts'];
 
-// type:e2e projects (ADR 0010): Playwright, not Jest — same "list by path" reason as
-// vitestSpecFiles above.
-const playwrightSpecFiles = ['apps/*-e2e/**/*.spec.ts'];
+// type:e2e projects (ADR 0010): Playwright, not Jest or Vitest — same "list by path"
+// reason as vitestSpecFiles above. e2e projects are nested at `apps/<app>/e2e` (ADR 0010,
+// 2026-10-09 amendment), so this overlaps vitestSpecFiles; both test-runner blocks
+// below ignore these files.
+const playwrightSpecFiles = ['apps/*/e2e/**/*.spec.ts'];
+
+// The two globs above are workspace-root-relative, but flat config resolves `files` /
+// `ignores` against the directory of the config file ESLint loaded — and per-project lint
+// loads `apps/<app>/eslint.config.mjs`, which spreads this file. Every block that uses
+// them sets `basePath` to pin matching to the workspace root (ESLint >= 9.30).
+const workspaceRoot = import.meta.dirname;
 
 const lodashMessage =
   'Import from lodash-es instead so bundle builds can tree-shake lodash utilities.';
@@ -351,6 +359,7 @@ export default [
     // the jest globals, and the recommended rule set (no-focused-tests,
     // no-disabled-tests, valid-expect, ...); the overrides below relax
     // TS rules that are noise in test code.
+    basePath: workspaceRoot,
     files: ['**/*.{spec,test}.ts', '**/*.{mock,mocks}.ts'],
     ignores: [...vitestSpecFiles, ...playwrightSpecFiles],
     ...jest.configs['flat/recommended'],
@@ -365,7 +374,9 @@ export default [
   {
     // Vitest lint rules for the Vitest projects' spec files (see `vitestSpecFiles`), in
     // place of the Jest block above. Same TS relaxations as the Jest block.
+    basePath: workspaceRoot,
     files: vitestSpecFiles,
+    ignores: playwrightSpecFiles,
     ...vitest.configs.recommended,
     rules: {
       ...vitest.configs.recommended.rules,
@@ -379,6 +390,7 @@ export default [
     // Playwright lint rules for e2e spec files (see `playwrightSpecFiles`), in place of
     // the Jest block above — no TS relaxation block needed, e2e specs don't lean on
     // mock `any`s the way unit specs do.
+    basePath: workspaceRoot,
     files: playwrightSpecFiles,
     ...playwright.configs['flat/recommended'],
     rules: {
