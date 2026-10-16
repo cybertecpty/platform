@@ -1,4 +1,4 @@
-name: CI
+name: Lint and Test Affected
 
 on:
   push:
@@ -21,6 +21,13 @@ env:
   # caching. If fork PRs ever land, switch this to a conditional that hands forks
   # the read-only token instead.
   NX_CLOUD_ACCESS_TOKEN: ${{ secrets.NX_CLOUD_ACCESS_TOKEN }}
+
+# Supersede stale runs on a PR (saves Nx Cloud agent time). Push runs on
+# develop/main always finish: nrwl/nx-set-shas bases `$NX_BASE` on the last
+# successful commit, and each commit there keeps a completed result.
+concurrency:
+  group: ${{ github.workflow }}-${{ github.event.pull_request.number || github.ref }}
+  cancel-in-progress: ${{ github.event_name == 'pull_request' }}
 
 jobs:
   ci:
