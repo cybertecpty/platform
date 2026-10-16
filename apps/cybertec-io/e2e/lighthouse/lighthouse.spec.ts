@@ -16,6 +16,13 @@ const MAX_LCP_MS = 2000;
 /** Cumulative Layout Shift budget: how much the page jumps around while loading. */
 const MAX_CLS = 0.05;
 
+/**
+ * Third-party requests blocked during the audit so the gate never depends on an outside
+ * service. The Cloudflare Web Analytics beacon (#91) made runs fail intermittently with no
+ * scores at all, and it would also count CI audits as site visits.
+ */
+const BLOCKED_URL_PATTERNS = ['*cloudflareinsights.com*'] as const;
+
 const CATEGORIES = ['performance', 'accessibility', 'best-practices', 'seo'] as const;
 type Category = (typeof CATEGORIES)[number];
 
@@ -65,11 +72,24 @@ async function auditPage(url: string, preset: Preset): Promise<Metrics> {
 
     const result = await lighthouse(
       url,
-      { port, output: 'json', logLevel: 'error', onlyCategories: [...CATEGORIES] },
+      {
+        port,
+        output: 'json',
+        logLevel: 'error',
+        onlyCategories: [...CATEGORIES],
+        blockedUrlPatterns: [...BLOCKED_URL_PATTERNS]
+      },
       config
     );
     const report = result?.lhr;
     if (!report) throw new Error('Lighthouse returned no result');
+    // A run that errored (page hung, no paint, …) reports null scores; say why instead of
+    // letting it surface as an unexplained row of zeros.
+    if (report.runtimeError) {
+      throw new Error(
+        `Lighthouse ${preset} run errored: ${report.runtimeError.code}: ${report.runtimeError.message}`
+      );
+    }
 
     // A missing category or audit counts as the worst possible value, so it fails the gate
     // instead of silently passing.

@@ -1,0 +1,28 @@
+{
+  "$schema": "https://json-schema.org/schema",
+  "version": 2,
+  "title": "SWA deploy executor",
+  "description": "Deploy a project's build output to Azure Static Web Apps with the SWA CLI. Reads the deployment token from SWA_CLI_DEPLOYMENT_TOKEN.",
+  "type": "object",
+  "properties": {
+    "outputPath": {
+      "type": "string",
+      "description": "Folder to deploy, relative to the workspace root. Defaults to the single output the build target declares; the deploy fails if it declares none or several.",
+      "minLength": 1
+    },
+    "buildTarget": {
+      "type": "string",
+      "description": "Target whose declared output is deployed when outputPath is not set.",
+      "default": "build",
+      "minLength": 1
+    },
+    "env": {
+      "type": "string",
+      "description": "Static Web Apps environment to deploy to. Any name other than production deploys a preview environment.",
+      "default": "production",
+      "minLength": 1
+    }
+  },
+  "required": [],
+  "additionalProperties": false
+}

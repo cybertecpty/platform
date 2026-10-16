@@ -102,6 +102,9 @@ importers:
       '@types/archiver':
         specifier: 6.0.4
         version: 6.0.4
+      '@types/cross-spawn':
+        specifier: ^6.0.6
+        version: 6.0.6
       '@types/jest':
         specifier: ~30.0.0
         version: 30.0.0
@@ -120,6 +123,9 @@ importers:
       adm-zip:
         specifier: ^0.6.1
         version: 0.6.1
+      cross-spawn:
+        specifier: ^7.0.6
+        version: 7.0.6
       eslint:
         specifier: ^9.8.0
         version: 9.39.5(jiti@2.7.0)
@@ -3272,6 +3278,9 @@ packages:
 
   '@types/configstore@2.1.1':
     resolution: {integrity: sha512-YY+hm3afkDHeSM2rsFXxeZtu0garnusBWNG1+7MknmDWQHqcH2w21/xOU9arJUi8ch4qyFklidANLCu3ihhVwQ==}
+
+  '@types/cross-spawn@6.0.6':
+    resolution: {integrity: sha512-fXRhhUkG4H3TQk5dBhQ7m/JDdSNHKwR2BBia62lhwEIq9xGiQKLxd6LymNhn47SjXhsUEPmxi+PKw2OkW4LLjA==}
 
   '@types/debug@0.0.30':
     resolution: {integrity: sha512-orGL5LXERPYsLov6CWs3Fh6203+dXzJkR7OnddIr2514Hsecwc8xRpzCapshBbKFImCsvS/mk6+FWiN5LyZJAQ==}
@@ -12648,6 +12657,10 @@ snapshots:
       assertion-error: 2.0.1
 
   '@types/configstore@2.1.1': {}
+
+  '@types/cross-spawn@6.0.6':
+    dependencies:
+      '@types/node': 24.13.3
 
   '@types/debug@0.0.30': {}
 

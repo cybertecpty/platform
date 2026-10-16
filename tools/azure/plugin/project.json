@@ -1,0 +1,42 @@
+{
+  "name": "azure-plugin",
+  "$schema": "../../../node_modules/nx/schemas/project-schema.json",
+  "sourceRoot": "tools/azure/plugin/src",
+  "projectType": "library",
+  "tags": ["scope:tools", "type:plugin"],
+  "targets": {
+    "build": {
+      "executor": "@nx/js:tsc",
+      "outputs": ["{options.outputPath}"],
+      "options": {
+        "outputPath": "dist/tools/azure/plugin",
+        "main": "tools/azure/plugin/src/index.ts",
+        "tsConfig": "tools/azure/plugin/tsconfig.lib.json",
+        "assets": [
+          "tools/azure/plugin/*.md",
+          {
+            "input": "./tools/azure/plugin/src",
+            "glob": "**/!(*.ts)",
+            "output": "./src"
+          },
+          {
+            "input": "./tools/azure/plugin/src",
+            "glob": "**/*.d.ts",
+            "output": "./src"
+          },
+          {
+            "input": "./tools/azure/plugin",
+            "glob": "generators.json",
+            "output": "."
+          },
+          {
+            "input": "./tools/azure/plugin",
+            "glob": "executors.json",
+            "output": "."
+          }
+        ]
+      }
+    },
+    "typecheck": {}
+  }
+}

@@ -16,7 +16,7 @@ mark **only the fixed threads** resolved. Declined/deferred threads stay **open*
 reply for the human — nothing gets silently dismissed. "Address PR feedback" includes the
 GitHub thread-resolution writes; do them unless the user explicitly opts out.
 
-Known review bots (none is enabled by default; see conventions §4):
+Known review bots (none is enabled by default; see [What counts as feedback](#what-counts-as-feedback)):
 
 | Reviewer       | First comment `author.login`         |
 | -------------- | ------------------------------------ |
@@ -24,6 +24,21 @@ Known review bots (none is enabled by default; see conventions §4):
 
 Step 2 discovers the actual thread authors before filtering — surface any login not in this
 table (e.g. a newly added review bot) rather than skipping it.
+
+### What counts as feedback
+
+Moved here from `docs/agents/conventions.md` §4. A monitor event can re-surface any new PR
+comment; before acting, confirm it is genuine reviewer feedback.
+
+- **Actionable:** humans, and any review bot the maintainer later enables. No automated reviewer
+  is configured today — Copilot code review needs a paid plan the maintainer chose not to buy
+  (#110), so maintainer approval is the only review gate. A review bot added later is advisory
+  (never a required check) and gets a row in the table above.
+- **Noise — skip:** CI-status bots, comments authored by `cybertec-bot`, comments with an
+  "addressed by" signature from the same workflow, already-resolved/outdated threads (unless the
+  underlying feedback still applies).
+
+If nothing qualifies, say so and stop — do not fabricate a no-op fix.
 
 ## Preconditions
 
@@ -93,8 +108,8 @@ Fixed threads: an optional "Fixed in {short-sha}." Declined/deferred: a reply is
 ### 5. Commit, verify, push (only if step 3 produced code changes)
 
 ```bash
-npm exec nx test {project}
-npm exec nx run-many -t build -p {affected}   # when compilation could be affected; CI doesn't run build on PRs to develop only if... check conventions §9
+pnpm exec nx test {project}
+pnpm exec nx run-many -t build -p {affected}   # when compilation could be affected; CI also builds every project on each PR
 git -c user.name="cybertec-bot" -c user.email="cybertec-bot@cybertec.io" commit -F /tmp/msg.txt
 git push cybertec-bot HEAD
 ```
