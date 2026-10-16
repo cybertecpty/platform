@@ -3,7 +3,8 @@ name: Deploy Affected Apps
 # Single production deploy workflow for every app (issue #76, ADR 0012 amendment). On merge
 # to `main` (the develop -> main promotion of ADR 0011) it asks Nx which apps with a
 # `deploy` target are affected by the push and deploys each one in a matrix job. Adding a
-# deployable app is a project.json change (a `deploy` target), not a new workflow.
+# deployable app is a project.json change (a `deploy` target), not a new workflow. It then
+# merges main back into develop (`back-merge` job, ADR 0015).
 #
 # Per-app contract:
 #   - a GitHub Environment named after the Nx project, holding that app's deploy secret
@@ -154,3 +155,66 @@ jobs:
             exit 0
           fi
           BASE_URL="$url" pnpm exec nx run "$app-e2e:smoke"
+
+  # Merge main back into develop so the next release is cut from a develop that contains
+  # this one (ADR 0015). Pushes directly as the `cybertec-back-merge` GitHub App, a bypass
+  # actor on `protect-develop`; its key lives in the `back-merge` environment, which only
+  # `main` can use. Doesn't wait on `deploy`: the release commit is on main whether or not
+  # an app deployed. Only ever lands a merge of commits already on main — on conflict it
+  # aborts and fails, and the back-merge is done by hand through a normal PR.
+  back-merge:
+    needs: affected
+    runs-on: ubuntu-latest
+    environment:
+      name: back-merge
+    steps:
+      - name: Create GitHub App token
+        id: app-token
+        uses: actions/create-github-app-token@v3
+        with:
+          client-id: ${{ secrets.BACK_MERGE_APP_CLIENT_ID }}
+          private-key: ${{ secrets.BACK_MERGE_APP_PRIVATE_KEY }}
+          permission-contents: write
+
+      - name: Checkout develop
+        uses: actions/checkout@v7
+        with:
+          ref: develop
+          fetch-depth: 0
+          token: ${{ steps.app-token.outputs.token }}
+
+      # Author the merge as the App's bot user. Logging the slug also makes a GH013
+      # "not authorized to push" easy to match against the ruleset's bypass actor.
+      - name: Configure git author
+        shell: bash
+        env:
+          GH_TOKEN: ${{ steps.app-token.outputs.token }}
+          APP_SLUG: ${{ steps.app-token.outputs.app-slug }}
+        run: |
+          user_id="$(gh api "users/${APP_SLUG}[bot]" --jq .id)"
+          echo "Back-merge pushes as ${APP_SLUG}[bot] (user id ${user_id})."
+          git config user.name "${APP_SLUG}[bot]"
+          git config user.email "${user_id}+${APP_SLUG}[bot]@users.noreply.github.com"
+
+      - name: Back-merge main into develop
+        shell: bash
+        run: |
+          set -euo pipefail
+
+          git fetch origin main develop
+
+          if git merge-base --is-ancestor origin/main HEAD; then
+            echo "develop already contains main - nothing to back-merge."
+            exit 0
+          fi
+
+          # Always a two-parent merge (conventions §2), even when a fast-forward is possible.
+          if ! git merge --no-ff -m "chore(release): back-merge main into develop" origin/main; then
+            git merge --abort
+            echo "::error::main does not merge cleanly into develop. Back-merge it by hand through a PR (merge commit, not squash)."
+            exit 1
+          fi
+
+          # Never force. A non-fast-forward rejection means develop moved since checkout;
+          # re-run the job.
+          git push origin HEAD:develop

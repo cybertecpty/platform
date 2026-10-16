@@ -152,3 +152,20 @@ Making any of these changes supersedes this section and should be recorded as an
 - ADR 0002 — `develop` as default branch; ADR 0011 — release flow (agent-driven release
   generator under the same protection model).
 - `.claude/skills/`: `commit-push-pr`, `address-pr-feedback`, `audit-drift`, `session-retrospect`.
+
+## Amendment (2026-10-16): back-merge bypass (ADR 0015)
+
+The locked parameter "the maintainer (admin) is the only bypass" no longer holds for `develop`.
+ADR 0015 adds the `cybertec-back-merge` GitHub App as a bypass actor on `protect-develop` so the
+`deploy-affected.yml` workflow can merge `main` back into `develop` after every push to `main`.
+
+What does not change:
+
+- `cybertec-bot` and every agent session still have no bypass; agent work still reaches `develop`
+  only through an approved PR.
+- `protect-main` keeps the maintainer as its only bypass.
+- The App can only land a merge of commits already approved into `main`. It aborts on conflict and
+  never adds content of its own (ADR 0015, "What the job may do").
+
+The "single point of failure" risk above now reads: the maintainer is the only approver and the
+only bypass actor on `main`.
