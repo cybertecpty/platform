@@ -232,7 +232,7 @@ Mobile-first. All multi-column grids use `auto-fit` + `minmax(...)` so they coll
 - ~~**A1 — Analytics:**~~ **Resolved (#91).** Cloudflare Web Analytics (cookieless, no banner); see §11.
 - **A2 — Scroll-spy:** active-nav-link highlighting from v2.1 is not implemented. Implement or drop.
 - **A3 — Caching and compression:** `staticwebapp.config.json` has security headers only; add cache and compression headers if the site is redeployed.
-- ~~**A4 — CI gates:**~~ **Resolved (#94).** CI now runs an axe check (WCAG 2.0/2.1/2.2 A and AA, desktop and mobile; `cybertec-io-e2e:e2e`) and a Lighthouse gate (`cybertec-io-e2e:lighthouse`: ≥ 95 in all four categories, LCP < 2.0s, CLS < 0.05, mobile and desktop). Both run against the production build in `ci.yml`.
+- ~~**A4 — CI gates:**~~ **Resolved (#94).** CI now runs an axe check (WCAG 2.0/2.1/2.2 A and AA, desktop and mobile; `cybertec-io-e2e:e2e`) and a Lighthouse gate (`cybertec-io-e2e:lighthouse`: ≥ 95 in all four categories, LCP < 2.0s, CLS < 0.05, mobile and desktop). Both run against the production build in `lint-and-test-affected.yml`.
 - **N4 — pre-launch (launch gate):** trademark search for "CyberTec" (name remains contested); native-Japanese-speaker review of the 匠 mark is lower urgency now its story is off the page, but still advisable since the mark reads as 匠. _(Owner: Daniel.)_
 - **O3 — Phase-2 trigger (non-blocking):** reputation milestone that flips the site back toward the boutique framing (preserved separately).
 - **O4 — future proof (Phase 2):** sanitized metrics/references/repos for a real "Selected Work" later.
@@ -252,7 +252,7 @@ Checked items are met by the shipped source. Unchecked items are open (see §14)
 - [x] Responsive mobile-first; nav condenses to a disclosure menu; mobile menu tap target ≥44px; `prefers-reduced-motion` honored; footer year dynamic. Scroll-spy not implemented (A2).
 - [x] SEO: static HTML, JSON-LD `Person`, sitemap, robots, canonical, Open Graph and Twitter card.
 - [x] Lighthouse ≥95 across Performance, Accessibility, Best Practices, SEO; LCP <2.0s, CLS <0.05. Production build of the one-screen page, 2026-10-14: mobile 99/100/100/100 (LCP 1.8s, CLS 0); desktop 100/100/100/100 (LCP 0.4s, CLS 0). Dropping the unused Fraunces italic preload took mobile LCP from 2.1s to under 2.0s. An earlier live run on 2026-10-07 (before the hero font preload) had desktop Performance at 94 (CLS 0.154).
-- [x] CI runs the Lighthouse and axe gates (A4, #94): `cybertec-io-e2e:e2e` (axe) and `cybertec-io-e2e:lighthouse`, both in `ci.yml`.
+- [x] CI runs the Lighthouse and axe gates (A4, #94): `cybertec-io-e2e:e2e` (axe) and `cybertec-io-e2e:lighthouse`, both in `lint-and-test-affected.yml`.
 
 ---
 

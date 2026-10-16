@@ -13,7 +13,7 @@
  *   3. writes a Markdown report to the job summary and, on a non-fork PR,
  *      upserts it as a single PR comment (matched by MARKER).
  *
- * Invoked from `.github/workflows/ci.yml` via `actions/github-script`:
+ * Invoked from `.github/workflows/lint-and-test-affected.yml` via `actions/github-script`:
  *   const report = require(`${process.env.GITHUB_WORKSPACE}/.github/scripts/coverage-report.cjs`);
  *   await report({ github, context, core });
  *
