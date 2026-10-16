@@ -1,3 +1,9 @@
+## 1.2.0 (2026-10-15)
+
+### 🚀 Features
+
+- **cybertec-io:** add cloudflare web analytics beacon ([#121](https://github.com/cybertecpty/platform/pull/121), [#91](https://github.com/cybertecpty/platform/issues/91))
+
 ## 1.1.0 (2026-10-13)
 
 ### 🚀 Features
