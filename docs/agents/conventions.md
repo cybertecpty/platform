@@ -51,7 +51,7 @@ policy so they're in place when the tooling lands, but don't assume they're acti
 | Claude Code hooks (`.claude/hooks/`, `settings.json`)     | ✅ live — bot-identity guard, end-of-turn format (§1, §8)      | —       |
 | Commitlint / `commit-msg` hook                            | ✅ live — `commit-msg` hook + CI PR-title check (#32)          | §3      |
 | `@cybertecpty/*` publish on merge to `main`               | ❌ no release flow, no packages                                | §2      |
-| `cybertec-back-merge` app                                 | app installed, not driving anything                            | §2      |
+| `cybertec-back-merge` app                                 | ✅ live — `back-merge` job in `deploy-affected.yml` (ADR 0015) | —       |
 | pnpm (`pnpm-lock.yaml`, `pnpm exec nx`)                   | ✅ live — pnpm@10.34.5, `node-linker=isolated` (PR #17)        | —       |
 | Application frameworks (Angular 22, NestJS 11)            | ✅ live — `@nx/angular` / `@nx/nest`, path-alias TS (ADR 0005) | —       |
 
@@ -120,7 +120,7 @@ not proof. Prefer `git branch -d` (refuses unmerged work).
   explicitly (the default is now `develop`), and carry **no** closing keywords — the issues
   they promote were already closed when the work merged to `develop`.
 - Never push directly to `develop` or `main`. Never force-push a shared branch — add
-  a new commit.
+  a new commit. (The one automated exception is the `main` → `develop` back-merge below.)
 
 **Branch protection (live).** Rulesets `protect-develop` and `protect-main` enforce,
 on both branches:
@@ -135,9 +135,15 @@ on both branches:
 - no force-push, no branch deletion;
 - merge methods: squash or merge commit.
 
-Repo admins (currently just the maintainer) can bypass. A CI-status or release
-automation account that needs to push directly would have to be added as a bypass
-actor — none is today.
+Repo admins (currently just the maintainer) can bypass both. On `protect-develop` only,
+the `cybertec-back-merge` GitHub App is also a bypass actor (ADR 0015). `cybertec-bot`
+and agent sessions have no bypass on either branch.
+
+**Back-merge (live).** After every push to `main`, the `back-merge` job in
+`deploy-affected.yml` merges `main` into `develop` and pushes it directly as the App — a
+real two-parent merge (`--no-ff`), never a squash. On conflict it aborts and fails; then
+back-merge by hand on a `chore/back-merge-main-{date}` branch through a normal PR, merged
+as a **merge commit**.
 
 **Intended (not wired yet — see §0):**
 
@@ -145,8 +151,6 @@ actor — none is today.
   publishable packages exist. Release PRs into `main` merge as **merge commits, not
   squash** — squashing orphans the `{project}@{version}` tag the release generator
   creates on the release branch, breaking the next release's baseline.
-- `main` → `develop` back-merges (via the `cybertec-back-merge` app or manually) are
-  real two-parent merges.
 
 ---
 
