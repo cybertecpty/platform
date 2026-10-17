@@ -1,0 +1,15 @@
+# `<%= name %>` generator
+
+<%- summary %>
+
+## Usage
+
+```sh
+nx g <%= packageName %>:<%= name %> {name}
+```
+
+## Options
+
+- `name` — the first positional argument. TODO: describe what it names.
+
+Document each option here as it is added to `schema.json` and `schema.ts`.

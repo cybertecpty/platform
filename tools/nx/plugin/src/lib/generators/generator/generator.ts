@@ -3,6 +3,7 @@ import { formatFiles, generateFiles, joinPathFragments, names, Tree } from '@nx/
 import { generatorGenerator as nxGeneratorGenerator } from '@nx/plugin/generators';
 import {
   appendPluginExports,
+  readPluginPackageName,
   readPluginProject,
   removeUpstreamSchemaDeclaration,
   sortPluginCollection,
@@ -20,7 +21,8 @@ const GENERATORS_DIR = 'src/lib/generators';
  * writes to `src/lib/generators/<directory>/generator.ts`. After the upstream
  * generator runs it aligns the output with the workspace conventions: the
  * ambient `schema.d.ts` is replaced with a type-checked `schema.ts` exporting
- * `<Name>GeneratorOptions` (the `typecheck` target, issue #48), the `libs/${name}` starter is replaced with a minimal one, the
+ * `<Name>GeneratorOptions` (the `typecheck` target, issue #48), the
+ * `libs/${name}` starter is replaced with a minimal one, a README is added, the
  * generator is re-exported from the plugin's `src/index.ts`, and the plugin's
  * `generators.json` collection and `package.json` dependencies are
  * alpha-sorted.
@@ -52,7 +54,14 @@ export async function nxGenGenerator(tree: Tree, options: NxGenGeneratorOptions)
 
   // The starter writes a `schema.ts` in its place.
   removeUpstreamSchemaDeclaration(tree, generatorDir, 'generator');
-  writeStarterFiles(tree, generatorDir, { className, generatorFnName, name, unitTestRunner });
+  writeStarterFiles(tree, generatorDir, {
+    className,
+    generatorFnName,
+    name,
+    packageName: readPluginPackageName(tree, projectConfig.root) ?? project,
+    summary: description ?? `TODO: describe what the \`${name}\` generator scaffolds.`,
+    unitTestRunner
+  });
   appendPluginExports(tree, projectConfig, {
     kind: 'generator',
     directory,
@@ -70,7 +79,7 @@ export async function nxGenGenerator(tree: Tree, options: NxGenGeneratorOptions)
 /**
  * Overwrites the delegated `generator.ts` (and `generator.spec.ts`, when a
  * unit-test runner is configured) with the workspace's minimal starter, adds a
- * type-checked `schema.ts` exporting `<Name>GeneratorOptions`, and drops
+ * type-checked `schema.ts` exporting `<Name>GeneratorOptions` and a `README.md`, and drops
  * `@nx/plugin`'s placeholder `files/` template so the folder starts clean.
  */
 function writeStarterFiles(
@@ -80,6 +89,8 @@ function writeStarterFiles(
     className: string;
     generatorFnName: string;
     name: string;
+    packageName: string;
+    summary: string;
     unitTestRunner: 'jest' | 'none';
   }
 ): void {

@@ -201,6 +201,28 @@ describe('nxGenGenerator', () => {
       expect(tree.exists(`${genDir}/files/src/index.ts.template`)).toBe(false);
     });
 
+    it('writes a README with the description and a usage command', async () => {
+      tree.write(
+        `${PLUGIN_ROOT}/package.json`,
+        JSON.stringify({ name: '@cybertecpty/demo-plugin' })
+      );
+
+      await run(tree, { name: 'release-manifest', description: 'Write <a> & "b".' });
+
+      const readme = tree.read(`${genDir}/README.md`, 'utf-8') ?? '';
+      expect(readme).toContain('# `release-manifest` generator');
+      expect(readme).toContain('Write <a> & "b".');
+      expect(readme).toContain('nx g @cybertecpty/demo-plugin:release-manifest {name}');
+    });
+
+    it('leaves a purpose TODO in the README and falls back to the project name', async () => {
+      await run(tree, { name: 'release-manifest' });
+
+      const readme = tree.read(`${genDir}/README.md`, 'utf-8') ?? '';
+      expect(readme).toContain('TODO: describe what the `release-manifest` generator scaffolds.');
+      expect(readme).toContain('nx g demo-plugin:release-manifest {name}');
+    });
+
     it('fails loudly if `@nx/plugin:generator` stops emitting `schema.d.ts`', async () => {
       nxGeneratorGeneratorMock.mockImplementationOnce((tree, options) => {
         const dir = options.path.slice(0, options.path.lastIndexOf('/'));

@@ -33,6 +33,8 @@ exactly what each one rewrites.
   `{Name}GeneratorOptions` / `{Name}ExecutorOptions`, not `…Schema`.
 - The plugin's `src/index.ts` re-exports the default function and its options type, and the
   `generators.json` / `executors.json` collection is alpha-sorted.
+- Each artifact folder has its own `README.md`: its purpose, its options, and a usage command
+  (generators) or an example target (executors).
 
 Executors also follow these rules:
 
@@ -43,7 +45,6 @@ Executors also follow these rules:
   logs through `logger` (never `console`), and returns a structured `{ success }`.
 - Specs build their context with `createExecutorContextFixture` from `@cybertecpty/nx-testing`,
   not a hand-rolled `ExecutorContext`.
-- Each executor folder has a `README.md` with its options and an example target.
 - Out of scope until a real need appears: batch implementations, custom hashers, and wiring a
   target into a consuming project.
 
