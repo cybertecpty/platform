@@ -1,7 +1,7 @@
 /**
- * Options for the `swa-deploy` executor.
+ * Options for the `swa-deploy` executor. Keep in step with `schema.json`.
  */
-export interface SwaDeployExecutorSchema {
+export interface SwaDeployExecutorOptions {
   /**
    * Folder to deploy, relative to the workspace root. Defaults to the single output the
    * build target declares; the deploy fails if it declares none or several.

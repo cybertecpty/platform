@@ -1,7 +1,7 @@
 import { resolveTargetOutputFolder, runCommand } from '@cybertecpty/nx-utils';
 import { logger, type ExecutorContext, type PromiseExecutor } from '@nx/devkit';
 import { join } from 'node:path';
-import type { SwaDeployExecutorSchema } from './schema';
+import type { SwaDeployExecutorOptions } from './schema';
 
 export const TOKEN_VARIABLE = 'SWA_CLI_DEPLOYMENT_TOKEN';
 
@@ -23,7 +23,7 @@ type OutputPathResult = { outputPath: string } | { error: string };
  * the wrong thing or fails inside `swa` with an unclear error.
  */
 const resolveOutputPath = (
-  options: SwaDeployExecutorSchema,
+  options: SwaDeployExecutorOptions,
   context: ExecutorContext,
   projectName: string
 ): OutputPathResult => {
@@ -52,7 +52,7 @@ const resolveOutputPath = (
  * interactive login that offers to create a new Static Web App. The token reaches the
  * CLI through the environment, never as an argument.
  */
-const swaDeployExecutor: PromiseExecutor<SwaDeployExecutorSchema> = (options, context) => {
+const swaDeployExecutor: PromiseExecutor<SwaDeployExecutorOptions> = (options, context) => {
   const projectName = context.projectName;
 
   if (!projectName) {
