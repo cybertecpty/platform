@@ -1,8 +1,5 @@
-import {
-  createFakeLibraryGenerator,
-  createWorkspaceTreeFixture,
-  lastCallArg
-} from '@cybertecpty/nx-testing';
+import { lastCallArg } from '@cybertecpty/jest-testing';
+import { createFakeLibraryGenerator, createWorkspaceTreeFixture } from '@cybertecpty/nx-testing';
 import * as devkit from '@nx/devkit';
 import { addProjectConfiguration, readJson, Tree } from '@nx/devkit';
 import { libraryGenerator as nxJsLibraryGenerator } from '@nx/js';

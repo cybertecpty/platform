@@ -1,4 +1,5 @@
-import { createExecutorContextFixture, lastCallArg } from '@cybertecpty/nx-testing';
+import { lastCallArg } from '@cybertecpty/jest-testing';
+import { createExecutorContextFixture } from '@cybertecpty/nx-testing';
 import { runCommand } from '@cybertecpty/nx-utils';
 import { logger, type ExecutorContext, type TargetConfiguration } from '@nx/devkit';
 import { join } from 'node:path';

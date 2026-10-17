@@ -240,3 +240,53 @@ owns, and its `depConstraints` row(s).
 - Nx docs: "Enforce Module Boundaries" and the `@nx/enforce-module-boundaries` rule
   options (`onlyDependOnLibsWithTags`, `notDependOnLibsWithTags`, `bannedExternalImports`,
   `enforceBuildableLibDependency`, `checkNestedExternalImports`).
+
+## Amendment (2026-10-17): environment-agnostic testing libs may be `scope:shared`
+
+- Status: accepted
+- Deciders: djmcgrath
+- Implemented by: `jest-testing` (`libs/shared/jest/testing`, tagged `domain:shared`,
+  `scope:shared`, `type:testing`); the `type:testing` comment in `eslint.config.mjs`;
+  issue #158
+
+The locked parameter "Testing libs are scoped `scope:frontend` or `scope:backend`, never
+`scope:shared`" rests on "a mock is environment-specific". That holds for a double of an
+Angular service or a Nest provider, but not for every test helper. `lastCallArg` (added to
+`nx-testing` in #157) only reads a Jest mock's `mock.calls`: it imports nothing and runs the
+same in a browser-environment spec as in a Node one. Under the old rule it could only live in
+a `scope:backend` or `scope:tools` lib, which frontend specs may not import. ADR 0009 already
+describes `type:testing` as spanning all three scopes, the same as `type:utils`, so the two
+ADRs disagreed.
+
+### Considered options
+
+1. **Leave general-purpose helpers in `nx-testing`** (`scope:tools`) until a spec outside
+   `tools/` needs one. No change now, but the first frontend consumer forces this decision
+   anyway, and the helper keeps an Nx name it has nothing to do with.
+2. **Move them to a `scope:backend` testing lib.** Allowed today, since `scope:tools` may import
+   `scope:backend`, but frontend specs still couldn't use it.
+3. **Allow `scope:shared` testing libs for environment-agnostic helpers.** **(chosen)**
+
+### Decision
+
+- **The locked parameter is replaced by:** a testing lib takes the `scope:` of the code its
+  helpers are tied to: `scope:frontend` for Angular doubles, `scope:backend` for Node and Nest
+  ones, `scope:tools` for helpers built on Nx devkit types. A lib whose helpers work in any
+  environment is `scope:shared`.
+- **No `depConstraints` row changes.** The `scope:shared` row already limits such a lib to other
+  `scope:shared` libs and carries the zod ban, so an environment-specific import fails
+  `nx lint` there just as it does for a `scope:shared` util. Only the `type:testing` comment in
+  `eslint.config.mjs` changes.
+- **The first such lib is `jest-testing`** (`libs/shared/jest/testing`, ADR 0009 layout). It is
+  for helpers that need nothing but Jest's own mock shape. `lastCallArg` moves there from
+  `nx-testing`, and `nx-testing` no longer exports it.
+
+### Consequences
+
+- **Positive:** frontend, backend and tools specs share one copy of each general-purpose helper.
+  ADR 0004 and ADR 0009 now agree that `type:testing` spans every scope.
+- **Negative / risk:** "works in any environment" is a judgement made when a helper is added,
+  and lint catches only imports, not runtime use. A helper that touches a Node global (`process`,
+  `Buffer`) without importing anything would pass lint in a `scope:shared` lib and fail only in
+  a browser-environment spec. Keep `scope:shared` testing helpers to plain JavaScript and Jest's
+  own APIs.

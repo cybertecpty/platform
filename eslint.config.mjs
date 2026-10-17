@@ -244,8 +244,8 @@ export default [
               // Test helpers, mocks, fixtures, builders. May depend on any typed lib so
               // it can build doubles for it — except type:app and type:e2e, which are
               // leaf projects nothing should import (notDependOnLibsWithTags is
-              // transitive). Scoped frontend or backend, never shared, so a mock does
-              // not leak across environments.
+              // transitive). Scoped to the environment its helpers are tied to; a lib
+              // whose helpers work anywhere is scope:shared (ADR 0004 2026-10-17 amendment).
               sourceTag: 'type:testing',
               onlyDependOnLibsWithTags: ['type:*'],
               notDependOnLibsWithTags: ['type:app', 'type:e2e']
