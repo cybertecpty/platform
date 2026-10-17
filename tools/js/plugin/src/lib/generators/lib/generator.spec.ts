@@ -1,6 +1,6 @@
+import { createFakeLibraryGenerator, createWorkspaceTreeFixture } from '@cybertecpty/nx-testing';
 import * as devkit from '@nx/devkit';
-import { addProjectConfiguration, readJson, Tree, updateJson, writeJson } from '@nx/devkit';
-import { createTreeWithEmptyWorkspace } from '@nx/devkit/testing';
+import { addProjectConfiguration, readJson, Tree } from '@nx/devkit';
 import { libraryGenerator as nxJsLibraryGenerator } from '@nx/js';
 import { libGenerator } from './generator';
 import { LibGeneratorOptions } from './schema';
@@ -13,33 +13,12 @@ const nxJsLibraryGeneratorMock = nxJsLibraryGenerator as jest.MockedFunction<
   typeof nxJsLibraryGenerator
 >;
 
-/**
- * Stand-in for `@nx/js:library`: writes the minimal project config and
- * `tsconfig.lib.json` the real generator would, appends the new project's
- * path entry to `tsconfig.base.json` (unsorted, same as the real generator),
- * so the wrapper's post-delegation edits have a project (and tsconfigs) to
- * read, then returns a no-op task.
- */
-function fakeNxJsLibraryGenerator(tree: Tree, options: { name: string; directory: string }) {
-  addProjectConfiguration(tree, options.name, {
-    root: options.directory,
-    projectType: 'library',
-    targets: { build: {} }
-  });
-  writeJson(tree, `${options.directory}/tsconfig.lib.json`, {
+/** Stand-in for `@nx/js:library`, which also writes the `tsconfig.lib.json` the real one would. */
+const fakeNxJsLibraryGenerator = createFakeLibraryGenerator({
+  tsConfigLib: {
     compilerOptions: { outDir: '../../../dist/out-tsc', declaration: true, types: ['node'] }
-  });
-  updateJson(tree, 'tsconfig.base.json', json => {
-    json.compilerOptions.paths = {
-      ...json.compilerOptions.paths,
-      [`@cybertecpty/${options.name}`]: [`./${options.directory}/src/index.ts`]
-    };
-
-    return json;
-  });
-
-  return Promise.resolve(jest.fn());
-}
+  }
+});
 
 function run(
   tree: Tree,
@@ -66,11 +45,8 @@ describe('libGenerator', () => {
 
   beforeEach(() => {
     jest.clearAllMocks();
-    tree = createTreeWithEmptyWorkspace();
-    writeJson(tree, 'tsconfig.base.json', {
-      compilerOptions: {
-        paths: { '@cybertecpty/zzz-existing': ['./tools/zzz/existing/src/index.ts'] }
-      }
+    tree = createWorkspaceTreeFixture({
+      tsConfigPaths: { '@cybertecpty/zzz-existing': ['./tools/zzz/existing/src/index.ts'] }
     });
     formatFiles = jest.spyOn(devkit, 'formatFiles').mockResolvedValue();
     loggerWarn = jest.spyOn(devkit.logger, 'warn').mockImplementation(() => undefined);
