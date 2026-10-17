@@ -142,6 +142,10 @@ Auto-merge pre-arms and then waits for the required `ci` check **and** the maint
 approval — it will not merge unreviewed. If the bot is not authorized for the branch, report
 that; do not grant bypass to force a self-merge.
 
+Converting the PR to draft (`gh pr ready {n} --undo`, e.g. to park it while it's reworked) also
+**turns auto-merge off**. After `gh pr ready {n}`, re-run the `gh pr merge … --auto --squash` above,
+then check `gh pr view {n} --json autoMergeRequest`.
+
 ### 9. Switch back to the maintainer
 
 ```bash

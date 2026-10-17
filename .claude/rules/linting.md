@@ -16,8 +16,8 @@ Moved here from `docs/agents/conventions.md` §8. Loads when editing an ESLint c
   `tseslint.configs.disableTypeChecked` override rather than the workspace opting out.
 - On top of that base ruleset, `eslint.config.mjs` carries a **plugin layer** (ADR
   0008): `@ngrx/eslint-plugin` `configs.signals` on `{apps,libs}/**/*.ts` (SignalStore
-  footguns), `eslint-plugin-jest` `flat/recommended` on spec / mock files
-  (`.claude/rules/testing.md`), `@typescript-eslint/no-deprecated` on all TS (flags
+  footguns), `eslint-plugin-jest` `flat/recommended` on spec files and test
+  artifacts (`*.{mock,stub,fake,fixture}.ts` and plurals, `.claude/rules/testing.md`), `@typescript-eslint/no-deprecated` on all TS (flags
   `@deprecated` symbols — the one `strictTypeChecked` rule promoted),
   `@eslint-community/eslint-plugin-eslint-comments`, and a curated list of
   `eslint-plugin-unicorn` rules (never its preset).
