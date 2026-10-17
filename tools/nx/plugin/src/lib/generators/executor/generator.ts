@@ -1,5 +1,5 @@
 import { assertValidPathSegment } from '@cybertecpty/nx-utils';
-import { formatFiles, generateFiles, joinPathFragments, names, Tree, writeJson } from '@nx/devkit';
+import { formatFiles, generateFiles, joinPathFragments, names, Tree } from '@nx/devkit';
 import { executorGenerator as nxExecutorGenerator } from '@nx/plugin/generators';
 import {
   appendPluginExports,
@@ -56,9 +56,9 @@ export async function nxExecGenerator(tree: Tree, options: NxExecGeneratorOption
 
   // The starter writes a `schema.ts` in its place.
   removeUpstreamSchemaDeclaration(tree, executorDir, 'executor');
-  writeStrictSchemaJson(tree, executorDir, { name, description });
   writeStarterFiles(tree, executorDir, {
     className,
+    description,
     executorFnName,
     name,
     packageName: readPluginPackageName(tree, projectConfig.root) ?? project,
@@ -82,36 +82,17 @@ export async function nxExecGenerator(tree: Tree, options: NxExecGeneratorOption
 }
 
 /**
- * Overwrites `@nx/plugin`'s `schema.json` with a strict one. Written as JSON rather
- * than a template so the description is escaped correctly.
- */
-function writeStrictSchemaJson(
-  tree: Tree,
-  executorDir: string,
-  { name, description }: { name: string; description: string }
-): void {
-  writeJson(tree, joinPathFragments(executorDir, 'schema.json'), {
-    $schema: 'https://json-schema.org/schema',
-    version: 2,
-    title: `${name} executor`,
-    description,
-    type: 'object',
-    properties: {},
-    required: [],
-    additionalProperties: false
-  });
-}
-
-/**
- * Overwrites the delegated `executor.ts` (and `executor.spec.ts`, when a unit-test
- * runner is configured) with the workspace's minimal starter, and adds `schema.ts`
- * and `README.md`.
+ * Overwrites the delegated `executor.ts`, `schema.json` and (when a unit-test runner is
+ * configured) `executor.spec.ts` with the workspace's minimal, strict starters, and adds
+ * `schema.ts` and `README.md`. The `schema.json` template embeds the description with
+ * `JSON.stringify`, so quotes and backslashes stay valid JSON.
  */
 function writeStarterFiles(
   tree: Tree,
   executorDir: string,
   substitutions: {
     className: string;
+    description: string;
     executorFnName: string;
     name: string;
     packageName: string;

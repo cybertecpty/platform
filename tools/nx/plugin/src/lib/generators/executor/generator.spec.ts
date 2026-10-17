@@ -193,14 +193,14 @@ describe('nxExecGenerator', () => {
       );
     });
 
-    it('writes a strict `schema.json` carrying the description', async () => {
-      await run(tree, { name: 'swa-deploy', description: 'Deploy "it".' });
+    it('writes a strict `schema.json` carrying the description, escaped as JSON', async () => {
+      await run(tree, { name: 'swa-deploy', description: 'Deploy "it" <now> & C:\\dist.' });
 
       expect(readJson(tree, `${execDir}/schema.json`)).toEqual({
         $schema: 'https://json-schema.org/schema',
         version: 2,
         title: 'swa-deploy executor',
-        description: 'Deploy "it".',
+        description: 'Deploy "it" <now> & C:\\dist.',
         type: 'object',
         properties: {},
         required: [],
