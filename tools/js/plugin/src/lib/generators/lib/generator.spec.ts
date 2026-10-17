@@ -1,4 +1,8 @@
-import { createFakeLibraryGenerator, createWorkspaceTreeFixture } from '@cybertecpty/nx-testing';
+import {
+  createFakeLibraryGenerator,
+  createWorkspaceTreeFixture,
+  lastCallArg
+} from '@cybertecpty/nx-testing';
 import * as devkit from '@nx/devkit';
 import { addProjectConfiguration, readJson, Tree } from '@nx/devkit';
 import { libraryGenerator as nxJsLibraryGenerator } from '@nx/js';
@@ -29,13 +33,7 @@ function run(
 
 /** The options `@nx/js:library` was called with on the most recent run. */
 function forwardedOptions() {
-  const lastCall = nxJsLibraryGeneratorMock.mock.calls.at(-1);
-
-  if (!lastCall) {
-    throw new Error('`@nx/js:library` was never called');
-  }
-
-  return lastCall[1];
+  return lastCallArg(nxJsLibraryGeneratorMock, 1, '`@nx/js:library`');
 }
 
 describe('libGenerator', () => {

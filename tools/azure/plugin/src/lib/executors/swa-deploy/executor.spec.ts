@@ -1,4 +1,4 @@
-import { createExecutorContextFixture } from '@cybertecpty/nx-testing';
+import { createExecutorContextFixture, lastCallArg } from '@cybertecpty/nx-testing';
 import { runCommand } from '@cybertecpty/nx-utils';
 import { logger, type ExecutorContext, type TargetConfiguration } from '@nx/devkit';
 import { join } from 'node:path';
@@ -23,7 +23,8 @@ const createContextFixture = (
     overrides
   );
 
-const lastError = (): string => jest.mocked(logger.error).mock.calls.at(-1)?.[0] as string;
+const lastError = (): string =>
+  lastCallArg(jest.mocked(logger.error), 0, '`logger.error`') as string;
 
 describe('swaDeployExecutor', () => {
   const originalToken = process.env[TOKEN_VARIABLE];

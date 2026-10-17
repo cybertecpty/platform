@@ -1,3 +1,4 @@
+import { lastCallArg } from '@cybertecpty/nx-testing';
 import * as devkit from '@nx/devkit';
 import {
   addProjectConfiguration,
@@ -117,13 +118,7 @@ function run(tree: Tree, options: Partial<NxGenGeneratorOptions> & { name: strin
 
 /** The options `@nx/plugin:generator` was called with on the most recent run. */
 function forwardedOptions() {
-  const lastCall = nxGeneratorGeneratorMock.mock.calls.at(-1);
-
-  if (!lastCall) {
-    throw new Error('`@nx/plugin:generator` was never called');
-  }
-
-  return lastCall[1];
+  return lastCallArg(nxGeneratorGeneratorMock, 1, '`@nx/plugin:generator`');
 }
 
 describe('nxGenGenerator', () => {
