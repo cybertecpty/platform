@@ -309,3 +309,37 @@ rules that catch real bugs rather than style.
 - One more version pin, held back a major by the ESLint 9 peer range.
 - Adding a rule from the plugin is a normal `eslint.config.mjs` edit; adopting a preset
   reopens this ADR.
+
+## Amendment (2026-10-17): Jest block covers every test-artifact suffix
+
+- Status: proposed
+- Deciders: djmcgrath
+- Implemented by: the Jest block's `files` in `eslint.config.mjs`; the naming convention in
+  `.claude/rules/testing.md` (#136)
+
+Test helpers outside spec files are named `<name>.<kind>.ts`, where the kind says what the
+artifact is: a test double (`mock`, `stub`, `fake`) or test data (`fixture`), each with a plural
+form for a file holding several. The Jest block only matched `*.{mock,mocks}.ts`, so a
+`*.fixture.ts` (the first being `nx-executor-context.fixture.ts` in `nx-testing`) got neither the
+Jest globals nor the test-code relaxations.
+
+### Decision
+
+- **The locked Jest glob widens** from `**/*.{mock,mocks}.ts` to
+  `**/*.{mock,mocks,stub,stubs,fake,fakes,fixture,fixtures}.ts`, next to
+  `**/*.{spec,test}.ts`. `flat/recommended` and the four relaxations are unchanged.
+- **No `spy` or `dummy` suffix.** Spies are created inline (`jest.spyOn`) and dummies are
+  literals; neither warrants its own file.
+- **No `builder` suffix.** A test-data builder (a function returning valid data with per-test
+  overrides) is a `.fixture`. `*.builder.ts` would collide with production builders (query or URL
+  builders) and with Angular CLI builders, the Architect counterpart of Nx executors, and the
+  glob would then wrongly lint them as test code. `.factory` was rejected for the same reason
+  (Angular injection factories).
+
+### Consequences
+
+- These suffixes are reserved for test artifacts. A production file using one of them would get
+  Jest globals and relaxed rules. `mock`, `stub`, `fake` and `fixture` have no common production
+  meaning, which is why they were chosen.
+- Coverage is unaffected: the preset still counts these files, so fixtures and fakes in a
+  `type:testing` lib need their own specs.

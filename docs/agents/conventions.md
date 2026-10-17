@@ -17,7 +17,7 @@ one part of the repo lives next to it and loads on demand:
 | When a decision needs an ADR, how to write one       | `.claude/skills/write-adr`           | a decision picks between real alternatives   |
 | Vetting a new dependency                             | `.claude/skills/add-dependency`      | before `pnpm add`                            |
 | Generator templates & the five generator surfaces    | `.claude/rules/generators.md`        | working in `tools/*/plugin/**`               |
-| Spec style, coverage mechanics                       | `.claude/rules/testing.md`           | editing specs / Jest config                  |
+| Spec style, test-artifact naming, coverage           | `.claude/rules/testing.md`           | editing specs, test artifacts, Jest config   |
 | `tsconfig` layout, `baseUrl`, `typecheck` stub       | `.claude/rules/project-config.md`    | editing `project.json` / `tsconfig*.json`    |
 | Typed linting & the ESLint plugin layer              | `.claude/rules/linting.md`           | editing an `eslint.config.mjs`               |
 | Commitlint formatter internals                       | `.claude/rules/commitlint.md`        | working on `tools/git/utils/**`, `.husky/**` |
@@ -341,7 +341,7 @@ skill.
   - **Exception: an Astro site with no `src/**/*.ts`** is exempt; its `test` target
     asserts on the built output instead (ADR 0007 2026-09-23 amendment).
 - **Spec files are type-checked by the `typecheck` target, not `test`** — run it too.
-- Spec style and coverage mechanics: `.claude/rules/testing.md`.
+- Spec style, test-artifact naming and coverage mechanics: `.claude/rules/testing.md`.
 
 ### Verification defaults
 

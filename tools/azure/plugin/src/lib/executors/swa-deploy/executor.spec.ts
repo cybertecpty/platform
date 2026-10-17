@@ -1,3 +1,4 @@
+import { createExecutorContextFixture } from '@cybertecpty/nx-testing';
 import { runCommand } from '@cybertecpty/nx-utils';
 import { logger, type ExecutorContext, type TargetConfiguration } from '@nx/devkit';
 import { join } from 'node:path';
@@ -12,32 +13,15 @@ const runCommandMock = jest.mocked(runCommand);
 
 const DEFAULT_BUILD: TargetConfiguration = { outputs: ['{workspaceRoot}/dist/{projectRoot}'] };
 
-/** A context whose project graph gives `cybertec-io` the given targets. */
-const createContext = (
+/** A context fixture whose project graph gives `cybertec-io` the given targets. */
+const createContextFixture = (
   targets: Record<string, TargetConfiguration> = { build: DEFAULT_BUILD },
   overrides: Partial<ExecutorContext> = {}
-): ExecutorContext => ({
-  root: '/workspace',
-  cwd: '/workspace',
-  isVerbose: false,
-  projectName: 'cybertec-io',
-  projectGraph: {
-    nodes: {
-      'cybertec-io': {
-        name: 'cybertec-io',
-        type: 'app',
-        data: { root: 'apps/cybertec-io', targets }
-      }
-    },
-    dependencies: {}
-  },
-  projectsConfigurations: {
-    version: 2,
-    projects: { 'cybertec-io': { root: 'apps/cybertec-io', targets } }
-  },
-  nxJsonConfiguration: {},
-  ...overrides
-});
+): ExecutorContext =>
+  createExecutorContextFixture(
+    { projectName: 'cybertec-io', projectRoot: 'apps/cybertec-io', targets },
+    overrides
+  );
 
 const lastError = (): string => jest.mocked(logger.error).mock.calls.at(-1)?.[0] as string;
 
@@ -65,7 +49,9 @@ describe('swaDeployExecutor', () => {
 
   describe('deploy folder', () => {
     it("deploys the build target's single output to production by default", async () => {
-      await expect(swaDeployExecutor({}, createContext())).resolves.toEqual({ success: true });
+      await expect(swaDeployExecutor({}, createContextFixture())).resolves.toEqual({
+        success: true
+      });
 
       expect(runCommandMock).toHaveBeenCalledWith({
         command: join('/workspace', 'node_modules', '.bin', 'swa'),
@@ -83,7 +69,7 @@ describe('swaDeployExecutor', () => {
         defaultConfiguration: 'production'
       };
 
-      await swaDeployExecutor({}, createContext({ build }));
+      await swaDeployExecutor({}, createContextFixture({ build }));
 
       expect(runCommandMock).toHaveBeenCalledWith(
         expect.objectContaining({ args: expect.arrayContaining(['dist/production']) as string[] })
@@ -93,7 +79,7 @@ describe('swaDeployExecutor', () => {
     it('reads the output of the target named by buildTarget', async () => {
       const targets = { 'build-static': { outputs: ['{workspaceRoot}/dist/static'] } };
 
-      await swaDeployExecutor({ buildTarget: 'build-static' }, createContext(targets));
+      await swaDeployExecutor({ buildTarget: 'build-static' }, createContextFixture(targets));
 
       expect(runCommandMock).toHaveBeenCalledWith(
         expect.objectContaining({ args: expect.arrayContaining(['dist/static']) as string[] })
@@ -101,7 +87,10 @@ describe('swaDeployExecutor', () => {
     });
 
     it('prefers the outputPath option, without needing a build target', async () => {
-      await swaDeployExecutor({ outputPath: 'dist/custom', env: 'preview' }, createContext({}));
+      await swaDeployExecutor(
+        { outputPath: 'dist/custom', env: 'preview' },
+        createContextFixture({})
+      );
 
       expect(runCommandMock).toHaveBeenCalledWith(
         expect.objectContaining({
@@ -129,7 +118,7 @@ describe('swaDeployExecutor', () => {
         'exactly one output folder'
       ]
     ])('fails before calling swa when %s', async (_label, targets, expected) => {
-      await expect(swaDeployExecutor({}, createContext(targets))).resolves.toEqual({
+      await expect(swaDeployExecutor({}, createContextFixture(targets))).resolves.toEqual({
         success: false
       });
 
@@ -141,7 +130,7 @@ describe('swaDeployExecutor', () => {
     it('reports an unresolvable deploy folder before a missing token', async () => {
       delete process.env[TOKEN_VARIABLE];
 
-      await swaDeployExecutor({}, createContext({}));
+      await swaDeployExecutor({}, createContextFixture({}));
 
       expect(lastError()).toContain('has no "build" target');
     });
@@ -151,7 +140,7 @@ describe('swaDeployExecutor', () => {
     it('never passes the token as an argument', async () => {
       process.env[TOKEN_VARIABLE] = 'secret-token-value';
 
-      await swaDeployExecutor({}, createContext());
+      await swaDeployExecutor({}, createContextFixture());
 
       expect(JSON.stringify(runCommandMock.mock.calls)).not.toContain('secret-token-value');
     });
@@ -167,7 +156,9 @@ describe('swaDeployExecutor', () => {
         process.env[TOKEN_VARIABLE] = token;
       }
 
-      await expect(swaDeployExecutor({}, createContext())).resolves.toEqual({ success: false });
+      await expect(swaDeployExecutor({}, createContextFixture())).resolves.toEqual({
+        success: false
+      });
 
       expect(runCommandMock).not.toHaveBeenCalled();
       expect(lastError()).toContain(`${TOKEN_VARIABLE} is not set`);
@@ -179,12 +170,14 @@ describe('swaDeployExecutor', () => {
   it('passes through an unsuccessful deploy', async () => {
     runCommandMock.mockResolvedValue({ success: false });
 
-    await expect(swaDeployExecutor({}, createContext())).resolves.toEqual({ success: false });
+    await expect(swaDeployExecutor({}, createContextFixture())).resolves.toEqual({
+      success: false
+    });
   });
 
   it('fails when run outside a project target', async () => {
     await expect(
-      swaDeployExecutor({}, createContext(undefined, { projectName: undefined }))
+      swaDeployExecutor({}, createContextFixture(undefined, { projectName: undefined }))
     ).resolves.toEqual({ success: false });
 
     expect(runCommandMock).not.toHaveBeenCalled();
