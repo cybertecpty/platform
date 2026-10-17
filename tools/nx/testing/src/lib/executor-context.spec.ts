@@ -1,5 +1,5 @@
 import type { TargetConfiguration } from '@nx/devkit';
-import { createExecutorContext } from './nx-executor-context.utils';
+import { createExecutorContext } from './executor-context';
 
 describe('createExecutorContext', () => {
   const build: TargetConfiguration = { outputs: ['{workspaceRoot}/dist/{projectRoot}'] };

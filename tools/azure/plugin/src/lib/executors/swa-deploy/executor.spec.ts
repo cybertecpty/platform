@@ -1,4 +1,5 @@
-import { createExecutorContext, runCommand } from '@cybertecpty/nx-utils';
+import { createExecutorContext } from '@cybertecpty/nx-testing';
+import { runCommand } from '@cybertecpty/nx-utils';
 import { logger, type ExecutorContext, type TargetConfiguration } from '@nx/devkit';
 import { join } from 'node:path';
 import swaDeployExecutor, { TOKEN_VARIABLE } from './executor';
