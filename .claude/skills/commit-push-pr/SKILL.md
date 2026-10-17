@@ -127,8 +127,10 @@ Capture the PR number from the `/pull/{n}` URL.
 
 `.github/CODEOWNERS` already makes GitHub auto-request the maintainer's review, so
 `--reviewer djmcgrath101` is belt-and-suspenders — keep it so the request still
-fires if CODEOWNERS ever stops matching. If it errors (e.g. the maintainer can't be
-requested on this PR), drop the flag and re-run; do not block the PR on it.
+fires if CODEOWNERS ever stops matching. If it errors (`Could not add requested reviewers`),
+the PR has usually been created anyway: check the output for a `/pull/{n}` URL first. If it is
+there, carry on — CODEOWNERS has already requested the review, and re-running would try to open
+a duplicate PR. Only if no URL printed, drop the flag and re-run; do not block the PR on it.
 
 ### 8. Arm auto-merge
 
@@ -158,8 +160,9 @@ Always last, even if an earlier step failed. `gh` rests at the maintainer betwee
 
 When one of the agent's own PRs has merged and its remote branch is auto-deleted, prune the
 stale local branch — but only after confirming `MERGED` via
-`gh pr list --state merged --head {branch}`. Prefer `git branch -d`. Never touch branches or
-worktrees the agent's workflow didn't create.
+`gh pr list --state merged --head {branch}`. `develop` squash-merges, so `git branch -d` refuses
+("not fully merged") — the squash commit is not the branch tip. Once `MERGED` is confirmed,
+`git branch -D` is expected. Never touch branches or worktrees the agent's workflow didn't create.
 
 ## Constraints
 

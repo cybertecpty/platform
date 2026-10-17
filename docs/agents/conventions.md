@@ -97,7 +97,8 @@ After one of the agent's own PRs merges and its remote branch is auto-deleted, p
 the stale local branch (and any worktree attached to it). Scope strictly to branches
 this agent's workflow created — never touch carryover from another session (§6).
 Confirm `MERGED` via `gh pr list --state merged --head {branch}`; `[gone]` alone is
-not proof. Prefer `git branch -d` (refuses unmerged work).
+not proof. `develop` squash-merges, so `git branch -d` refuses a merged branch ("not fully
+merged"); once `MERGED` is confirmed, `git branch -D` is expected.
 
 ### GitHub MCP boundary
 
