@@ -7,6 +7,7 @@
       "@cybertecpty/fs-utils": ["./libs/shared/fs/utils/src/index.ts"],
       "@cybertecpty/git-utils": ["./tools/git/utils/src/index.ts"],
       "@cybertecpty/github-utils": ["./tools/github/utils/src/index.ts"],
+      "@cybertecpty/jest-testing": ["./libs/shared/jest/testing/src/index.ts"],
       "@cybertecpty/js-plugin": ["./tools/js/plugin/src/index.ts"],
       "@cybertecpty/node-plugin": ["./tools/node/plugin/src/index.ts"],
       "@cybertecpty/nx-plugin": ["./tools/nx/plugin/src/index.ts"],

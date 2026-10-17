@@ -1,4 +1,4 @@
-import { lastCallArg } from './nx-mock-calls.utils';
+import { lastCallArg } from './jest-mock-calls.utils';
 
 describe('lastCallArg', () => {
   it("returns the given argument of the mock's most recent call", () => {

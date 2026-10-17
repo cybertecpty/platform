@@ -1,4 +1,4 @@
-import { lastCallArg } from '@cybertecpty/nx-testing';
+import { lastCallArg } from '@cybertecpty/jest-testing';
 import * as devkit from '@nx/devkit';
 import {
   addProjectConfiguration,
