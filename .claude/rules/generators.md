@@ -24,6 +24,8 @@ executor with `nx g @cybertecpty/nx-plugin:nx-exec {name} --project={plugin}`, n
 exactly what each one rewrites.
 
 - The target must be a `type:plugin` project, named by `--project`, not a path.
+- The wrappers refuse to overwrite an existing artifact, whether its folder or its collection
+  entry. `@nx/plugin` itself overwrites both silently, so to regenerate, delete the folder first.
 - Each artifact gets its own folder: `src/lib/generators/{directory}/` or
   `src/lib/executors/{directory}/`. `--directory` defaults to `name` and is only for when the
   folder should differ from the collection key.

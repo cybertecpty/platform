@@ -6,6 +6,11 @@ import {
   type ProjectConfiguration,
   type Tree
 } from '@nx/devkit';
+import { addGlobal } from '@nx/js';
+import { ensureTypescript } from '@nx/js/internal';
+
+/** The TypeScript module, loaded on first use the way `@nx/*` generators load it. */
+let tsModule: ReturnType<typeof ensureTypescript> | undefined;
 
 /** The artifact a workspace wrapper scaffolds into a plugin: a generator or an executor. */
 export type PluginArtifactKind = 'executor' | 'generator';
@@ -102,29 +107,75 @@ export function removeUpstreamSchemaDeclaration(
 }
 
 /**
- * Re-exports an artifact's default function and options type from the plugin's
- * `src/index.ts`, once — when the index already imports the artifact, it is left
- * untouched.
+ * Throws when the plugin already has an artifact in `artifactDir` or a `name` entry in its
+ * collection. Upstream `@nx/plugin` overwrites both without warning, which would silently
+ * replace a real implementation with the starter. Call it before delegating.
  */
-export function appendPluginExports(
+export function assertArtifactAbsent(
+  tree: Tree,
+  projectRoot: string,
+  { kind, name, artifactDir }: { kind: PluginArtifactKind; name: string; artifactDir: string }
+): void {
+  if (tree.exists(artifactDir)) {
+    throw new Error(
+      `The ${kind} folder ${artifactDir} already exists. Delete it first to regenerate it, ` +
+        'or pass a different `directory`.'
+    );
+  }
+
+  const collectionPath = resolvePluginCollectionPath(tree, projectRoot, kind);
+  const collection = tree.exists(collectionPath)
+    ? readJson<Record<string, Record<string, unknown> | undefined>>(tree, collectionPath)
+    : {};
+
+  if (COLLECTION_KEYS[kind].some(key => collection[key]?.[name] !== undefined)) {
+    throw new Error(
+      `${collectionPath} already has a "${name}" ${kind}. Pick a different \`name\`, ` +
+        'or remove the existing entry first.'
+    );
+  }
+}
+
+/**
+ * Re-exports an artifact's default function and options type from the plugin's
+ * `src/index.ts` with `@nx/js`'s `addGlobal`, creating the index if it is missing.
+ * `addGlobal` inserts after the last `import` (at the top of an exports-only barrel);
+ * `formatFiles` then sorts the exports. It does not check for duplicates: the wrappers
+ * refuse to regenerate an existing artifact (`assertArtifactAbsent`), and a duplicate
+ * export would fail `typecheck` anyway.
+ */
+export function addPluginExports(
   tree: Tree,
   { root, sourceRoot }: Pick<ProjectConfiguration, 'root' | 'sourceRoot'>,
   { kind, directory, fnName, optionsType }: PluginArtifactExport
 ): void {
   const indexPath = joinPathFragments(sourceRoot ?? joinPathFragments(root, 'src'), 'index.ts');
-  const existing = tree.exists(indexPath) ? (tree.read(indexPath, 'utf-8') ?? '') : '';
   const artifactDir = `./lib/${kind}s/${directory}`;
-  const importPath = `${artifactDir}/${kind}`;
 
-  if ([`'${importPath}'`, `"${importPath}"`].some(quoted => existing.includes(quoted))) {
-    return;
+  if (!tree.exists(indexPath)) {
+    tree.write(indexPath, '');
   }
 
-  const additions =
-    `export { default as ${fnName} } from '${importPath}';\n` +
-    `export type { ${optionsType} } from '${artifactDir}/schema';\n`;
+  tsModule ??= ensureTypescript();
+  let sourceFile = tsModule.createSourceFile(
+    indexPath,
+    tree.read(indexPath, 'utf-8') ?? '',
+    tsModule.ScriptTarget.Latest,
+    true
+  );
 
-  tree.write(indexPath, existing ? `${existing.trimEnd()}\n${additions}` : additions);
+  sourceFile = addGlobal(
+    tree,
+    sourceFile,
+    indexPath,
+    `export type { ${optionsType} } from '${artifactDir}/schema';`
+  );
+  addGlobal(
+    tree,
+    sourceFile,
+    indexPath,
+    `export { default as ${fnName} } from '${artifactDir}/${kind}';`
+  );
 }
 
 /**
@@ -160,9 +211,7 @@ export function sortPluginCollection(
   kind: PluginArtifactKind
 ): void {
   const keys = COLLECTION_KEYS[kind];
-  const packageJson = readPluginPackageJson(tree, projectRoot);
-  const declared = keys.map(key => packageJson[key]).find(value => typeof value === 'string');
-  const collectionPath = joinPathFragments(projectRoot, declared ?? `${kind}s.json`);
+  const collectionPath = resolvePluginCollectionPath(tree, projectRoot, kind);
 
   if (!tree.exists(collectionPath)) {
     return;
@@ -188,6 +237,24 @@ function readPluginPackageJson(tree: Tree, projectRoot: string): Record<string, 
   return tree.exists(packageJsonPath)
     ? readJson<Record<string, unknown>>(tree, packageJsonPath)
     : {};
+}
+
+/**
+ * The plugin's generator or executor collection file, resolved the way Nx does: the
+ * `package.json` field (`generators` / `schematics`, `executors` / `builders`), falling back
+ * to `{kind}s.json`. The file may not exist yet.
+ */
+function resolvePluginCollectionPath(
+  tree: Tree,
+  projectRoot: string,
+  kind: PluginArtifactKind
+): string {
+  const packageJson = readPluginPackageJson(tree, projectRoot);
+  const declared = COLLECTION_KEYS[kind]
+    .map(key => packageJson[key])
+    .find((value): value is string => typeof value === 'string');
+
+  return joinPathFragments(projectRoot, declared ?? `${kind}s.json`);
 }
 
 /** A copy of `record` with its keys in code-unit order, as `Array.prototype.sort` orders them. */

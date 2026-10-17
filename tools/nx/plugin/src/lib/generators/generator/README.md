@@ -22,7 +22,11 @@ e.g. `nx g @cybertecpty/nx-plugin:nx-gen release-manifest --project=release-plug
 - Replaces the `libs/{name}` starter and its spec with minimal ones, and drops upstream's example
   `files/` template.
 - Adds a generator-local `README.md`: the description (or a TODO), a usage command and options.
-- Re-exports the generator and its options type from the plugin's `src/index.ts`, once.
+- Refuses to run when the generator folder or its collection entry already exists, because upstream
+  would silently overwrite a real implementation with the starter. Delete the folder first to
+  regenerate.
+- Re-exports the generator and its options type from the plugin's `src/index.ts`, using `@nx/js`'s
+  `addGlobal`.
 - Alpha-sorts the plugin's `generators.json` and its `package.json` dependencies, which upstream
   reorders by moving `@nx/devkit` to the top.
 

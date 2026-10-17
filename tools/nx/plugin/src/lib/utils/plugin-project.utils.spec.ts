@@ -3,7 +3,8 @@ import { createTreeWithEmptyWorkspace } from '@nx/devkit/testing';
 import { readFileSync } from 'node:fs';
 import { join } from 'node:path';
 import {
-  appendPluginExports,
+  addPluginExports,
+  assertArtifactAbsent,
   assertValidArtifactName,
   readPluginPackageName,
   readPluginProject,
@@ -143,7 +144,59 @@ describe('removeUpstreamSchemaDeclaration', () => {
   );
 });
 
-describe('appendPluginExports', () => {
+describe('assertArtifactAbsent', () => {
+  let tree: Tree;
+  const artifactDir = `${PLUGIN_ROOT}/src/lib/executors/swa-deploy`;
+  const target = { kind: 'executor', name: 'swa-deploy', artifactDir } as const;
+
+  beforeEach(() => {
+    tree = createTreeWithEmptyWorkspace();
+  });
+
+  it('passes for a new artifact', () => {
+    tree.write(`${PLUGIN_ROOT}/executors.json`, JSON.stringify({ executors: { other: {} } }));
+
+    expect(() => assertArtifactAbsent(tree, PLUGIN_ROOT, target)).not.toThrow();
+  });
+
+  it('passes when the plugin has no collection file yet', () => {
+    expect(() => assertArtifactAbsent(tree, PLUGIN_ROOT, target)).not.toThrow();
+  });
+
+  it('refuses an artifact folder that already exists', () => {
+    tree.write(`${artifactDir}/executor.ts`, 'export default () => undefined;');
+
+    expect(() => assertArtifactAbsent(tree, PLUGIN_ROOT, target)).toThrow(
+      `The executor folder ${artifactDir} already exists. Delete it first to regenerate it`
+    );
+  });
+
+  it('refuses a name already in the collection, even under another folder', () => {
+    tree.write(
+      `${PLUGIN_ROOT}/executors.json`,
+      JSON.stringify({ executors: { 'swa-deploy': { implementation: './elsewhere' } } })
+    );
+
+    expect(() => assertArtifactAbsent(tree, PLUGIN_ROOT, target)).toThrow(
+      `${PLUGIN_ROOT}/executors.json already has a "swa-deploy" executor`
+    );
+  });
+
+  it('checks the legacy collection key and a collection path declared in package.json', () => {
+    tree.write(`${PLUGIN_ROOT}/package.json`, JSON.stringify({ schematics: './collection.json' }));
+    tree.write(`${PLUGIN_ROOT}/collection.json`, JSON.stringify({ schematics: { demo: {} } }));
+
+    expect(() =>
+      assertArtifactAbsent(tree, PLUGIN_ROOT, {
+        kind: 'generator',
+        name: 'demo',
+        artifactDir: `${PLUGIN_ROOT}/src/lib/generators/demo`
+      })
+    ).toThrow(`${PLUGIN_ROOT}/collection.json already has a "demo" generator`);
+  });
+});
+
+describe('addPluginExports', () => {
   let tree: Tree;
   const indexPath = `${PLUGIN_ROOT}/src/index.ts`;
   const demoExecutor = {
@@ -152,73 +205,53 @@ describe('appendPluginExports', () => {
     fnName: 'demoExecutor',
     optionsType: 'DemoExecutorOptions'
   } as const;
-  const demoExports = [
-    `export { default as demoExecutor } from './lib/executors/demo/executor';`,
-    `export type { DemoExecutorOptions } from './lib/executors/demo/schema';`,
-    ''
-  ].join('\n');
+  const DEFAULT_EXPORT = `export { default as demoExecutor } from './lib/executors/demo/executor';`;
+  const TYPE_EXPORT = `export type { DemoExecutorOptions } from './lib/executors/demo/schema';`;
 
   beforeEach(() => {
     tree = createTreeWithEmptyWorkspace();
     seedPlugin(tree);
   });
 
-  it('appends the default and options-type re-exports after the existing exports', () => {
+  it('adds the default and options-type re-exports above an exports-only barrel', () => {
     tree.write(indexPath, `export * from './lib/other';\n`);
 
-    appendPluginExports(
-      tree,
-      { root: PLUGIN_ROOT, sourceRoot: `${PLUGIN_ROOT}/src` },
-      demoExecutor
-    );
+    addPluginExports(tree, { root: PLUGIN_ROOT, sourceRoot: `${PLUGIN_ROOT}/src` }, demoExecutor);
 
-    expect(tree.read(indexPath, 'utf-8')).toBe(`export * from './lib/other';\n${demoExports}`);
+    expect(tree.read(indexPath, 'utf-8')).toBe(
+      `${DEFAULT_EXPORT}\n${TYPE_EXPORT}\nexport * from './lib/other';\n`
+    );
+  });
+
+  it('adds them after the last import when the barrel has imports', () => {
+    tree.write(indexPath, `import './polyfill';\nexport * from './lib/other';\n`);
+
+    addPluginExports(tree, { root: PLUGIN_ROOT }, demoExecutor);
+
+    const index = tree.read(indexPath, 'utf-8') ?? '';
+    expect(index.startsWith(`import './polyfill';\n`)).toBe(true);
+    expect(index).toContain(DEFAULT_EXPORT);
+    expect(index).toContain(TYPE_EXPORT);
   });
 
   it('builds generator paths from the kind', () => {
-    appendPluginExports(
+    addPluginExports(
       tree,
       { root: PLUGIN_ROOT },
       { kind: 'generator', directory: 'demo', fnName: 'demoGenerator', optionsType: 'DemoOptions' }
     );
 
-    expect(tree.read(indexPath, 'utf-8')).toBe(
-      [
-        `export { default as demoGenerator } from './lib/generators/demo/generator';`,
-        `export type { DemoOptions } from './lib/generators/demo/schema';`,
-        ''
-      ].join('\n')
+    const index = tree.read(indexPath, 'utf-8') ?? '';
+    expect(index).toContain(
+      `export { default as demoGenerator } from './lib/generators/demo/generator';`
     );
+    expect(index).toContain(`export type { DemoOptions } from './lib/generators/demo/schema';`);
   });
 
-  it('creates the index under `<root>/src` when the project has no source root', () => {
-    appendPluginExports(tree, { root: PLUGIN_ROOT }, demoExecutor);
+  it('creates the index under `<root>/src` when the project has neither a source root nor an index', () => {
+    addPluginExports(tree, { root: PLUGIN_ROOT }, demoExecutor);
 
-    expect(tree.read(indexPath, 'utf-8')).toBe(demoExports);
-  });
-
-  it('is a no-op when run again for the same artifact', () => {
-    appendPluginExports(tree, { root: PLUGIN_ROOT }, demoExecutor);
-    appendPluginExports(tree, { root: PLUGIN_ROOT }, demoExecutor);
-
-    expect(tree.read(indexPath, 'utf-8')).toBe(demoExports);
-  });
-
-  it('treats a double-quoted import of the artifact as already exported', () => {
-    const existing = `export { default } from "./lib/executors/demo/executor";\n`;
-    tree.write(indexPath, existing);
-
-    appendPluginExports(tree, { root: PLUGIN_ROOT }, demoExecutor);
-
-    expect(tree.read(indexPath, 'utf-8')).toBe(existing);
-  });
-
-  it('does not mistake a longer path for the artifact', () => {
-    tree.write(indexPath, `export * from './lib/executors/demo/executor-utils';\n`);
-
-    appendPluginExports(tree, { root: PLUGIN_ROOT }, demoExecutor);
-
-    expect(tree.read(indexPath, 'utf-8')).toContain(demoExports);
+    expect(tree.read(indexPath, 'utf-8')).toBe(`${DEFAULT_EXPORT}\n${TYPE_EXPORT}\n`);
   });
 });
 

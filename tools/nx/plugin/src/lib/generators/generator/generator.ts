@@ -2,7 +2,8 @@ import { assertValidPathSegment } from '@cybertecpty/nx-utils';
 import { formatFiles, generateFiles, joinPathFragments, names, Tree } from '@nx/devkit';
 import { generatorGenerator as nxGeneratorGenerator } from '@nx/plugin/generators';
 import {
-  appendPluginExports,
+  addPluginExports,
+  assertArtifactAbsent,
   assertValidArtifactName,
   readPluginPackageName,
   readPluginProject,
@@ -41,6 +42,12 @@ export async function nxGenGenerator(tree: Tree, options: NxGenGeneratorOptions)
   const generatorDir = joinPathFragments(projectConfig.root, GENERATORS_DIR, directory);
   const generatorPath = joinPathFragments(generatorDir, 'generator.ts');
 
+  assertArtifactAbsent(tree, projectConfig.root, {
+    kind: 'generator',
+    name,
+    artifactDir: generatorDir
+  });
+
   await nxGeneratorGenerator(tree, {
     path: generatorPath,
     name,
@@ -63,7 +70,7 @@ export async function nxGenGenerator(tree: Tree, options: NxGenGeneratorOptions)
     summary: description ?? `TODO: describe what the \`${name}\` generator scaffolds.`,
     unitTestRunner
   });
-  appendPluginExports(tree, projectConfig, {
+  addPluginExports(tree, projectConfig, {
     kind: 'generator',
     directory,
     fnName: generatorFnName,

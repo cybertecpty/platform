@@ -2,7 +2,8 @@ import { assertValidPathSegment } from '@cybertecpty/nx-utils';
 import { formatFiles, generateFiles, joinPathFragments, names, Tree } from '@nx/devkit';
 import { executorGenerator as nxExecutorGenerator } from '@nx/plugin/generators';
 import {
-  appendPluginExports,
+  addPluginExports,
+  assertArtifactAbsent,
   assertValidArtifactName,
   readPluginPackageName,
   readPluginProject,
@@ -41,6 +42,12 @@ export async function nxExecGenerator(tree: Tree, options: NxExecGeneratorOption
   const projectConfig = readPluginProject(tree, project);
   const executorDir = joinPathFragments(projectConfig.root, EXECUTORS_DIR, directory);
 
+  assertArtifactAbsent(tree, projectConfig.root, {
+    kind: 'executor',
+    name,
+    artifactDir: executorDir
+  });
+
   await nxExecutorGenerator(tree, {
     path: joinPathFragments(executorDir, 'executor.ts'),
     name,
@@ -67,7 +74,7 @@ export async function nxExecGenerator(tree: Tree, options: NxExecGeneratorOption
     unitTestRunner
   });
 
-  appendPluginExports(tree, projectConfig, {
+  addPluginExports(tree, projectConfig, {
     kind: 'executor',
     directory,
     fnName: executorFnName,

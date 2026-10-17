@@ -276,21 +276,33 @@ describe('nxExecGenerator', () => {
     it('re-exports the executor default under its function name and the options type', async () => {
       await run(tree, { name: 'swa-deploy' });
 
+      // Unformatted order (`formatFiles` is mocked): `addGlobal` inserts at the top of an
+      // exports-only barrel.
       expect(read(indexPath)).toBe(
         [
-          `export * from './lib/existing';`,
           `export { default as swaDeployExecutor } from './lib/executors/swa-deploy/executor';`,
           `export type { SwaDeployExecutorOptions } from './lib/executors/swa-deploy/schema';`,
+          `export * from './lib/existing';`,
           ''
         ].join('\n')
       );
     });
 
-    it('does not duplicate the exports when run again for the same executor', async () => {
+    it('refuses to regenerate an executor whose folder exists, before delegating', async () => {
       await run(tree, { name: 'swa-deploy' });
-      await run(tree, { name: 'swa-deploy' });
+      nxExecutorGeneratorMock.mockClear();
 
-      expect(read(indexPath).split('./lib/executors/swa-deploy/executor').length - 1).toBe(1);
+      await expect(run(tree, { name: 'swa-deploy' })).rejects.toThrow(
+        `The executor folder ${execDir} already exists. Delete it first to regenerate it`
+      );
+      expect(nxExecutorGeneratorMock).not.toHaveBeenCalled();
+    });
+
+    it('refuses a name already in `executors.json`, even under another folder', async () => {
+      await expect(run(tree, { name: 'mmm-existing', directory: 'other' })).rejects.toThrow(
+        `${PLUGIN_ROOT}/executors.json already has a "mmm-existing" executor`
+      );
+      expect(nxExecutorGeneratorMock).not.toHaveBeenCalled();
     });
 
     it('alpha-sorts the executors collection after the new entry is appended', async () => {

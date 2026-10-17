@@ -278,14 +278,24 @@ describe('nxGenGenerator', () => {
         `export type { ReleaseManifestGeneratorOptions } from './lib/generators/release-manifest/schema';`
       );
     });
+  });
 
-    it('does not duplicate the exports when run again for the same generator', async () => {
+  describe('existing generators', () => {
+    it('refuses to regenerate a generator whose folder exists, before delegating', async () => {
       await run(tree, { name: 'release-manifest' });
-      await run(tree, { name: 'release-manifest' });
+      nxGeneratorGeneratorMock.mockClear();
 
-      const index = tree.read(indexPath, 'utf-8') ?? '';
-      const occurrences = index.split('./lib/generators/release-manifest/generator').length - 1;
-      expect(occurrences).toBe(1);
+      await expect(run(tree, { name: 'release-manifest' })).rejects.toThrow(
+        'already exists. Delete it first to regenerate it'
+      );
+      expect(nxGeneratorGeneratorMock).not.toHaveBeenCalled();
+    });
+
+    it('refuses a name already in `generators.json`, even under another folder', async () => {
+      await expect(run(tree, { name: 'nx-plugin', directory: 'other' })).rejects.toThrow(
+        'already has a "nx-plugin" generator'
+      );
+      expect(nxGeneratorGeneratorMock).not.toHaveBeenCalled();
     });
   });
 
