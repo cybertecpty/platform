@@ -1,6 +1,6 @@
 import type { ExecutorContext, TargetConfiguration } from '@nx/devkit';
 
-export interface CreateExecutorContextOptions {
+export interface CreateExecutorContextFixtureOptions {
   /** Project the executor runs for. */
   projectName: string;
 
@@ -12,15 +12,15 @@ export interface CreateExecutorContextOptions {
 }
 
 /**
- * Build an `ExecutorContext` for executor specs: one `app` project in a
+ * Build an `ExecutorContext` fixture for executor specs: one `app` project in a
  * `/workspace` root, described identically in the project graph and the
  * projects configurations. `overrides` replace top-level fields, e.g.
  * `{ projectName: undefined }` to model running outside a project target.
  * Rename the project through `options`, not `overrides`, so the graph and
  * configurations stay keyed by the same name.
  */
-export const createExecutorContext = (
-  { projectName, projectRoot, targets = {} }: CreateExecutorContextOptions,
+export const createExecutorContextFixture = (
+  { projectName, projectRoot, targets = {} }: CreateExecutorContextFixtureOptions,
   overrides: Partial<ExecutorContext> = {}
 ): ExecutorContext => ({
   root: '/workspace',

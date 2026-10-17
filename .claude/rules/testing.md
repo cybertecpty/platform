@@ -32,6 +32,17 @@ defaults. Loads when working on specs, test artifacts, `type:testing` libs, or J
   Shared artifacts go in a `type:testing` lib (ADR 0004), and an artifact used by one spec
   stays beside it.
 
+- **Name the function that creates a test artifact after its kind**, so a call site shows it
+  isn't the real thing. Ask whether it pretends to be the thing or is data of that type:
+  - A double (`mock`, `stub`, `fake`) pretends, and the kind reads as an adjective, so it goes
+    **first**: `createFakeTree`, `createMockLogger`, `createStubHttpClient`.
+  - A fixture is a real instance used as test data, and the kind reads only as a noun, so it
+    goes **last**: `createExecutorContextFixture`, `createProjectGraphFixture`.
+
+  The same applies to a spec's local wrappers (`createContextFixture`) and to exported constants
+  (`EXECUTOR_CONTEXT_FIXTURE`, `mockLogger`). File suffixes stay fixed at the end whatever the
+  kind, because the lint glob matches them.
+
 - Name the top-level `describe` after the exported unit; write `it(...)` names as
   behavior statements.
 - `eslint-plugin-jest` `flat/recommended` lints spec files and the test artifacts above

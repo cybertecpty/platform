@@ -1,11 +1,14 @@
 import type { TargetConfiguration } from '@nx/devkit';
-import { createExecutorContext } from './nx-executor-context.fixture';
+import { createExecutorContextFixture } from './nx-executor-context.fixture';
 
-describe('createExecutorContext', () => {
+describe('createExecutorContextFixture', () => {
   const build: TargetConfiguration = { outputs: ['{workspaceRoot}/dist/{projectRoot}'] };
 
   it('runs the named project from the workspace root', () => {
-    const context = createExecutorContext({ projectName: 'my-app', projectRoot: 'apps/my-app' });
+    const context = createExecutorContextFixture({
+      projectName: 'my-app',
+      projectRoot: 'apps/my-app'
+    });
 
     expect(context).toMatchObject({
       root: '/workspace',
@@ -19,7 +22,7 @@ describe('createExecutorContext', () => {
   it('describes the project the same way in the graph and the configurations', () => {
     const targets = { build };
 
-    const context = createExecutorContext({
+    const context = createExecutorContextFixture({
       projectName: 'my-app',
       projectRoot: 'apps/my-app',
       targets
@@ -38,14 +41,17 @@ describe('createExecutorContext', () => {
   });
 
   it('gives the project no targets by default', () => {
-    const context = createExecutorContext({ projectName: 'my-lib', projectRoot: 'libs/my-lib' });
+    const context = createExecutorContextFixture({
+      projectName: 'my-lib',
+      projectRoot: 'libs/my-lib'
+    });
 
     expect(context.projectsConfigurations.projects['my-lib']?.targets).toEqual({});
     expect(context.projectGraph.nodes['my-lib']?.data.targets).toEqual({});
   });
 
   it('applies overrides on top of the defaults', () => {
-    const context = createExecutorContext(
+    const context = createExecutorContextFixture(
       { projectName: 'my-app', projectRoot: 'apps/my-app' },
       { root: '/other', isVerbose: true, targetName: 'deploy' }
     );
@@ -59,7 +65,7 @@ describe('createExecutorContext', () => {
   });
 
   it('can model running outside a project target', () => {
-    const context = createExecutorContext(
+    const context = createExecutorContextFixture(
       { projectName: 'my-app', projectRoot: 'apps/my-app' },
       { projectName: undefined }
     );
