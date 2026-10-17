@@ -123,8 +123,9 @@ across apps is #114.
   to the PRs that affect it.
 - **axe is a floor.** Zero violations doesn't mean accessible; manual checks (keyboard, screen
   reader) are still needed for anything interactive.
-- **Only one app is gated so far.** The gate code lives in `apps/cybertec-io/e2e` until #114
-  makes it reusable; a new web app has to copy it until then.
+- ~~**Only one app is gated so far.** The gate code lives in `apps/cybertec-io/e2e` until #114
+  makes it reusable; a new web app has to copy it until then.~~ Resolved by the 2026-10-17
+  amendment: the gates live in `@cybertecpty/playwright-testing`.
 
 ## More information
 
