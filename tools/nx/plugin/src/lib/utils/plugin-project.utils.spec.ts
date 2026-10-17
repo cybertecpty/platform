@@ -4,9 +4,9 @@ import {
   appendPluginExports,
   readPluginPackageName,
   readPluginProject,
+  removeUpstreamSchemaDeclaration,
   sortPluginCollection,
-  sortPluginDependencies,
-  takeUpstreamSchemaDeclaration
+  sortPluginDependencies
 } from './plugin-project.utils';
 
 const PLUGIN_ROOT = 'tools/demo/plugin';
@@ -73,7 +73,7 @@ describe('readPluginPackageName', () => {
   });
 });
 
-describe('takeUpstreamSchemaDeclaration', () => {
+describe('removeUpstreamSchemaDeclaration', () => {
   let tree: Tree;
   const artifactDir = `${PLUGIN_ROOT}/src/lib/executors/demo`;
 
@@ -81,12 +81,11 @@ describe('takeUpstreamSchemaDeclaration', () => {
     tree = createTreeWithEmptyWorkspace();
   });
 
-  it('removes the ambient declaration and returns its source', () => {
+  it('removes the ambient declaration', () => {
     tree.write(`${artifactDir}/schema.d.ts`, 'export interface DemoExecutorSchema {}\n');
 
-    expect(takeUpstreamSchemaDeclaration(tree, artifactDir, 'executor')).toBe(
-      'export interface DemoExecutorSchema {}\n'
-    );
+    removeUpstreamSchemaDeclaration(tree, artifactDir, 'executor');
+
     expect(tree.exists(`${artifactDir}/schema.d.ts`)).toBe(false);
   });
 
@@ -96,7 +95,7 @@ describe('takeUpstreamSchemaDeclaration', () => {
   ] as const)(
     'fails loudly, naming the `%s` wrapper, when upstream emitted none',
     (kind, wrapper) => {
-      expect(() => takeUpstreamSchemaDeclaration(tree, artifactDir, kind)).toThrow(
+      expect(() => removeUpstreamSchemaDeclaration(tree, artifactDir, kind)).toThrow(
         `\`@nx/plugin:${kind}\` did not emit ${artifactDir}/schema.d.ts; its output shape has changed and \`${wrapper}\` needs updating.`
       );
     }

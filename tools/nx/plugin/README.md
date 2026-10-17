@@ -35,7 +35,8 @@ over the `@nx/*` generators that apply the naming, directory, and tag convention
   plugin's own `nx-gen` does, living in `generators/generator/`).
 
   On top of `@nx/plugin:generator` it swaps the ambient `schema.d.ts` for a
-  type-checked `schema.ts`, renames the `Schema` interface to `Options`, replaces
+  type-checked `schema.ts` exporting `{Name}GeneratorOptions` (written from a template,
+  as `nx-exec` does), replaces
   the `libs/${name}` starter with a minimal one, re-exports the generator from the
   plugin's `src/index.ts`, and alpha-sorts the plugin's `generators.json` and its
   `package.json` dependencies (which `@nx/plugin` reorders by hoisting `@nx/devkit`).

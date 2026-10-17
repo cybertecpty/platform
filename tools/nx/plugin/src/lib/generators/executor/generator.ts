@@ -5,9 +5,9 @@ import {
   appendPluginExports,
   readPluginPackageName,
   readPluginProject,
+  removeUpstreamSchemaDeclaration,
   sortPluginCollection,
-  sortPluginDependencies,
-  takeUpstreamSchemaDeclaration
+  sortPluginDependencies
 } from '../../utils/plugin-project.utils';
 import { NxExecGeneratorOptions } from './schema';
 
@@ -54,7 +54,7 @@ export async function nxExecGenerator(tree: Tree, options: NxExecGeneratorOption
   const executorFnName = `${propertyName}Executor`;
 
   // The starter writes a `schema.ts` in its place.
-  takeUpstreamSchemaDeclaration(tree, executorDir, 'executor');
+  removeUpstreamSchemaDeclaration(tree, executorDir, 'executor');
   writeStrictSchemaJson(tree, executorDir, { name, description });
   writeStarterFiles(tree, executorDir, {
     className,

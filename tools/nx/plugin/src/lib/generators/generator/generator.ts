@@ -4,9 +4,9 @@ import { generatorGenerator as nxGeneratorGenerator } from '@nx/plugin/generator
 import {
   appendPluginExports,
   readPluginProject,
+  removeUpstreamSchemaDeclaration,
   sortPluginCollection,
-  sortPluginDependencies,
-  takeUpstreamSchemaDeclaration
+  sortPluginDependencies
 } from '../../utils/plugin-project.utils';
 import { NxGenGeneratorOptions } from './schema';
 
@@ -19,9 +19,8 @@ const GENERATORS_DIR = 'src/lib/generators';
  * Targets an existing `type:plugin` project by name (not a raw path) and always
  * writes to `src/lib/generators/<directory>/generator.ts`. After the upstream
  * generator runs it aligns the output with the workspace conventions: the
- * ambient `schema.d.ts` becomes a type-checked `schema.ts` (conventions §8;
- * the `typecheck` target, issue #48), the `Schema` interface is renamed to
- * `Options`, the `libs/${name}` starter is replaced with a minimal one, the
+ * ambient `schema.d.ts` is replaced with a type-checked `schema.ts` exporting
+ * `<Name>GeneratorOptions` (the `typecheck` target, issue #48), the `libs/${name}` starter is replaced with a minimal one, the
  * generator is re-exported from the plugin's `src/index.ts`, and the plugin's
  * `generators.json` collection and `package.json` dependencies are
  * alpha-sorted.
@@ -51,7 +50,8 @@ export async function nxGenGenerator(tree: Tree, options: NxGenGeneratorOptions)
   const { className, propertyName } = names(name);
   const generatorFnName = `${propertyName}Generator`;
 
-  swapSchemaDeclaration(tree, generatorDir);
+  // The starter writes a `schema.ts` in its place.
+  removeUpstreamSchemaDeclaration(tree, generatorDir, 'generator');
   writeStarterFiles(tree, generatorDir, { className, generatorFnName, name, unitTestRunner });
   appendPluginExports(tree, projectConfig, {
     kind: 'generator',
@@ -68,23 +68,10 @@ export async function nxGenGenerator(tree: Tree, options: NxGenGeneratorOptions)
 }
 
 /**
- * Replaces `@nx/plugin`'s ambient `schema.d.ts` with a `schema.ts` the
- * `typecheck` target can see, renaming `<Name>GeneratorSchema` to the
- * workspace's `<Name>GeneratorOptions`.
- */
-function swapSchemaDeclaration(tree: Tree, generatorDir: string): void {
-  const source = takeUpstreamSchemaDeclaration(tree, generatorDir, 'generator');
-
-  tree.write(
-    joinPathFragments(generatorDir, 'schema.ts'),
-    source.replace(/GeneratorSchema/g, 'GeneratorOptions')
-  );
-}
-
-/**
  * Overwrites the delegated `generator.ts` (and `generator.spec.ts`, when a
- * unit-test runner is configured) with the workspace's minimal starter, and
- * drops `@nx/plugin`'s placeholder `files/` template so the folder starts clean.
+ * unit-test runner is configured) with the workspace's minimal starter, adds a
+ * type-checked `schema.ts` exporting `<Name>GeneratorOptions`, and drops
+ * `@nx/plugin`'s placeholder `files/` template so the folder starts clean.
  */
 function writeStarterFiles(
   tree: Tree,
