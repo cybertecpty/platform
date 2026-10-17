@@ -284,6 +284,9 @@ _using_ one.
 - No `any` without an inline comment explaining why.
 - Don't swallow errors — rethrow or return a structured failure.
 - Exported functions have explicit return types.
+- A shared helper's JSDoc says what it does, not who calls it. Don't name callers or call
+  sites, which go stale as soon as another project uses the helper. A project's internal
+  helpers may name the code they serve.
 - Typed linting is on workspace-wide (ADR 0006) with an ESLint plugin layer on top (ADR 0008) —
   details in `.claude/rules/linting.md`.
 - **Every `eslint-disable` must name specific rules and carry a reason** — write

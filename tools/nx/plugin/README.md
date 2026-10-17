@@ -42,7 +42,9 @@ options.
   as `nx-exec` does), replaces the `libs/${name}` starter with a minimal one, adds a
   README with a usage command, re-exports the generator from the
   plugin's `src/index.ts`, and alpha-sorts the plugin's `generators.json` and its
-  `package.json` dependencies (which `@nx/plugin` reorders by hoisting `@nx/devkit`).
+  `package.json` dependencies (which `@nx/plugin` reorders by hoisting `@nx/devkit`). It
+  refuses to run when the generator's folder or collection entry already exists, because
+  upstream would silently overwrite it.
 
 - **`nx-exec`** — scaffold an executor inside a `type:plugin` project, wrapping
   `@nx/plugin:executor`.
@@ -56,6 +58,8 @@ options.
   `--directory` when the folder should differ from the collection key.
 
   On top of `@nx/plugin:executor` it does the following:
+  - refuses to run when the executor's folder or collection entry already exists, because
+    upstream would silently overwrite it
   - swaps the ambient `schema.d.ts` for a type-checked `schema.ts` exporting
     `{Name}ExecutorOptions`
   - makes `schema.json` strict (`additionalProperties: false`)

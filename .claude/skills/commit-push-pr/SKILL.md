@@ -249,3 +249,8 @@ lint-staged re-stages what it changed, so the commit lands clean.
 - It fires on **bot commits** too. When the working tree is already formatted the hook is a
   no-op. Don't reach for `--no-verify` in the bot flow unless the hook is actively breaking a
   commit (step 5).
+- lint-staged backs up the working tree as a stash before it runs and normally deletes it
+  afterwards, but a `lint-staged automatic backup` entry has been seen left behind after a
+  successful commit. It holds nothing the commit lacks. After committing, check
+  `git stash list` and drop an entry your own commit left; leave any other stash alone
+  (conventions §5).
