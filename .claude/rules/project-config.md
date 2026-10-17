@@ -27,6 +27,11 @@ Moved here from `docs/agents/conventions.md` §8, §9 and §11. Loads when editi
   project needs both the stub and a `tsconfig.spec.json` (spec-less projects are
   fine — `files: []` in the base `tsconfig.json` suppresses `TS18003`). The
   `nx-plugin` generator emits the stub for scaffolded plugins. See issue #48.
+  - **The lib source is checked only through `tsconfig.spec.json`.** Specs import the source,
+    so it is type-checked with the spec config's `types`, which must include `node` for
+    `jest.config.cts` (`module.exports`). Narrowing `types` in `tsconfig.lib.json` (e.g.
+    dropping `node` so a `scope:shared` lib can't use `process`) therefore changes only what
+    the editor shows, not what `typecheck` or CI catches.
 - A stray `.ts` file outside every project `tsconfig` fails typed-lint project-service
   resolution — add it to a `tsconfig`, the ESLint `ignores` list, or
   `projectService.allowDefaultProject`.
