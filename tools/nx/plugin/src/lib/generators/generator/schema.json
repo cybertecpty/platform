@@ -3,7 +3,7 @@
   "cli": "nx",
   "$id": "NxGenGenerator",
   "title": "Scaffold a generator inside a workspace plugin",
-  "description": "Wrap `@nx/plugin:generator` with the workspace conventions: the generator lands at `src/lib/generators/<directory>/generator.ts` in the target plugin, with a type-checked `schema.ts` exporting an `Options` interface, a minimal starter function, and a re-export from the plugin's `src/index.ts`.",
+  "description": "Wrap `@nx/plugin:generator` with the workspace conventions: the generator lands at `src/lib/generators/<directory>/generator.ts` in the target plugin, with a type-checked `schema.ts` exporting an `Options` interface, a minimal starter function and spec, a README, and a re-export from the plugin's `src/index.ts`.",
   "type": "object",
   "examples": [
     {
@@ -18,8 +18,8 @@
   "properties": {
     "name": {
       "type": "string",
-      "description": "The generator name — its key in the target plugin's generators collection and, unless `directory` overrides it, its folder under `src/lib/generators/`. Lowercase alphanumeric words joined by single hyphens.",
-      "pattern": "^[a-z0-9]+(?:-[a-z0-9]+)*$",
+      "description": "The generator name — its key in the target plugin's generators collection and, unless `directory` overrides it, its folder under `src/lib/generators/`. Lowercase alphanumeric words joined by single hyphens, starting with a letter (it becomes part of TypeScript identifiers).",
+      "pattern": "^[a-z][a-z0-9]*(?:-[a-z0-9]+)*$",
       "x-priority": "important",
       "$default": {
         "$source": "argv",

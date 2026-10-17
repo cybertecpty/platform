@@ -1,5 +1,5 @@
 import { NxProjectOptions } from '@cybertecpty/nx-types';
-import { createProjectTags, NxProjectTags } from './nx-project-tags.utils';
+import { createProjectTags, isProjectOfType, NxProjectTags } from './nx-project-tags.utils';
 
 describe('nx-project-tags.utils', () => {
   describe('createProjectTags', () => {
@@ -96,6 +96,24 @@ describe('nx-project-tags.utils', () => {
 
       const result = createProjectTags(options);
       expect(result.toString()).toBe('scope:tools,type:plugin');
+    });
+  });
+
+  describe('isProjectOfType', () => {
+    it('is true for a project carrying the `type:{type}` tag', () => {
+      expect(isProjectOfType({ tags: ['scope:tools', 'type:plugin'] }, 'plugin')).toBe(true);
+    });
+
+    it('is false for a project of another type', () => {
+      expect(isProjectOfType({ tags: ['scope:tools', 'type:utils'] }, 'plugin')).toBe(false);
+    });
+
+    it('is false for a project without tags', () => {
+      expect(isProjectOfType({}, 'plugin')).toBe(false);
+    });
+
+    it('matches only the `type` key, not the same value under another key', () => {
+      expect(isProjectOfType({ tags: ['scope:plugin', 'domain:plugin'] }, 'plugin')).toBe(false);
     });
   });
 

@@ -1,6 +1,7 @@
-import { NxProjectOptions } from '@cybertecpty/nx-types';
+import { NxProjectOptions, type NxProjectType } from '@cybertecpty/nx-types';
 import { MapPrimitivePropsToArrays, NonNullableProps } from '@cybertecpty/shared-types';
 import { UniqMultiMap } from '@cybertecpty/shared-utils';
+import type { ProjectConfiguration } from '@nx/devkit';
 import { ArrayElement, Simplify } from 'type-fest';
 import { projectDomainToName } from './nx-domain.utils';
 import { NX_PROJECT_SCOPES, NX_PROJECT_TYPES } from './nx-projects.utils';
@@ -53,6 +54,16 @@ export function createProjectTags<T extends NxProjectOptions>(options: T): NxPro
   }
 
   return tags;
+}
+
+/**
+ * Whether `project` carries the `type:{type}` tag. A project with no tags is of no type.
+ */
+export function isProjectOfType(
+  project: Pick<ProjectConfiguration, 'tags'>,
+  type: NxProjectType
+): boolean {
+  return new NxProjectTags(project.tags).hasTag('type', type);
 }
 
 /**

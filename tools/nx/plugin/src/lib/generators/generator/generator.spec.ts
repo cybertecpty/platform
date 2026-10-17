@@ -163,6 +163,19 @@ describe('nxGenGenerator', () => {
       expect(nxGeneratorGeneratorMock).not.toHaveBeenCalled();
     });
 
+    it('rejects a `name` that would not form valid identifiers, before delegating', async () => {
+      await expect(run(tree, { name: '1password-sync' })).rejects.toThrow('starting with a letter');
+      expect(nxGeneratorGeneratorMock).not.toHaveBeenCalled();
+    });
+
+    it('accepts a digit-leading `directory`, which is only a folder', async () => {
+      await run(tree, { name: 'demo', directory: '2nd-pass' });
+
+      expect(forwardedOptions().path).toBe(
+        'tools/demo/plugin/src/lib/generators/2nd-pass/generator.ts'
+      );
+    });
+
     it('rejects a malformed `directory` before delegating', async () => {
       await expect(run(tree, { name: 'demo', directory: 'Bad/Seg' })).rejects.toThrow(
         'must be lowercase alphanumeric words joined by single hyphens'
@@ -199,6 +212,28 @@ describe('nxGenGenerator', () => {
       await run(tree, { name: 'release-manifest' });
 
       expect(tree.exists(`${genDir}/files/src/index.ts.template`)).toBe(false);
+    });
+
+    it('writes a README with the description and a usage command', async () => {
+      tree.write(
+        `${PLUGIN_ROOT}/package.json`,
+        JSON.stringify({ name: '@cybertecpty/demo-plugin' })
+      );
+
+      await run(tree, { name: 'release-manifest', description: 'Write <a> & "b".' });
+
+      const readme = tree.read(`${genDir}/README.md`, 'utf-8') ?? '';
+      expect(readme).toContain('# `release-manifest` generator');
+      expect(readme).toContain('Write <a> & "b".');
+      expect(readme).toContain('nx g @cybertecpty/demo-plugin:release-manifest {name}');
+    });
+
+    it('leaves a purpose TODO in the README and falls back to the project name', async () => {
+      await run(tree, { name: 'release-manifest' });
+
+      const readme = tree.read(`${genDir}/README.md`, 'utf-8') ?? '';
+      expect(readme).toContain('TODO: describe what the `release-manifest` generator scaffolds.');
+      expect(readme).toContain('nx g demo-plugin:release-manifest {name}');
     });
 
     it('fails loudly if `@nx/plugin:generator` stops emitting `schema.d.ts`', async () => {
@@ -243,14 +278,24 @@ describe('nxGenGenerator', () => {
         `export type { ReleaseManifestGeneratorOptions } from './lib/generators/release-manifest/schema';`
       );
     });
+  });
 
-    it('does not duplicate the exports when run again for the same generator', async () => {
+  describe('existing generators', () => {
+    it('refuses to regenerate a generator whose folder exists, before delegating', async () => {
       await run(tree, { name: 'release-manifest' });
-      await run(tree, { name: 'release-manifest' });
+      nxGeneratorGeneratorMock.mockClear();
 
-      const index = tree.read(indexPath, 'utf-8') ?? '';
-      const occurrences = index.split('./lib/generators/release-manifest/generator').length - 1;
-      expect(occurrences).toBe(1);
+      await expect(run(tree, { name: 'release-manifest' })).rejects.toThrow(
+        'already exists. Delete it first to regenerate it'
+      );
+      expect(nxGeneratorGeneratorMock).not.toHaveBeenCalled();
+    });
+
+    it('refuses a name already in `generators.json`, even under another folder', async () => {
+      await expect(run(tree, { name: 'nx-plugin', directory: 'other' })).rejects.toThrow(
+        'already has a "nx-plugin" generator'
+      );
+      expect(nxGeneratorGeneratorMock).not.toHaveBeenCalled();
     });
   });
 
@@ -275,6 +320,28 @@ describe('nxGenGenerator', () => {
       await run(tree, { name: 'mmm-middle' });
 
       expect(collectionKeys(tree)).toEqual(['mmm-middle', 'nx-plugin', 'zzz-last']);
+    });
+  });
+
+  describe('plugin package.json', () => {
+    it('re-sorts the dependencies after `@nx/plugin:generator` hoists `@nx/devkit`', async () => {
+      const packageJsonPath = `${PLUGIN_ROOT}/package.json`;
+      tree.write(
+        packageJsonPath,
+        JSON.stringify({ dependencies: { '@cybertecpty/nx-utils': '0.0.1', tslib: '^2.3.0' } })
+      );
+      nxGeneratorGeneratorMock.mockImplementationOnce(async (tree, options) => {
+        await (fakeGeneratorGenerator as unknown as typeof nxGeneratorGenerator)(tree, options);
+        devkit.updateJson(tree, packageJsonPath, (json: { dependencies: object }) => {
+          json.dependencies = { '@nx/devkit': '23.1.1', ...json.dependencies };
+          return json;
+        });
+      });
+
+      await run(tree, { name: 'demo' });
+
+      const { dependencies } = devkit.readJson<{ dependencies: object }>(tree, packageJsonPath);
+      expect(Object.keys(dependencies)).toEqual(['@cybertecpty/nx-utils', '@nx/devkit', 'tslib']);
     });
   });
 

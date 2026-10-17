@@ -1,0 +1,34 @@
+import { createExecutorContextFixture } from '@cybertecpty/nx-testing';
+import { logger, type ExecutorContext } from '@nx/devkit';
+import <%= executorFnName %> from './executor';
+import type { <%= className %>ExecutorOptions } from './schema';
+
+const createContextFixture = (overrides: Partial<ExecutorContext> = {}): ExecutorContext =>
+  createExecutorContextFixture({ projectName: 'my-app', projectRoot: 'apps/my-app' }, overrides);
+
+describe('<%= executorFnName %>', () => {
+  const options: <%= className %>ExecutorOptions = {};
+
+  beforeEach(() => {
+    jest.spyOn(logger, 'info').mockImplementation(() => undefined);
+    jest.spyOn(logger, 'error').mockImplementation(() => undefined);
+  });
+
+  afterEach(() => {
+    jest.restoreAllMocks();
+  });
+
+  it('succeeds when run as a project target', async () => {
+    await expect(<%= executorFnName %>(options, createContextFixture())).resolves.toEqual({
+      success: true
+    });
+  });
+
+  it('fails when run outside a project target', async () => {
+    await expect(
+      <%= executorFnName %>(options, createContextFixture({ projectName: undefined }))
+    ).resolves.toEqual({ success: false });
+
+    expect(logger.error).toHaveBeenCalledWith('<%= name %> must run as a project target.');
+  });
+});

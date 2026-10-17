@@ -1,0 +1,19 @@
+import { logger, type PromiseExecutor } from '@nx/devkit';
+import type { <%= className %>ExecutorOptions } from './schema';
+
+/**
+ * TODO: describe what the `<%= name %>` executor does.
+ */
+const <%= executorFnName %>: PromiseExecutor<<%= className %>ExecutorOptions> = (_options, context) => {
+  const projectName = context.projectName;
+  if (!projectName) {
+    logger.error('<%= name %> must run as a project target.');
+    return Promise.resolve({ success: false });
+  }
+
+  logger.info(`TODO: implement the "<%= name %>" executor for ${projectName}`);
+
+  return Promise.resolve({ success: true });
+};
+
+export default <%= executorFnName %>;
