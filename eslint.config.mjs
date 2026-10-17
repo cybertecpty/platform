@@ -20,6 +20,13 @@ const vitestSpecFiles = ['apps/cybertec-io/**/*.{spec,test}.ts'];
 // below ignore these files.
 const playwrightSpecFiles = ['apps/*/e2e/**/*.spec.ts'];
 
+// The shared Playwright lib's gate code (`defineLighthouseTests`, `defineAxeTests`) calls
+// Playwright's `test()` / `expect`, so it gets the Playwright rules too. Matched by folder,
+// not suffix. The lib's own unit specs run under Jest, so they are left out here and keep
+// the Jest block.
+const playwrightLibFiles = ['libs/shared/playwright/**/*.ts'];
+const playwrightLibIgnores = ['libs/shared/playwright/**/*.spec.ts'];
+
 // The two globs above are workspace-root-relative, but flat config resolves `files` /
 // `ignores` against the directory of the config file ESLint loaded — and per-project lint
 // loads `apps/<app>/eslint.config.mjs`, which spreads this file. Every block that uses
@@ -423,6 +430,14 @@ export default [
       ...playwright.configs['flat/recommended'].rules,
       '@nx/enforce-module-boundaries': 'off'
     }
+  },
+  {
+    // The same Playwright rules for the shared lib's gate code (see `playwrightLibFiles`).
+    // Unlike the specs above, it is production code of a lib, so module boundaries stay on.
+    basePath: workspaceRoot,
+    files: playwrightLibFiles,
+    ignores: playwrightLibIgnores,
+    ...playwright.configs['flat/recommended']
   },
   // Astro components (ADR 0012). `flat/recommended` parses `.astro` files and lints their
   // frontmatter and `<script>` blocks as virtual `*.astro/*.{js,ts}` files. Its
