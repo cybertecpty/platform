@@ -50,6 +50,9 @@ defaults. Loads when working on specs, test artifacts, `type:testing` libs, or J
   `.only`, an `expect()` with no matcher, or a duplicated `it()` title fails `nx lint` (ADR
   0008). The same block relaxes `@nx/enforce-module-boundaries` and a few TS rules for test code.
 - Prefer direct assertions over snapshots.
+- Run one spec file with a Jest path pattern after `--`:
+  `pnpm exec nx test {project} -- {file-pattern}`. Nx forwards unknown flags to Jest, which has no
+  `--testFile`, so that flag fails the run.
 - For Nx generators / workspace utilities, use `createTreeWithEmptyWorkspace()` and
   assert against the in-memory `Tree`, generated files, and project config.
 - **Coverage mechanics.** `jest.preset.js` sets `coverageThreshold.global` to 80 and
