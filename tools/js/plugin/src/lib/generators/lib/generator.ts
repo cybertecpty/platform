@@ -22,7 +22,7 @@ import { LibGeneratorOptions } from './schema';
  * Workspace `ts-lib` generator — a thin wrapper over `@nx/js:library`.
  *
  * Derives the project's name, directory (`libs/<domain>[/<subdomain>...]/[<group>/]<type>`,
- * ADR 0009), and tags from the shared `nx-utils` helpers rather than taking a raw
+ * or `tools/[<group>/]<type>` for `scope:tools`, ADR 0009), and tags from the shared `nx-utils` helpers rather than taking a raw
  * `directory`, then forwards every other option to `@nx/js:library` unchanged.
  *
  * `scope` is resolved before derivation: `type:infra` isn't scope-polymorphic (ADR
@@ -38,6 +38,7 @@ export async function libGenerator(
   options: LibGeneratorOptions
 ): Promise<GeneratorCallback> {
   const scope = resolveScope(options);
+  assertDomainMatchesScope(options.domain, scope);
   const projectOptions = { ...options, scope };
   const name = projectNameFromOpts(projectOptions);
   const directory = projectDirFromOpts(projectOptions);
@@ -121,6 +122,26 @@ function resolveScope(options: LibGeneratorOptions): NonNullable<LibGeneratorOpt
   }
 
   return options.scope;
+}
+
+/**
+ * A `scope:tools` project lives under `tools/` and is domain-exempt (ADR 0009), so an
+ * explicit `domain` is rejected rather than silently dropped. Every other scope places
+ * the project under `libs/<domain>/...`, which is never domain-exempt.
+ */
+function assertDomainMatchesScope(
+  domain: LibGeneratorOptions['domain'],
+  scope: NonNullable<LibGeneratorOptions['scope']>
+): void {
+  if (scope === 'tools' && domain) {
+    throw new Error(
+      '`domain` cannot be set for `scope:tools` — tools projects are domain-exempt. Omit `--domain`.'
+    );
+  }
+
+  if (scope !== 'tools' && !domain) {
+    throw new Error('`domain` must be provided for every `scope` except `tools`.');
+  }
 }
 
 export default libGenerator;
