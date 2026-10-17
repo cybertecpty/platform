@@ -57,9 +57,7 @@ export function createProjectTags<T extends NxProjectOptions>(options: T): NxPro
 }
 
 /**
- * Whether `project` carries the `type:{type}` tag — e.g. `isProjectOfType(config, 'plugin')`
- * for the `type:plugin` projects the `nx-gen` / `nx-exec` wrappers target. A project with no
- * tags is of no type.
+ * Whether `project` carries the `type:{type}` tag. A project with no tags is of no type.
  */
 export function isProjectOfType(
   project: Pick<ProjectConfiguration, 'tags'>,
