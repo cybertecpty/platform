@@ -207,7 +207,8 @@ Enforced two ways from `@commitlint/config-conventional` plus a terse custom for
 `.husky/commit-msg` hook locally, and a CI check on the **PR title** — the subject that lands,
 since `develop` squash-merges. Write the message to a file and `git commit -F {file}`.
 
-- subject **lowercase** (acronyms too), no trailing period;
+- subject **lowercase** (acronyms too), no trailing period. camelCase identifiers fail
+  `subject-case` too: `move lastCallArg` is rejected, so describe it (`move the last-call helper`);
 - header ≤ 100 characters; body / footer lines ≤ 100 (blocking);
 - blank line before any footer (warning only — the commit still lands);
 - breaking change: `!` after the type/scope — `feat(api)!: drop v1 endpoints`.
