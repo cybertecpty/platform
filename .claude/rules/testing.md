@@ -2,7 +2,7 @@
 paths:
   - '**/*.spec.ts'
   - '**/*.test.ts'
-  - '**/*.{mock,mocks,stub,stubs,fake,fakes,fixture,fixtures,builder,builders}.ts'
+  - '**/*.{mock,mocks,stub,stubs,fake,fakes,fixture,fixtures}.ts'
   - '{libs,tools}/**/testing/**'
   - '**/jest.config.*'
   - 'jest.preset.js'
@@ -17,19 +17,20 @@ defaults. Loads when working on specs, test artifacts, `type:testing` libs, or J
 - **Name test artifacts `<name>.<kind>.ts`**, by what the file exports (Meszaros's
   vocabulary), with the plural kind for a file holding several:
 
-  | Kind                     | Exports                                                                    |
-  | ------------------------ | -------------------------------------------------------------------------- |
-  | `.mock` / `.mocks`       | a double the test checks calls on (`jest.fn()`, `jest.mock` factories)     |
-  | `.stub` / `.stubs`       | a double returning canned answers, checked only through the output         |
-  | `.fake` / `.fakes`       | a working, simplified implementation (an in-memory store, a fake executor) |
-  | `.fixture` / `.fixtures` | ready-made test data: constants or named presets                           |
-  | `.builder` / `.builders` | a function building valid test data with defaults and per-test overrides   |
+  | Kind                     | Exports                                                                      |
+  | ------------------------ | ---------------------------------------------------------------------------- |
+  | `.mock` / `.mocks`       | a double the test checks calls on (`jest.fn()`, `jest.mock` factories)       |
+  | `.stub` / `.stubs`       | a double returning canned answers, checked only through the output           |
+  | `.fake` / `.fakes`       | a working, simplified implementation (an in-memory store, a fake executor)   |
+  | `.fixture` / `.fixtures` | test data: constants, presets, or a builder function with per-test overrides |
 
   Inside a group's lib, keep the group prefix the source files use
-  (`nx-executor-context.builder.ts` in `tools/nx/testing`). Spies (`jest.spyOn`) and dummies
+  (`nx-executor-context.fixture.ts` in `tools/nx/testing`). Spies (`jest.spyOn`) and dummies
   stay inline, with no suffix. These suffixes are reserved for test code; don't use them for
-  production files. Shared artifacts go in a `type:testing` lib (ADR 0004), and an artifact used
-  by one spec stays beside it.
+  production files. There is deliberately no `.builder` suffix: a test-data builder is a
+  `.fixture`, because "builder" collides with production builders and Angular CLI builders.
+  Shared artifacts go in a `type:testing` lib (ADR 0004), and an artifact used by one spec
+  stays beside it.
 
 - Name the top-level `describe` after the exported unit; write `it(...)` names as
   behavior statements.
