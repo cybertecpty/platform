@@ -1,15 +1,11 @@
-import type { ExecutorContext, TargetConfiguration } from '@nx/devkit';
+import type { ExecutorContext } from '@nx/devkit';
+import {
+  createProjectGraphFixture,
+  type CreateProjectGraphFixtureOptions
+} from './nx-project-graph.fixture';
 
-export interface CreateExecutorContextFixtureOptions {
-  /** Project the executor runs for. */
-  projectName: string;
-
-  /** Project root, relative to the workspace root. */
-  projectRoot: string;
-
-  /** The project's targets, mirrored into the project graph and configurations. */
-  targets?: Record<string, TargetConfiguration>;
-}
+/** The project the executor runs for, mirrored into the graph and the configurations. */
+export type CreateExecutorContextFixtureOptions = CreateProjectGraphFixtureOptions;
 
 /**
  * Build an `ExecutorContext` fixture for executor specs: one `app` project in a
@@ -27,12 +23,7 @@ export const createExecutorContextFixture = (
   cwd: '/workspace',
   isVerbose: false,
   projectName,
-  projectGraph: {
-    nodes: {
-      [projectName]: { name: projectName, type: 'app', data: { root: projectRoot, targets } }
-    },
-    dependencies: {}
-  },
+  projectGraph: createProjectGraphFixture({ projectName, projectRoot, targets }),
   projectsConfigurations: {
     version: 2,
     projects: { [projectName]: { root: projectRoot, targets } }
