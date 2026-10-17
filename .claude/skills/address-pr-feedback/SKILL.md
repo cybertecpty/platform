@@ -109,7 +109,7 @@ Fixed threads: an optional "Fixed in {short-sha}." Declined/deferred: a reply is
 
 ```bash
 pnpm exec nx test {project}
-pnpm exec nx run-many -t build -p {affected}   # when compilation could be affected; CI also builds every project on each PR
+pnpm exec nx run-many -t build -p {affected}   # when compilation could be affected; CI builds the affected projects on each PR
 git -c user.name="cybertec-bot" -c user.email="cybertec-bot@cybertec.io" commit -F /tmp/msg.txt
 git push cybertec-bot HEAD
 ```

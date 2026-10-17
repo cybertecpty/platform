@@ -53,7 +53,7 @@ jobs:
       # Node, not Nx projects). `pnpm verify` runs the same step locally.
       - run: node --test .github/scripts/*.test.cjs .claude/hooks/*.test.cjs
 
-      # Derive the diff base/head for format:check (and, later, `nx affected`):
+      # Derive the diff base/head for format:check and `nx affected`:
       # on a PR, the merge-base with the target branch; on a push, the last
       # successful commit on this branch. Exposes $NX_BASE / $NX_HEAD. Needs
       # `actions: read` + `fetch-depth: 0` (both set above).
@@ -69,14 +69,21 @@ jobs:
       - run: pnpm exec nx record -- pnpm exec nx format:check --base=$NX_BASE --head=$NX_HEAD
       # `lighthouse` is the cybertec-io-e2e performance/accessibility gate;
       # `e2e` also runs the axe check.
-      - run: pnpm exec nx run-many -t lint test build typecheck e2e lighthouse
+      # A PR runs only the projects it affects. A push to develop/main runs every
+      # project: a safety net for changes the project graph doesn't connect to a
+      # project, and a complete workspace coverage number (ADR 0007, 2026-10-16).
+      - if: github.event_name == 'pull_request'
+        run: pnpm exec nx affected -t lint test build typecheck e2e lighthouse --base=$NX_BASE --head=$NX_HEAD
+      - if: github.event_name != 'pull_request'
+        run: pnpm exec nx run-many -t lint test build typecheck e2e lighthouse
 
       # Coverage reporting (ADR 0007 amendment / issue #52). The `test` targets
       # collect coverage in CI (jest.preset.js) and declare
-      # `coverage/{projectRoot}` as an output, so Nx hydrates every project's
-      # report onto this runner after the distributed run. This step merges them
-      # into one workspace number, writes the job summary, and — on a non-fork PR
-      # — upserts a single coverage comment. `always()` so a coverage-threshold
+      # `coverage/{projectRoot}` as an output, so Nx hydrates each tested
+      # project's report onto this runner after the distributed run. This step
+      # merges them into one number (the whole workspace on a push, the affected
+      # projects on a PR), writes the job summary, and — on a non-fork PR —
+      # upserts a single coverage comment. `always()` so a coverage-threshold
       # failure above still produces the report.
       - name: Coverage report
         if: always()

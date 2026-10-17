@@ -191,3 +191,28 @@ describe('renderMarkdown', () => {
     assert.match(md, /no instrumented lines changed/);
   });
 });
+
+describe('renderMarkdown (affected-only PR runs)', () => {
+  const projects = [
+    { name: 'libs/x', total: fullTotal({ s: [10, 10], b: [2, 2], f: [1, 1], l: [10, 10] }) }
+  ];
+  const workspace = sumTotals(projects);
+
+  it('labels the total as the whole workspace by default', () => {
+    const md = renderMarkdown({ projects, workspace, patch: null });
+    assert.match(md, /\*\*Workspace:\*\* 100% statements/);
+  });
+
+  it('labels the total as affected projects only when affectedOnly is set', () => {
+    const md = renderMarkdown({ projects, workspace, patch: null, affectedOnly: true });
+    assert.match(md, /\*\*Affected projects:\*\* 100% statements/);
+    assert.doesNotMatch(md, /\*\*Workspace:\*\*/);
+  });
+
+  it('states that no affected project reported coverage, without a table', () => {
+    const md = renderMarkdown({ projects: [], workspace: null, patch: null, affectedOnly: true });
+    assert.ok(md.startsWith(MARKER));
+    assert.match(md, /No affected project reported coverage/);
+    assert.doesNotMatch(md, /\| Project \|/);
+  });
+});
