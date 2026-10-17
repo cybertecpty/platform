@@ -13,6 +13,11 @@ Moved here from `docs/agents/conventions.md` §8. Loads when working in an Nx pl
   `__tmpl__` is what the workspace already uses (`generators/plugin/files/src/lib/.gitkeep__tmpl__`),
   and a `__tmpl__` name falls outside the `src/**/*.ts` / `**/!(*.ts)` globs that lint,
   typecheck, and asset-copy would otherwise apply to it.
+- "Generator output" includes `schema.ts`, `schema.json` and READMEs. Don't build file contents
+  in code (`writeJson`, string-building, rewriting upstream output) when a template would do.
+  For a JSON value, write `<%- JSON.stringify(value) %>`: `<%= %>` HTML-escapes its output, so a
+  quote in a description would become `&#34;`, while `JSON.stringify` inside the unescaped tag
+  yields valid JSON.
 - Keep generator/executor folders to actual implementations; supporting constants,
   helpers, and types go in sibling `src/lib/defaults/`, `src/lib/utils/`, etc.
 
