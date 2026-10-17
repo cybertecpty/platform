@@ -278,6 +278,28 @@ describe('nxGenGenerator', () => {
     });
   });
 
+  describe('plugin package.json', () => {
+    it('re-sorts the dependencies after `@nx/plugin:generator` hoists `@nx/devkit`', async () => {
+      const packageJsonPath = `${PLUGIN_ROOT}/package.json`;
+      tree.write(
+        packageJsonPath,
+        JSON.stringify({ dependencies: { '@cybertecpty/nx-utils': '0.0.1', tslib: '^2.3.0' } })
+      );
+      nxGeneratorGeneratorMock.mockImplementationOnce(async (tree, options) => {
+        await (fakeGeneratorGenerator as unknown as typeof nxGeneratorGenerator)(tree, options);
+        devkit.updateJson(tree, packageJsonPath, (json: { dependencies: object }) => {
+          json.dependencies = { '@nx/devkit': '23.1.1', ...json.dependencies };
+          return json;
+        });
+      });
+
+      await run(tree, { name: 'demo' });
+
+      const { dependencies } = devkit.readJson<{ dependencies: object }>(tree, packageJsonPath);
+      expect(Object.keys(dependencies)).toEqual(['@cybertecpty/nx-utils', '@nx/devkit', 'tslib']);
+    });
+  });
+
   describe('formatting', () => {
     it('delegates formatting so it runs once, at the end', async () => {
       await run(tree, { name: 'demo' });

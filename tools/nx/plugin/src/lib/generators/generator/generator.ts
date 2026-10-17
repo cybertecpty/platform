@@ -1,15 +1,13 @@
 import { assertValidPathSegment } from '@cybertecpty/nx-utils';
-import {
-  formatFiles,
-  generateFiles,
-  joinPathFragments,
-  names,
-  readJson,
-  readProjectConfiguration,
-  Tree,
-  updateJson
-} from '@nx/devkit';
+import { formatFiles, generateFiles, joinPathFragments, names, Tree } from '@nx/devkit';
 import { generatorGenerator as nxGeneratorGenerator } from '@nx/plugin/generators';
+import {
+  appendPluginExports,
+  readPluginProject,
+  sortPluginCollection,
+  sortPluginDependencies,
+  takeUpstreamSchemaDeclaration
+} from '../../utils/plugin-project.utils';
 import { NxGenGeneratorOptions } from './schema';
 
 /** Path, relative to a plugin's root, that holds its generator folders. */
@@ -25,7 +23,8 @@ const GENERATORS_DIR = 'src/lib/generators';
  * the `typecheck` target, issue #48), the `Schema` interface is renamed to
  * `Options`, the `libs/${name}` starter is replaced with a minimal one, the
  * generator is re-exported from the plugin's `src/index.ts`, and the plugin's
- * `generators.json` collection is alpha-sorted.
+ * `generators.json` collection and `package.json` dependencies are
+ * alpha-sorted.
  */
 export async function nxGenGenerator(tree: Tree, options: NxGenGeneratorOptions): Promise<void> {
   const { name, project, description, skipLintChecks, skipFormat } = options;
@@ -35,14 +34,7 @@ export async function nxGenGenerator(tree: Tree, options: NxGenGeneratorOptions)
   assertValidPathSegment(name, 'name');
   assertValidPathSegment(directory, 'directory');
 
-  const projectConfig = readProjectConfiguration(tree, project);
-
-  if (!projectConfig.tags?.includes('type:plugin')) {
-    throw new Error(
-      `Project "${project}" is not a plugin (missing the \`type:plugin\` tag). ` +
-        'Scaffold the plugin with `nx g @cybertecpty/nx-plugin:nx-plugin` first.'
-    );
-  }
+  const projectConfig = readPluginProject(tree, project);
 
   const generatorDir = joinPathFragments(projectConfig.root, GENERATORS_DIR, directory);
   const generatorPath = joinPathFragments(generatorDir, 'generator.ts');
@@ -61,12 +53,14 @@ export async function nxGenGenerator(tree: Tree, options: NxGenGeneratorOptions)
 
   swapSchemaDeclaration(tree, generatorDir);
   writeStarterFiles(tree, generatorDir, { className, generatorFnName, name, unitTestRunner });
-  appendPluginExports(tree, projectConfig.root, projectConfig.sourceRoot, {
-    className,
+  appendPluginExports(tree, projectConfig, {
+    kind: 'generator',
     directory,
-    generatorFnName
+    fnName: generatorFnName,
+    optionsType: `${className}GeneratorOptions`
   });
-  sortGeneratorsCollection(tree, projectConfig.root);
+  sortPluginCollection(tree, projectConfig.root, 'generator');
+  sortPluginDependencies(tree, projectConfig.root);
 
   if (!skipFormat) {
     await formatFiles(tree);
@@ -79,21 +73,12 @@ export async function nxGenGenerator(tree: Tree, options: NxGenGeneratorOptions)
  * workspace's `<Name>GeneratorOptions`.
  */
 function swapSchemaDeclaration(tree: Tree, generatorDir: string): void {
-  const schemaDtsPath = joinPathFragments(generatorDir, 'schema.d.ts');
-
-  if (!tree.exists(schemaDtsPath)) {
-    throw new Error(
-      `\`@nx/plugin:generator\` did not emit ${schemaDtsPath}; its output shape has changed and \`nx-gen\` needs updating.`
-    );
-  }
-
-  const source = tree.read(schemaDtsPath, 'utf-8') ?? '';
+  const source = takeUpstreamSchemaDeclaration(tree, generatorDir, 'generator');
 
   tree.write(
     joinPathFragments(generatorDir, 'schema.ts'),
     source.replace(/GeneratorSchema/g, 'GeneratorOptions')
   );
-  tree.delete(schemaDtsPath);
 }
 
 /**
@@ -120,71 +105,6 @@ function writeStarterFiles(
   if (substitutions.unitTestRunner === 'none') {
     tree.delete(joinPathFragments(generatorDir, 'generator.spec.ts'));
   }
-}
-
-/**
- * Appends the generator's default and options-type re-exports to the plugin's
- * `src/index.ts`, once — re-running for the same generator is a no-op.
- */
-function appendPluginExports(
-  tree: Tree,
-  projectRoot: string,
-  sourceRoot: string | undefined,
-  parts: { className: string; directory: string; generatorFnName: string }
-): void {
-  const indexPath = joinPathFragments(
-    sourceRoot ?? joinPathFragments(projectRoot, 'src'),
-    'index.ts'
-  );
-  const generatorImport = `./lib/generators/${parts.directory}/generator`;
-  const existing = tree.exists(indexPath) ? (tree.read(indexPath, 'utf-8') ?? '') : '';
-
-  if (existing.includes(generatorImport)) {
-    return;
-  }
-
-  const additions =
-    `export { default as ${parts.generatorFnName} } from '${generatorImport}';\n` +
-    `export type { ${parts.className}GeneratorOptions } from './lib/generators/${parts.directory}/schema';\n`;
-
-  tree.write(indexPath, existing ? `${existing.trimEnd()}\n${additions}` : additions);
-}
-
-/**
- * Alpha-sorts the target plugin's generator collection so `@nx/plugin`'s
- * append-at-the-end entry lands in a stable position. Resolves the collection
- * file the same way Nx does — the `package.json` `generators` / `schematics`
- * field, falling back to `generators.json`.
- */
-function sortGeneratorsCollection(tree: Tree, projectRoot: string): void {
-  const packageJsonPath = joinPathFragments(projectRoot, 'package.json');
-  const packageJson = tree.exists(packageJsonPath)
-    ? readJson<{ generators?: string; schematics?: string }>(tree, packageJsonPath)
-    : {};
-  const collectionPath = joinPathFragments(
-    projectRoot,
-    packageJson.generators ?? packageJson.schematics ?? 'generators.json'
-  );
-
-  if (!tree.exists(collectionPath)) {
-    return;
-  }
-
-  updateJson<Record<string, Record<string, unknown> | undefined>>(tree, collectionPath, json => {
-    for (const key of ['generators', 'schematics'] as const) {
-      const collection = json[key];
-
-      if (collection) {
-        const sorted: Record<string, unknown> = {};
-        for (const generatorName of Object.keys(collection).sort()) {
-          sorted[generatorName] = collection[generatorName];
-        }
-        json[key] = sorted;
-      }
-    }
-
-    return json;
-  });
 }
 
 export default nxGenGenerator;

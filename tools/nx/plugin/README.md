@@ -37,7 +37,32 @@ over the `@nx/*` generators that apply the naming, directory, and tag convention
   On top of `@nx/plugin:generator` it swaps the ambient `schema.d.ts` for a
   type-checked `schema.ts`, renames the `Schema` interface to `Options`, replaces
   the `libs/${name}` starter with a minimal one, re-exports the generator from the
-  plugin's `src/index.ts`, and alpha-sorts the plugin's `generators.json`.
+  plugin's `src/index.ts`, and alpha-sorts the plugin's `generators.json` and its
+  `package.json` dependencies (which `@nx/plugin` reorders by hoisting `@nx/devkit`).
+
+- **`nx-exec`** — scaffold an executor inside a `type:plugin` project, wrapping
+  `@nx/plugin:executor`.
+
+  ```sh
+  nx g @cybertecpty/nx-plugin:nx-exec {name} --project={plugin}
+  ```
+
+  e.g. `nx g @cybertecpty/nx-plugin:nx-exec swa-deploy --project=azure-plugin` adds
+  `swa-deploy` at `tools/azure/plugin/src/lib/executors/swa-deploy/executor.ts`. Pass
+  `--directory` when the folder should differ from the collection key.
+
+  On top of `@nx/plugin:executor` it does the following:
+  - swaps the ambient `schema.d.ts` for a type-checked `schema.ts` exporting
+    `{Name}ExecutorOptions`
+  - makes `schema.json` strict (`additionalProperties: false`)
+  - replaces the `console.log` starter with a `PromiseExecutor` that fails outside a project
+    target and logs through `logger`
+  - writes a spec on `@cybertecpty/nx-testing`'s `createExecutorContextFixture`, and a README
+    with an example target
+  - re-exports the executor from the plugin's `src/index.ts`
+  - alpha-sorts the plugin's `executors.json` and `package.json` dependencies
+
+  The executor conventions are in `.claude/rules/generators.md`.
 
 ## Building
 

@@ -1,0 +1,21 @@
+# `<%= name %>` executor
+
+<%- summary %>
+
+Run it as `<%= packageName %>:<%= name %>`.
+
+## Options
+
+None yet. Document each option here as it is added to `schema.json` and `schema.ts`.
+
+## Example
+
+```json
+{
+  "targets": {
+    "<%= name %>": {
+      "executor": "<%= packageName %>:<%= name %>"
+    }
+  }
+}
+```
