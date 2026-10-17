@@ -1,11 +1,13 @@
-# SWA deploy executor
+# `swa-deploy` executor
 
-Deploy a project's build output to Azure Static Web Apps with `@cybertecpty/azure-plugin:swa-deploy`.
+Deploy a project's build output to Azure Static Web Apps.
+
+Run it as `@cybertecpty/azure-plugin:swa-deploy`.
 
 It runs the root devDependency's SWA CLI, non-interactively:
 
 ```
-swa deploy <outputPath> --env <env> --no-use-keychain
+swa deploy {outputPath} --env {env} --no-use-keychain
 ```
 
 ## Token

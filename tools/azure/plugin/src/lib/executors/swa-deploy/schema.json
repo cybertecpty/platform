@@ -1,7 +1,7 @@
 {
   "$schema": "https://json-schema.org/schema",
   "version": 2,
-  "title": "SWA deploy executor",
+  "title": "swa-deploy executor",
   "description": "Deploy a project's build output to Azure Static Web Apps with the SWA CLI. Reads the deployment token from SWA_CLI_DEPLOYMENT_TOKEN.",
   "type": "object",
   "properties": {
