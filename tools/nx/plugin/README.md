@@ -6,6 +6,9 @@ over the `@nx/*` generators that apply the naming, directory, and tag convention
 
 ## Generators
 
+Each generator's folder under `src/lib/generators/` has its own `README.md` with the full list of
+options.
+
 - **`nx-plugin`** — scaffold another tools plugin under `tools/<group>/plugin`, wrapping
   `@nx/plugin:plugin`.
 
