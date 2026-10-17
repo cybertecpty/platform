@@ -3,7 +3,7 @@
   "cli": "nx",
   "$id": "TsLibGenerator",
   "title": "Create a TypeScript Library",
-  "description": "Create a TypeScript library under `libs/<domain>[/<subdomain>...]/[<group>/]<type>`, wrapping `@nx/js:library` with the workspace naming, directory, and tag conventions (ADR 0009). Restricted to the framework-agnostic and backend-only, non-Nest `type:` values (`infra`, `models`, `testing`, `types`, `utils`) — Angular-only and Nest-only types are out of scope for this generator.",
+  "description": "Create a TypeScript library under `libs/<domain>[/<subdomain>...]/[<group>/]<type>`, or `tools/[<group>/]<type>` for `--scope=tools`, wrapping `@nx/js:library` with the workspace naming, directory, and tag conventions (ADR 0009). Restricted to the framework-agnostic and backend-only, non-Nest `type:` values (`infra`, `models`, `testing`, `types`, `utils`) — Angular-only and Nest-only types are out of scope for this generator.",
   "type": "object",
   "examples": [
     {
@@ -17,6 +17,10 @@
     {
       "command": "nx g ts-lib infra --domain=billing",
       "description": "Generates `billing-infra` at `libs/billing/infra`, tagged `scope:backend` automatically — `--scope` is neither required nor accepted for `infra`."
+    },
+    {
+      "command": "nx g ts-lib testing --scope=tools --group=nx",
+      "description": "Generates `nx-testing` at `tools/nx/testing`, tagged `scope:tools,type:testing` — tools projects are domain-exempt, so `--domain` is not accepted."
     }
   ],
   "properties": {
@@ -32,14 +36,14 @@
     },
     "domain": {
       "type": "string",
-      "description": "The product domain (and optional `/`-separated subdomains, e.g. `billing/checkout`) this library belongs to. Required — a `libs/` project is never domain-exempt (ADR 0009).",
+      "description": "The product domain (and optional `/`-separated subdomains, e.g. `billing/checkout`) this library belongs to. Required for every `--scope` except `tools` — a `libs/` project is never domain-exempt, while a `tools/` project always is, so `--domain` is rejected for `--scope=tools` (ADR 0009).",
       "pattern": "^[a-z0-9]+(?:-[a-z0-9]+)*(?:/[a-z0-9]+(?:-[a-z0-9]+)*)*$",
       "x-priority": "important"
     },
     "scope": {
       "type": "string",
-      "description": "The project's `scope:` tag. Required for every `type` except `infra` — `models`/`testing`/`types`/`utils` are scope-polymorphic (ADR 0009) so this must be given explicitly. `infra` is always `scope:backend`, applied automatically; passing anything but `backend` for `type:infra` is rejected.",
-      "enum": ["backend", "frontend", "shared"],
+      "description": "The project's `scope:` tag. Required for every `type` except `infra` — `models`/`testing`/`types`/`utils` are scope-polymorphic (ADR 0009) so this must be given explicitly. `tools` places the project under `tools/[<group>/]<type>` with no `domain:` tag. `infra` is always `scope:backend`, applied automatically; passing anything but `backend` for `type:infra` is rejected.",
+      "enum": ["backend", "frontend", "shared", "tools"],
       "x-priority": "important"
     },
     "group": {
@@ -142,5 +146,5 @@
       "x-priority": "internal"
     }
   },
-  "required": ["domain", "type"]
+  "required": ["type"]
 }

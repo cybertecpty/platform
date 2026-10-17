@@ -43,7 +43,7 @@ function fakeNxJsLibraryGenerator(tree: Tree, options: { name: string; directory
 
 function run(
   tree: Tree,
-  options: Partial<LibGeneratorOptions> & Pick<LibGeneratorOptions, 'domain' | 'scope' | 'type'>
+  options: Partial<LibGeneratorOptions> & Pick<LibGeneratorOptions, 'type'>
 ) {
   return libGenerator(tree, options);
 }
@@ -187,6 +187,32 @@ describe('libGenerator', () => {
     it('rejects a missing `scope` for every type except `infra`', async () => {
       await expect(run(tree, { domain: 'billing', type: 'utils' })).rejects.toThrow(
         '`scope` must be provided for every `type` except `infra`'
+      );
+      expect(nxJsLibraryGeneratorMock).not.toHaveBeenCalled();
+    });
+  });
+
+  describe('`scope:tools` projects', () => {
+    it('places a tools library under `tools/[<group>/]<type>` with no `domain:` tag', async () => {
+      await run(tree, { scope: 'tools', group: 'nx', type: 'testing' });
+
+      expect(forwardedOptions()).toMatchObject({
+        name: 'nx-testing',
+        directory: 'tools/nx/testing',
+        tags: 'scope:tools,type:testing'
+      });
+    });
+
+    it('rejects a `domain` for a tools library — tools projects are domain-exempt', async () => {
+      await expect(
+        run(tree, { domain: 'billing', scope: 'tools', group: 'nx', type: 'utils' })
+      ).rejects.toThrow('`domain` cannot be set for `scope:tools`');
+      expect(nxJsLibraryGeneratorMock).not.toHaveBeenCalled();
+    });
+
+    it('rejects a missing `domain` for every scope except `tools`', async () => {
+      await expect(run(tree, { scope: 'backend', type: 'utils' })).rejects.toThrow(
+        '`domain` must be provided for every `scope` except `tools`'
       );
       expect(nxJsLibraryGeneratorMock).not.toHaveBeenCalled();
     });

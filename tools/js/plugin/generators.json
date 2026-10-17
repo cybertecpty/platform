@@ -3,7 +3,7 @@
     "ts-lib": {
       "factory": "./src/lib/generators/lib/generator",
       "schema": "./src/lib/generators/lib/schema.json",
-      "description": "Create a TypeScript library under libs/<domain>/[<group>/]<type> (ADR 0009), wrapping @nx/js:library."
+      "description": "Create a TypeScript library under libs/<domain>/[<group>/]<type> or tools/[<group>/]<type> (ADR 0009), wrapping @nx/js:library."
     }
   }
 }
