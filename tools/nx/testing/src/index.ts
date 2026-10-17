@@ -1,1 +1,1 @@
-export * from './lib/executor-context';
+export * from './lib/nx-executor-context.builder';
