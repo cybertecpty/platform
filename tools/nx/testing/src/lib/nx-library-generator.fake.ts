@@ -1,6 +1,6 @@
 import type { GeneratorCallback, Tree } from '@nx/devkit';
 import { addProjectConfiguration, updateJson, writeJson } from '@nx/devkit';
-import type { TsConfigBase } from './nx-tsconfig-base';
+import type { TsConfigJson } from 'type-fest';
 
 export interface CreateFakeLibraryGeneratorOptions {
   /** Contents of the project's `tsconfig.lib.json`; not written when omitted. */
@@ -34,7 +34,7 @@ export const createFakeLibraryGenerator =
       writeJson(tree, `${directory}/tsconfig.lib.json`, tsConfigLib);
     }
 
-    updateJson<TsConfigBase>(tree, 'tsconfig.base.json', json => ({
+    updateJson<TsConfigJson>(tree, 'tsconfig.base.json', json => ({
       ...json,
       compilerOptions: {
         ...json.compilerOptions,

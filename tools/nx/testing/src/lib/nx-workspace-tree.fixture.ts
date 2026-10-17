@@ -1,7 +1,7 @@
 import type { Tree } from '@nx/devkit';
 import { updateJson } from '@nx/devkit';
 import { createTreeWithEmptyWorkspace } from '@nx/devkit/testing';
-import type { TsConfigBase } from './nx-tsconfig-base';
+import type { TsConfigJson } from 'type-fest';
 
 export interface CreateWorkspaceTreeFixtureOptions {
   /** `compilerOptions.paths` entries to seed `tsconfig.base.json` with. */
@@ -17,7 +17,7 @@ export const createWorkspaceTreeFixture = ({
 }: CreateWorkspaceTreeFixtureOptions = {}): Tree => {
   const tree = createTreeWithEmptyWorkspace();
 
-  updateJson<TsConfigBase>(tree, 'tsconfig.base.json', json => ({
+  updateJson<TsConfigJson>(tree, 'tsconfig.base.json', json => ({
     ...json,
     compilerOptions: { ...json.compilerOptions, paths: tsConfigPaths }
   }));
