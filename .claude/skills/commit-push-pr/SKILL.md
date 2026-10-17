@@ -94,8 +94,13 @@ re-check `git show HEAD` and amend the PR body if a "prettier clean" box needs i
 ```bash
 git fetch origin
 pnpm verify
-git push cybertec-bot HEAD
+git push cybertec-bot {branch}
 ```
+
+Push the branch **by name**, never `HEAD`. Another session on the same clone can check out a
+different branch between your commit and your push. `HEAD` then pushes their branch, which leaves
+a stray branch on the bot remote, and your PR fails with "No commits between develop and
+{branch}".
 
 `pnpm verify` mirrors the required `ci` check on affected projects (conventions §9). Don't push
 until it passes; on Windows, prefix `NX_NO_CLOUD=true` if Nx Cloud teardown fails with `EISDIR`.
@@ -180,8 +185,8 @@ Moved here from `docs/agents/conventions.md` §1 and §3, which keep only the in
   `github-cybertec-bot` in `~/.ssh/config`, key `~/.ssh/id_ed25519_cybertec_bot`.
 - `origin` → `https://github.com/cybertecpty/platform.git` (HTTPS via GCM, authenticates as the
   maintainer).
-- `git push cybertec-bot HEAD` or `git push cybertec-bot {branch}`. Prefer shipping a committed
-  branch without checking it out (conventions §5).
+- `git push cybertec-bot {branch}`, never `HEAD` (step 6). Prefer shipping a committed branch
+  without checking it out (conventions §5).
 
 ### Which `gh` account, when
 
