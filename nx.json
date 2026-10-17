@@ -63,6 +63,17 @@
       "dependsOn": ["^build"],
       "inputs": ["production", "^production"]
     },
+    "lighthouse": {
+      "executor": "nx:run-commands",
+      "cache": true,
+      "dependsOn": ["^build"],
+      "inputs": ["default", "^production"],
+      "outputs": ["{projectRoot}/test-results"],
+      "options": {
+        "command": "playwright test --config playwright.lighthouse.config.ts",
+        "cwd": "{projectRoot}"
+      }
+    },
     "typecheck": {
       "executor": "nx:run-commands",
       "cache": true,

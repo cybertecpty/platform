@@ -1,0 +1,10 @@
+{
+  "name": "playwright-testing",
+  "$schema": "../../../../node_modules/nx/schemas/project-schema.json",
+  "sourceRoot": "libs/shared/playwright/testing/src",
+  "projectType": "library",
+  "tags": ["domain:shared", "scope:frontend", "type:testing"],
+  "targets": {
+    "typecheck": {}
+  }
+}

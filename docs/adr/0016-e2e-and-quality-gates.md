@@ -1,6 +1,6 @@
 # 16. Playwright e2e with axe and Lighthouse quality gates
 
-- Status: accepted
+- Status: accepted (amended 2026-10-17: the gates are shared spec factories, #114)
 - Date: 2026-10-16
 - Deciders: djmcgrath
 - Implemented by: `apps/cybertec-io/e2e` (`e2e` and `lighthouse` targets,
@@ -134,3 +134,61 @@ across apps is #114.
 - #94 / #115 — the gates' original issue and PR, with the first Lighthouse numbers.
 - #114 — make the gates reusable across web apps.
 - [`axe-core` rule tags](https://github.com/dequelabs/axe-core/blob/develop/doc/API.md#axe-core-tags).
+
+## Amendment (2026-10-17): the gates are shared spec factories
+
+- Status: accepted
+- Deciders: djmcgrath
+- Implemented by: `libs/shared/playwright/testing` (`@cybertecpty/playwright-testing`), the
+  `lighthouse` entry in `nx.json` `targetDefaults`, the Playwright lint block for the lib in
+  `eslint.config.mjs`; `cybertec-io-e2e` migrated as the first consumer (#114)
+
+The gate code lived in `apps/cybertec-io/e2e`, so a second web app would have copied it and a
+threshold change would have meant editing every app. Both specs also checked only one page.
+
+### Decision
+
+- **The gates live in `playwright-testing`** at `libs/shared/playwright/testing` (`type:testing`,
+  `scope:frontend`, `domain:shared`), which exports spec factories rather than spec files:
+  `defineLighthouseTests` (`playwright-lighthouse.utils.ts`) and `defineAxeTests`
+  (`playwright-axe.utils.ts`). Each `-e2e` project calls them from its own one-line spec,
+  `lighthouse/lighthouse.spec.ts` and `e2e/a11y.spec.ts`, and carries no copy of the gate code.
+  The factories call Playwright's `test()`, so they only work at the top level of a spec file.
+- **`paths` is required.** Each app lists the routes it covers. Each path × preset (Lighthouse)
+  or path × viewport (axe) is its own test, so a failing report names the route.
+- **The locked parameters above are the defaults:** `DEFAULT_LIGHTHOUSE_THRESHOLDS`,
+  `WCAG_22_AA_TAGS` and `AXE_VIEWPORTS`. Thresholds can be overridden per app and per path, in the
+  app's spec where review sees them. Lowering one is the documented per-app exception this ADR
+  already requires, so it gets a comment saying why. Changing a default still needs an amendment.
+- **Lighthouse `presets` can be set per path** (e.g. desktop only on a secondary page) to keep
+  run time down. **axe takes an optional per-path `setup(page)`**, run after the page loads and
+  before the scan, so interaction states (an open menu, a submitted empty form) get checked.
+- **The `lighthouse` target is defined once** in `nx.json` `targetDefaults`, with
+  `dependsOn: ["^build"]`, so an `-e2e` project declares `"lighthouse": {}`. The Playwright
+  `timeout` is per test, so it already applies to each route and doesn't grow with more routes.
+- **`playwright.lighthouse.config.ts` stays per project**, because the `webServer` command depends
+  on the app type: `astro preview` for Astro, a static server for Angular. For an Angular app the
+  static server has to fall back to `index.html`, so deep links resolve.
+- **The lib's gate code gets the Playwright lint rules**, matched by folder
+  (`libs/shared/playwright/**/*.ts`). Its own unit specs run under Jest and keep the Jest rules.
+
+### Out of scope
+
+Revisit each with the first app that needs it.
+
+- **Pages behind a login.** Lighthouse drives its own fresh Chromium session, with none of
+  Playwright's cookies or saved login state, so a protected route gets audited as the login
+  redirect. Options: a pre-audit login hook that sets cookies over the DevTools port, or
+  Lighthouse's `extraHeaders`. axe runs inside Playwright, so it can use `storageState`.
+- **In-app route changes in single-page apps.** Lighthouse's navigation mode only measures a cold
+  load of each URL. Measuring client-side route changes needs its timespan mode.
+- **Dynamic routes** (`/items/:id`). The app supplies concrete URLs and the seed data behind them.
+
+### Consequences
+
+- A new web app gets both gates from two one-line specs, a short
+  `playwright.lighthouse.config.ts` and `"lighthouse": {}`.
+- A change to the lib re-runs `e2e` and `lighthouse` for every web app on the PR, since each
+  `-e2e` project depends on it in the project graph.
+- Lighthouse run time grows with the number of routes: about 30–60s per path and preset, run
+  serially.
