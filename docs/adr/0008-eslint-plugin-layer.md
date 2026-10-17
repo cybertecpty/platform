@@ -237,3 +237,75 @@ description, pair with an `eslint-enable` when it is a block disable, and not be
   `flat/recommended`; `@typescript-eslint/no-deprecated`;
   `@eslint-community/eslint-plugin-eslint-comments` `require-description` +
   `disable-enable-pair`; ESLint `linterOptions.reportUnusedDisableDirectives`.
+
+## Amendment (2026-10-16): `eslint-plugin-unicorn`, a curated rule list
+
+- Status: proposed
+- Deciders: djmcgrath
+- Implemented by: the `unicorn` block in `eslint.config.mjs`; the `eslint-plugin-unicorn`
+  devDependency (#128)
+
+The workspace imports Node built-ins with the `node:` prefix (`node:path`,
+`node:child_process`), but nothing enforced it: four bare imports passed lint, typecheck and
+the pre-commit hooks on the #123 branch and were only caught in review. `eslint-plugin-unicorn`
+enforces the prefix (`prefer-node-protocol`, with an automatic fix) and carries a number of
+rules that catch real bugs rather than style.
+
+### Decision
+
+- **Add `eslint-plugin-unicorn` to the plugin layer**, in its own block on
+  `**/*.{ts,tsx,cts,mts,js,jsx,cjs,mjs}`, next to the bundle-hygiene and NgRx blocks.
+- **A curated list of rules, never a preset.** `recommended` is opinionated and conflicts with
+  this repo (file-name casing, `no-null`, `prevent-abbreviations`, `prefer-module`). Enabled,
+  all `error`:
+
+  | Rule                                   | Catches                                                        |
+  | -------------------------------------- | -------------------------------------------------------------- |
+  | `prefer-node-protocol`                 | `'path'` instead of `'node:path'` (auto-fix)                   |
+  | `error-message`                        | `new Error()` with no message                                  |
+  | `throw-new-error`                      | `throw Error('x')` without `new`                               |
+  | `new-for-builtins`                     | `Date()` returning a string; `new String()` and other wrappers |
+  | `no-instanceof-builtins`               | `x instanceof Array`, wrong across realms (Jest VM contexts)   |
+  | `no-thenable`                          | objects with a `then` property                                 |
+  | `no-await-in-promise-methods`          | `Promise.all([await a, await b])`, which serializes            |
+  | `no-single-promise-in-promise-methods` | `Promise.all([x])`                                             |
+  | `no-array-fill-with-reference-type`    | `new Array(n).fill({})` sharing one object                     |
+  | `no-unused-array-method-return`        | ignored `.map()` / `.filter()` / `.find()` results             |
+  | `no-negation-in-equality-check`        | `!a === b`                                                     |
+  | `no-accessor-recursion`                | a getter or setter that calls itself                           |
+  | `no-new-buffer`                        | deprecated, unsafe `new Buffer()`                              |
+  | `no-invalid-remove-event-listener`     | `removeEventListener('x', fn.bind(this))`                      |
+  | `prefer-structured-clone`              | `JSON.parse(JSON.stringify(x))` deep copies                    |
+
+  `no-instanceof-builtins` keeps its default `loose` strategy, which doesn't cover `Error`;
+  widening it to `strict` is a separate call.
+
+- **Left off deliberately.** `prefer-module` and `prefer-top-level-await` (the `tools/`
+  projects are CommonJS), `no-null` (Angular APIs use `null`), `no-process-exit` (scripts exit
+  with codes). `no-abusive-eslint-disable` duplicates the `eslint-comments` contract above, and
+  `no-unnecessary-await` duplicates `@typescript-eslint/await-thenable` (ADR 0006) on TS files,
+  which is nearly all the code; plain JS goes without it.
+  `no-array-callback-reference` and the style rules are too noisy for their value.
+- **Pinned to `^65.0.1`.** Every release from 66.0.0 declares `eslint: ">=10.4"`; the
+  workspace is on ESLint 9. 65.0.1 is the newest release that supports ESLint 9
+  (`>=9.38.0`). Moving past 65 waits on the ESLint 10 migration.
+
+### Considered options (for `node:` enforcement alone)
+
+- **ESLint's `no-restricted-imports` built from `module.builtinModules`.** No new dependency,
+  but no automatic fix, and it would collide with the ADR 0003 lodash ban: in flat config a
+  later block's options for the same rule replace an earlier block's, so both bans would have
+  to share one option set.
+- **`eslint-plugin-import-x` (`enforce-node-protocol-usage`) or `eslint-plugin-n`
+  (`prefer-node-protocol`).** They cover only the `node:` part, and each is as large as
+  unicorn.
+
+### Consequences
+
+- Bare built-in imports and the bug patterns above fail `nx lint`; `eslint --fix` (and the
+  pre-commit hook) rewrites bare imports automatically.
+- Run at `warn` first across the workspace: zero findings for every rule (217 files), so none
+  was dropped and nothing needed fixing.
+- One more version pin, held back a major by the ESLint 9 peer range.
+- Adding a rule from the plugin is a normal `eslint.config.mjs` edit; adopting a preset
+  reopens this ADR.
