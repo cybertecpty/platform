@@ -27,11 +27,32 @@ const COLLECTION_KEYS: Record<PluginArtifactKind, readonly [string, string]> = {
   generator: ['generators', 'schematics']
 };
 
+/**
+ * A well-formed path segment that also starts with a letter, so the identifiers derived from
+ * it (`{name}Generator`, `{Name}ExecutorOptions`, …) are valid TypeScript. Mirrored by the
+ * `name` `pattern` in the `nx-gen` and `nx-exec` `schema.json` files.
+ */
+const ARTIFACT_NAME_PATTERN = /^[a-z][a-z0-9]*(-[a-z0-9]+)*$/;
+
 /** The workspace wrapper for each artifact kind, named in errors about upstream drift. */
 const WRAPPER_NAMES: Record<PluginArtifactKind, string> = {
   executor: 'nx-exec',
   generator: 'nx-gen'
 };
+
+/**
+ * Throws unless `name` can name a generator or executor: lowercase alphanumeric words joined by
+ * single hyphens, starting with a letter. A leading digit would pass `assertValidPathSegment`
+ * but produce invalid identifiers such as `1passwordSyncExecutor`.
+ */
+export function assertValidArtifactName(name: string): void {
+  if (!ARTIFACT_NAME_PATTERN.test(name)) {
+    throw new Error(
+      `\`name\` "${name}" must be lowercase alphanumeric words joined by single hyphens, ` +
+        'starting with a letter, so the generated TypeScript identifiers are valid.'
+    );
+  }
+}
 
 /**
  * Reads the configuration of `project`, which must be tagged `type:plugin`.

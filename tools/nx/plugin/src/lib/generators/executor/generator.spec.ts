@@ -161,6 +161,7 @@ describe('nxExecGenerator', () => {
 
     it.each([
       ['name', { name: 'SwaDeploy' }],
+      ['name', { name: '1password-sync' }],
       ['directory', { name: 'swa-deploy', directory: 'a/b' }]
     ])('rejects a malformed `%s` before delegating', async (_label, options) => {
       await expect(run(tree, options)).rejects.toThrow(

@@ -163,6 +163,19 @@ describe('nxGenGenerator', () => {
       expect(nxGeneratorGeneratorMock).not.toHaveBeenCalled();
     });
 
+    it('rejects a `name` that would not form valid identifiers, before delegating', async () => {
+      await expect(run(tree, { name: '1password-sync' })).rejects.toThrow('starting with a letter');
+      expect(nxGeneratorGeneratorMock).not.toHaveBeenCalled();
+    });
+
+    it('accepts a digit-leading `directory`, which is only a folder', async () => {
+      await run(tree, { name: 'demo', directory: '2nd-pass' });
+
+      expect(forwardedOptions().path).toBe(
+        'tools/demo/plugin/src/lib/generators/2nd-pass/generator.ts'
+      );
+    });
+
     it('rejects a malformed `directory` before delegating', async () => {
       await expect(run(tree, { name: 'demo', directory: 'Bad/Seg' })).rejects.toThrow(
         'must be lowercase alphanumeric words joined by single hyphens'

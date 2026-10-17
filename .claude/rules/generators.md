@@ -27,6 +27,9 @@ exactly what each one rewrites.
 - Each artifact gets its own folder: `src/lib/generators/{directory}/` or
   `src/lib/executors/{directory}/`. `--directory` defaults to `name` and is only for when the
   folder should differ from the collection key.
+- `name` must start with a letter, because it becomes part of TypeScript identifiers
+  (`{name}Generator`, `{Name}ExecutorOptions`). `directory` is only a folder, so it may start with
+  a digit.
 - File names are fixed: `generator.ts` / `generator.spec.ts` or `executor.ts` /
   `executor.spec.ts`.
 - `schema.d.ts` becomes a type-checked `schema.ts`, and its interface is named

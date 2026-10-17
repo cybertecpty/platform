@@ -1,7 +1,10 @@
 import { addProjectConfiguration, readJson, type Tree } from '@nx/devkit';
 import { createTreeWithEmptyWorkspace } from '@nx/devkit/testing';
+import { readFileSync } from 'node:fs';
+import { join } from 'node:path';
 import {
   appendPluginExports,
+  assertValidArtifactName,
   readPluginPackageName,
   readPluginProject,
   removeUpstreamSchemaDeclaration,
@@ -19,6 +22,44 @@ function seedPlugin(tree: Tree, tags = ['scope:tools', 'type:plugin']): void {
     tags
   });
 }
+
+describe('assertValidArtifactName', () => {
+  const VALID = ['swa-deploy', 'e2e-probe', 'x2', 'a-1b'];
+  const INVALID = ['1password-sync', 'SwaDeploy', 'swa--deploy', '-swa', 'swa-', 'swa/deploy', ''];
+
+  it.each(VALID)('accepts `%s`', name => {
+    expect(() => assertValidArtifactName(name)).not.toThrow();
+  });
+
+  it.each(INVALID)('rejects `%s`', name => {
+    expect(() => assertValidArtifactName(name)).toThrow(
+      `\`name\` "${name}" must be lowercase alphanumeric words joined by single hyphens, starting with a letter`
+    );
+  });
+
+  it.each(['generator', 'executor'])(
+    'agrees with the `name` pattern in the `%s` wrapper schema',
+    folder => {
+      const schema = JSON.parse(
+        readFileSync(join(__dirname, '..', 'generators', folder, 'schema.json'), 'utf-8')
+      ) as { properties: { name: { pattern: string } } };
+      const pattern = new RegExp(schema.properties.name.pattern);
+
+      for (const name of [...VALID, ...INVALID]) {
+        let runtimeAccepts = true;
+        try {
+          assertValidArtifactName(name);
+        } catch {
+          runtimeAccepts = false;
+        }
+        expect({ name, schemaAccepts: pattern.test(name) }).toEqual({
+          name,
+          schemaAccepts: runtimeAccepts
+        });
+      }
+    }
+  );
+});
 
 describe('readPluginProject', () => {
   let tree: Tree;

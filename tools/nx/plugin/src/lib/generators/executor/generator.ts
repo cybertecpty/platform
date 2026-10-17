@@ -3,6 +3,7 @@ import { formatFiles, generateFiles, joinPathFragments, names, Tree, writeJson }
 import { executorGenerator as nxExecutorGenerator } from '@nx/plugin/generators';
 import {
   appendPluginExports,
+  assertValidArtifactName,
   readPluginPackageName,
   readPluginProject,
   removeUpstreamSchemaDeclaration,
@@ -34,7 +35,7 @@ export async function nxExecGenerator(tree: Tree, options: NxExecGeneratorOption
   // `@nx/plugin:executor`'s own default, so every surface agrees with `executors.json`.
   const description = options.description ?? `${name} executor`;
 
-  assertValidPathSegment(name, 'name');
+  assertValidArtifactName(name);
   assertValidPathSegment(directory, 'directory');
 
   const projectConfig = readPluginProject(tree, project);

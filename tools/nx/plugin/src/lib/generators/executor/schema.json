@@ -18,8 +18,8 @@
   "properties": {
     "name": {
       "type": "string",
-      "description": "The executor name — its key in the target plugin's executors collection and, unless `directory` overrides it, its folder under `src/lib/executors/`. Lowercase alphanumeric words joined by single hyphens.",
-      "pattern": "^[a-z0-9]+(?:-[a-z0-9]+)*$",
+      "description": "The executor name — its key in the target plugin's executors collection and, unless `directory` overrides it, its folder under `src/lib/executors/`. Lowercase alphanumeric words joined by single hyphens, starting with a letter (it becomes part of TypeScript identifiers).",
+      "pattern": "^[a-z][a-z0-9]*(?:-[a-z0-9]+)*$",
       "x-priority": "important",
       "$default": {
         "$source": "argv",

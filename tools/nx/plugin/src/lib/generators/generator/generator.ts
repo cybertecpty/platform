@@ -3,6 +3,7 @@ import { formatFiles, generateFiles, joinPathFragments, names, Tree } from '@nx/
 import { generatorGenerator as nxGeneratorGenerator } from '@nx/plugin/generators';
 import {
   appendPluginExports,
+  assertValidArtifactName,
   readPluginPackageName,
   readPluginProject,
   removeUpstreamSchemaDeclaration,
@@ -32,7 +33,7 @@ export async function nxGenGenerator(tree: Tree, options: NxGenGeneratorOptions)
   const directory = options.directory ?? name;
   const unitTestRunner = options.unitTestRunner ?? 'jest';
 
-  assertValidPathSegment(name, 'name');
+  assertValidArtifactName(name);
   assertValidPathSegment(directory, 'directory');
 
   const projectConfig = readPluginProject(tree, project);
