@@ -24,8 +24,9 @@ defaults. Loads when working on specs or Jest config.
   assert against the in-memory `Tree`, generated files, and project config.
 - **Coverage mechanics.** `jest.preset.js` sets `coverageThreshold.global` to 80 and
   `collectCoverage: !!process.env.CI`, so local `nx test` stays fast and the threshold gates
-  CI. Under `nx run-many` it is a per-project gate. `type:types` libs have no `test` target and
-  are exempt. CI also merges the per-project reports into one workspace number, uploads
+  CI. Each project runs its own Jest process, so it is a per-project gate. `type:types` libs have no `test` target and
+  are exempt. CI also merges the per-project reports into one number (workspace on a push, affected
+  projects on a PR), uploads
   `coverage/` as an artifact, and posts a per-PR coverage comment (per-project table + patch
   coverage for changed lines) — all inside GitHub Actions, no third-party service
   (`.github/scripts/coverage-report.cjs`, unit-tested with `node --test`). Astro sites run

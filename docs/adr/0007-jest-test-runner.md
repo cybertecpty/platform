@@ -253,3 +253,36 @@ Container API, `astro/container`) runs inside Vite through `getViteConfig` from
   components doesn't map back to source reliably enough to gate on.
 - The Container API was still `experimental_`-prefixed when last checked. Confirm its
   status before using it for component tests.
+
+## Amendment (2026-10-16): affected-only coverage on pull requests
+
+- Status: accepted
+- Deciders: djmcgrath
+- Implemented by: `.github/workflows/lint-and-test-affected.yml`,
+  `.github/scripts/coverage-report.cjs`
+
+The reporting layer above assumed CI ran `nx run-many`, so every project reported coverage and
+the PR comment's **Workspace** line covered the whole workspace. CI now runs
+`nx affected -t lint test build typecheck e2e lighthouse` on a pull request and keeps
+`nx run-many` for pushes to `develop` and `main`. A PR run only produces coverage reports for
+the affected projects.
+
+### Decision
+
+- **On a PR, the summed line is labelled "Affected projects"**, not "Workspace", and the
+  per-project table lists only the affected projects. Patch coverage is unchanged: it only
+  ever looked at the lines the PR adds.
+- **A PR that affects no tested project still updates the comment**, to say no affected
+  project reported coverage, so an earlier push's numbers don't linger.
+- **The workspace number comes from push runs.** A push to `develop` or `main` runs every
+  project, so its job summary and the uploaded `coverage/` artifact carry the full workspace
+  number.
+- The 80% gate is unchanged. It was always per project, and every affected project with a
+  `test` target still runs it.
+
+### Consequences
+
+- A PR's coverage comment no longer shows how the whole workspace stands. Look at the latest
+  `develop` run for that.
+- A change the project graph doesn't connect to a project isn't tested on the PR. The full
+  run on `develop` catches it right after merge.

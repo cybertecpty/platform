@@ -2,11 +2,13 @@
  * Workspace coverage reporting for CI — runs entirely inside GitHub Actions, no
  * third-party service (ADR 0007 amendment / issue #52).
  *
- * After `nx run-many -t test` (coverage collected in CI via `jest.preset.js`),
- * every project drops `coverage/<projectRoot>/coverage-{summary,final}.json`.
- * This script:
- *   1. sums the per-project `coverage-summary.json` totals into one workspace
- *      number and writes `coverage/coverage-summary.merged.json`;
+ * After the CI test run (coverage collected in CI via `jest.preset.js`), each
+ * tested project drops `coverage/<projectRoot>/coverage-{summary,final}.json`.
+ * A push runs `nx run-many` (every project); a PR runs `nx affected`, so only
+ * the affected projects report. This script:
+ *   1. sums the per-project `coverage-summary.json` totals into one number (the
+ *      workspace on a push, the affected projects on a PR) and writes
+ *      `coverage/coverage-summary.merged.json`;
  *   2. on a pull request, computes patch coverage — the covered fraction of the
  *      source lines the PR adds — from the merged `coverage-final.json` maps and
  *      `git diff`;
@@ -177,19 +179,26 @@ function oneLine(totals) {
  * @param {{
  *   projects: { name: string, total: Record<string, { pct: number }> }[],
  *   workspace: Record<string, { pct: number }>,
- *   patch: { covered: number, coverable: number, pct: number | null, perFile: { file: string, covered: number, coverable: number, pct: number }[] } | null
- * }} input
+ *   patch: { covered: number, coverable: number, pct: number | null, perFile: { file: string, covered: number, coverable: number, pct: number }[] } | null,
+ *   affectedOnly?: boolean
+ * }} input  `affectedOnly`: a PR run, which tests only the affected projects, so the
+ *   total covers those rather than the whole workspace.
  */
-function renderMarkdown({ projects, workspace, patch }) {
+function renderMarkdown({ projects, workspace, patch, affectedOnly = false }) {
   const lines = [MARKER, '', '## Test coverage', ''];
-  lines.push(`**Workspace:** ${oneLine(workspace)}`, '');
-  lines.push('| Project | Statements | Branches | Functions | Lines |');
-  lines.push('| --- | --: | --: | --: | --: |');
-  for (const project of projects) {
-    const cells = METRICS.map(m => `${project.total[m].pct}%`);
-    lines.push(`| ${project.name} | ${cells.join(' | ')} |`);
+  if (projects.length === 0) {
+    lines.push('No affected project reported coverage.', '');
+  } else {
+    const label = affectedOnly ? 'Affected projects' : 'Workspace';
+    lines.push(`**${label}:** ${oneLine(workspace)}`, '');
+    lines.push('| Project | Statements | Branches | Functions | Lines |');
+    lines.push('| --- | --: | --: | --: | --: |');
+    for (const project of projects) {
+      const cells = METRICS.map(m => `${project.total[m].pct}%`);
+      lines.push(`| ${project.name} | ${cells.join(' | ')} |`);
+    }
+    lines.push('');
   }
-  lines.push('');
 
   if (patch) {
     if (patch.pct === null) {
@@ -305,9 +314,19 @@ async function upsertComment({ github, context, body }) {
 /** @param {{ github: any, context: any, core: any }} args */
 async function report({ github, context, core }) {
   const root = process.env.GITHUB_WORKSPACE ?? process.cwd();
+  const isPullRequest = context.eventName === 'pull_request';
+  const isFork = context.payload.pull_request?.head?.repo?.fork ?? false;
 
   const projects = collectProjects(root);
   if (projects.length === 0) {
+    if (isPullRequest) {
+      // A PR that affects no tested project: replace any earlier coverage
+      // comment so it doesn't show numbers from a previous push.
+      const body = renderMarkdown({ projects, workspace: null, patch: null, affectedOnly: true });
+      await core.summary.addRaw(body).write();
+      if (!isFork) await upsertComment({ github, context, body });
+      return;
+    }
     core.warning('coverage-report: no coverage-summary.json files under coverage/ — skipping.');
     return;
   }
@@ -323,17 +342,16 @@ async function report({ github, context, core }) {
   core.info(`coverage-report: workspace ${oneLine(workspace)}`);
 
   let patch = null;
-  if (context.eventName === 'pull_request') {
+  if (isPullRequest) {
     const base = process.env.NX_BASE || context.payload.pull_request.base.sha;
     const head = process.env.NX_HEAD || context.payload.pull_request.head.sha;
     patch = patchCoverage(changedLines({ base, head }), mergeFinalByRel(root));
   }
 
-  const body = renderMarkdown({ projects, workspace, patch });
+  const body = renderMarkdown({ projects, workspace, patch, affectedOnly: isPullRequest });
   await core.summary.addRaw(body).write();
 
-  const isFork = context.payload.pull_request?.head?.repo?.fork ?? false;
-  if (context.eventName === 'pull_request' && !isFork) {
+  if (isPullRequest && !isFork) {
     await upsertComment({ github, context, body });
   }
 }

@@ -23,7 +23,7 @@ Moved here from `docs/agents/conventions.md` §8, §9 and §11. Loads when editi
 - **Every lib/tool project needs a `typecheck` stub.** Every lib/tool project carries a
   `"typecheck": {}` stub in its `project.json` that inherits
   `tsc --noEmit -p {projectRoot}/tsconfig.spec.json` from `nx.json`
-  `targetDefaults.typecheck`; CI runs it via `nx run-many -t ... typecheck`. A new
+  `targetDefaults.typecheck`; CI runs it via `nx affected -t ... typecheck` on a PR and `nx run-many` on a push. A new
   project needs both the stub and a `tsconfig.spec.json` (spec-less projects are
   fine — `files: []` in the base `tsconfig.json` suppresses `TS18003`). The
   `nx-plugin` generator emits the stub for scaffolded plugins. See issue #48.
