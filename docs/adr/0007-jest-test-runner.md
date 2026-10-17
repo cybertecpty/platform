@@ -73,7 +73,8 @@ Chosen option: **1 — Jest everywhere.**
   against a silently-broken `testMatch`. See the 2026-09-07 amendment for that
   threshold.
 - **E2E is out of scope.** Browser e2e uses Playwright (its own tooling); this ADR
-  governs the unit / integration test runner only.
+  governs the unit / integration test runner only. ADR 0016 records the e2e runner and the
+  axe / Lighthouse quality gates.
 
 ## Consequences
 
