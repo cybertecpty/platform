@@ -309,3 +309,31 @@ rules that catch real bugs rather than style.
 - One more version pin, held back a major by the ESLint 9 peer range.
 - Adding a rule from the plugin is a normal `eslint.config.mjs` edit; adopting a preset
   reopens this ADR.
+
+## Amendment (2026-10-17): Jest block covers every test-artifact suffix
+
+- Status: proposed
+- Deciders: djmcgrath
+- Implemented by: the Jest block's `files` in `eslint.config.mjs`; the naming convention in
+  `.claude/rules/testing.md` (#136)
+
+Test helpers outside spec files are named `<name>.<kind>.ts`, where the kind says what the
+artifact is: a test double (`mock`, `stub`, `fake`) or supporting data (`fixture`, `builder`),
+each with a plural form for a file holding several. The Jest block only matched
+`*.{mock,mocks}.ts`, so a `*.builder.ts` (the first being `nx-executor-context.builder.ts` in
+`nx-testing`) got neither the Jest globals nor the test-code relaxations.
+
+### Decision
+
+- **The locked Jest glob widens** from `**/*.{mock,mocks}.ts` to
+  `**/*.{mock,mocks,stub,stubs,fake,fakes,fixture,fixtures,builder,builders}.ts`, next to
+  `**/*.{spec,test}.ts`. `flat/recommended` and the four relaxations are unchanged.
+- **No `spy` or `dummy` suffix.** Spies are created inline (`jest.spyOn`) and dummies are
+  literals; neither warrants its own file.
+
+### Consequences
+
+- These suffixes are reserved for test artifacts. A production file named `*.builder.ts` (say, a
+  query builder) would get Jest globals and relaxed rules, so name production code differently.
+- Coverage is unaffected: the preset still counts these files, so builders and fakes in a
+  `type:testing` lib need their own specs.

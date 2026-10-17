@@ -380,12 +380,16 @@ export default [
   // non-NgRx files. Revisit (per-project spread) when the Angular ADR lands.
   ...ngrx.configs.signals.map(config => ({ ...config, files: ['{apps,libs}/**/*.ts'] })),
   {
-    // Jest lint rules for spec/mock files. `flat/recommended` brings the plugin,
-    // the jest globals, and the recommended rule set (no-focused-tests,
+    // Jest lint rules for spec files and test artifacts (doubles, fixtures, builders —
+    // `<name>.<kind>.ts`, ADR 0008 2026-10-17 amendment). `flat/recommended` brings the
+    // plugin, the jest globals, and the recommended rule set (no-focused-tests,
     // no-disabled-tests, valid-expect, ...); the overrides below relax
     // TS rules that are noise in test code.
     basePath: workspaceRoot,
-    files: ['**/*.{spec,test}.ts', '**/*.{mock,mocks}.ts'],
+    files: [
+      '**/*.{spec,test}.ts',
+      '**/*.{mock,mocks,stub,stubs,fake,fakes,fixture,fixtures,builder,builders}.ts'
+    ],
     ignores: [...vitestSpecFiles, ...playwrightSpecFiles],
     ...jest.configs['flat/recommended'],
     rules: {

@@ -2,7 +2,8 @@
 paths:
   - '**/*.spec.ts'
   - '**/*.test.ts'
-  - '**/*.{mock,mocks}.ts'
+  - '**/*.{mock,mocks,stub,stubs,fake,fakes,fixture,fixtures,builder,builders}.ts'
+  - '{libs,tools}/**/testing/**'
   - '**/jest.config.*'
   - 'jest.preset.js'
 ---
@@ -10,15 +11,32 @@ paths:
 # Writing tests
 
 Moved here from `docs/agents/conventions.md` §9, which keeps the runner and verification
-defaults. Loads when working on specs or Jest config.
+defaults. Loads when working on specs, test artifacts, `type:testing` libs, or Jest config.
 
 - Unit tests are `*.spec.ts`, beside the implementation.
+- **Name test artifacts `<name>.<kind>.ts`**, by what the file exports (Meszaros's
+  vocabulary), with the plural kind for a file holding several:
+
+  | Kind                     | Exports                                                                    |
+  | ------------------------ | -------------------------------------------------------------------------- |
+  | `.mock` / `.mocks`       | a double the test checks calls on (`jest.fn()`, `jest.mock` factories)     |
+  | `.stub` / `.stubs`       | a double returning canned answers, checked only through the output         |
+  | `.fake` / `.fakes`       | a working, simplified implementation (an in-memory store, a fake executor) |
+  | `.fixture` / `.fixtures` | ready-made test data: constants or named presets                           |
+  | `.builder` / `.builders` | a function building valid test data with defaults and per-test overrides   |
+
+  Inside a group's lib, keep the group prefix the source files use
+  (`nx-executor-context.builder.ts` in `tools/nx/testing`). Spies (`jest.spyOn`) and dummies
+  stay inline, with no suffix. These suffixes are reserved for test code; don't use them for
+  production files. Shared artifacts go in a `type:testing` lib (ADR 0004), and an artifact used
+  by one spec stays beside it.
+
 - Name the top-level `describe` after the exported unit; write `it(...)` names as
   behavior statements.
-- `eslint-plugin-jest` `flat/recommended` lints spec / mock files (`*.{spec,test}.ts`,
-  `*.{mock,mocks}.ts`) — a left-in `fit` / `fdescribe` / `.only`, an `expect()` with no
-  matcher, or a duplicated `it()` title fails `nx lint` (ADR 0008). The same block
-  relaxes `@nx/enforce-module-boundaries` and a few TS rules for test code.
+- `eslint-plugin-jest` `flat/recommended` lints spec files and the test artifacts above
+  (`*.{spec,test}.ts` and every suffix in the table) — a left-in `fit` / `fdescribe` /
+  `.only`, an `expect()` with no matcher, or a duplicated `it()` title fails `nx lint` (ADR
+  0008). The same block relaxes `@nx/enforce-module-boundaries` and a few TS rules for test code.
 - Prefer direct assertions over snapshots.
 - For Nx generators / workspace utilities, use `createTreeWithEmptyWorkspace()` and
   assert against the in-memory `Tree`, generated files, and project config.
