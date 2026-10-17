@@ -63,9 +63,8 @@ Prefix project-scoped names `platform-…`.
 ## Pending work → a GitHub issue
 
 Deferred work becomes a GitHub issue on `cybertecpty/platform` (see
-[`docs/agents/issue-tracker.md`](../../../docs/agents/issue-tracker.md)), added to the
-**Platform · Foundation** project board. Prefer the `mattpocock-skills:to-tickets` skill for
-anything that is more than a single well-scoped issue (vertical slices + blocking edges); use
+[`docs/agents/issue-tracker.md`](../../../docs/agents/issue-tracker.md)). Don't add it to
+a project board. Prefer the `mattpocock-skills:to-tickets` skill for anything that is more than a single well-scoped issue (vertical slices + blocking edges); use
 a single `mcp__github__issue_write` create call otherwise. An issue _is_ the durable record —
 creating it here is the completed action, no later commit step.
 
