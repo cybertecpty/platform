@@ -1,4 +1,8 @@
-import { createFakeLibraryGenerator, createWorkspaceTreeFixture } from '@cybertecpty/nx-testing';
+import {
+  createFakeLibraryGenerator,
+  createWorkspaceTreeFixture,
+  lastCallArg
+} from '@cybertecpty/nx-testing';
 import * as devkit from '@nx/devkit';
 import { addProjectConfiguration, readJson, Tree } from '@nx/devkit';
 import { pluginGenerator as nxPluginGenerator } from '@nx/plugin/generators';
@@ -20,13 +24,7 @@ function run(tree: Tree, options: Partial<NxPluginGeneratorOptions> & { group: s
 
 /** The options `@nx/plugin:plugin` was called with on the most recent run. */
 function forwardedOptions() {
-  const lastCall = nxPluginGeneratorMock.mock.calls.at(-1);
-
-  if (!lastCall) {
-    throw new Error('`@nx/plugin:plugin` was never called');
-  }
-
-  return lastCall[1];
+  return lastCallArg(nxPluginGeneratorMock, 1, '`@nx/plugin:plugin`');
 }
 
 describe('pluginGenerator', () => {
