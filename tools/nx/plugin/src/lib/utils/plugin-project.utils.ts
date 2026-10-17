@@ -9,12 +9,6 @@ import {
 import { addGlobal } from '@nx/js';
 import { ensureTypescript } from '@nx/js/internal';
 
-/** The TypeScript module, loaded on first use the way `@nx/*` generators load it. */
-let tsModule: ReturnType<typeof ensureTypescript> | undefined;
-
-/** The artifact a workspace wrapper scaffolds into a plugin: a generator or an executor. */
-export type PluginArtifactKind = 'executor' | 'generator';
-
 /** How the plugin's `src/index.ts` re-exports one artifact. */
 export interface PluginArtifactExport {
   kind: PluginArtifactKind;
@@ -26,11 +20,8 @@ export interface PluginArtifactExport {
   optionsType: string;
 }
 
-/** The `package.json` / collection-file keys Nx reads for each artifact kind, in priority order. */
-const COLLECTION_KEYS: Record<PluginArtifactKind, readonly [string, string]> = {
-  executor: ['executors', 'builders'],
-  generator: ['generators', 'schematics']
-};
+/** The artifact a workspace wrapper scaffolds into a plugin: a generator or an executor. */
+export type PluginArtifactKind = 'executor' | 'generator';
 
 /**
  * A well-formed path segment that also starts with a letter, so the identifiers derived from
@@ -39,102 +30,20 @@ const COLLECTION_KEYS: Record<PluginArtifactKind, readonly [string, string]> = {
  */
 const ARTIFACT_NAME_PATTERN = /^[a-z][a-z0-9]*(-[a-z0-9]+)*$/;
 
+/** The `package.json` / collection-file keys Nx reads for each artifact kind, in priority order. */
+const COLLECTION_KEYS: Record<PluginArtifactKind, readonly [string, string]> = {
+  executor: ['executors', 'builders'],
+  generator: ['generators', 'schematics']
+};
+
 /** The workspace wrapper for each artifact kind, named in errors about upstream drift. */
 const WRAPPER_NAMES: Record<PluginArtifactKind, string> = {
   executor: 'nx-exec',
   generator: 'nx-gen'
 };
 
-/**
- * Throws unless `name` can name a generator or executor: lowercase alphanumeric words joined by
- * single hyphens, starting with a letter. A leading digit would pass `assertValidPathSegment`
- * but produce invalid identifiers such as `1passwordSyncExecutor`.
- */
-export function assertValidArtifactName(name: string): void {
-  if (!ARTIFACT_NAME_PATTERN.test(name)) {
-    throw new Error(
-      `\`name\` "${name}" must be lowercase alphanumeric words joined by single hyphens, ` +
-        'starting with a letter, so the generated TypeScript identifiers are valid.'
-    );
-  }
-}
-
-/**
- * Reads the configuration of `project`, which must be tagged `type:plugin`.
- *
- * @throws when the project is not a plugin, pointing at the `nx-plugin` scaffold.
- */
-export function readPluginProject(tree: Tree, project: string): ProjectConfiguration {
-  const projectConfig = readProjectConfiguration(tree, project);
-
-  if (!projectConfig.tags?.includes('type:plugin')) {
-    throw new Error(
-      `Project "${project}" is not a plugin (missing the \`type:plugin\` tag). ` +
-        'Scaffold the plugin with `nx g @cybertecpty/nx-plugin:nx-plugin` first.'
-    );
-  }
-
-  return projectConfig;
-}
-
-/** The plugin's npm package name — the prefix of its executors in `project.json` targets. */
-export function readPluginPackageName(tree: Tree, projectRoot: string): string | undefined {
-  const name = readPluginPackageJson(tree, projectRoot).name;
-
-  return typeof name === 'string' ? name : undefined;
-}
-
-/**
- * Deletes the ambient `schema.d.ts` that `@nx/plugin:{kind}` emits; the wrapper's
- * own template writes a type-checked `schema.ts` in its place.
- *
- * @throws when upstream did not emit it — its output shape has changed.
- */
-export function removeUpstreamSchemaDeclaration(
-  tree: Tree,
-  artifactDir: string,
-  kind: PluginArtifactKind
-): void {
-  const schemaDtsPath = joinPathFragments(artifactDir, 'schema.d.ts');
-
-  if (!tree.exists(schemaDtsPath)) {
-    throw new Error(
-      `\`@nx/plugin:${kind}\` did not emit ${schemaDtsPath}; its output shape has changed and \`${WRAPPER_NAMES[kind]}\` needs updating.`
-    );
-  }
-
-  tree.delete(schemaDtsPath);
-}
-
-/**
- * Throws when the plugin already has an artifact in `artifactDir` or a `name` entry in its
- * collection. Upstream `@nx/plugin` overwrites both without warning, which would silently
- * replace a real implementation with the starter. Call it before delegating.
- */
-export function assertArtifactAbsent(
-  tree: Tree,
-  projectRoot: string,
-  { kind, name, artifactDir }: { kind: PluginArtifactKind; name: string; artifactDir: string }
-): void {
-  if (tree.exists(artifactDir)) {
-    throw new Error(
-      `The ${kind} folder ${artifactDir} already exists. Delete it first to regenerate it, ` +
-        'or pass a different `directory`.'
-    );
-  }
-
-  const collectionPath = resolvePluginCollectionPath(tree, projectRoot, kind);
-  const collection = tree.exists(collectionPath)
-    ? readJson<Record<string, Record<string, unknown> | undefined>>(tree, collectionPath)
-    : {};
-
-  if (COLLECTION_KEYS[kind].some(key => collection[key]?.[name] !== undefined)) {
-    throw new Error(
-      `${collectionPath} already has a "${name}" ${kind}. Pick a different \`name\`, ` +
-        'or remove the existing entry first.'
-    );
-  }
-}
+/** The TypeScript module, loaded on first use the way `@nx/*` generators load it. */
+let tsModule: ReturnType<typeof ensureTypescript> | undefined;
 
 /**
  * Re-exports an artifact's default function and options type from the plugin's
@@ -179,24 +88,94 @@ export function addPluginExports(
 }
 
 /**
- * Alpha-sorts the plugin's `package.json` `dependencies`, which `@nx/plugin`'s
- * generators reorder by hoisting `@nx/devkit` to the top. pnpm writes them sorted,
- * so this keeps the delegated run from leaving a reorder-only diff.
+ * Throws when the plugin already has an artifact in `artifactDir` or a `name` entry in its
+ * collection. Upstream `@nx/plugin` overwrites both without warning, which would silently
+ * replace a real implementation with the starter. Call it before delegating.
  */
-export function sortPluginDependencies(tree: Tree, projectRoot: string): void {
-  const packageJsonPath = joinPathFragments(projectRoot, 'package.json');
-
-  if (!tree.exists(packageJsonPath)) {
-    return;
+export function assertArtifactAbsent(
+  tree: Tree,
+  projectRoot: string,
+  { kind, name, artifactDir }: { kind: PluginArtifactKind; name: string; artifactDir: string }
+): void {
+  if (tree.exists(artifactDir)) {
+    throw new Error(
+      `The ${kind} folder ${artifactDir} already exists. Delete it first to regenerate it, ` +
+        'or pass a different `directory`.'
+    );
   }
 
-  updateJson<{ dependencies?: Record<string, string> }>(tree, packageJsonPath, json => {
-    if (json.dependencies) {
-      json.dependencies = sortKeys(json.dependencies);
-    }
+  const collectionPath = resolvePluginCollectionPath(tree, projectRoot, kind);
+  const collection = tree.exists(collectionPath)
+    ? readJson<Record<string, Record<string, unknown> | undefined>>(tree, collectionPath)
+    : {};
 
-    return json;
-  });
+  if (COLLECTION_KEYS[kind].some(key => collection[key]?.[name] !== undefined)) {
+    throw new Error(
+      `${collectionPath} already has a "${name}" ${kind}. Pick a different \`name\`, ` +
+        'or remove the existing entry first.'
+    );
+  }
+}
+
+/**
+ * Throws unless `name` can name a generator or executor: lowercase alphanumeric words joined by
+ * single hyphens, starting with a letter. A leading digit would pass `assertValidPathSegment`
+ * but produce invalid identifiers such as `1passwordSyncExecutor`.
+ */
+export function assertValidArtifactName(name: string): void {
+  if (!ARTIFACT_NAME_PATTERN.test(name)) {
+    throw new Error(
+      `\`name\` "${name}" must be lowercase alphanumeric words joined by single hyphens, ` +
+        'starting with a letter, so the generated TypeScript identifiers are valid.'
+    );
+  }
+}
+
+/** The plugin's npm package name — the prefix of its executors in `project.json` targets. */
+export function readPluginPackageName(tree: Tree, projectRoot: string): string | undefined {
+  const name = readPluginPackageJson(tree, projectRoot).name;
+
+  return typeof name === 'string' ? name : undefined;
+}
+
+/**
+ * Reads the configuration of `project`, which must be tagged `type:plugin`.
+ *
+ * @throws when the project is not a plugin, pointing at the `nx-plugin` scaffold.
+ */
+export function readPluginProject(tree: Tree, project: string): ProjectConfiguration {
+  const projectConfig = readProjectConfiguration(tree, project);
+
+  if (!projectConfig.tags?.includes('type:plugin')) {
+    throw new Error(
+      `Project "${project}" is not a plugin (missing the \`type:plugin\` tag). ` +
+        'Scaffold the plugin with `nx g @cybertecpty/nx-plugin:nx-plugin` first.'
+    );
+  }
+
+  return projectConfig;
+}
+
+/**
+ * Deletes the ambient `schema.d.ts` that `@nx/plugin:{kind}` emits; the wrapper's
+ * own template writes a type-checked `schema.ts` in its place.
+ *
+ * @throws when upstream did not emit it — its output shape has changed.
+ */
+export function removeUpstreamSchemaDeclaration(
+  tree: Tree,
+  artifactDir: string,
+  kind: PluginArtifactKind
+): void {
+  const schemaDtsPath = joinPathFragments(artifactDir, 'schema.d.ts');
+
+  if (!tree.exists(schemaDtsPath)) {
+    throw new Error(
+      `\`@nx/plugin:${kind}\` did not emit ${schemaDtsPath}; its output shape has changed and \`${WRAPPER_NAMES[kind]}\` needs updating.`
+    );
+  }
+
+  tree.delete(schemaDtsPath);
 }
 
 /**
@@ -224,6 +203,27 @@ export function sortPluginCollection(
       if (collection) {
         json[key] = sortKeys(collection);
       }
+    }
+
+    return json;
+  });
+}
+
+/**
+ * Alpha-sorts the plugin's `package.json` `dependencies`, which `@nx/plugin`'s
+ * generators reorder by hoisting `@nx/devkit` to the top. pnpm writes them sorted,
+ * so this keeps the delegated run from leaving a reorder-only diff.
+ */
+export function sortPluginDependencies(tree: Tree, projectRoot: string): void {
+  const packageJsonPath = joinPathFragments(projectRoot, 'package.json');
+
+  if (!tree.exists(packageJsonPath)) {
+    return;
+  }
+
+  updateJson<{ dependencies?: Record<string, string> }>(tree, packageJsonPath, json => {
+    if (json.dependencies) {
+      json.dependencies = sortKeys(json.dependencies);
     }
 
     return json;
