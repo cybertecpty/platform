@@ -6,6 +6,7 @@ import eslintConfigPrettier from 'eslint-config-prettier';
 import astro from 'eslint-plugin-astro';
 import jest from 'eslint-plugin-jest';
 import playwright from 'eslint-plugin-playwright';
+import unicorn from 'eslint-plugin-unicorn';
 import tseslint from 'typescript-eslint';
 
 // Projects that test with Vitest instead of Jest: Astro content sites only (ADR 0007,
@@ -344,6 +345,30 @@ export default [
           patterns: [{ group: ['lodash/*'], message: lodashMessage, allowTypeImports: true }]
         }
       ]
+    }
+  },
+  {
+    // eslint-plugin-unicorn: a curated list of bug-catching rules, never its opinionated
+    // `recommended` preset. Held at ^65 until the ESLint 10 migration. See ADR 0008,
+    // 2026-10-16 amendment.
+    files: ['**/*.{ts,tsx,cts,mts,js,jsx,cjs,mjs}'],
+    plugins: { unicorn },
+    rules: {
+      'unicorn/prefer-node-protocol': 'error',
+      'unicorn/error-message': 'error',
+      'unicorn/throw-new-error': 'error',
+      'unicorn/new-for-builtins': 'error',
+      'unicorn/no-instanceof-builtins': 'error',
+      'unicorn/no-thenable': 'error',
+      'unicorn/no-await-in-promise-methods': 'error',
+      'unicorn/no-single-promise-in-promise-methods': 'error',
+      'unicorn/no-array-fill-with-reference-type': 'error',
+      'unicorn/no-unused-array-method-return': 'error',
+      'unicorn/no-negation-in-equality-check': 'error',
+      'unicorn/no-accessor-recursion': 'error',
+      'unicorn/no-new-buffer': 'error',
+      'unicorn/no-invalid-remove-event-listener': 'error',
+      'unicorn/prefer-structured-clone': 'error'
     }
   },
   // NgRx SignalStore lint rules. Spread the plugin's flat config (the `ngrx/base`

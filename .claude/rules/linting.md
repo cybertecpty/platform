@@ -18,8 +18,9 @@ Moved here from `docs/agents/conventions.md` §8. Loads when editing an ESLint c
   0008): `@ngrx/eslint-plugin` `configs.signals` on `{apps,libs}/**/*.ts` (SignalStore
   footguns), `eslint-plugin-jest` `flat/recommended` on spec / mock files
   (`.claude/rules/testing.md`), `@typescript-eslint/no-deprecated` on all TS (flags
-  `@deprecated` symbols — the one `strictTypeChecked` rule promoted), and
-  `@eslint-community/eslint-plugin-eslint-comments`.
+  `@deprecated` symbols — the one `strictTypeChecked` rule promoted),
+  `@eslint-community/eslint-plugin-eslint-comments`, and a curated list of
+  `eslint-plugin-unicorn` rules (never its preset).
   Adding or removing a whole plugin, or swapping its preset, is an ADR 0008 change;
   promoting or demoting an individual rule is a normal config edit.
 - `eslint-comments` details: `require-description` and `no-unlimited-disable` are errors, and
