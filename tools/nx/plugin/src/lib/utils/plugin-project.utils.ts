@@ -59,9 +59,11 @@ export function readPluginPackageName(tree: Tree, projectRoot: string): string |
 }
 
 /**
- * Removes the ambient `schema.d.ts` that `@nx/plugin:{kind}` emits and returns its
- * source, so the wrapper can write a type-checked `schema.ts` in its place.
+ * Deletes the ambient `schema.d.ts` that `@nx/plugin:{kind}` emits, so the wrapper
+ * can write a type-checked `schema.ts` in its place.
  *
+ * @returns the content of the deleted `schema.d.ts` — `nx-gen` rewrites it into
+ *   `schema.ts`; `nx-exec` ignores it and writes `schema.ts` from its own template.
  * @throws when upstream did not emit it — its output shape has changed.
  */
 export function takeUpstreamSchemaDeclaration(
