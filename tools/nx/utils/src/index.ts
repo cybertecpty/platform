@@ -5,6 +5,7 @@ export {
 export * from './lib/nx-affected.utils';
 export * from './lib/nx-domain.utils';
 export * from './lib/nx-env.utils';
+export * from './lib/nx-executor-context.utils';
 export * from './lib/nx-executor.utils';
 export * from './lib/nx-generator.utils';
 export * from './lib/nx-project-tags.utils';

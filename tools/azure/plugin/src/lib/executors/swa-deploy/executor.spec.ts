@@ -1,4 +1,4 @@
-import { runCommand } from '@cybertecpty/nx-utils';
+import { createExecutorContext, runCommand } from '@cybertecpty/nx-utils';
 import { logger, type ExecutorContext, type TargetConfiguration } from '@nx/devkit';
 import { join } from 'node:path';
 import swaDeployExecutor, { TOKEN_VARIABLE } from './executor';
@@ -16,28 +16,11 @@ const DEFAULT_BUILD: TargetConfiguration = { outputs: ['{workspaceRoot}/dist/{pr
 const createContext = (
   targets: Record<string, TargetConfiguration> = { build: DEFAULT_BUILD },
   overrides: Partial<ExecutorContext> = {}
-): ExecutorContext => ({
-  root: '/workspace',
-  cwd: '/workspace',
-  isVerbose: false,
-  projectName: 'cybertec-io',
-  projectGraph: {
-    nodes: {
-      'cybertec-io': {
-        name: 'cybertec-io',
-        type: 'app',
-        data: { root: 'apps/cybertec-io', targets }
-      }
-    },
-    dependencies: {}
-  },
-  projectsConfigurations: {
-    version: 2,
-    projects: { 'cybertec-io': { root: 'apps/cybertec-io', targets } }
-  },
-  nxJsonConfiguration: {},
-  ...overrides
-});
+): ExecutorContext =>
+  createExecutorContext(
+    { projectName: 'cybertec-io', projectRoot: 'apps/cybertec-io', targets },
+    overrides
+  );
 
 const lastError = (): string => jest.mocked(logger.error).mock.calls.at(-1)?.[0] as string;
 
