@@ -1,3 +1,4 @@
+import { isProjectOfType } from '@cybertecpty/nx-utils';
 import {
   joinPathFragments,
   readJson,
@@ -146,7 +147,7 @@ export function readPluginPackageName(tree: Tree, projectRoot: string): string |
 export function readPluginProject(tree: Tree, project: string): ProjectConfiguration {
   const projectConfig = readProjectConfiguration(tree, project);
 
-  if (!projectConfig.tags?.includes('type:plugin')) {
+  if (!isProjectOfType(projectConfig, 'plugin')) {
     throw new Error(
       `Project "${project}" is not a plugin (missing the \`type:plugin\` tag). ` +
         'Scaffold the plugin with `nx g @cybertecpty/nx-plugin:nx-plugin` first.'
