@@ -258,7 +258,7 @@ record of anything the repo depends on.
 - Repo conventions → checked-in agent docs (this folder, `.claude/rules/`, `.claude/skills/`).
 - Architecture decisions → ADRs in `docs/adr/` (`write-adr` skill: when one is needed, how to
   write it).
-- Pending implementation work → GitHub issues on the matching project board.
+- Pending implementation work → GitHub issues, not added to a project board.
 - Memory → a short pointer to the durable source. Committed docs win on conflict.
 - Don't memorialize values with live sources (versions, branch names, remotes,
   labels, paths, flags). Store how to re-derive them; re-verify load-bearing facts
