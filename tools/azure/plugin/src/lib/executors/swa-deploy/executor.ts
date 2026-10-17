@@ -1,19 +1,11 @@
-import {
-  getOutputsForTargetAndConfiguration,
-  logger,
-  type ExecutorContext,
-  type PromiseExecutor
-} from '@nx/devkit';
+import { resolveTargetOutputFolder, runCommand } from '@cybertecpty/nx-utils';
+import { logger, type ExecutorContext, type PromiseExecutor } from '@nx/devkit';
 import { join } from 'node:path';
-import { runCommand } from '../../utils/run-command.utils';
 import type { SwaDeployExecutorSchema } from './schema';
 
 export const TOKEN_VARIABLE = 'SWA_CLI_DEPLOYMENT_TOKEN';
 
 const DEFAULT_BUILD_TARGET = 'build';
-
-/** Glob characters: an output like `dist/app/**` is a file pattern, not a folder to deploy. */
-const GLOB_PATTERN = /[*?[\]{}!]/;
 
 const missingTokenMessage = (projectRoot: string): string =>
   [
@@ -40,40 +32,16 @@ const resolveOutputPath = (
   }
 
   const buildTarget = options.buildTarget ?? DEFAULT_BUILD_TARGET;
-  const setOutputPath = 'Set the outputPath option on the deploy target.';
-  const node = context.projectGraph.nodes[projectName];
-  const targetConfiguration = node?.data.targets?.[buildTarget];
 
-  if (!targetConfiguration) {
+  try {
     return {
-      error: `${projectName} has no "${buildTarget}" target to read the deploy folder from. ${setOutputPath}`
+      outputPath: resolveTargetOutputFolder(context.projectGraph, projectName, buildTarget)
     };
+  } catch (error) {
+    const message = error instanceof Error ? error.message : String(error);
+
+    return { error: `${message} Set the outputPath option on the deploy target.` };
   }
-
-  // Without `outputs`, Nx guesses several conventional folders for a `build` target.
-  if (!targetConfiguration.outputs?.length) {
-    return {
-      error: `${projectName}:${buildTarget} declares no outputs, so the deploy folder is unknown. ${setOutputPath}`
-    };
-  }
-
-  const outputs = getOutputsForTargetAndConfiguration(
-    {
-      project: projectName,
-      target: buildTarget,
-      configuration: targetConfiguration.defaultConfiguration
-    },
-    {},
-    node
-  );
-
-  if (outputs.length !== 1 || GLOB_PATTERN.test(outputs[0])) {
-    return {
-      error: `${projectName}:${buildTarget} must declare exactly one output folder to deploy, but resolves to ${JSON.stringify(outputs)}. ${setOutputPath}`
-    };
-  }
-
-  return { outputPath: outputs[0] };
 };
 
 /**

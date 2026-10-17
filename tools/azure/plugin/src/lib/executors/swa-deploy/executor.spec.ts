@@ -1,9 +1,12 @@
+import { runCommand } from '@cybertecpty/nx-utils';
 import { logger, type ExecutorContext, type TargetConfiguration } from '@nx/devkit';
 import { join } from 'node:path';
-import { runCommand } from '../../utils/run-command.utils';
 import swaDeployExecutor, { TOKEN_VARIABLE } from './executor';
 
-jest.mock('../../utils/run-command.utils', () => ({ runCommand: jest.fn() }));
+jest.mock('@cybertecpty/nx-utils', () => ({
+  ...jest.requireActual<typeof import('@cybertecpty/nx-utils')>('@cybertecpty/nx-utils'),
+  runCommand: jest.fn()
+}));
 
 const runCommandMock = jest.mocked(runCommand);
 
