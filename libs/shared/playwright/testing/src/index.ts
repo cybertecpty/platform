@@ -18,3 +18,4 @@ export {
   type LighthouseThresholdOverrides,
   type LighthouseThresholds
 } from './lib/playwright-lighthouse.utils';
+export { derivePort, type PortRange } from './lib/playwright-port.utils';
