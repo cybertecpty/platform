@@ -40,6 +40,14 @@ Moved here from `docs/agents/conventions.md` §8, §9 and §11. Loads when editi
     generator, so remove it by hand. `.github/scripts/shared-lib-types.test.cjs` (run by
     `pnpm verify` and CI) fails if any project tagged `scope:shared` loads it or has no
     `typecheck` target. See issue #164.
+  - **The lib pass checks everything in `tsconfig.lib.json`'s `include`, test artifacts too.** A
+    `*.mock.ts` or `*.fixture.ts` in a lib's `src` that uses `jest.fn()` fails with TS2304 unless
+    the lib config's `types` has `jest` (a `type:testing` lib gets it from the generator) or its
+    `exclude` lists the artifact.
+  - **The `scope:shared` guard has two blind spots.** It reads only `compilerOptions.types`, so
+    Node types that arrive through a `/// <reference types="node" />` or a dependency's typings
+    pass it, and it finds projects through `project.json` tags, not a `package.json` `nx.tags`
+    field. Keep shared libs' tags in `project.json` and don't reference `node` types in them.
 - A stray `.ts` file outside every project `tsconfig` fails typed-lint project-service
   resolution — add it to a `tsconfig`, the ESLint `ignores` list, or
   `projectService.allowDefaultProject`.
