@@ -23,17 +23,35 @@ defineLighthouseTests({ paths: ['/', { path: '/about', presets: ['desktop'] }] }
   `targetDefaults`) and a `playwright.lighthouse.config.ts` whose `webServer` serves its
   production build.
 
-## One server port per checkout
+## Preview server config
 
-`derivePort(workspaceRoot, { base, span })` maps a checkout's path to a stable port, so git
-worktrees of the repo each serve their own build on their own port. Use it for the `webServer`
-port in an `-e2e` config, and set `reuseExistingServer: false`: two paths can hash to the same
-port, and reusing whatever answers there would test another worktree's server.
+`definePreviewConfig` returns the `baseURL`, `webServer` and `port` for an `-e2e` project's
+Playwright config, so no app hand-rolls its preview server:
 
-The `e2e` and `lighthouse` targets can run at the same time, so give each its own port.
-`cybertec-io-e2e` derives the lighthouse port from `<root>#lighthouse` and lets `E2E_PORT` and
-`LIGHTHOUSE_PORT` pin them to get out of a collision. It also passes `--ignore-lock` to
-`astro preview`, which otherwise allows one preview per project root.
+```ts
+// apps/{app}/e2e/playwright.config.ts
+const { baseURL, webServer } = definePreviewConfig({
+  target: 'e2e', // 'lighthouse' in playwright.lighthouse.config.ts
+  workspaceRoot: resolve(__dirname, '../../..'),
+  previewCommand: port => `pnpm exec astro preview --root apps/{app} --port ${port}`
+});
+export default defineConfig({ use: { baseURL }, webServer /* ... */ });
+```
+
+- **The port is derived from the checkout path and the target** (`derivePort`, range
+  4400-4899), so git worktrees each serve their own build and the `e2e` and `lighthouse` targets,
+  which can run at the same time, never share a port.
+- **`<TARGET>_PORT` pins it** (`E2E_PORT`, `LIGHTHOUSE_PORT`; non-alphanumerics in the target
+  become `_`) to get out of a hash collision. A value that isn't a whole number from 1024 to
+  65535 throws.
+- **`reuseExistingServer` is always `false`.** Two paths can hash to the same port, and reusing
+  whatever answers there would test another worktree's server. Playwright fails loudly instead.
+- **`BASE_URL` targets a running site** (a deployed URL) and returns no `webServer`.
+- **`previewCommand` is the app's**, because the static server differs per framework. Make it
+  bind the given port, and any flag the server needs to run two previews of one app at once
+  (Astro's `--ignore-lock`, for its one-preview-per-root lock).
+
+Use `derivePort(key, { base, span })` directly only for something that isn't a preview server.
 
 ## Running unit tests
 

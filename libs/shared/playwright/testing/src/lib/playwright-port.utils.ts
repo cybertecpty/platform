@@ -7,8 +7,8 @@ export interface PortRange {
   span: number;
 }
 
-const MAX_PORT = 65_535;
-const MIN_UNPRIVILEGED_PORT = 1024;
+export const MAX_PORT = 65_535;
+export const MIN_UNPRIVILEGED_PORT = 1024;
 
 /**
  * Maps a key (usually an absolute workspace path) to a stable port inside the range, so every
