@@ -19,3 +19,8 @@ export {
   type LighthouseThresholds
 } from './lib/playwright-lighthouse.utils';
 export { derivePort, type PortRange } from './lib/playwright-port.utils';
+export {
+  definePreviewConfig,
+  type DefinePreviewConfigOptions,
+  type PreviewConfig
+} from './lib/playwright-preview.utils';
