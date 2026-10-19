@@ -1,4 +1,5 @@
 import { isProjectOfType } from '@cybertecpty/nx-utils';
+import { orderByKeys } from '@cybertecpty/shared-utils';
 import {
   joinPathFragments,
   readJson,
@@ -202,7 +203,7 @@ export function sortPluginCollection(
       const collection = json[key];
 
       if (collection) {
-        json[key] = sortKeys(collection);
+        json[key] = orderByKeys(collection);
       }
     }
 
@@ -224,7 +225,7 @@ export function sortPluginDependencies(tree: Tree, projectRoot: string): void {
 
   updateJson<{ dependencies?: Record<string, string> }>(tree, packageJsonPath, json => {
     if (json.dependencies) {
-      json.dependencies = sortKeys(json.dependencies);
+      json.dependencies = orderByKeys(json.dependencies);
     }
 
     return json;
@@ -256,15 +257,4 @@ function resolvePluginCollectionPath(
     .find((value): value is string => typeof value === 'string');
 
   return joinPathFragments(projectRoot, declared ?? `${kind}s.json`);
-}
-
-/** A copy of `record` with its keys in code-unit order, as `Array.prototype.sort` orders them. */
-function sortKeys<T>(record: Record<string, T>): Record<string, T> {
-  const sorted: Record<string, T> = {};
-
-  for (const key of Object.keys(record).sort()) {
-    sorted[key] = record[key];
-  }
-
-  return sorted;
 }
