@@ -1,3 +1,4 @@
+import { orderByKeys } from '@cybertecpty/shared-utils';
 import { readProjectConfiguration, Tree, updateJson, updateProjectConfiguration } from '@nx/devkit';
 
 /** Minimal shape of a tsconfig file relevant to `addTsConfigTypes`. */
@@ -92,14 +93,7 @@ export function sortTsConfigBasePaths(tree: Tree, tsConfigBasePath = 'tsconfig.b
       return json;
     }
 
-    const sortedPaths = Object.keys(paths)
-      .sort()
-      .reduce<Record<string, string[]>>((sorted, key) => {
-        sorted[key] = paths[key];
-        return sorted;
-      }, {});
-
-    json.compilerOptions = { ...json.compilerOptions, paths: sortedPaths };
+    json.compilerOptions = { ...json.compilerOptions, paths: orderByKeys(paths) };
 
     return json;
   });
