@@ -53,9 +53,12 @@ export function definePreviewConfig({
   previewCommand,
   env = process.env
 }: DefinePreviewConfigOptions): PreviewConfig {
+  // The target is part of the hashed key, so `e2e` and `lighthouse` of one checkout differ.
   const port = pinnedPort(target, env) ?? derivePort(`${workspaceRoot}#${target}`, PORT_RANGE);
   const deployedUrl = env['BASE_URL'];
 
+  // The port is still resolved above, so a malformed override fails here too, not only
+  // on the runs that happen to start a local server.
   if (deployedUrl) {
     return { baseURL: deployedUrl, port, webServer: undefined };
   }
@@ -67,6 +70,8 @@ export function definePreviewConfig({
     port,
     webServer: {
       command: previewCommand(port),
+      // The workspace root, so tools like `pnpm exec` find the root package.json whichever
+      // app directory Playwright was started from.
       cwd: workspaceRoot,
       url: baseURL,
       reuseExistingServer: false,
@@ -75,6 +80,13 @@ export function definePreviewConfig({
   };
 }
 
+/**
+ * Reads the `<TARGET>_PORT` override for a target, or undefined when it isn't set. Throws a
+ * `RangeError` when it isn't a whole number between 1024 and 65535.
+ *
+ * The derived port is a hash of the checkout path, so two worktrees can land on the same one.
+ * The override lets one of them pin a different port instead of failing on the clash.
+ */
 function pinnedPort(target: string, env: Env): number | undefined {
   const name = `${target.toUpperCase().replaceAll(/[^A-Z0-9]/g, '_')}_PORT`;
   const value = env[name];
