@@ -71,7 +71,7 @@
       "x-priority": "important"
     },
     "unitTestRunner": {
-      "description": "Test runner to use for unit tests. The workspace standardizes on Jest (ADR 0007).",
+      "description": "Test runner to use for unit tests. The workspace standardizes on Jest (ADR 0007). `none` is rejected for `scope:shared`, which needs the `typecheck` target that only a test runner brings (issue #164).",
       "type": "string",
       "enum": ["none", "jest"],
       "default": "jest",

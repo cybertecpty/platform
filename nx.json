@@ -79,7 +79,7 @@
       "cache": true,
       "inputs": ["default", "^default", { "externalDependencies": ["typescript"] }],
       "options": {
-        "command": "tsc --noEmit -p {projectRoot}/tsconfig.spec.json"
+        "command": "tsc --noEmit -p {projectRoot}/tsconfig.lib.json && tsc --noEmit -p {projectRoot}/tsconfig.spec.json"
       }
     }
   },
