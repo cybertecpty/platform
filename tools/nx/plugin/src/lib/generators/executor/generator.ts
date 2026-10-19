@@ -1,11 +1,10 @@
-import { assertValidPathSegment } from '@cybertecpty/nx-utils';
+import { assertValidPathSegment, readProjectPackageJson } from '@cybertecpty/nx-utils';
 import { formatFiles, generateFiles, joinPathFragments, names, Tree } from '@nx/devkit';
 import { executorGenerator as nxExecutorGenerator } from '@nx/plugin/generators';
 import {
   addPluginExports,
   assertArtifactAbsent,
   assertValidArtifactName,
-  readPluginPackageName,
   readPluginProject,
   removeUpstreamSchemaDeclaration,
   sortPluginCollection,
@@ -68,7 +67,7 @@ export async function nxExecGenerator(tree: Tree, options: NxExecGeneratorOption
     description,
     executorFnName,
     name,
-    packageName: readPluginPackageName(tree, projectConfig.root) ?? project,
+    packageName: readProjectPackageJson(tree, projectConfig.root)?.name ?? project,
     // Without `--description` the README gets a TODO, not upstream's bare "<name> executor".
     summary: options.description ?? `TODO: describe what the \`${name}\` executor does.`,
     unitTestRunner

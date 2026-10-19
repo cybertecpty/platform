@@ -1,4 +1,4 @@
-import { isProjectOfType } from '@cybertecpty/nx-utils';
+import { isProjectOfType, readProjectPackageJson } from '@cybertecpty/nx-utils';
 import { orderByKeys } from '@cybertecpty/shared-utils';
 import {
   joinPathFragments,
@@ -133,13 +133,6 @@ export function assertValidArtifactName(name: string): void {
   }
 }
 
-/** The plugin's npm package name — the prefix of its executors in `project.json` targets. */
-export function readPluginPackageName(tree: Tree, projectRoot: string): string | undefined {
-  const name = readPluginPackageJson(tree, projectRoot).name;
-
-  return typeof name === 'string' ? name : undefined;
-}
-
 /**
  * Reads the configuration of `project`, which must be tagged `type:plugin`.
  *
@@ -232,15 +225,6 @@ export function sortPluginDependencies(tree: Tree, projectRoot: string): void {
   });
 }
 
-/** The plugin's `package.json`, or `{}` when it has none. */
-function readPluginPackageJson(tree: Tree, projectRoot: string): Record<string, unknown> {
-  const packageJsonPath = joinPathFragments(projectRoot, 'package.json');
-
-  return tree.exists(packageJsonPath)
-    ? readJson<Record<string, unknown>>(tree, packageJsonPath)
-    : {};
-}
-
 /**
  * The plugin's generator or executor collection file, resolved the way Nx does: the
  * `package.json` field (`generators` / `schematics`, `executors` / `builders`), falling back
@@ -251,7 +235,7 @@ function resolvePluginCollectionPath(
   projectRoot: string,
   kind: PluginArtifactKind
 ): string {
-  const packageJson = readPluginPackageJson(tree, projectRoot);
+  const packageJson = readProjectPackageJson(tree, projectRoot) ?? {};
   const declared = COLLECTION_KEYS[kind]
     .map(key => packageJson[key])
     .find((value): value is string => typeof value === 'string');

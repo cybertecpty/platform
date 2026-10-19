@@ -1,4 +1,5 @@
-import { logger } from '@nx/devkit';
+import { logger, type Tree } from '@nx/devkit';
+import { createTreeWithEmptyWorkspace } from '@nx/devkit/testing';
 import {
   determineTopLevelProjectDir,
   normalizeProjectOptions,
@@ -6,6 +7,7 @@ import {
   NX_PROJECT_TYPES,
   projectDirFromOpts,
   projectNameFromOpts,
+  readProjectPackageJson,
   stripProjectTypeFromName
 } from './nx-projects.utils';
 
@@ -126,6 +128,31 @@ describe('projectNameFromOpts', () => {
     ).toThrow(
       '`group` segment "Orchestration" must be lowercase alphanumeric words joined by single hyphens.'
     );
+  });
+});
+
+describe('readProjectPackageJson', () => {
+  const projectRoot = 'libs/demo/utils';
+  let tree: Tree;
+
+  beforeEach(() => {
+    tree = createTreeWithEmptyWorkspace();
+  });
+
+  it('returns the parsed package.json in the project root', () => {
+    tree.write(`${projectRoot}/package.json`, JSON.stringify({ name: '@proj/demo-utils' }));
+
+    expect(readProjectPackageJson(tree, projectRoot)).toEqual({ name: '@proj/demo-utils' });
+  });
+
+  it('returns undefined when the project has no package.json', () => {
+    expect(readProjectPackageJson(tree, projectRoot)).toBeUndefined();
+  });
+
+  it('throws when the package.json is not valid JSON', () => {
+    tree.write(`${projectRoot}/package.json`, '{ not valid json');
+
+    expect(() => readProjectPackageJson(tree, projectRoot)).toThrow();
   });
 });
 
