@@ -18,13 +18,18 @@ import { resolve } from 'node:path';
 // Setting BASE_URL targets an already-running site (the post-deploy `smoke` target points it
 // at the deployed URL), so the local `astro preview` webServer is skipped entirely. Unset, the
 // suite serves the local build as above.
-//
-// `cwd` is the workspace root (not the app dir): `pnpm exec` resolves its "current
-// project" from cwd, and only the root has a package.json (ADR 0012 — the app itself
-// doesn't). `astro`'s own `--root` flag points it at the app instead.
-const workspaceRoot = resolve(__dirname, '../../..');
+const pinnedPort = process.env['E2E_PORT'];
+const pinnedNumber = Number(pinnedPort);
+if (
+  pinnedPort !== undefined &&
+  !(Number.isInteger(pinnedNumber) && pinnedNumber >= 1024 && pinnedNumber <= 65535)
+) {
+  throw new Error(`E2E_PORT must be a port number between 1024 and 65535, got "${pinnedPort}"`);
+}
 const previewPort =
-  Number(process.env['E2E_PORT']) || derivePort(workspaceRoot, { base: 4400, span: 500 });
+  pinnedPort !== undefined
+    ? pinnedNumber
+    : derivePort(resolve(__dirname, '../../..'), { base: 4400, span: 500 });
 const baseURL = process.env['BASE_URL'] || `http://localhost:${previewPort}`;
 const isCI = !!process.env['CI'];
 const targetsDeployedSite = !!process.env['BASE_URL'];
@@ -43,6 +48,9 @@ export default defineConfig({
     ? undefined
     : {
         command: `pnpm exec astro preview --root apps/cybertec-io --port ${previewPort}`,
+        // The workspace root, not the app dir: `pnpm exec` resolves its "current project" from
+        // cwd, and only the root has a package.json (ADR 0012 — the app itself doesn't).
+        // `astro`'s own `--root` flag points it at the app instead.
         cwd: '../../..',
         url: baseURL,
         reuseExistingServer: false,
