@@ -23,6 +23,13 @@ defineLighthouseTests({ paths: ['/', { path: '/about', presets: ['desktop'] }] }
   `targetDefaults`) and a `playwright.lighthouse.config.ts` whose `webServer` serves its
   production build.
 
+## One server port per checkout
+
+`derivePort(workspaceRoot, { base, span })` maps a checkout's path to a stable port, so git
+worktrees of the repo each serve their own build on their own port. Use it for the `webServer`
+port in an `-e2e` config, and set `reuseExistingServer: false`: two paths can hash to the same
+port, and reusing whatever answers there would test another worktree's server.
+
 ## Running unit tests
 
 Run `nx test playwright-testing` to execute the unit tests via [Jest](https://jestjs.io).
