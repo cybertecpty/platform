@@ -28,8 +28,12 @@ defineLighthouseTests({ paths: ['/', { path: '/about', presets: ['desktop'] }] }
 `derivePort(workspaceRoot, { base, span })` maps a checkout's path to a stable port, so git
 worktrees of the repo each serve their own build on their own port. Use it for the `webServer`
 port in an `-e2e` config, and set `reuseExistingServer: false`: two paths can hash to the same
-port, and reusing whatever answers there would test another worktree's server. `cybertec-io-e2e` lets `E2E_PORT` pin the port to get out
-of a collision. Its `e2e` and `lighthouse` targets share one port per checkout, so run them one after the other.
+port, and reusing whatever answers there would test another worktree's server.
+
+The `e2e` and `lighthouse` targets can run at the same time, so give each its own port.
+`cybertec-io-e2e` derives the lighthouse port from `<root>#lighthouse` and lets `E2E_PORT` and
+`LIGHTHOUSE_PORT` pin them to get out of a collision. It also passes `--ignore-lock` to
+`astro preview`, which otherwise allows one preview per project root.
 
 ## Running unit tests
 
