@@ -210,7 +210,9 @@ since `develop` squash-merges. Write the message to a file and `git commit -F {f
 - subject **lowercase** (acronyms too), no trailing period. camelCase identifiers fail
   `subject-case` too: `move lastCallArg` is rejected, so describe it (`move the last-call helper`);
 - header ≤ 100 characters; body / footer lines ≤ 100 (blocking);
-- blank line before any footer (warning only — the commit still lands);
+- blank line before any footer (warning only — the commit still lands). A body line that starts
+  with `word:` (e.g. a wrapped line beginning `definePreviewConfig: …`) is read as a footer and
+  trips the same warning, so reword it or start that line with a plain word;
 - breaking change: `!` after the type/scope — `feat(api)!: drop v1 endpoints`.
 
 `--no-verify` skips the hook, but the CI check on the PR title still gates the merge.
