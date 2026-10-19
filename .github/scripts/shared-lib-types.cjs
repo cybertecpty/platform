@@ -3,11 +3,11 @@
  *
  * The `typecheck` target checks each project's `tsconfig.lib.json`, so a Node global
  * (`process`, `Buffer`, …) in a lib's source fails CI only if that config doesn't load
- * `node` types. Nx generators add `node` to a new lib's `types`, so this finds every
- * project tagged `scope:shared` (no hand-kept list) and reports any that has no
- * `typecheck` target, or whose lib tsconfig is missing, has config errors, or would load
- * Node types: `node` listed directly or through `extends`, or no `types` at all, which
- * loads every visible `@types` package.
+ * `node` types. This finds every project tagged `scope:shared` (no hand-kept list) and
+ * reports the cases that would silently let Node globals through: no `typecheck` target,
+ * `node` in the lib tsconfig's `types` (directly or through `extends`), or no `types` at
+ * all, which loads every visible `@types` package. A missing or invalid lib tsconfig
+ * isn't checked here — `typecheck` already fails on it.
  *
  * Run by `node --test` (`shared-lib-types.test.cjs`) in `pnpm verify` and CI.
  */
@@ -16,8 +16,6 @@ const fs = require('node:fs');
 const path = require('node:path');
 const ts = require('typescript');
 
-/** TS18003 "No inputs were found" — irrelevant here, since only `compilerOptions` is read. */
-const NO_INPUTS_FOUND = 18003;
 const SKIP_DIRS = new Set(['node_modules', 'dist', 'coverage', 'tmp', '.git', '.nx']);
 const TAG = 'scope:shared';
 
@@ -44,28 +42,19 @@ function findProjectFiles(root) {
 /**
  * Resolves a tsconfig's effective `compilerOptions.types`, following `extends`.
  * @param {string} configPath
- * @returns {{ types: string[] | undefined, errors: string[] }} `types` is undefined when no
- *   config in the chain sets it; `errors` holds TypeScript's config diagnostics
+ * @returns {string[] | undefined} undefined when no config in the chain sets `types`
  */
 function effectiveTypes(configPath) {
-  const unrecoverable = [];
   const parsed = ts.getParsedCommandLineOfConfigFile(
     configPath,
     {},
-    {
-      ...ts.sys,
-      onUnRecoverableConfigFileDiagnostic: diagnostic => unrecoverable.push(diagnostic)
-    }
+    { ...ts.sys, onUnRecoverableConfigFileDiagnostic: () => undefined }
   );
-  const errors = [...unrecoverable, ...(parsed?.errors ?? [])]
-    .filter(diagnostic => diagnostic.code !== NO_INPUTS_FOUND)
-    .map(diagnostic => ts.flattenDiagnosticMessageText(diagnostic.messageText, ' '));
-  return { types: parsed?.options.types, errors };
+  return parsed?.options.types;
 }
 
 /**
- * Reports each `scope:shared` project whose source isn't type-checked without Node types:
- * no `typecheck` target, or a `tsconfig.lib.json` that is missing, invalid, or loads `node`.
+ * Reports each `scope:shared` project whose source could use Node globals unnoticed.
  * @param {string} root workspace root
  * @returns {{ project: string, problem: string }[]} project is the root-relative directory
  */
@@ -82,15 +71,10 @@ function findViolations(root) {
     }
 
     const libConfig = path.join(dir, 'tsconfig.lib.json');
-    if (!fs.existsSync(libConfig)) {
-      violations.push({ project, problem: 'has no tsconfig.lib.json' });
-      continue;
-    }
+    if (!fs.existsSync(libConfig)) continue;
 
-    const { types, errors } = effectiveTypes(libConfig);
-    if (errors.length > 0) {
-      violations.push({ project, problem: `tsconfig.lib.json has errors: ${errors.join('; ')}` });
-    } else if (types === undefined) {
+    const types = effectiveTypes(libConfig);
+    if (types === undefined) {
       violations.push({
         project,
         problem: 'tsconfig.lib.json sets no "types", so every @types package (node too) loads'

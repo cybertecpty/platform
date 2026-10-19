@@ -18,12 +18,10 @@ const write = (rel, value) => {
 
 const addProject = (dir, { tags, types, libConfig, targets = { typecheck: {} } }) => {
   write(`${dir}/project.json`, { name: path.basename(dir), tags, targets });
-  if (libConfig !== null) {
-    write(
-      `${dir}/tsconfig.lib.json`,
-      libConfig ?? { compilerOptions: types === undefined ? {} : { types }, include: [] }
-    );
-  }
+  write(
+    `${dir}/tsconfig.lib.json`,
+    libConfig ?? { compilerOptions: types === undefined ? {} : { types }, include: [] }
+  );
 };
 
 describe('findViolations', () => {
@@ -73,31 +71,12 @@ describe('findViolations', () => {
     ]);
   });
 
-  it('flags a scope:shared lib with no lib tsconfig', () => {
-    addProject('libs/shared/a', { tags: ['scope:shared'], libConfig: null });
-
-    assert.deepEqual(findViolations(root), [
-      { project: 'libs/shared/a', problem: 'has no tsconfig.lib.json' }
-    ]);
-  });
-
   it('flags a scope:shared lib with no typecheck target, since nothing would check its source', () => {
     addProject('libs/shared/a', { tags: ['scope:shared'], types: [], targets: {} });
 
     assert.deepEqual(findViolations(root), [
       { project: 'libs/shared/a', problem: 'has no "typecheck" target' }
     ]);
-  });
-
-  it('reports a lib tsconfig that TypeScript cannot parse cleanly', () => {
-    addProject('libs/shared/a', {
-      tags: ['scope:shared'],
-      libConfig: { extends: './missing.json', compilerOptions: { types: [] }, include: [] }
-    });
-
-    const [violation] = findViolations(root);
-    assert.equal(violation.project, 'libs/shared/a');
-    assert.match(violation.problem, /^tsconfig\.lib\.json has errors: .*missing\.json/);
   });
 
   it('ignores projects not tagged scope:shared, and node_modules', () => {
