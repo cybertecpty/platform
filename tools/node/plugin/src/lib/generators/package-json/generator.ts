@@ -1,4 +1,4 @@
-import { getWorkspaceScope, readRootPackageJson } from '@cybertecpty/nx-utils';
+import { getWorkspaceScope, readWorkspacePackageJson } from '@cybertecpty/nx-utils';
 import { formatFiles, joinPathFragments, logger, writeJson, type Tree } from '@nx/devkit';
 import { valid } from 'semver';
 import type { PackageJson } from 'type-fest';
@@ -97,7 +97,7 @@ export async function packageJsonGenerator(
  * neither, rather than copying a partial set silently.
  */
 function resolveDependencyVersions(tree: Tree, names: string[]): Record<string, string> {
-  const rootPackageJson = readRootPackageJson(tree);
+  const rootPackageJson = readWorkspacePackageJson(tree);
   const resolved: Record<string, string> = {};
   const missing: string[] = [];
 

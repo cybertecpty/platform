@@ -7,6 +7,7 @@ export * from './lib/nx-domain.utils';
 export * from './lib/nx-env.utils';
 export * from './lib/nx-executor.utils';
 export * from './lib/nx-generator.utils';
+export * from './lib/nx-path-segment.utils';
 export * from './lib/nx-project-tags.utils';
 export * from './lib/nx-projects.utils';
 export * from './lib/nx-targets.utils';

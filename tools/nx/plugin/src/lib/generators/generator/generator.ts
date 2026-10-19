@@ -1,11 +1,10 @@
-import { assertValidPathSegment } from '@cybertecpty/nx-utils';
+import { assertValidPathSegment, readProjectPackageJson } from '@cybertecpty/nx-utils';
 import { formatFiles, generateFiles, joinPathFragments, names, Tree } from '@nx/devkit';
 import { generatorGenerator as nxGeneratorGenerator } from '@nx/plugin/generators';
 import {
   addPluginExports,
   assertArtifactAbsent,
   assertValidArtifactName,
-  readPluginPackageName,
   readPluginProject,
   removeUpstreamSchemaDeclaration,
   sortPluginCollection,
@@ -66,7 +65,7 @@ export async function nxGenGenerator(tree: Tree, options: NxGenGeneratorOptions)
     className,
     generatorFnName,
     name,
-    packageName: readPluginPackageName(tree, projectConfig.root) ?? project,
+    packageName: readProjectPackageJson(tree, projectConfig.root)?.name ?? project,
     summary: description ?? `TODO: describe what the \`${name}\` generator scaffolds.`,
     unitTestRunner
   });

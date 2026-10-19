@@ -5,8 +5,10 @@ import {
   NxProjectScope,
   NxProjectType
 } from '@cybertecpty/nx-types';
-import { joinPathFragments, logger } from '@nx/devkit';
-import { assertValidPathSegment, domainToSegments, projectDomainToName } from './nx-domain.utils';
+import { joinPathFragments, logger, readJson, type Tree } from '@nx/devkit';
+import type { PackageJson } from 'type-fest';
+import { domainToSegments, projectDomainToName } from './nx-domain.utils';
+import { assertValidPathSegment } from './nx-path-segment.utils';
 import { createProjectTags } from './nx-project-tags.utils';
 
 /**
@@ -208,6 +210,18 @@ export function projectNameFromOpts(opts: NxProjectOptions): string {
   }
 
   return `${name}-${type}`;
+}
+
+/**
+ * Reads the `package.json` in `projectRoot` and returns its contents as a `PackageJson`
+ * object, or `undefined` when the project has none.
+ *
+ * @throws when the file exists but is not valid JSON.
+ */
+export function readProjectPackageJson(tree: Tree, projectRoot: string): PackageJson | undefined {
+  const packageJsonPath = joinPathFragments(projectRoot, 'package.json');
+
+  return tree.exists(packageJsonPath) ? readJson<PackageJson>(tree, packageJsonPath) : undefined;
 }
 
 /**

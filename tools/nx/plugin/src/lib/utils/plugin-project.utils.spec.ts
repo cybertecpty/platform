@@ -6,7 +6,6 @@ import {
   addPluginExports,
   assertArtifactAbsent,
   assertValidArtifactName,
-  readPluginPackageName,
   readPluginProject,
   removeUpstreamSchemaDeclaration,
   sortPluginCollection,
@@ -171,31 +170,6 @@ describe('assertValidArtifactName', () => {
       }
     }
   );
-});
-
-describe('readPluginPackageName', () => {
-  let tree: Tree;
-  const packageJsonPath = `${PLUGIN_ROOT}/package.json`;
-
-  beforeEach(() => {
-    tree = createTreeWithEmptyWorkspace();
-  });
-
-  it('returns the package name', () => {
-    tree.write(packageJsonPath, JSON.stringify({ name: '@cybertecpty/demo-plugin' }));
-
-    expect(readPluginPackageName(tree, PLUGIN_ROOT)).toBe('@cybertecpty/demo-plugin');
-  });
-
-  it('returns undefined when the package has no string name', () => {
-    tree.write(packageJsonPath, JSON.stringify({ name: 42 }));
-
-    expect(readPluginPackageName(tree, PLUGIN_ROOT)).toBeUndefined();
-  });
-
-  it('returns undefined when the plugin has no package.json', () => {
-    expect(readPluginPackageName(tree, PLUGIN_ROOT)).toBeUndefined();
-  });
 });
 
 describe('readPluginProject', () => {
