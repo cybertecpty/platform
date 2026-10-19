@@ -290,3 +290,7 @@ ADRs disagreed.
   `Buffer`) without importing anything would pass lint in a `scope:shared` lib and fail only in
   a browser-environment spec. Keep `scope:shared` testing helpers to plain JavaScript and Jest's
   own APIs.
+- **Update (2026-10-19, #164):** `typecheck` now also checks each project's `tsconfig.lib.json`,
+  and no `scope:shared` lib's lib tsconfig loads `node` types, so a Node global in their source
+  fails `typecheck` and CI. A `node --test` guard (`.github/scripts/shared-lib-types.test.cjs`)
+  keeps `node` out of every `scope:shared` lib's lib tsconfig, including new ones.

@@ -36,11 +36,28 @@ export function addTsConfigTypes(tree: Tree, tsConfigPath: string, types: string
 }
 
 /**
+ * Removes `types` from a tsconfig file's `compilerOptions.types`, keeping the rest in order.
+ * Always leaves an explicit array, even an empty one: a tsconfig with no `types` loads every
+ * visible `@types` package, which would bring back whatever was removed.
+ */
+export function removeTsConfigTypes(tree: Tree, tsConfigPath: string, types: string[]): void {
+  updateJson<TsConfigWithTypes, TsConfigWithTypes>(tree, tsConfigPath, json => {
+    const keptTypes = (json.compilerOptions?.types ?? []).filter(type => !types.includes(type));
+
+    json.compilerOptions = { ...json.compilerOptions, types: keptTypes };
+
+    return json;
+  });
+}
+
+/**
  * Adds the `typecheck` target stub every generator-created project needs since the
  * `@nx/js/typescript` inference plugin was dropped (Angular can't do `composite` —
  * ADR 0005/0006). The stub inherits its command from `targetDefaults.typecheck` in
- * `nx.json`; it gives a project's `.spec.ts` files a real `tsc --noEmit` that `ts-jest`
- * and `build` (lib sources only) both skip. See issue #48.
+ * `nx.json`, which runs `tsc --noEmit` on the project's `tsconfig.lib.json` and then its
+ * `tsconfig.spec.json`. That checks the source against the lib config's own `types` (so a
+ * lib without `node` types can't use Node globals), and gives `.spec.ts` files a real type
+ * check that `ts-jest` and `build` (lib sources only) both skip. See issues #48 and #164.
  *
  * No-ops when there's no unit-test runner: the underlying `@nx/*:library` /
  * `@nx/*:plugin` generator writes no `tsconfig.spec.json` then, so the inherited

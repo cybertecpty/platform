@@ -69,7 +69,7 @@ export type LibGeneratorOptions = Except<NxProjectOptions, 'buildable' | 'scope'
     type: JsLibType;
     /** Tool for running lint checks. */
     linter?: 'eslint' | 'none';
-    /** Test runner for unit tests. Jest-only per ADR 0007. */
+    /** Test runner for unit tests. Jest-only per ADR 0007. `none` is rejected for `scope:shared`. */
     unitTestRunner?: 'jest' | 'none';
   };
 

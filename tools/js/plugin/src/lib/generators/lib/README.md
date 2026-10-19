@@ -29,6 +29,9 @@ directory, and tag conventions (ADR 0009).
   real buildable dependency.
 - Adds `jest` to a `type:testing` library's `tsconfig.lib.json` `compilerOptions.types` — its own
   source (mocks, builders, fixtures) commonly uses Jest globals outside `*.spec.ts`.
+- Removes `node` from a `scope:shared` library's `tsconfig.lib.json` `compilerOptions.types`,
+  so a Node global in its source fails `typecheck` (ADR 0004, issue #164). `scope:shared` also
+  rejects `--unitTestRunner=none`, which would leave the library with no `typecheck` target.
 - Re-sorts `tsconfig.base.json`'s `paths` map alphabetically after delegating.
 - Adds the `typecheck` target stub (issue #48) unless `--unitTestRunner=none`.
 - Formats generated files unless `--skipFormat` is passed.

@@ -4,6 +4,7 @@ import {
   createProjectTags,
   projectDirFromOpts,
   projectNameFromOpts,
+  removeTsConfigTypes,
   sortTsConfigBasePaths
 } from '@cybertecpty/nx-utils';
 import {
@@ -45,6 +46,14 @@ export async function libGenerator(
   const tags = createProjectTags(projectOptions).toString();
   const unitTestRunner = options.unitTestRunner ?? 'jest';
 
+  // A `scope:shared` lib's `typecheck` target is what keeps Node globals out of its source
+  // (ADR 0004, #164), and `addTypecheckTarget` adds none without a unit-test runner.
+  if (scope === 'shared' && unitTestRunner === 'none') {
+    throw new Error(
+      '`unitTestRunner: none` is not allowed for `scope:shared` — the library needs a `typecheck` target to stay browser-safe.'
+    );
+  }
+
   // A `type:testing` library is never buildable — the same invariant `nx-utils`'s
   // `normalizeProjectOptions` enforces for the `buildable` flag, restated here because
   // this generator forwards the native `bundler` enum directly instead of going through
@@ -82,13 +91,21 @@ export async function libGenerator(
   sortTsConfigBasePaths(tree);
   addTypecheckTarget(tree, name, unitTestRunner);
 
+  const { root } = readProjectConfiguration(tree, name);
+  const tsConfigLibPath = joinPathFragments(root, 'tsconfig.lib.json');
+
   // A `type:testing` library's own source (mocks, builders, fixtures) commonly uses
   // Jest globals (`jest.fn()`, `jest.Mock`) outside `*.spec.ts`, so `tsconfig.lib.json`
   // needs `jest` in `compilerOptions.types` too — `@nx/js:library` only adds it to
   // `tsconfig.spec.json`.
   if (options.type === 'testing') {
-    const { root } = readProjectConfiguration(tree, name);
-    addTsConfigTypes(tree, joinPathFragments(root, 'tsconfig.lib.json'), ['jest']);
+    addTsConfigTypes(tree, tsConfigLibPath, ['jest']);
+  }
+
+  // `@nx/js:library` loads `node` types; a `scope:shared` lib must stay browser-safe (ADR
+  // 0004), so its source is type-checked without them and a Node global fails `typecheck`.
+  if (scope === 'shared') {
+    removeTsConfigTypes(tree, tsConfigLibPath, ['node']);
   }
 
   if (!options.skipFormat) {

@@ -309,6 +309,29 @@ describe('libGenerator', () => {
       expect(tsConfig.compilerOptions.types).toEqual(['node']);
     });
 
+    it('drops `node` from `tsconfig.lib.json` types for a `scope:shared` library (ADR 0004)', async () => {
+      await run(tree, { domain: 'billing', scope: 'shared', type: 'models' });
+
+      const tsConfig = readJson(tree, 'libs/billing/models/tsconfig.lib.json');
+
+      expect(tsConfig.compilerOptions.types).toEqual([]);
+    });
+
+    it('keeps `jest` but drops `node` for a `scope:shared` `type:testing` library', async () => {
+      await run(tree, { domain: 'billing', scope: 'shared', type: 'testing' });
+
+      const tsConfig = readJson(tree, 'libs/billing/testing/tsconfig.lib.json');
+
+      expect(tsConfig.compilerOptions.types).toEqual(['jest']);
+    });
+
+    it('rejects `unitTestRunner: none` for a `scope:shared` library, which would get no `typecheck`', async () => {
+      await expect(
+        run(tree, { domain: 'billing', scope: 'shared', type: 'models', unitTestRunner: 'none' })
+      ).rejects.toThrow('`unitTestRunner: none` is not allowed for `scope:shared`');
+      expect(nxJsLibraryGeneratorMock).not.toHaveBeenCalled();
+    });
+
     it('forces a `type:testing` library to `bundler: none` even when a buildable bundler is requested', async () => {
       await run(tree, {
         domain: 'billing',

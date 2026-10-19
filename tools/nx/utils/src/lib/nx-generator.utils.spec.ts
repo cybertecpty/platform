@@ -6,7 +6,12 @@ import {
   writeJson
 } from '@nx/devkit';
 import { createTreeWithEmptyWorkspace } from '@nx/devkit/testing';
-import { addTsConfigTypes, addTypecheckTarget, sortTsConfigBasePaths } from './nx-generator.utils';
+import {
+  addTsConfigTypes,
+  addTypecheckTarget,
+  removeTsConfigTypes,
+  sortTsConfigBasePaths
+} from './nx-generator.utils';
 
 describe('addTsConfigTypes', () => {
   let tree: Tree;
@@ -63,6 +68,43 @@ describe('addTsConfigTypes', () => {
     expect(readJson(tree, 'libs/demo/tsconfig.lib.json').compilerOptions).toEqual({
       outDir: 'dist',
       types: ['jest']
+    });
+  });
+});
+
+describe('removeTsConfigTypes', () => {
+  let tree: Tree;
+
+  beforeEach(() => {
+    tree = createTreeWithEmptyWorkspace();
+  });
+
+  it('removes the given types and keeps the rest', () => {
+    writeJson(tree, 'libs/demo/tsconfig.lib.json', {
+      compilerOptions: { types: ['jest', 'node'] }
+    });
+
+    removeTsConfigTypes(tree, 'libs/demo/tsconfig.lib.json', ['node']);
+
+    expect(readJson(tree, 'libs/demo/tsconfig.lib.json').compilerOptions.types).toEqual(['jest']);
+  });
+
+  it('leaves an explicit empty array when every type is removed', () => {
+    writeJson(tree, 'libs/demo/tsconfig.lib.json', { compilerOptions: { types: ['node'] } });
+
+    removeTsConfigTypes(tree, 'libs/demo/tsconfig.lib.json', ['node']);
+
+    expect(readJson(tree, 'libs/demo/tsconfig.lib.json').compilerOptions.types).toEqual([]);
+  });
+
+  it('writes an empty array when the tsconfig sets no types, so no @types package loads', () => {
+    writeJson(tree, 'libs/demo/tsconfig.lib.json', { compilerOptions: { outDir: 'dist' } });
+
+    removeTsConfigTypes(tree, 'libs/demo/tsconfig.lib.json', ['node']);
+
+    expect(readJson(tree, 'libs/demo/tsconfig.lib.json').compilerOptions).toEqual({
+      outDir: 'dist',
+      types: []
     });
   });
 });
