@@ -1,6 +1,7 @@
 // Pins how `perfectionist/sort-modules` behaves as configured in the root eslint.config.mjs
-// (conventions §8 declaration order, ADR 0008 2026-10-20 amendment): what it reports, what
-// `--fix` produces, and the cases where it must NOT reorder. It lints code strings in memory
+// (conventions §8 declaration order, ADR 0008 2026-10-20 amendment): what it reports and what
+// `--fix` produces. It tests our config (the groups), not the plugin's own sorting, dependency
+// and barrier behavior; perfectionist's suite covers that. It lints code strings in memory
 // rather than a fixture file, because a deliberately misordered file on disk would fail
 // `nx lint` for everyone. It lives here because `node --test` runs this folder in CI and
 // `pnpm verify`; the root eslint config belongs to no Nx project that could host a Jest spec.
@@ -36,7 +37,7 @@ const fix = code => new Linter().verifyAndFix(code, config, { filename: 'src/exa
 const order = code =>
   [
     ...code.matchAll(
-      /^(?:export )?(?:declare )?(?:abstract )?(?:interface|type|enum|class|function|const|let) (\w+)/gm
+      /^(?:export )?(?:declare )?(?:abstract )?(?:interface|type|enum|class|function) (\w+)/gm
     )
   ].map(m => m[1]);
 
@@ -108,59 +109,5 @@ describe('perfectionist/sort-modules as configured in eslint.config.mjs', () => 
     ].join('\n');
 
     assert.deepEqual(lint(code), []);
-  });
-
-  // Alphabetical order would put `Alpha` before `Zed` and `Derived` before `Base`, which throws
-  // at runtime (a class or enum initializer reads the other). The rule tracks these dependencies.
-  it('never moves a class above the class or enum it depends on', () => {
-    const code = [
-      'class Zed {}',
-      'class Alpha extends Zed {}',
-      'enum Base { A = 1 }',
-      'enum Derived { B = Base.A }',
-      ''
-    ].join('\n');
-
-    const fixed = fix(code).output;
-    assert.ok(fixed.indexOf('class Zed') < fixed.indexOf('class Alpha'), fixed);
-    assert.ok(fixed.indexOf('enum Base') < fixed.indexOf('enum Derived'), fixed);
-  });
-
-  // `const` / `let` end a sorting run, so the rule cannot reorder across them. This documents the
-  // known gap: `Late` stays below `zeta` here although types are meant to come first.
-  it('leaves const and let declarations in place and never sorts across them', () => {
-    const code = [
-      'function zeta() {}',
-      'const limit = 1;',
-      'let state = 0;',
-      'export const exported = 2;',
-      'interface Late { a: number }',
-      ''
-    ].join('\n');
-
-    assert.deepEqual(lint(code), []);
-    assert.equal(fix(code).output, code);
-  });
-
-  it('still sorts the run of declarations after a const', () => {
-    const code = ['const limit = 1;', 'function run() {}', 'interface Late { a: number }', ''].join(
-      '\n'
-    );
-
-    assert.deepEqual(order(fix(code).output), ['limit', 'Late', 'run']);
-  });
-
-  // Statements that run code at module load (a call, an `if`) pin the declarations around them.
-  it('leaves expression statements and control flow as barriers', () => {
-    const code = [
-      'function zeta() {}',
-      'zeta();',
-      'function alpha() {}',
-      'if (alpha) { zeta(); }',
-      'function beta() {}',
-      ''
-    ].join('\n');
-
-    assert.deepEqual(order(fix(code).output), ['zeta', 'alpha', 'beta']);
   });
 });
