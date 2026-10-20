@@ -13,6 +13,21 @@ Issues and PRDs for this repo live as GitHub issues. Use the `gh` CLI for all op
 
 Infer the repo from `git remote -v` — `gh` does this automatically when run inside a clone.
 
+## Claiming an issue
+
+Before starting an issue, check whether someone already owns it, then claim it. An issue is taken
+if it has an assignee, an open PR that mentions it, or a `{type}/{issue#}-*` branch on `origin` or
+`cybertec-bot`. If it is taken, stop and report it; do not start a second branch.
+
+- **Check**: `gh issue view <number> --json assignees,state`, `gh pr list --state open --search "<number> in:title,body"`,
+  and `git ls-remote --heads origin "*/<number>-*"` (repeat for `cybertec-bot`).
+- **Claim**: as `cybertec-bot`, `gh issue edit <number> --add-assignee cybertec-bot`. Or open an early draft PR.
+- **Release** if you abandon the issue unmerged: `gh issue edit <number> --remove-assignee cybertec-bot` and close the draft PR.
+  A PR that merges with `Closes #<number>` closes the issue, so the claim needs no release.
+
+The commands, with the worktree setup that follows, are in `.claude/skills/commit-push-pr`
+(Before you start). Wayfinding tickets use the **Claim** operation below instead.
+
 ## Pull requests as a triage surface
 
 **PRs as a request surface: no.** _(Set to `yes` if this repo treats external PRs as feature requests; `/triage` reads this flag.)_
