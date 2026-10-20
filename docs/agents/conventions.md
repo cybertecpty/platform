@@ -44,7 +44,7 @@ policy so they're in place when the tooling lands, but don't assume they're acti
 | --------------------------------------------------------- | -------------------------------------------------------------- | ------- |
 | Bot PR flow (`cybertec-bot`, `cybertecpty/bots` team)     | ✅ live                                                        | —       |
 | CI (`lint-and-test-affected.yml`)                         | ✅ live — one runner, `NX_NO_CLOUD=true` (#188)                | —       |
-| Nx Cloud (distribution, remote cache, self-healing)       | ❌ none — org disabled over the free plan; not paid for (#188) | later   |
+| Nx Cloud (distribution, remote cache, self-healing)       | ❌ none — org disabled over the free plan; not paid for (#188) | —       |
 | Branch protection on `develop` / `main`                   | ✅ live — rulesets `protect-develop` / `protect-main`          | —       |
 | Reviewer routing (`.github/CODEOWNERS` → `@djmcgrath101`) | ✅ live — auto-requests maintainer review on every PR          | —       |
 | Automated PR reviewer (e.g. Copilot code review)          | ❌ none — needs a paid plan; maintainer review only (#110)     | later   |

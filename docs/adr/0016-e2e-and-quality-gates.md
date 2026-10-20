@@ -103,8 +103,9 @@ across apps is #114.
 **CI**
 
 - `e2e` and `lighthouse` run in `lint-and-test-affected.yml` with the other targets: affected
-  projects on a PR, every project on a push to `develop` / `main`. Nx Cloud agents are kept up
-  until both finish (`--stop-agents-after="e2e,lighthouse"`).
+  projects on a PR, every project on a push to `develop` / `main`. ~~Nx Cloud agents are kept up
+  until both finish (`--stop-agents-after="e2e,lighthouse"`).~~ Superseded by the 2026-10-20
+  amendment: there are no agents.
 
 ## Consequences
 
@@ -216,5 +217,5 @@ CI and the deploy workflow set `NX_NO_CLOUD=true`. `nx start-ci-run`, `nx record
 keep up. The Nx Cloud remote cache and self-healing are gone too, which also affects the
 mentions in ADR 0001 (distributed agents) and ADR 0006 (remote cache absorbing CI lint time).
 
-`nxCloudId` stays in `nx.json`, so re-enabling Nx Cloud is a revert of the #188 workflow changes
-plus restoring the `NX_CLOUD_ACCESS_TOKEN` secret's use.
+`nxCloudId` stays in `nx.json`, so re-enabling Nx Cloud is a revert of the #188 changes to
+`lint-and-test-affected.yml` and `deploy-affected.yml`, plus the docs notes listed above.
