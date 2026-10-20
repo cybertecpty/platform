@@ -30,6 +30,7 @@ read the relevant file directly. Companion docs in this folder:
 - [`issue-tracker.md`](issue-tracker.md) — GitHub Issues workflow
 - [`triage-labels.md`](triage-labels.md) — the five-role triage vocabulary
 - [`domain.md`](domain.md) — how to consume `CONTEXT.md` / `docs/adr/`
+- [`merge-conflicts.md`](merge-conflicts.md) — resolving conflicts on shared files (lockfile, barrels, docs)
 
 ---
 
