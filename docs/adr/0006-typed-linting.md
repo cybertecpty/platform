@@ -157,3 +157,15 @@ Chosen option: **1 — central, `recommendedTypeChecked`.**
 - `@nx/js:library` generator schema — `enableTypedLinting` (default `false`, "For flat
   configs, this configures the recommended `parserOptions.projectService` and
   `tsconfigRootDir` … We do not enable this by default for lint performance reasons").
+
+## Amendment (2026-10-20): no Nx Cloud remote cache
+
+- Status: accepted
+- Deciders: djmcgrath
+- Implemented by: #188
+
+CI no longer uses Nx Cloud (see the ADR 0016 amendment of the same date). The mitigation this ADR
+relies on for CI lint time is now `nx affected` alone: there is no remote cache, so each CI run
+lints its affected projects from cold. The decision to type-lint every project stands. If lint
+time on CI becomes a problem, a project can opt out with a local `disableTypeChecked` override,
+as above.

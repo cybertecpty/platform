@@ -15,14 +15,14 @@ permissions:
   pull-requests: write
 
 env:
-  # Read-write CI token for the Nx Cloud remote cache. Set the repo secret
-  # NX_CLOUD_ACCESS_TOKEN to the "protected-branch-pipeline" token from
-  # https://cloud.nx.app. Empty until then — CI still runs, just without shared
-  # caching. If fork PRs ever land, switch this to a conditional that hands forks
-  # the read-only token instead.
-  NX_CLOUD_ACCESS_TOKEN: ${{ secrets.NX_CLOUD_ACCESS_TOKEN }}
+  # The Nx Cloud organization is disabled (over the free plan) and not being paid for, so CI
+  # runs on this one runner with no remote cache, task distribution or self-healing. To turn
+  # Nx Cloud back on: drop this variable, restore the NX_CLOUD_ACCESS_TOKEN env, and restore
+  # the `nx start-ci-run`, `nx record --` and `nx fix-ci` steps from git history (#188).
+  # `nxCloudId` stays in nx.json.
+  NX_NO_CLOUD: 'true'
 
-# Supersede stale runs on a PR (saves Nx Cloud agent time). Push runs on
+# Supersede stale runs on a PR (saves runner time). Push runs on
 # develop/main always finish: nrwl/nx-set-shas bases `$NX_BASE` on the last
 # successful commit, and each commit there keeps a completed result.
 concurrency:
@@ -59,14 +59,8 @@ jobs:
       # `actions: read` + `fetch-depth: 0` (both set above).
       - uses: nrwl/nx-set-shas@v5
 
-      # Enable Nx Cloud task distribution. Runs after install because it is
-      # invoked through the workspace's pinned Nx (pnpm exec).
-      # Learn more at https://nx.dev/docs/reference/nx-cloud-cli#npx-nxcloud-startcirun
-      - run: pnpm exec nx start-ci-run --distribute-on="3 linux-medium-js" --stop-agents-after="e2e,lighthouse"
-
-      # Prepend any command with "nx record --" to record its logs to Nx Cloud
       # $NX_BASE / $NX_HEAD come from nrwl/nx-set-shas above.
-      - run: pnpm exec nx record -- pnpm exec nx format:check --base=$NX_BASE --head=$NX_HEAD
+      - run: pnpm exec nx format:check --base=$NX_BASE --head=$NX_HEAD
       # `lighthouse` is the cybertec-io-e2e performance/accessibility gate;
       # `e2e` also runs the axe check.
       # A PR runs only the projects it affects. A push to develop/main runs every
@@ -79,16 +73,16 @@ jobs:
 
       # Coverage reporting (ADR 0007 amendment / issue #52). The `test` targets
       # collect coverage in CI (jest.preset.js) and declare
-      # `coverage/{projectRoot}` as an output, so Nx hydrates each tested
-      # project's report onto this runner after the distributed run. This step
-      # merges them into one number (the whole workspace on a push, the affected
-      # projects on a PR), writes the job summary, and — on a non-fork PR —
-      # upserts a single coverage comment. `always()` so a coverage-threshold
-      # failure above still produces the report.
+      # `coverage/{projectRoot}` as an output, which Nx writes (or restores from
+      # its local cache) on this runner. This step merges the reports into one
+      # number (the whole workspace on a push, the affected projects on a PR),
+      # writes the job summary, and — on a non-fork PR — upserts a single
+      # coverage comment. `always()` so a coverage-threshold failure above still
+      # produces the report.
       - name: Coverage report
         if: always()
         # Reporting only — the coverage *gate* is the `test` run above. A broken
-        # reporter (or Nx not hydrating the coverage dirs) must not block a merge.
+        # reporter (or missing coverage dirs) must not block a merge.
         continue-on-error: true
         uses: actions/github-script@v9
         with:
@@ -103,7 +97,3 @@ jobs:
           name: coverage
           path: coverage/
           if-no-files-found: warn
-
-      # Nx Cloud recommends fixes for failures to help you get CI green faster. Learn more: https://nx.dev/docs/features/ci-features/self-healing-ci
-      - run: pnpm exec nx fix-ci
-        if: always()

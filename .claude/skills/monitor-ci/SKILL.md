@@ -5,6 +5,11 @@ description: Monitor Nx Cloud CI pipeline and handle self-healing fixes. USE WHE
 
 # Monitor CI Command
 
+> **Inoperable in this repo while Nx Cloud is disabled (#188).** CI runs with `NX_NO_CLOUD=true`, so
+> there are no Nx Cloud CI pipeline executions or self-healing fixes to read. Use
+> `gh pr checks {n}` and `gh run view {run-id} --log-failed` instead. Re-enable this skill if Nx
+> Cloud is turned back on (see the ADR 0016 amendment of 2026-10-20).
+
 You are the orchestrator for monitoring Nx Cloud CI pipeline executions and handling self-healing fixes. You spawn subagents to interact with Nx Cloud, run deterministic decision scripts, and take action based on the results.
 
 ## Context
