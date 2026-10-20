@@ -1,3 +1,10 @@
+// Pins how `perfectionist/sort-modules` behaves as configured in the root eslint.config.mjs
+// (conventions §8 declaration order, ADR 0008 2026-10-20 amendment): what it reports, what
+// `--fix` produces, and the cases where it must NOT reorder. It lints code strings in memory
+// rather than a fixture file, because a deliberately misordered file on disk would fail
+// `nx lint` for everyone. It lives here because `node --test` runs this folder in CI and
+// `pnpm verify`; the root eslint config belongs to no Nx project that could host a Jest spec.
+
 const assert = require('node:assert/strict');
 const { before, describe, it } = require('node:test');
 const path = require('node:path');
@@ -11,14 +18,21 @@ const RULE = 'perfectionist/sort-modules';
 let config;
 
 before(async () => {
+  // The config is ESM and this file is CJS, hence the dynamic import.
   const root = await import(pathToFileURL(path.resolve(__dirname, '../../eslint.config.mjs')).href);
+  // Take the block that carries the rule, so the tests exercise the real options rather than a copy.
   const block = root.default.find(entry => entry.rules?.[RULE]);
   assert.ok(block, `eslint.config.mjs has no ${RULE} block`);
+  // The block has no parser of its own (the typed-linting blocks supply it), so add the TS one.
   config = [{ languageOptions: { parser: tseslint.parser } }, block];
 });
 
+// `filename` must match the block's `files` glob (`**/*.ts`) for the rule to apply.
 const lint = code => new Linter().verify(code, config, { filename: 'src/example.ts' });
+// Applies fixes until stable, like `eslint --fix`; the result is in `.output`.
 const fix = code => new Linter().verifyAndFix(code, config, { filename: 'src/example.ts' });
+// Top-level declaration names in source order, so tests can assert order without comparing
+// whole strings. Only needs to understand the declaration forms the fixtures use.
 const order = code =>
   [
     ...code.matchAll(
@@ -27,6 +41,8 @@ const order = code =>
   ].map(m => m[1]);
 
 describe('perfectionist/sort-modules as configured in eslint.config.mjs', () => {
+  // Import and export order belongs to prettier-plugin-organize-imports; a perfectionist
+  // import/export sorter anywhere in the config would fight it.
   it('is the only perfectionist rule enabled, leaving import and export order to the formatter', async () => {
     const root = await import(
       pathToFileURL(path.resolve(__dirname, '../../eslint.config.mjs')).href
@@ -94,6 +110,8 @@ describe('perfectionist/sort-modules as configured in eslint.config.mjs', () => 
     assert.deepEqual(lint(code), []);
   });
 
+  // Alphabetical order would put `Alpha` before `Zed` and `Derived` before `Base`, which throws
+  // at runtime (a class or enum initializer reads the other). The rule tracks these dependencies.
   it('never moves a class above the class or enum it depends on', () => {
     const code = [
       'class Zed {}',
@@ -108,6 +126,8 @@ describe('perfectionist/sort-modules as configured in eslint.config.mjs', () => 
     assert.ok(fixed.indexOf('enum Base') < fixed.indexOf('enum Derived'), fixed);
   });
 
+  // `const` / `let` end a sorting run, so the rule cannot reorder across them. This documents the
+  // known gap: `Late` stays below `zeta` here although types are meant to come first.
   it('leaves const and let declarations in place and never sorts across them', () => {
     const code = [
       'function zeta() {}',
@@ -130,6 +150,7 @@ describe('perfectionist/sort-modules as configured in eslint.config.mjs', () => 
     assert.deepEqual(order(fix(code).output), ['limit', 'Late', 'run']);
   });
 
+  // Statements that run code at module load (a call, an `if`) pin the declarations around them.
   it('leaves expression statements and control flow as barriers', () => {
     const code = [
       'function zeta() {}',
