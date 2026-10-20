@@ -1,6 +1,7 @@
 # 16. Playwright e2e with axe and Lighthouse quality gates
 
-- Status: accepted (amended 2026-10-17: the gates are shared spec factories, #114)
+- Status: accepted (amended 2026-10-17: the gates are shared spec factories, #114;
+  2026-10-20: CI runs without Nx Cloud, #188)
 - Date: 2026-10-16
 - Deciders: djmcgrath
 - Implemented by: `apps/cybertec-io/e2e` (`e2e` and `lighthouse` targets,
@@ -193,3 +194,27 @@ Revisit each with the first app that needs it.
   `-e2e` project depends on it in the project graph.
 - Lighthouse run time grows with the number of routes: about 30–60s per path and preset, run
   serially.
+
+## Amendment (2026-10-20): CI runs without Nx Cloud
+
+- Status: accepted
+- Deciders: djmcgrath
+- Implemented by: `.github/workflows/lint-and-test-affected.yml`,
+  `.github/workflows/deploy-affected.yml` (#188)
+
+The Nx Cloud organization was disabled for exceeding the free plan, and `nx record` failed the
+required `ci` check on every PR. The usage does not reset until Nov 1. Options:
+
+1. **Upgrade to the paid Team plan.** Rejected: the maintainer does not want to pay for Nx Cloud.
+2. **Wait for the Nov 1 reset.** Rejected: the required check, and so every merge, is blocked for
+   11 days.
+3. **Run CI without Nx Cloud.** Chosen.
+
+CI and the deploy workflow set `NX_NO_CLOUD=true`. `nx start-ci-run`, `nx record --` and
+`nx fix-ci` are gone from `lint-and-test-affected.yml`. The CI section above no longer holds:
+`e2e` and `lighthouse` run on the one runner with the other targets, and there are no agents to
+keep up. The Nx Cloud remote cache and self-healing are gone too, which also affects the
+mentions in ADR 0001 (distributed agents) and ADR 0006 (remote cache absorbing CI lint time).
+
+`nxCloudId` stays in `nx.json`, so re-enabling Nx Cloud is a revert of the #188 workflow changes
+plus restoring the `NX_CLOUD_ACCESS_TOKEN` secret's use.
