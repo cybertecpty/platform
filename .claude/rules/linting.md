@@ -20,9 +20,15 @@ Moved here from `docs/agents/conventions.md` §8. Loads when editing an ESLint c
   artifacts (`*.{mock,stub,fake,fixture}.ts` and plurals, `.claude/rules/testing.md`), `@typescript-eslint/no-deprecated` on all TS (flags
   `@deprecated` symbols — the one `strictTypeChecked` rule promoted),
   `@eslint-community/eslint-plugin-eslint-comments`, and a curated list of
-  `eslint-plugin-unicorn` rules (never its preset).
+  `eslint-plugin-unicorn` rules (never its preset), and `eslint-plugin-perfectionist`'s
+  `sort-modules` alone on TS files, which enforces conventions §8's declaration order.
   Adding or removing a whole plugin, or swapping its preset, is an ADR 0008 change;
   promoting or demoting an individual rule is a normal config edit.
 - `eslint-comments` details: `require-description` and `no-unlimited-disable` are errors, and
   ESLint's `reportUnusedDisableDirectives` flags stale ones. A block `/* eslint-disable rule */`
   needs a matching `/* eslint-enable rule */`.
+- `sort-modules` details: types (`interface` / `type` / `enum`), then classes, exported functions,
+  private functions, alphabetical within each; `eslint --fix` reorders. It never moves `const` /
+  `let` and sorts only the runs of declarations between them (and between expression
+  statements), so a type below a `const` is a reviewer catch. Don't enable perfectionist's import
+  or export rules: `prettier-plugin-organize-imports` owns import order.
