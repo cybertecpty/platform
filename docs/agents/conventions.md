@@ -54,7 +54,8 @@ policy so they're in place when the tooling lands, but don't assume they're acti
 | `@cybertecpty/*` publish on merge to `main`               | ❌ no release flow, no packages                                | §2      |
 | `cybertec-back-merge` app                                 | ✅ live — `back-merge` job in `deploy-affected.yml` (ADR 0015) | —       |
 | pnpm (`pnpm-lock.yaml`, `pnpm exec nx`)                   | ✅ live — pnpm@10.34.5, `node-linker=isolated` (PR #17)        | —       |
-| Application frameworks (Angular 22, NestJS 11)            | ✅ live — `@nx/angular` / `@nx/nest`, path-alias TS (ADR 0005) | —       |
+| Frontend framework (Angular 22)                           | ✅ live — `@nx/angular`, path-alias TS (ADR 0005)              | —       |
+| Backend stack (ASP.NET Core, .NET 10 LTS)                 | ❌ decided, not wired — no `@nx/dotnet`, no project (ADR 0017) | §11     |
 
 Where a rule depends on unwired tooling, it says so inline.
 
@@ -435,13 +436,17 @@ skill.
 
 ## 9. Testing & verification
 
-- Jest is the workspace test runner for every project — Angular, NestJS, and plain libs
+- Jest is the test runner for every TypeScript project — Angular apps and plain libs
   (ADR 0007). Generators are defaulted to `unitTestRunner: jest` in `nx.json`; there is
   no `@nx/vitest` plugin. Run tests through `nx test {project}`, never `jest` directly.
   - **Exception: Astro content sites use Vitest** via a per-project `vitest.config.ts`
     (ADR 0007 2026-09-23 amendment, ADR 0012).
-- **Coverage: an 80% floor, CI-enforced** (ADR 0007 amendment). New runtime projects must
-  clear 80% — check with `nx test {project} --coverage` before opening the PR.
+  - **.NET uses xUnit with coverlet** (ADR 0007 2026-10-20 amendment, ADR 0017). Test
+    projects are separate `.csproj` files in a `tests/` folder inside the project they
+    test, tagged `type:testing`. Nothing is wired yet — there is no .NET project.
+- **Coverage: an 80% floor, CI-enforced** (ADR 0007 amendment) — the same number and the same
+  CI-only gate for Jest, Vitest and coverlet. New runtime projects must clear 80% — check with
+  `nx test {project} --coverage` before opening the PR.
   - **Exception: an Astro site with no `src/**/*.ts`** is exempt; its `test` target
     asserts on the built output instead (ADR 0007 2026-09-23 amendment).
 - **Spec files are type-checked by the `typecheck` target, not `test`** — run it too.
@@ -489,7 +494,19 @@ path → tier table is in the `review-pr` skill.
   `tsconfig.base.json` aliases, `project.json` roots, and workspace references).
 - TypeScript layout is path-alias, not project references, and `tsconfig.base.json` has no
   `baseUrl` (ADR 0005) — details in `.claude/rules/project-config.md`.
-- Angular and NestJS are the only application stacks (ADR 0005), except Astro for static
-  content sites such as `apps/cybertec-io` (ADR 0005 amendment, ADR 0012). Add framework
-  capability through `@nx/angular` / `@nx/nest` generators and `nx add`, not hand-installed
-  `@angular/*` / `@nestjs/*` packages. Framework upgrades run through `nx migrate`.
+- **Angular and .NET are the only application stacks** — Angular on the frontend (ADR 0005),
+  ASP.NET Core on the backend (ADR 0017, which supersedes ADR 0005's NestJS decision) —
+  except Astro for static content sites such as `apps/cybertec-io` (ADR 0005 amendment,
+  ADR 0012). A third stack needs a new ADR.
+  - Add Angular capability through `@nx/angular` generators and `nx add`, not hand-installed
+    `@angular/*` packages. Angular upgrades run through `nx migrate`.
+  - .NET is integrated through `@nx/dotnet` with `dotnet new` for scaffolding (no Nx
+    generators for .NET), pinned to .NET 10 LTS via `global.json`, with a `project.json`
+    beside each `.csproj` carrying the three tags (ADR 0017). **None of it is wired yet** —
+    no `@nx/dotnet`, no `global.json`, no .NET project; don't assume a `dotnet` target
+    exists.
+  - `type:models` is the **generated TypeScript client lib** derived from the backend's
+    OpenAPI document — `scope:frontend`, derived output, never hand-edited (ADR 0017). ADR
+    0003's zod bans are unchanged.
+  - `@nx/enforce-module-boundaries` only reads TypeScript imports, so ADR 0004's matrix is
+    unenforced between backend .NET projects until the DIY check in ADR 0017 exists.

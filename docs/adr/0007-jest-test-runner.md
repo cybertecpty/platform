@@ -311,3 +311,37 @@ runs every task on the one runner and there is no distributed run.
 
 - If Nx Cloud is turned back on, distribution would again put the reports on other agents, and
   hydration back to the main runner would again be what the script relies on.
+
+## Amendment (2026-10-20): the backend stack changed — xUnit for .NET
+
+- Status: accepted
+- Deciders: djmcgrath
+- Implemented by: ADR 0017 (`dotnet-backend`); issue #194
+
+The backend is **ASP.NET Core on .NET**, not NestJS (ADR 0017 supersedes the backend half of
+ADR 0005). Jest cannot run C#, so "one runner" no longer means one runner workspace-wide.
+
+### Decision
+
+- **Jest stays the runner for Angular and TypeScript libs** — the `nx.json` generator
+  defaults, `jest.preset.js`, `passWithNoTests`, the 80% CI-gated `coverageThreshold` and
+  `nx test {project}` as the entry point are all unchanged. The Astro/Vitest exception
+  (2026-09-23 amendment) is unchanged.
+- **xUnit with coverlet is the .NET test runner**, with an **80% floor gated in CI only** —
+  the same number and the same CI-only enforcement as `collectCoverage: !!process.env.CI`
+  above, for the same reason: keep the local inner loop fast.
+- **Test projects are separate `.csproj` files** nested in a `tests/` folder inside the
+  project they test, tagged `type:testing`.
+- The reasoning above for rejecting Vitest — `@nx/nest` scaffolding only Jest, and Nest DI
+  needing `emitDecoratorMetadata` — was specific to NestJS and is now moot. It is **not** a
+  reason to revisit Jest for Angular and TypeScript libs: one runner per language is still
+  the goal, and nothing has changed on the TypeScript side.
+
+### Consequences
+
+- Two unit-test runners in the workspace, one per language, plus Vitest for Astro. The 80%
+  floor and the CI-only gate are identical across all of them, so the policy stays one
+  number.
+- CI needs a .NET SDK as well as Node, and coverlet output has to reach the coverage
+  reporting layer above (which reads `coverage/{projectRoot}` per project) or .NET projects
+  will be absent from the PR comment. That wiring is separate work.

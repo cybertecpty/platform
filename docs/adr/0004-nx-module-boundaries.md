@@ -294,3 +294,46 @@ ADRs disagreed.
   and no `scope:shared` lib's lib tsconfig loads `node` types, so a Node global in their source
   fails `typecheck` and CI. A `node --test` guard (`.github/scripts/shared-lib-types.test.cjs`)
   keeps `node` out of every `scope:shared` lib's lib tsconfig, including new ones.
+
+## Amendment (2026-10-20): the backend stack changed — see ADR 0017
+
+- Status: accepted
+- Deciders: djmcgrath
+- Implemented by: ADR 0017 (`dotnet-backend`); issue #194
+
+The backend is **ASP.NET Core on .NET**, not NestJS (ADR 0017 supersedes the backend half
+of ADR 0005). This matrix was written around Angular + NestJS; what follows is what that
+changes here.
+
+### Tag names are unchanged
+
+No `scope:` or `type:` value is added, removed or renamed, so the "value sets are closed"
+rule above is **not** reopened. Three descriptions are reworded and one changes meaning:
+
+- `scope:backend` — read "Node only (NestJS)" as **".NET only (ASP.NET Core)"**.
+- `type:app` — read "(Angular or Nest)" as **"(Angular or ASP.NET Core)"**.
+- `type:api` / `type:services` — read Nest's "controllers, resolvers, DTOs" and "injectable
+  providers" as the **ASP.NET Core** equivalents. The architectural roles are identical.
+- `type:models` **changes meaning**: it is no longer a hand-written zod wire contract shared
+  by frontend and backend, but the **generated TypeScript client lib** derived from the
+  backend's OpenAPI document — `scope:frontend`, derived output, never hand-edited. ADR
+  0003's zod bans are unaffected.
+
+### The matrix is unenforced on the backend until a DIY check exists
+
+`@nx/enforce-module-boundaries` reads **TypeScript imports only**. A C# `ProjectReference`
+is invisible to it, and `@nx/dotnet` ships no boundaries rule of its own, so every `type:`
+edge between backend .NET projects is currently unchecked. Nx Conformance would cover it but
+is Nx Enterprise-only.
+
+ADR 0017 chooses a **DIY check** over `type:` edges between backend .NET projects that reads
+**this matrix** rather than restating it — the matrix stays the single source of truth,
+extracted from `eslint.config.mjs` into a module both the ESLint config and the check can
+read. Its feasibility is unverified until a real `.csproj` exists.
+
+### One open edge: `type:testing` may not depend on `type:app`
+
+`WebApplicationFactory`-style ASP.NET integration tests need a reference to the app under
+test, which this matrix forbids. ADR 0017 lists this as unverified with two options — keep
+the host thin so tests target a referenced lib, or amend this matrix for that one edge. The
+first .NET project decides; if the matrix changes, that is an amendment to this ADR.

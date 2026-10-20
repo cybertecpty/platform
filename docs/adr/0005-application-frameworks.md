@@ -1,6 +1,8 @@
 # 5. Application frameworks — Angular (frontend) and NestJS (backend)
 
-- Status: accepted
+- Status: accepted (amended 2026-09-23: Astro for content sites; **backend half superseded
+  2026-10-20 — the backend is .NET, see ADR 0017**. The frontend, TypeScript-layout and pnpm
+  decisions stand.)
 - Date: 2026-09-02
 - Deciders: djmcgrath
 - Implemented by: `pnpm exec nx add @nx/angular` / `@nx/nest`; the TypeScript-layout
@@ -64,6 +66,9 @@ TypeScript project model changes.
 
 ### Backend framework
 
+> **Superseded by the 2026-10-20 amendment below** — the backend is ASP.NET Core (.NET); see
+> ADR 0017, which carries its own options list. Kept for the record.
+
 1. **NestJS.**
 2. **Fastify / Express directly.**
 3. **A different opinionated framework** (AdonisJS, tRPC-first, etc.).
@@ -94,6 +99,9 @@ C. **Split the setup** — project references for backend libs, path-alias for f
 
 ### Backend — NestJS
 
+> **Superseded by the 2026-10-20 amendment below** — the backend is ASP.NET Core (.NET), for
+> job-market reasons rather than any problem with Nest; see ADR 0017. Kept for the record.
+
 - NestJS gives the backend the same architectural vocabulary the tag matrix already uses:
   modules, controllers (`type:api`), injectable providers (`type:services`), and a DI
   container. Options 2 and 3 would leave `type:api` / `type:services` as a convention with
@@ -116,6 +124,12 @@ C. **Split the setup** — project references for backend libs, path-alias for f
   and no code.
 
 ### Locked parameters
+
+> **The backend halves of the bullets below are superseded by the 2026-10-20 amendment** —
+> "Backend framework: NestJS", `@nx/nest` as the backend plugin, and the "NestJS 11" version
+> pin no longer hold; the backend is ASP.NET Core on .NET 10 LTS via `@nx/dotnet` (ADR 0017).
+> Everything else here — Angular, the Angular 22 pin, the path-alias layout,
+> `pnpm-workspace.yaml`, ADR 0001, ADR 0004's tag catalog — is unchanged. Kept for the record.
 
 - **Frontend framework: Angular. Backend framework: NestJS.** Adding a third application
   stack (a CLI, a worker runtime, a second frontend framework) requires a new ADR and,
@@ -211,3 +225,26 @@ sites** (marketing, docs, landing pages), starting with `apps/cybertec-io`.
   0004's catalog is unchanged.
 - **Not plugin-managed.** Astro has no first-party Nx plugin, so the "framework tooling is
   the Nx plugins" rule above does not apply to it. Upgrades are manual. See ADR 0012.
+
+## Amendment (2026-10-20): the backend stack changed — see ADR 0017
+
+- Status: accepted
+- Deciders: djmcgrath
+- Implemented by: ADR 0017 (`dotnet-backend`); issue #194
+
+**The backend is no longer NestJS. It is ASP.NET Core on .NET.** The driver is the
+job-market value of fullstack .NET + Angular, not a technical problem with Nest — Nest
+would have worked. ADR 0017 carries the full decision; this amendment only records that
+this ADR's backend half no longer holds.
+
+- **Superseded here:** the "Backend: NestJS" decision outcome and its rationale, the
+  `@nx/nest` tooling rule for the backend, and the "NestJS 11" version pin. The markers
+  above point at each.
+- **Unchanged here:** Angular as the frontend framework, the Angular 22 pin, the
+  path-alias TypeScript layout, `pnpm-workspace.yaml`, ADR 0001, and ADR 0004's tag
+  catalog. ADR 0017 rewords three backend tag _descriptions_ but adds, removes and renames
+  nothing.
+- **The Astro exception stands** (2026-09-23 amendment, ADR 0012). The application stacks
+  are now **Angular and .NET**, plus Astro for static content sites.
+- No NestJS application code was ever written, so nothing migrated. Removing `@nx/nest` /
+  `@nestjs/schematics` and the generator defaults that mention them is separate work.
