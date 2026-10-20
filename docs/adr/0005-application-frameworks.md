@@ -167,8 +167,10 @@ C. **Split the setup** — project references for backend libs, path-alias for f
 
 - ADRs 0003 and 0004 no longer rest on a pending decision — the stack they describe is
   installed.
-- One language, one DI model, one wire-contract representation across frontend and
-  backend.
+- ~~One language, one DI model, one wire-contract representation across frontend and
+  backend.~~ Superseded by the 2026-10-20 amendment below — with a .NET backend there is no
+  shared language, the DI models are only analogous, and the wire contract is generated
+  rather than shared (ADR 0017).
 - Framework capability, upgrades, and code generation are plugin-managed
   (`nx g`, `nx migrate`).
 - The workspace configuration now matches what the frontend framework supports; a future
@@ -183,8 +185,9 @@ C. **Split the setup** — project references for backend libs, path-alias for f
 - **No project-references build speedup.** The path-alias setup rebuilds/type-checks more
   broadly than an incremental `composite` graph would. Acceptable at current scale; Nx
   task caching and affected-detection are the mitigation.
-- **NestJS sits one major behind latest** (11 vs 12) until the Nx plugins catch up. Newer
-  Nest features are unavailable in the meantime.
+- ~~**NestJS sits one major behind latest** (11 vs 12) until the Nx plugins catch up. Newer
+  Nest features are unavailable in the meantime.~~ Moot as of the 2026-10-20 amendment below
+  — there is no Nest version to track; the backend pins .NET 10 LTS (ADR 0017).
 - **Angular bundle discipline is now load-bearing.** ADR 0003's guardrails matter more
   with a real Angular app in the tree; they remain inert until a frontend project has a
   `lint` target in CI.
@@ -238,8 +241,9 @@ would have worked. ADR 0017 carries the full decision; this amendment only recor
 this ADR's backend half no longer holds.
 
 - **Superseded here:** the "Backend: NestJS" decision outcome and its rationale, the
-  `@nx/nest` tooling rule for the backend, and the "NestJS 11" version pin. The markers
-  above point at each.
+  `@nx/nest` tooling rule for the backend, the "NestJS 11" version pin, the "one language,
+  one DI model, one wire-contract representation" positive consequence, and the "NestJS sits
+  one major behind latest" risk. The markers above point at each.
 - **Unchanged here:** Angular as the frontend framework, the Angular 22 pin, the
   path-alias TypeScript layout, `pnpm-workspace.yaml`, ADR 0001, and ADR 0004's tag
   catalog. ADR 0017 rewords three backend tag _descriptions_ but adds, removes and renames

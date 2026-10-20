@@ -103,6 +103,17 @@ B. **Third-party analyzers** (StyleCop.Analyzers, SonarAnalyzer, Roslynator). Re
 now: the built-in analyzer set is already substantial and ships with the SDK, so it costs
 no dependency and no version pinning. Revisit only if a concrete gap appears.
 
+### SDK version and upgrade cadence
+
+A. **.NET 10 LTS, pinned by `global.json`, upgraded only on the next LTS.** **(chosen)**
+B. **Track the newest SDK**, STS releases included. Rejected: an STS release is supported for
+18 months, so the workspace would be forced onto a new major roughly every six months for
+features nothing here needs — the opposite of the "track what the pinned plugin supports,
+not latest" rule ADR 0005 applied to Angular and Nest.
+C. **No `global.json`** — build on whatever SDK is installed. Rejected: the SDK version then
+differs between a developer machine and CI silently, which is exactly the class of drift
+`global.json` exists to close.
+
 ## Decision outcome
 
 **The backend is ASP.NET Core on .NET, integrated through the official `@nx/dotnet`
@@ -119,7 +130,8 @@ decisions stand.**
 - That lib is **derived output**, tagged **`scope:frontend`**, and is **never hand-edited**.
   A change to the contract is a change to the C# code followed by a regeneration.
 - **ADR 0003's zod bans stay exactly as they are.** `zod` and `zod/v4` remain banned on
-  `scope:frontend` and `scope:shared`; `zod/mini` and `zod/v4/core` remain allowed. The bans
+  `scope:frontend` and `scope:shared`; `zod/mini`, `zod/v4/mini` and `zod/v4/core` remain
+  allowed. The bans
   are about bundle size, not about where the contract comes from, so frontend-side
   validation written in zod is still written in `zod/mini`.
 
@@ -127,8 +139,9 @@ decisions stand.**
 
 - **`@nx/dotnet`** is the integration: target inference, caching, and `affected` for .NET
   projects, pinned to the workspace Nx version like every other `@nx/*` package.
-- **Scaffolding is `dotnet new`**, not an Nx generator. `@nx/dotnet` does not ship project
-  generators, so a new .NET project is created with the .NET CLI and then given the Nx
+- **Scaffolding is `dotnet new`**, not an Nx generator. `@nx/dotnet` ships no project
+  generators (documented, not observed — unverified item 0), so a new .NET project is created
+  with the .NET CLI and then given the Nx
   metadata this ADR requires (`project.json` with explicit tags, placement per ADRs 0009 /
   0010, an entry in the root solution).
 - **No Nx Enterprise, therefore no Nx Conformance.** Any rule that would have been a
@@ -136,18 +149,23 @@ decisions stand.**
 
 ### Backend module boundaries — a DIY check
 
-`@nx/dotnet` ships no module-boundaries rule, and `@nx/enforce-module-boundaries` only reads
+`@nx/dotnet` ships no module-boundaries rule (documented, not observed — unverified item 0),
+and `@nx/enforce-module-boundaries` only reads
 **TypeScript imports** — a C# `ProjectReference` is invisible to it. ADR 0004's matrix would
 therefore go unenforced across the entire backend.
 
 - **The chosen approach is a DIY check** that walks `type:` edges **between backend .NET
   projects** and fails on a disallowed edge, reading **ADR 0004's matrix** rather than
-  restating it. The matrix stays the single source of truth, extracted from
-  `eslint.config.mjs` into a module both the ESLint config and the check can read.
+  restating it. **The matrix stays the single source of truth** — the check reads it rather
+  than keeping a second copy. What that means mechanically (most likely: lifting the matrix
+  out of `eslint.config.mjs` into a module both the ESLint config and the check import) is an
+  implementation question for the ticket that builds it, not a decision here.
 - Scope: backend-to-backend .NET edges. TypeScript-to-TypeScript edges stay with
   `@nx/enforce-module-boundaries`; there is no C#-to-TypeScript edge to check (the only link
   is the generated client, which is derived output).
-- It is a `scope:tools` project, run as a target in CI alongside `lint`.
+- Where the check lives and how it runs is likewise left to that ticket; a `scope:tools`
+  project with a CI target alongside `lint` is the obvious shape, given its feasibility is
+  unverified.
 
 ### Tests — xUnit with coverlet
 
@@ -227,6 +245,13 @@ following are **decisions taken on documented behaviour, not observed behaviour*
 one test project, one generated client) **confirms or corrects each of them**, and this ADR
 gets a dated amendment either way.
 
+0. **`@nx/dotnet`'s shape, before anything it does.** The plugin is not installed in this
+   workspace — it is absent from `pnpm-lock.yaml` and `node_modules/@nx`. That it is
+   first-party, that a release exists for the pinned workspace Nx version, that it ships **no
+   project generators** (hence `dotnet new`), and that it ships **no module-boundaries rule**
+   (hence the DIY check) are all read from its documentation, not observed here. Two of this
+   ADR's choices rest on them, so this item is checked first: `pnpm add -D @nx/dotnet` at the
+   pinned version, then read what the installed plugin actually provides.
 1. **How `@nx/dotnet` assigns tags to a project.** This ADR requires a `project.json` beside
    each `.csproj` carrying the three explicit tags. Whether the plugin reads tags from there,
    infers its own, or ignores them is unverified.

@@ -327,9 +327,9 @@ edge between backend .NET projects is currently unchecked. Nx Conformance would 
 is Nx Enterprise-only.
 
 ADR 0017 chooses a **DIY check** over `type:` edges between backend .NET projects that reads
-**this matrix** rather than restating it — the matrix stays the single source of truth,
-extracted from `eslint.config.mjs` into a module both the ESLint config and the check can
-read. Its feasibility is unverified until a real `.csproj` exists.
+**this matrix** rather than restating it — the matrix stays the single source of truth, read
+by the check instead of copied into it. Its feasibility is unverified until a real `.csproj`
+exists.
 
 ### One open edge: `type:testing` may not depend on `type:app`
 
