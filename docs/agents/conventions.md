@@ -278,8 +278,9 @@ _using_ one.
 - General-purpose helpers default to `utils/` unless a more specific concept owns
   them.
 - Group files by functional cohesion — one honest reason to change per file.
-- New/substantially-reorganized TS files: type declarations before runtime
-  implementation; alphabetize within groups when it aids scanning.
+- Type declarations before runtime implementation, then classes, exported functions and private
+  functions, each alphabetized. Enforced by `perfectionist/sort-modules` (ADR 0008) — `eslint --fix`
+  reorders; it does not move `const` / `let`, so a type below a `const` is a reviewer catch.
 - Don't hand-sort imports — the formatter handles it.
 - No `any` without an inline comment explaining why.
 - Don't swallow errors — rethrow or return a structured failure.

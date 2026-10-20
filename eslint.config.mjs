@@ -5,6 +5,7 @@ import vitest from '@vitest/eslint-plugin';
 import eslintConfigPrettier from 'eslint-config-prettier';
 import astro from 'eslint-plugin-astro';
 import jest from 'eslint-plugin-jest';
+import perfectionist from 'eslint-plugin-perfectionist';
 import playwright from 'eslint-plugin-playwright';
 import unicorn from 'eslint-plugin-unicorn';
 import tseslint from 'typescript-eslint';
@@ -376,6 +377,22 @@ export default [
       'unicorn/no-new-buffer': 'error',
       'unicorn/no-invalid-remove-event-listener': 'error',
       'unicorn/prefer-structured-clone': 'error'
+    }
+  },
+  {
+    // Declaration order (conventions §8): type declarations before runtime ones, exported
+    // functions before private helpers, alphabetized within each group. Only `sort-modules`,
+    // never the plugin's presets, and none of its import/export rules: import order belongs
+    // to prettier-plugin-organize-imports. The rule leaves `const` / `let`, expression
+    // statements and control flow where they are and sorts only the runs between them; class
+    // and enum dependencies are tracked. See ADR 0008, 2026-10-20 amendment.
+    files: ['**/*.{ts,tsx,cts,mts}'],
+    plugins: { perfectionist },
+    rules: {
+      'perfectionist/sort-modules': [
+        'error',
+        { groups: [['interface', 'type', 'enum'], 'class', 'export-function', 'function'] }
+      ]
     }
   },
   // NgRx SignalStore lint rules. Spread the plugin's flat config (the `ngrx/base`
