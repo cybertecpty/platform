@@ -95,8 +95,7 @@ same command switches to it first. `gh pr review` (maintainer approval) is not t
 ### Post-merge cleanup
 
 After one of the agent's own PRs merges and its remote branch is auto-deleted, prune
-the stale local branch and the worktree attached to it — worktree first, then branch;
-git refuses to delete a branch that is still checked out in a worktree. Scope strictly to
+the stale local branch and the worktree attached to it (worktree first). Scope strictly to
 branches and worktrees this agent's workflow created — never touch carryover from another
 session (§5). Confirm `MERGED` via `gh pr list --state merged --head {branch}`; `[gone]`
 alone is not proof. `develop` squash-merges, so `git branch -d` refuses a merged branch
@@ -230,10 +229,11 @@ sharing the repository, so there is nothing to race over. Sharing a clone is the
 - **One branch per worktree.** Git refuses to check out a branch that is already checked out
   in another worktree. Don't override it (`git worktree add --force`).
 - **Shared across worktrees:** the object store, branches and tags, remotes, `.git/config`,
-  and the stash. A stash made in one worktree shows up in `git stash list` in all of them, so
-  the "never stash carryover" rule below still applies.
+  and the stash. A stash made in one worktree shows up in `git stash list` in all of them.
+  **Never** stash, reset, or delete a branch, stash or worktree you did not create — it may be
+  another session's in-flight work.
 - **Per worktree:** `HEAD`, the index, the working files, and everything gitignored —
-  `node_modules`, `.nx` (cache and the Nx daemon's data), `.env`.
+  `node_modules`, `.nx`, `.env`.
 
 ### The main clone
 
@@ -255,9 +255,8 @@ pnpm install --frozen-lockfile
 
 - `--no-track` keeps the branch from tracking `origin/develop`; you push through the
   `cybertec-bot` remote (§1), never `origin`.
-- Branch name: `{type}/{issue#}-{slug}` (§3). Folder: `platform-{name}`, next to the main clone.
-  Keep it on the same drive as the pnpm store so installed files hardlink instead of copying.
-  Claude Code's own worktrees live in the gitignored `.claude/worktrees/`, which is fine too.
+- Branch name: `{type}/{issue#}-{slug}` (§3). Folder: `platform-{name}`, next to the main clone,
+  on the same drive as the pnpm store so installed files hardlink instead of copying.
 - **`pnpm install` is mandatory before the first commit.** `core.hooksPath` is the relative
   `.husky/_`, which `pnpm install` generates. A worktree that hasn't run it has no hooks, and
   it fails silently: no `commit-msg` check, no `lint-staged`.
@@ -271,63 +270,56 @@ pnpm install --frozen-lockfile
   pnpm exec nx e2e cybertec-io-e2e
   ```
 
-Verified with two worktrees running install, build, test, lint, typecheck, `serve` and `e2e` at
-the same time (#175). What that means in practice:
+Two worktrees can build, test, lint, typecheck, serve and run e2e at the same time without
+manual intervention. What to know:
 
-- **Nx daemon:** one per workspace root, each with its own PID and log under
-  `.nx/workspace-data/d/`. No clash.
-- **Nx cache:** per worktree, so the first run in a new worktree is cold. Nx Cloud was not
-  exercised from a worktree — every concurrent run used `NX_NO_CLOUD=true`.
-- **pnpm store:** shared, and concurrent installs of the same lockfile are safe.
-- **`nx serve cybertec-io`:** Astro takes the next free port (4321, then 4322, …), so read the
-  URL from its log; the port isn't fixed.
-- **`e2e` and `lighthouse` preview ports:** derived from the checkout path and the target
-  (range 4400-4899), so each worktree and each target gets its own port, and a port already in
-  use fails with "already used" instead of testing someone else's server. Two worktree paths can
-  hash to the same port (about 1 in 500 pairs); pin one with the target's variable, a whole
-  number from 1024 to 65535 (anything else throws):
+- **The first Nx run in a new worktree is cold:** the `.nx` cache and the Nx daemon are per
+  worktree.
+- **Nx Cloud has not been exercised from a worktree.** The concurrent runs used
+  `NX_NO_CLOUD=true`; prefix it if a task fails on Nx Cloud (on Windows, `EISDIR` — see the
+  `commit-push-pr` skill).
+- **`nx serve cybertec-io` takes the next free port** (4321, then 4322, …), so read the URL from
+  its log.
+- **`e2e` and `lighthouse` preview ports are derived per worktree and per target** (4400-4899),
+  and a port already in use fails with "already used". If two worktree paths hash to the same
+  port, pin one with a whole number from 1024 to 65535 (anything else throws):
   ```bash
   E2E_PORT=4777 pnpm exec nx e2e cybertec-io-e2e
   LIGHTHOUSE_PORT=4778 pnpm exec nx lighthouse cybertec-io-e2e
   ```
-  In PowerShell: `$env:E2E_PORT = '4777'; pnpm exec nx e2e cybertec-io-e2e`. `BASE_URL`
-  (the post-deploy smoke target) skips the local preview server, so the port variables do not
-  apply when it is set. Mechanics are in `libs/shared/playwright/testing/README.md`.
-- **Claude Code hooks:** `format-edited` keeps its state in the OS temp dir keyed by session
-  id and records absolute paths, so worktrees do not interfere.
+  In PowerShell: `$env:E2E_PORT = '4777'; pnpm exec nx e2e cybertec-io-e2e`. When `BASE_URL`
+  is set (the post-deploy smoke target) there is no local preview, so the port variables don't
+  apply. Details: `libs/shared/playwright/testing/README.md`.
 
 ### Clean up
 
-When the PR has merged and `MERGED` is confirmed (Post-merge cleanup, §1), remove the worktree,
-then its branch. Stop what is running in the worktree first — on Windows a dev server or the
-Nx daemon keeps files open, and `git worktree remove` can leave the folder behind:
+Once the PR is confirmed `MERGED` (Post-merge cleanup, §1), remove the worktree, then its
+branch — git refuses to delete a branch that is still checked out in a worktree. Stop what is
+running in the worktree first: on Windows a dev server or the Nx daemon keeps files open, and
+`git worktree remove` can leave the folder behind.
 
 ```bash
-cd ../platform-{name}
+# in the worktree
 pnpm exec nx daemon --stop
-cd {main-clone}
+# then from the main clone
 git worktree remove ../platform-{name}
 git branch -D {branch}
 ```
 
 - Ignored files (`node_modules`, `.nx`) don't block `git worktree remove`; leftover
   _untracked_ files do. If it refuses, check `git status` in the worktree for anything you
-  want, then rerun with `--force`, which throws away uncommitted work. Never `--force` a
-  worktree that isn't yours.
-- If a folder is left behind, delete it by hand after stopping the process holding it, then run
-  `git worktree prune`.
-- Only remove worktrees this agent's workflow created. `git worktree list` shows the rest;
-  leave them alone.
+  want, then rerun with `--force`, which throws away uncommitted work.
+- If a folder is left behind, delete it by hand once the process holding it has stopped, then
+  run `git worktree prune`.
 
 ### Sharing a clone (the exception)
 
-Use a shared clone only when you can't make a worktree, or a developer is working in the main
-clone on a branch you must not move. Then:
+Use a shared clone only when you can't make a worktree. Then:
 
 - Before any git write (branch, commit, stash, checkout, reset), check for signs
   another session is active. If one is changing the same clone, wait rather than
   race it.
-- **Never** stash, checkout, reset, or delete carryover you did not create — it may
+- **Never** checkout over, or stash, reset, or delete, carryover you did not create — it may
   be another session's in-flight work.
 - Prefer shipping your committed branch without checking it out:
   ```bash
