@@ -37,5 +37,6 @@ covers it — an existing dependency, an Nx plugin, or a shared helper.
   new), then also list the same version in the project's own `package.json`, which
   `@nx/dependency-checks` lints. That second step needs no install. `tools/js/plugin`'s
   `@nx/js` entry is an example.
-- Framework capability (`@angular/*`, `@nestjs/*`) comes through `@nx/angular` / `@nx/nest`
-  generators and `nx add`, not hand-installed packages (conventions §11).
+- Framework capability (`@angular/*`) comes through `@nx/angular` generators and `nx add`, not
+  hand-installed packages (conventions §11). Backend (.NET) package references are
+  `dotnet add package` against a `.csproj`, not pnpm (ADR 0017) — nothing is wired yet.
