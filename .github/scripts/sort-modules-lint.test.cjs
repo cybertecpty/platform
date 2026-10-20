@@ -27,6 +27,29 @@ const order = code =>
   ].map(m => m[1]);
 
 describe('perfectionist/sort-modules as configured in eslint.config.mjs', () => {
+  it('is the only perfectionist rule enabled, leaving import and export order to the formatter', async () => {
+    const root = await import(
+      pathToFileURL(path.resolve(__dirname, '../../eslint.config.mjs')).href
+    );
+    const enabled = root.default
+      .flatMap(entry => Object.entries(entry.rules ?? {}))
+      .filter(([name, setting]) => name.startsWith('perfectionist/') && setting !== 'off')
+      .map(([name]) => name);
+
+    assert.deepEqual([...new Set(enabled)], [RULE]);
+  });
+
+  it('puts classes after types and before functions', () => {
+    const code = [
+      'export function run() {}',
+      'class Box {}',
+      'interface Options { a: number }',
+      ''
+    ].join('\n');
+
+    assert.deepEqual(order(fix(code).output), ['Options', 'Box', 'run']);
+  });
+
   it('reports runtime declarations above type declarations and fixes them', () => {
     const code = [
       'function run(): Options { return { a: 1 }; }',

@@ -391,12 +391,16 @@ the maintainer asked.
   these behaviors: misordered code is reported and fixed, class and enum dependencies survive
   the fix, and `const`, `let`, expression statements and `if` stay barriers. It runs under
   `node --test`, so `pnpm verify` and CI run it.
-- The plugin marks `useExperimentalDependencyDetection` deprecated (it becomes the only mode),
-  so the config leaves it at its default rather than setting it.
+- The plugin's source marks the legacy dependency detection for removal once
+  `useExperimentalDependencyDetection` is the only mode, so the config leaves that option at its
+  default (`true`) rather than setting it.
+- The `class` group is an addition to §8's two-part rule (types, then runtime): classes are
+  runtime declarations with tracked dependencies, so they sit between the types and the
+  functions.
 
 ### Rollout
 
-Run over `apps/`, `libs/` and `tools/` (162 TypeScript files) before choosing, the rule found
+Run over the TypeScript sources in `apps/`, `libs/` and `tools/` before choosing, the rule found
 **44 errors in 28 files**, all fixable (46 in 29 files if exported and private functions share a
 group). The cleanup is a mechanical, comment-preserving move of whole declarations, so the rule
 is `error` from the start and the same PR autofixes the existing code, rather than starting at
@@ -419,7 +423,9 @@ permanent exception list.
 - Not every §8 violation is caught: a type declared below a `const` is not hoisted above the
   functions that precede it. Reviewers still own the cross-barrier case.
 - One more version pin (`eslint-plugin-perfectionist` 5.12.1, peer `eslint ^8.45 || ^9 || ^10`,
-  so it is not held back by the ESLint 9 workspace). 5.13.0 was published the day this was
-  added, so the earlier release was taken.
+  so it is not held back by the ESLint 9 workspace). It is pinned exactly rather than with a
+  caret because the dependency and barrier behavior above was verified against this release and
+  a sort rule's output changes with its version. 5.13.0 was published the day this was added, so
+  the earlier release was taken.
 - Adding another perfectionist rule is a normal `eslint.config.mjs` edit only if it does not
   touch imports or exports; adopting a preset reopens this ADR.
