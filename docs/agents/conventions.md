@@ -275,9 +275,9 @@ manual intervention. What to know:
 
 - **The first Nx run in a new worktree is cold:** the `.nx` cache and the Nx daemon are per
   worktree.
-- **Nx Cloud has not been exercised from a worktree.** The concurrent runs used
-  `NX_NO_CLOUD=true`; prefix it if a task fails on Nx Cloud (on Windows, `EISDIR` — see the
-  `commit-push-pr` skill).
+- **Prefix local Nx runs with `NX_NO_CLOUD=true`** if a task fails on the Nx Cloud client (on
+  Windows, `EISDIR` — see the `commit-push-pr` skill). CI doesn't use Nx Cloud (#188); this is
+  for local runs only.
 - **`nx serve cybertec-io` takes the next free port** (4321, then 4322, …), so read the URL from
   its log.
 - **`e2e` and `lighthouse` preview ports are derived per worktree and per target** (4400-4899),
