@@ -17,6 +17,75 @@ Accounts: maintainer `djmcgrath101` (gh rests here), bot `cybertec-bot` (member 
 `cybertecpty/bots` team, which has write on the repo). Remotes: `origin` (HTTPS,
 maintainer) and `cybertec-bot` -> `git@github-cybertec-bot:cybertecpty/platform.git`.
 
+## Before you start: check, claim, worktree
+
+Do this when you pick up an issue, before writing code. Skip it only when resuming a branch and
+worktree this session created.
+
+**1. Check for an existing claim.** Someone may already own the issue. Read-only, any `gh` account:
+
+```bash
+gh issue view {n} --repo cybertecpty/platform --json assignees,state --jq '{state, assignees: [.assignees[].login]}'
+gh pr list --repo cybertecpty/platform --state open --search "{n} in:title,body" --json number,title,headRefName
+git fetch origin
+git ls-remote --heads origin "*/{n}-*"
+git ls-remote --heads cybertec-bot "*/{n}-*"
+git worktree list
+```
+
+An assignee, an open PR, a `{type}/{n}-*` branch on either remote, or a local worktree on such a
+branch all mean the issue is taken. **Stop and report it** instead of starting a second branch.
+Resume only a branch and worktree this session created (conventions §5). An assignee of
+`cybertec-bot` does not tell you which session holds it, so treat it as someone else's unless you
+made the claim. Also check the issue's blockers and any open PR it depends on (conventions §3).
+
+**2. Claim it.** Switch to the bot first (the same switch as Steps, step 3), then assign the issue
+to the bot:
+
+```bash
+gh auth switch --user cybertec-bot
+gh issue edit {n} --repo cybertecpty/platform --add-assignee cybertec-bot
+```
+
+The assignee is the claim. An early draft PR (`gh pr create --draft`) also counts, and carries the
+branch name, so open one if the work will take more than one sitting. If you abandon the issue
+before merging, release it with
+`gh issue edit {n} --repo cybertecpty/platform --remove-assignee cybertec-bot` and close the draft
+PR. Do not leave a claim on work nobody is doing. A merged PR with `Closes #{n}` closes the issue,
+so the claim needs no manual release.
+
+**3. Create the worktree.** One worktree per session, from a fresh `origin/develop`. The full
+recipe, and why each flag is there, is conventions §5 (Set up):
+
+```bash
+git fetch origin
+git worktree add --no-track -b {type}/{n}-{slug} ../platform-{name} origin/develop
+cd ../platform-{name}
+pnpm install --frozen-lockfile
+```
+
+`pnpm install` is mandatory before the first commit: it generates `.husky/_`, and a worktree
+without it commits with no `commit-msg` or `pre-commit` hook, silently. Run every later command
+from inside the worktree. Do not start agent work in the main clone.
+
+### Splitting work across subagents
+
+A subagent that edits files, stages, commits, or checks out a branch gets its own worktree and
+branch, never the parent's: two writers in one working tree race over the index and `HEAD`
+(conventions §5). Create it from the parent's branch so it starts from the same work:
+
+```bash
+git worktree add --no-track -b {branch}-{part} ../platform-{name}-{part} {branch}
+cd ../platform-{name}-{part}
+pnpm install --frozen-lockfile
+```
+
+In Claude Code, the Agent tool's `isolation: "worktree"` makes the worktree for you; run
+`pnpm install --frozen-lockfile` in it before the subagent commits. The parent integrates the
+subagent's commits into its own branch (merge or cherry-pick), then removes the subagent
+worktree and branch it created, per step 10. Read-only subagents (search, review, fetching CI
+status) share the parent's worktree and need nothing extra.
+
 ## Steps
 
 ### 1. Inspect state
@@ -29,13 +98,15 @@ git log --oneline -5
 ```
 
 Confirm there are changes to commit and the branch is **not** `develop` or `main`. If the
-working tree is clean, say so and stop. If another session is active on this clone, see
-conventions §5 before any git write.
+working tree is clean, say so and stop. In your own worktree there is no other session to race;
+in a shared clone, see conventions §5 (Sharing a clone) before any git write.
 
 ### 2. Branch if needed
 
-If on `develop`/`main`, cut a feature branch off `develop` first:
-`feat/{issue#}-{slug}`, `fix/...`, `docs/...`, `chore/...`.
+If you are on `develop`/`main` with changes to ship, do not cut a branch in the main clone. Make a
+worktree and branch as in [Before you start](#before-you-start-check-claim-worktree)
+(`feat/{issue#}-{slug}`, `fix/...`, `docs/...`, `chore/...`), then copy the changed files into it
+(the stash is shared across worktrees, conventions §5). Only when you cannot make a worktree, use the shared-clone exception (conventions §5):
 
 ```bash
 git checkout -b {branch} develop
@@ -168,11 +239,33 @@ Always last, even if an earlier step failed. `gh` rests at the maintainer betwee
 
 ### 10. Post-merge cleanup (later sessions)
 
-When one of the agent's own PRs has merged and its remote branch is auto-deleted, prune the
-stale local branch — but only after confirming `MERGED` via
+When one of the agent's own PRs has merged and its remote branch is auto-deleted, remove the
+worktree, then the stale local branch — but only after confirming `MERGED` via
 `gh pr list --state merged --head {branch}`. `develop` squash-merges, so `git branch -d` refuses
 ("not fully merged") — the squash commit is not the branch tip. Once `MERGED` is confirmed,
-`git branch -D` is expected. Never touch branches or worktrees the agent's workflow didn't create.
+`git branch -D` is expected. The worktree goes first because git refuses to delete a branch that
+is still checked out in one. The full recipe is conventions §5 (Clean up):
+
+```bash
+# in the worktree: stop the Nx daemon, which holds files open on Windows
+pnpm exec nx daemon --stop
+# then from the main clone
+git worktree remove ../platform-{name}
+git branch -D {branch}
+```
+
+Scope this strictly to what **this session created**: the worktree you ran `git worktree add` for
+and the branch you cut, named explicitly. Name each path and branch; never loop over
+`git worktree list` or `git branch -vv` and remove whatever matches `[gone]` or "merged", and don't
+use a bulk cleanup such as `commit-commands:clean_gone`, which removes every gone branch and its
+worktree whoever made them. A worktree or branch you did not create may be another session's
+in-flight work: leave it, and mention it if it looks stale. Subagent worktrees you created follow
+the same steps. If you claimed the issue and abandoned it without merging, release the claim
+(Before you start, step 2).
+
+If `git worktree remove` refuses, check `git status` in the worktree for untracked files you want
+before using `--force`, which discards uncommitted work. If a folder is left behind, delete it
+once the holding process has stopped, then run `git worktree prune`.
 
 ## Constraints
 
@@ -190,8 +283,8 @@ Moved here from `docs/agents/conventions.md` §1 and §3, which keep only the in
   `github-cybertec-bot` in `~/.ssh/config`, key `~/.ssh/id_ed25519_cybertec_bot`.
 - `origin` → `https://github.com/cybertecpty/platform.git` (HTTPS via GCM, authenticates as the
   maintainer).
-- `git push cybertec-bot {branch}`, never `HEAD` (step 6). Prefer shipping a committed branch
-  without checking it out (conventions §5).
+- `git push cybertec-bot {branch}`, never `HEAD` (step 6). In a shared clone (the exception),
+  prefer shipping a committed branch without checking it out (conventions §5).
 
 ### Which `gh` account, when
 

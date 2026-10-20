@@ -141,6 +141,7 @@ The decision script returns one of the following statuses. This table defines th
 - **Git safety**: Stage specific files by name — `git add -A` or `git add .` risks committing the user's unrelated work-in-progress or secrets
 - **Environment failures** (OOM, command not found, permission denied): bail immediately. These aren't code bugs, so spending local-fix budget on them is wasteful
 - **Gate check**: Run `ci-state-update.mjs gate` before local fix attempts — if budget exhausted, print message and exit
+- **Worktrees**: Local fixes happen in the worktree the PR's branch is checked out in. A subagent that writes files gets its own worktree, never this one (`commit-push-pr`, Splitting work across subagents)
 
 ## Main Loop
 

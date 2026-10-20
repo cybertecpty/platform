@@ -20,7 +20,7 @@ The script returns `autoApplySkipReason` in its output.
 The script returns `verifiableTaskIds` in its output.
 
 1. **Run Nx via pnpm** (this workspace's package manager): `pnpm exec nx`
-2. **Run verifiable tasks in parallel** — spawn `general` subagents for each task
+2. **Run verifiable tasks in parallel** — spawn `general` subagents for each task. Subagents that only run tasks share this session's worktree; one that edits files, stages or commits gets its own worktree (`commit-push-pr`, Splitting work across subagents)
 3. **If all pass** → spawn UPDATE_FIX subagent with `APPLY`, enter wait mode
 4. **If any fail** → Apply Locally + Enhance Flow (see below)
 

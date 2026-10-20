@@ -29,6 +29,9 @@ touches** — not its line count — and state it in the PR's Test plan
 - **Ultra** (`/code-review ultra`) is the maintainer's call — it's user-triggered and billed.
   Agents never launch it.
 - The maintainer can always ask for a higher tier.
+- Review subagents are read-only and share the worktree under review. If one applies fixes
+  it gets its own worktree (`commit-push-pr`, Splitting work across
+  subagents).
 
 ## Priorities
 
