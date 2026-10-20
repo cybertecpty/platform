@@ -93,9 +93,14 @@ re-check `git show HEAD` and amend the PR body if a "prettier clean" box needs i
 
 ```bash
 git fetch origin
+git diff origin/develop --stat
 pnpm verify
 git push cybertec-bot {branch}
 ```
+
+The `--stat` must list only the files you meant to change. A file you did not touch, or a hunk
+that removes lines `develop` gained since you branched, means the branch would revert someone
+else's merged work: restore it with `git checkout origin/develop -- {file}`.
 
 Push the branch **by name**, never `HEAD`. Another session on the same clone can check out a
 different branch between your commit and your push. `HEAD` then pushes their branch, which leaves
