@@ -349,8 +349,7 @@ Jest globals nor the test-code relaxations.
 - Status: proposed
 - Deciders: djmcgrath
 - Implemented by: the `perfectionist` block in `eslint.config.mjs`; the
-  `eslint-plugin-perfectionist` devDependency; `.github/scripts/sort-modules-lint.test.cjs`
-  (#169)
+  `eslint-plugin-perfectionist` devDependency (#169)
 
 Conventions §8 says new or substantially reorganized TypeScript files put type declarations
 before runtime implementation and alphabetize within groups. Nothing enforced it, so it
@@ -387,10 +386,6 @@ the maintainer asked.
   `useExperimentalDependencyDetection: true`, a class (`extends`, static initializers,
   decorators) or an enum (initializers) is never moved above a declaration it depends on in
   the same run. Function declarations are hoisted, so moving them is safe.
-- `.github/scripts/sort-modules-lint.test.cjs` loads the real `eslint.config.mjs` block and pins
-  these behaviors: misordered code is reported and fixed, class and enum dependencies survive
-  the fix, and `const`, `let`, expression statements and `if` stay barriers. It runs under
-  `node --test`, so `pnpm verify` and CI run it.
 - The plugin's source marks the legacy dependency detection for removal once
   `useExperimentalDependencyDetection` is the only mode, so the config leaves that option at its
   default (`true`) rather than setting it.
