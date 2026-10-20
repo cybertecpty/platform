@@ -287,3 +287,27 @@ the affected projects.
   `develop` run for that.
 - A change the project graph doesn't connect to a project isn't tested on the PR. The full
   run on `develop` catches it right after merge.
+
+## Amendment (2026-10-20): CI has no distributed run
+
+- Status: accepted
+- Deciders: djmcgrath
+- Implemented by: `.github/workflows/lint-and-test-affected.yml` (`NX_NO_CLOUD`); issues #188, #191
+
+The coverage reporting layer above says Nx hydrates each project's `coverage/{projectRoot}`
+output onto the main runner "after the distributed run". That described Nx Cloud task
+distribution. The Nx Cloud organization is disabled and not being paid for (#188), so CI
+runs every task on the one runner and there is no distributed run.
+
+### Decision
+
+- **Nothing about the reporting layer changes.** `coverage-report.cjs` still reads each
+  project's `coverage/{projectRoot}` reports from the runner's workspace. They are now written
+  there by the `test` targets themselves, with no hydration step in between.
+- **Read "the distributed run" above as "the `nx` run".** The remaining decisions in this
+  ADR do not depend on distribution or on the Nx Cloud remote cache.
+
+### Consequences
+
+- If Nx Cloud is turned back on, distribution would again put the reports on other agents, and
+  hydration back to the main runner would again be what the script relies on.
