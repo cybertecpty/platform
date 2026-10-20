@@ -24,49 +24,6 @@ export type NxProjectPredefinedTags = Simplify<
 export type NxProjectTagOpts = Pick<NxProjectOptions, 'scope' | 'type'>;
 
 /**
- * Creates project tags based on the provided options.
- * Tools projects (`scope:tools`) are domain-exempt — they never receive a `domain:*` tag,
- * matching their directory/name handling. For other library projects, domain defaults to `shared`
- * when not explicitly set so that domain-specific code (a consumer workspace's own product
- * domains) can import shared libraries. App projects should always provide an explicit domain.
- * A multi-segment domain (a subdomain, e.g. `billing/checkout`) is compounded into the flattened
- * `domain:billing-checkout` tag form ADR 0009 specifies, via the same join `projectDomainToName`
- * already uses for naming — not passed through as the raw slash-separated string.
- */
-export function createProjectTags<T extends NxProjectOptions>(options: T): NxProjectTags {
-  const { scope, type } = options;
-  // Tools projects are domain-exempt (no domain:* tag). Otherwise default the domain to 'shared' for
-  // library projects so they are reachable by domain-constrained projects via the ESLint boundary
-  // rules; apps must set their own domain explicitly.
-  const rawDomain =
-    scope === 'tools' ? undefined : (options.domain ?? (type !== 'app' ? 'shared' : undefined));
-  const domain = rawDomain ? projectDomainToName(rawDomain) : undefined;
-  const tagRecord: Record<string, string> = { scope, type };
-
-  if (domain) {
-    tagRecord['domain'] = domain;
-  }
-
-  const tags = new NxProjectTags(tagRecord);
-
-  if (options.tags) {
-    tags.addTagsString(options.tags);
-  }
-
-  return tags;
-}
-
-/**
- * Whether `project` carries the `type:{type}` tag. A project with no tags is of no type.
- */
-export function isProjectOfType(
-  project: Pick<ProjectConfiguration, 'tags'>,
-  type: NxProjectType
-): boolean {
-  return new NxProjectTags(project.tags).hasTag('type', type);
-}
-
-/**
  * A utility class for managing Nx project tags.
  * Allows adding, retrieving, and checking tags
  * in various formats (string, array, record).
@@ -241,4 +198,47 @@ export class NxProjectTags {
   toString(): string {
     return this.toArray().join(NxProjectTags.TAGS_SEPARATOR);
   }
+}
+
+/**
+ * Creates project tags based on the provided options.
+ * Tools projects (`scope:tools`) are domain-exempt — they never receive a `domain:*` tag,
+ * matching their directory/name handling. For other library projects, domain defaults to `shared`
+ * when not explicitly set so that domain-specific code (a consumer workspace's own product
+ * domains) can import shared libraries. App projects should always provide an explicit domain.
+ * A multi-segment domain (a subdomain, e.g. `billing/checkout`) is compounded into the flattened
+ * `domain:billing-checkout` tag form ADR 0009 specifies, via the same join `projectDomainToName`
+ * already uses for naming — not passed through as the raw slash-separated string.
+ */
+export function createProjectTags<T extends NxProjectOptions>(options: T): NxProjectTags {
+  const { scope, type } = options;
+  // Tools projects are domain-exempt (no domain:* tag). Otherwise default the domain to 'shared' for
+  // library projects so they are reachable by domain-constrained projects via the ESLint boundary
+  // rules; apps must set their own domain explicitly.
+  const rawDomain =
+    scope === 'tools' ? undefined : (options.domain ?? (type !== 'app' ? 'shared' : undefined));
+  const domain = rawDomain ? projectDomainToName(rawDomain) : undefined;
+  const tagRecord: Record<string, string> = { scope, type };
+
+  if (domain) {
+    tagRecord['domain'] = domain;
+  }
+
+  const tags = new NxProjectTags(tagRecord);
+
+  if (options.tags) {
+    tags.addTagsString(options.tags);
+  }
+
+  return tags;
+}
+
+/**
+ * Whether `project` carries the `type:{type}` tag. A project with no tags is of no type.
+ */
+export function isProjectOfType(
+  project: Pick<ProjectConfiguration, 'tags'>,
+  type: NxProjectType
+): boolean {
+  return new NxProjectTags(project.tags).hasTag('type', type);
 }

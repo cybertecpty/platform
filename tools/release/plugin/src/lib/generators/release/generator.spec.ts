@@ -127,8 +127,8 @@ interface GitSpies {
   push: jest.Mock;
 }
 
-type ReleaseVersionResult = Awaited<ReturnType<typeof releaseVersion>>;
 type ReleaseChangelogResult = Awaited<ReturnType<typeof releaseChangelog>>;
+type ReleaseVersionResult = Awaited<ReturnType<typeof releaseVersion>>;
 
 /** Placeholder release graph, opaque to the generator — it only passes it through. */
 const FAKE_RELEASE_GRAPH = {} as unknown as ReleaseVersionResult['releaseGraph'];

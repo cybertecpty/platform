@@ -7,8 +7,6 @@ import {
   type PortRange
 } from './playwright-port.utils';
 
-type Env = Readonly<Record<string, string | undefined>>;
-
 export interface DefinePreviewConfigOptions {
   /**
    * The Nx target the config serves, e.g. `e2e` or `lighthouse`. It salts the derived port so
@@ -23,6 +21,8 @@ export interface DefinePreviewConfigOptions {
   /** Environment to read `BASE_URL` and the port override from; defaults to `process.env`. */
   env?: Env;
 }
+
+type Env = Readonly<Record<string, string | undefined>>;
 
 export interface PreviewConfig {
   /** `BASE_URL` when set, otherwise the local preview server. */

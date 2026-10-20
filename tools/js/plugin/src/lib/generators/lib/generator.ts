@@ -116,6 +116,26 @@ export async function libGenerator(
 }
 
 /**
+ * A `scope:tools` project lives under `tools/` and is domain-exempt (ADR 0009), so an
+ * explicit `domain` is rejected rather than silently dropped. Every other scope places
+ * the project under `libs/<domain>/...`, which is never domain-exempt.
+ */
+function assertDomainMatchesScope(
+  domain: LibGeneratorOptions['domain'],
+  scope: NonNullable<LibGeneratorOptions['scope']>
+): void {
+  if (scope === 'tools' && domain) {
+    throw new Error(
+      '`domain` cannot be set for `scope:tools` — tools projects are domain-exempt. Omit `--domain`.'
+    );
+  }
+
+  if (scope !== 'tools' && !domain) {
+    throw new Error('`domain` must be provided for every `scope` except `tools`.');
+  }
+}
+
+/**
  * Resolves the project's `scope:` tag from `options`. `type:infra` is not
  * scope-polymorphic (ADR 0004) — its scope is always `backend`, and an explicit
  * `--scope` that disagrees is rejected rather than silently overridden. Every other
@@ -139,26 +159,6 @@ function resolveScope(options: LibGeneratorOptions): NonNullable<LibGeneratorOpt
   }
 
   return options.scope;
-}
-
-/**
- * A `scope:tools` project lives under `tools/` and is domain-exempt (ADR 0009), so an
- * explicit `domain` is rejected rather than silently dropped. Every other scope places
- * the project under `libs/<domain>/...`, which is never domain-exempt.
- */
-function assertDomainMatchesScope(
-  domain: LibGeneratorOptions['domain'],
-  scope: NonNullable<LibGeneratorOptions['scope']>
-): void {
-  if (scope === 'tools' && domain) {
-    throw new Error(
-      '`domain` cannot be set for `scope:tools` — tools projects are domain-exempt. Omit `--domain`.'
-    );
-  }
-
-  if (scope !== 'tools' && !domain) {
-    throw new Error('`domain` must be provided for every `scope` except `tools`.');
-  }
 }
 
 export default libGenerator;

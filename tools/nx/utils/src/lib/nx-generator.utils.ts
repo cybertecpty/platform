@@ -1,19 +1,19 @@
 import { orderByKeys } from '@cybertecpty/shared-utils';
 import { readProjectConfiguration, Tree, updateJson, updateProjectConfiguration } from '@nx/devkit';
 
-/** Minimal shape of a tsconfig file relevant to `addTsConfigTypes`. */
-interface TsConfigWithTypes {
+/** Minimal shape of the root tsconfig relevant to `sortTsConfigBasePaths`. */
+interface TsConfigWithPaths {
   compilerOptions?: {
-    types?: string[];
+    paths?: Record<string, string[]>;
     [key: string]: unknown;
   };
   [key: string]: unknown;
 }
 
-/** Minimal shape of the root tsconfig relevant to `sortTsConfigBasePaths`. */
-interface TsConfigWithPaths {
+/** Minimal shape of a tsconfig file relevant to `addTsConfigTypes`. */
+interface TsConfigWithTypes {
   compilerOptions?: {
-    paths?: Record<string, string[]>;
+    types?: string[];
     [key: string]: unknown;
   };
   [key: string]: unknown;
@@ -31,21 +31,6 @@ export function addTsConfigTypes(tree: Tree, tsConfigPath: string, types: string
     const mergedTypes = Array.from(new Set([...existingTypes, ...types])).sort();
 
     json.compilerOptions = { ...json.compilerOptions, types: mergedTypes };
-
-    return json;
-  });
-}
-
-/**
- * Removes `types` from a tsconfig file's `compilerOptions.types`, keeping the rest in order.
- * Always leaves an explicit array, even an empty one: a tsconfig with no `types` loads every
- * visible `@types` package, which would bring back whatever was removed.
- */
-export function removeTsConfigTypes(tree: Tree, tsConfigPath: string, types: string[]): void {
-  updateJson<TsConfigWithTypes, TsConfigWithTypes>(tree, tsConfigPath, json => {
-    const keptTypes = (json.compilerOptions?.types ?? []).filter(type => !types.includes(type));
-
-    json.compilerOptions = { ...json.compilerOptions, types: keptTypes };
 
     return json;
   });
@@ -76,6 +61,21 @@ export function addTypecheckTarget(
   const projectConfig = readProjectConfiguration(tree, projectName);
   projectConfig.targets = { ...projectConfig.targets, typecheck: {} };
   updateProjectConfiguration(tree, projectName, projectConfig);
+}
+
+/**
+ * Removes `types` from a tsconfig file's `compilerOptions.types`, keeping the rest in order.
+ * Always leaves an explicit array, even an empty one: a tsconfig with no `types` loads every
+ * visible `@types` package, which would bring back whatever was removed.
+ */
+export function removeTsConfigTypes(tree: Tree, tsConfigPath: string, types: string[]): void {
+  updateJson<TsConfigWithTypes, TsConfigWithTypes>(tree, tsConfigPath, json => {
+    const keptTypes = (json.compilerOptions?.types ?? []).filter(type => !types.includes(type));
+
+    json.compilerOptions = { ...json.compilerOptions, types: keptTypes };
+
+    return json;
+  });
 }
 
 /**

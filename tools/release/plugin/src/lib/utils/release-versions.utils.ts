@@ -46,6 +46,28 @@ export function isReleaseType(value: string): value is ReleaseType {
 }
 
 /**
+ * Resolves the project release level from its version change.
+ *
+ * @param currentVersion The current version of the project.
+ * @param newVersion The new version of the project.
+ * @returns The release type ('major', 'minor', 'patch') or null if no release is needed.
+ */
+export function resolveProjectReleaseType(
+  currentVersion: string,
+  newVersion: string | null
+): WorkspaceReleaseType | null {
+  if (!newVersion) {
+    return null;
+  }
+
+  const releaseType = diff(currentVersion, newVersion);
+
+  return releaseType === 'major' || releaseType === 'minor' || releaseType === 'patch'
+    ? releaseType
+    : null;
+}
+
+/**
  * Determines the workspace release level from project version changes.
  */
 export function resolveWorkspaceReleaseType(versionData: VersionData): WorkspaceReleaseType | null {
@@ -68,26 +90,4 @@ export function resolveWorkspaceReleaseType(versionData: VersionData): Workspace
   }
 
   return null;
-}
-
-/**
- * Resolves the project release level from its version change.
- *
- * @param currentVersion The current version of the project.
- * @param newVersion The new version of the project.
- * @returns The release type ('major', 'minor', 'patch') or null if no release is needed.
- */
-export function resolveProjectReleaseType(
-  currentVersion: string,
-  newVersion: string | null
-): WorkspaceReleaseType | null {
-  if (!newVersion) {
-    return null;
-  }
-
-  const releaseType = diff(currentVersion, newVersion);
-
-  return releaseType === 'major' || releaseType === 'minor' || releaseType === 'patch'
-    ? releaseType
-    : null;
 }

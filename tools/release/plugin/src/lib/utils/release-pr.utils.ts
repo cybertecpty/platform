@@ -59,26 +59,28 @@ export async function buildReleasePrBody(options: ReleasePrBodyOptions): Promise
 }
 
 /**
- * Drops the commits that should not appear in the "Workspace changes" section:
- * the generated release commit (created after the changelogs, so never
- * changelog-covered, and its manifest footprint touches app files), and any
- * commit already represented in a project changelog entry.
- *
- * @param commits The full release-PR commit range.
- * @param coveredHashes Short commit hashes referenced by the project changelogs
- *   (see {@link extractChangelogCommitHashes}).
- * @param releaseCommitMessage Subject line of the generated release commit.
+ * Builds a {@link ProjectForFile} resolver from the current Nx project graph.
+ * The one point in this module that reads the graph.
  */
-export function selectUncoveredCommits(
-  commits: readonly GitLogEntry[],
-  coveredHashes: readonly string[],
-  releaseCommitMessage: string
-): GitLogEntry[] {
-  return commits.filter(
-    commit =>
-      commit.message !== releaseCommitMessage &&
-      !coveredHashes.some(hash => commit.hash.startsWith(hash))
-  );
+export async function createProjectForFile(): Promise<ProjectForFile> {
+  const projectGraph = await createProjectGraphAsync();
+  const projectRootMappings = createProjectRootMappings(projectGraph.nodes);
+
+  return file => findProjectForPath(file, projectRootMappings);
+}
+
+/**
+ * Extracts the (short) commit hashes referenced by the rendered project
+ * changelog entries, from their `.../commit/<hash>` markdown links.
+ */
+export function extractChangelogCommitHashes(
+  projectChangelogs: ProjectChangelogs | undefined
+): string[] {
+  const contents = Object.values(projectChangelogs ?? {})
+    .map(changelog => changelog.contents)
+    .join('\n');
+
+  return Array.from(contents.matchAll(/commit\/([0-9a-f]{6,40})/g), match => match[1]);
 }
 
 /**
@@ -118,27 +120,6 @@ export function groupCommitsByProject(
 }
 
 /**
- * Renders the grouped commits as the "Workspace changes" Markdown section, or
- * `null` when there are no groups.
- */
-export function renderWorkspaceChangesSection(
-  groups: ReadonlyMap<string, readonly GitLogEntry[]>
-): string | null {
-  if (groups.size === 0) {
-    return null;
-  }
-
-  const groupSections = [...groups.entries()].map(([groupName, groupCommits]) => {
-    // Bare short hashes are auto-linked by GitHub when rendered in a PR body.
-    const lines = groupCommits.map(commit => `- ${commit.message} (${commit.hash.slice(0, 7)})`);
-
-    return `### ${groupName}\n\n${lines.join('\n')}`;
-  });
-
-  return `## Workspace changes\n\n${groupSections.join('\n\n')}`;
-}
-
-/**
  * Assembles the final PR body from the per-project changelog sections and the
  * optional workspace-changes section, falling back to a placeholder when there
  * is nothing to report.
@@ -163,28 +144,47 @@ export function renderReleasePrBody(
 }
 
 /**
- * Extracts the (short) commit hashes referenced by the rendered project
- * changelog entries, from their `.../commit/<hash>` markdown links.
+ * Renders the grouped commits as the "Workspace changes" Markdown section, or
+ * `null` when there are no groups.
  */
-export function extractChangelogCommitHashes(
-  projectChangelogs: ProjectChangelogs | undefined
-): string[] {
-  const contents = Object.values(projectChangelogs ?? {})
-    .map(changelog => changelog.contents)
-    .join('\n');
+export function renderWorkspaceChangesSection(
+  groups: ReadonlyMap<string, readonly GitLogEntry[]>
+): string | null {
+  if (groups.size === 0) {
+    return null;
+  }
 
-  return Array.from(contents.matchAll(/commit\/([0-9a-f]{6,40})/g), match => match[1]);
+  const groupSections = [...groups.entries()].map(([groupName, groupCommits]) => {
+    // Bare short hashes are auto-linked by GitHub when rendered in a PR body.
+    const lines = groupCommits.map(commit => `- ${commit.message} (${commit.hash.slice(0, 7)})`);
+
+    return `### ${groupName}\n\n${lines.join('\n')}`;
+  });
+
+  return `## Workspace changes\n\n${groupSections.join('\n\n')}`;
 }
 
 /**
- * Builds a {@link ProjectForFile} resolver from the current Nx project graph.
- * The one point in this module that reads the graph.
+ * Drops the commits that should not appear in the "Workspace changes" section:
+ * the generated release commit (created after the changelogs, so never
+ * changelog-covered, and its manifest footprint touches app files), and any
+ * commit already represented in a project changelog entry.
+ *
+ * @param commits The full release-PR commit range.
+ * @param coveredHashes Short commit hashes referenced by the project changelogs
+ *   (see {@link extractChangelogCommitHashes}).
+ * @param releaseCommitMessage Subject line of the generated release commit.
  */
-export async function createProjectForFile(): Promise<ProjectForFile> {
-  const projectGraph = await createProjectGraphAsync();
-  const projectRootMappings = createProjectRootMappings(projectGraph.nodes);
-
-  return file => findProjectForPath(file, projectRootMappings);
+export function selectUncoveredCommits(
+  commits: readonly GitLogEntry[],
+  coveredHashes: readonly string[],
+  releaseCommitMessage: string
+): GitLogEntry[] {
+  return commits.filter(
+    commit =>
+      commit.message !== releaseCommitMessage &&
+      !coveredHashes.some(hash => commit.hash.startsWith(hash))
+  );
 }
 
 /** Sort comparator that orders named project groups alphabetically, 'other' last. */

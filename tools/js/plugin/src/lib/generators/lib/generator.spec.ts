@@ -21,16 +21,16 @@ const fakeNxJsLibraryGenerator = createFakeLibraryGenerator({
   }
 });
 
+/** The options `@nx/js:library` was called with on the most recent run. */
+function forwardedOptions() {
+  return lastCallArg(nxJsLibraryGeneratorMock, 1, '`@nx/js:library`');
+}
+
 function run(
   tree: Tree,
   options: Partial<LibGeneratorOptions> & Pick<LibGeneratorOptions, 'type'>
 ) {
   return libGenerator(tree, options);
-}
-
-/** The options `@nx/js:library` was called with on the most recent run. */
-function forwardedOptions() {
-  return lastCallArg(nxJsLibraryGeneratorMock, 1, '`@nx/js:library`');
 }
 
 describe('libGenerator', () => {

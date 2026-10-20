@@ -73,6 +73,15 @@ function fakeExecutorGenerator(
   return Promise.resolve();
 }
 
+/** The options `@nx/plugin:executor` was called with on the most recent run. */
+function forwardedOptions() {
+  return lastCallArg(nxExecutorGeneratorMock, 1, '`@nx/plugin:executor`');
+}
+
+function run(tree: Tree, options: Partial<NxExecGeneratorOptions> & { name: string }) {
+  return nxExecGenerator(tree, { project: 'demo-plugin', ...options });
+}
+
 function seedPlugin(tree: Tree): void {
   addProjectConfiguration(tree, 'demo-plugin', {
     root: PLUGIN_ROOT,
@@ -98,15 +107,6 @@ function seedPlugin(tree: Tree): void {
 function setProjectTags(tree: Tree, tags: string[]): void {
   const config = readProjectConfiguration(tree, 'demo-plugin');
   updateProjectConfiguration(tree, 'demo-plugin', { ...config, tags });
-}
-
-function run(tree: Tree, options: Partial<NxExecGeneratorOptions> & { name: string }) {
-  return nxExecGenerator(tree, { project: 'demo-plugin', ...options });
-}
-
-/** The options `@nx/plugin:executor` was called with on the most recent run. */
-function forwardedOptions() {
-  return lastCallArg(nxExecutorGeneratorMock, 1, '`@nx/plugin:executor`');
 }
 
 describe('nxExecGenerator', () => {

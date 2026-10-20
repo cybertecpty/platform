@@ -343,3 +343,84 @@ Jest globals nor the test-code relaxations.
   meaning, which is why they were chosen.
 - Coverage is unaffected: the preset still counts these files, so fixtures and fakes in a
   `type:testing` lib need their own specs.
+
+## Amendment (2026-10-20): `eslint-plugin-perfectionist`, `sort-modules` only
+
+- Status: proposed
+- Deciders: djmcgrath
+- Implemented by: the `perfectionist` block in `eslint.config.mjs`; the
+  `eslint-plugin-perfectionist` devDependency (#169)
+
+Conventions §8 says new or substantially reorganized TypeScript files put type declarations
+before runtime implementation and alphabetize within groups. Nothing enforced it, so it
+depended on reviewers remembering. In #166 a file grew across several review rounds, ended up
+with runtime state above its types and unsorted constants and exports, and nobody noticed until
+the maintainer asked.
+
+### Decision
+
+- **Add `eslint-plugin-perfectionist` and enable only `perfectionist/sort-modules`**, `error`,
+  on `**/*.{ts,tsx,cts,mts}`. It orders top-level declarations and has an autofix.
+- **Groups, in order:** `interface` / `type` / `enum` (one group), `class`, exported
+  `function`s, private `function`s. Alphabetical within a group (the plugin's default
+  `alphabetical`, case-insensitive). The exported-before-private split follows the order applied
+  by hand in #166; types are not split by export status.
+- **Never a preset.** The plugin's `recommended-*` configs also sort object keys, union members,
+  JSX props, classes and more, which goes well beyond §8 and would churn the whole repo.
+- **Imports and exports stay with the formatter.** `prettier-plugin-organize-imports` owns import
+  order (conventions §8, "don't hand-sort imports"). Perfectionist's `sort-imports`,
+  `sort-named-imports`, `sort-exports` and `sort-named-exports` stay off, as they would fight
+  it. `sort-modules` itself skips `import` and `export * from` and leaves `export { a }`
+  re-exports alone.
+
+### What the rule can and cannot reorder (v5.12.1, read from the source)
+
+- **`const` / `let` are never moved.** A variable declaration (including `export const`), an
+  expression statement or a control-flow statement ends the current sorting run. Only the
+  consecutive function, class, enum, interface and type declarations between two such statements
+  are sorted, and nothing moves across one. This is what keeps runtime-order-sensitive code
+  (`const` initializers, module state, `jest.mock` calls, side-effecting statements) out of
+  reach. The cost is that the rule sees a type declared _after_ a `const` and a function declared
+  _before_ it as unrelated, so "types first" holds within each run, not across the whole file.
+- **Class and enum dependencies are tracked.** With the default
+  `useExperimentalDependencyDetection: true`, a class (`extends`, static initializers,
+  decorators) or an enum (initializers) is never moved above a declaration it depends on in
+  the same run. Function declarations are hoisted, so moving them is safe.
+- The plugin's source marks the legacy dependency detection for removal once
+  `useExperimentalDependencyDetection` is the only mode, so the config leaves that option at its
+  default (`true`) rather than setting it.
+- The `class` group is an addition to §8's two-part rule (types, then runtime): classes are
+  runtime declarations with tracked dependencies, so they sit between the types and the
+  functions.
+
+### Rollout
+
+Run over the TypeScript sources in `apps/`, `libs/` and `tools/` before choosing, the rule found
+**44 errors in 28 files**, all fixable (46 in 29 files if exported and private functions share a
+group). The cleanup is a mechanical, comment-preserving move of whole declarations, so the rule
+is `error` from the start and the same PR autofixes the existing code, rather than starting at
+`warn` or scoping by path with a follow-up. Conventions §8 says "new/substantially-reorganized
+files", but a lint rule cannot tell old from new, and a 28-file cleanup is cheaper than a
+permanent exception list.
+
+### Considered options
+
+- **`@typescript-eslint/member-ordering`.** Orders class and interface members only, not
+  top-level declarations.
+- **A custom rule.** More code to own for a rule the plugin already has.
+- **`sort-modules` with `type: 'usage'`.** Sorts by use rather than alphabetically, which is not
+  what §8 says.
+
+### Consequences
+
+- Misordered declarations fail `nx lint`, and `eslint --fix` (and the pre-commit hook) repairs
+  them. Imports stay with the formatter, so `nx format:check` and `nx lint` do not disagree.
+- Not every §8 violation is caught: a type declared below a `const` is not hoisted above the
+  functions that precede it. Reviewers still own the cross-barrier case.
+- One more version pin (`eslint-plugin-perfectionist` 5.12.1, peer `eslint ^8.45 || ^9 || ^10`,
+  so it is not held back by the ESLint 9 workspace). It is pinned exactly rather than with a
+  caret because the dependency and barrier behavior above was verified against this release and
+  a sort rule's output changes with its version. 5.13.0 was published the day this was added, so
+  the earlier release was taken.
+- Adding another perfectionist rule is a normal `eslint.config.mjs` edit only if it does not
+  touch imports or exports; adopting a preset reopens this ADR.

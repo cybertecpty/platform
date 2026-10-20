@@ -2,8 +2,16 @@ import { NormalizedNxProjectOptions, NxProjectOptions } from '@cybertecpty/nx-ty
 import type { pluginGenerator } from '@nx/plugin/generators';
 import { Except, SetRequired } from 'type-fest';
 
-/** Options accepted by `@nx/plugin`'s `pluginGenerator`, in its installed version. */
-type NxPluginGeneratorSchema = Parameters<typeof pluginGenerator>[1];
+/**
+ * `NxPluginGeneratorOptions` after the generator has resolved `name`,
+ * `directory`, and `tags` and pinned `scope` / `type`.
+ *
+ * `bundler` (and `domain`) are omitted from the shared `NormalizedNxProjectOptions`
+ * shape: a plugin has no bundler — its build target is driven by `compiler` —
+ * and a `tools/` project carries no `domain`.
+ */
+export type NormalizedNxPluginGeneratorOptions = NxPluginGeneratorOptions &
+  Except<NormalizedNxProjectOptions<'tools', 'plugin'>, 'bundler' | 'domain'>;
 
 /**
  * Inputs to the workspace `nx-plugin` generator — a thin wrapper over
@@ -40,13 +48,5 @@ export type NxPluginGeneratorOptions = SetRequired<
     unitTestRunner?: 'jest' | 'none';
   };
 
-/**
- * `NxPluginGeneratorOptions` after the generator has resolved `name`,
- * `directory`, and `tags` and pinned `scope` / `type`.
- *
- * `bundler` (and `domain`) are omitted from the shared `NormalizedNxProjectOptions`
- * shape: a plugin has no bundler — its build target is driven by `compiler` —
- * and a `tools/` project carries no `domain`.
- */
-export type NormalizedNxPluginGeneratorOptions = NxPluginGeneratorOptions &
-  Except<NormalizedNxProjectOptions<'tools', 'plugin'>, 'bundler' | 'domain'>;
+/** Options accepted by `@nx/plugin`'s `pluginGenerator`, in its installed version. */
+type NxPluginGeneratorSchema = Parameters<typeof pluginGenerator>[1];

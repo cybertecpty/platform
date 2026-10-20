@@ -16,11 +16,14 @@ const gitLocalUserEmailMock = gitLocalUserEmail as jest.MockedFunction<typeof gi
 const LIB_ROOT = 'libs/shared/thing';
 const APP_ROOT = 'apps/web';
 
-function seedLib(tree: Tree): void {
-  addProjectConfiguration(tree, 'shared-thing', {
-    root: LIB_ROOT,
-    sourceRoot: `${LIB_ROOT}/src`,
-    projectType: 'library'
+function run(
+  tree: Tree,
+  options: Partial<ReleaseManifestGeneratorOptions> & { project: string }
+): Promise<string> {
+  return releaseManifestGenerator(tree, {
+    version: '1.2.3',
+    sourceCommit: 'abc123def4',
+    ...options
   });
 }
 
@@ -32,14 +35,11 @@ function seedApp(tree: Tree): void {
   });
 }
 
-function run(
-  tree: Tree,
-  options: Partial<ReleaseManifestGeneratorOptions> & { project: string }
-): Promise<string> {
-  return releaseManifestGenerator(tree, {
-    version: '1.2.3',
-    sourceCommit: 'abc123def4',
-    ...options
+function seedLib(tree: Tree): void {
+  addProjectConfiguration(tree, 'shared-thing', {
+    root: LIB_ROOT,
+    sourceRoot: `${LIB_ROOT}/src`,
+    projectType: 'library'
   });
 }
 

@@ -179,53 +179,6 @@ export async function releaseGenerator(
 }
 
 /**
- * Fills in the defaults the rest of the generator assumes are always present
- * (branch names, release date, skip flags) so downstream code never has to
- * re-check them.
- *
- * When `--affected` is passed, the project list is also resolved here and
- * baked into `opts.projects`, so callers see a plain list either way and don't
- * need to know whether it came from the user or the affected scan.
- */
-async function normalizeOpts(
-  tree: Tree,
-  schema: ReleaseGeneratorOptions,
-  git = simpleGit()
-): Promise<NormalizedReleaseGeneratorOptions> {
-  const opts = {
-    ...schema,
-    baseBranch: schema.baseBranch || 'develop',
-    releaseDate: schema.releaseDate || new Date().toISOString(),
-    skipBranch: schema.skipBranch ?? false,
-    skipPullRequest: schema.skipPullRequest ?? false,
-    targetBranch: schema.targetBranch || 'main'
-  };
-
-  if (!opts.affected) {
-    return opts;
-  }
-
-  return {
-    ...opts,
-    projects: await resolveAffectedReleaseProjects(tree, opts, git)
-  };
-}
-
-/**
- *
- */
-function getReleaseCommandOptions(dryRun: boolean): ReleaseCommandOptions {
-  return {
-    dryRun,
-    // Stage Nx release changes so the final manifest commit can include them in one release commit.
-    gitCommit: false,
-    gitPush: false,
-    gitTag: false,
-    stageChanges: true
-  };
-}
-
-/**
  * Bumps the workspace package version based on the highest project release level in the run
  * and returns the path to the workspace package manifest if it was updated, or null if no update
  * was made.
@@ -300,18 +253,50 @@ async function generateReleaseManifests(
 }
 
 /**
- * Restores the starting Git branch after a release operation.
  *
- * @param restoreBranch The branch to switch back to.
- * @param git The Git client to use.
  */
-async function restoreStartingBranch(restoreBranch: string | null, git: SimpleGit): Promise<void> {
-  if (!restoreBranch) {
-    return;
+function getReleaseCommandOptions(dryRun: boolean): ReleaseCommandOptions {
+  return {
+    dryRun,
+    // Stage Nx release changes so the final manifest commit can include them in one release commit.
+    gitCommit: false,
+    gitPush: false,
+    gitTag: false,
+    stageChanges: true
+  };
+}
+
+/**
+ * Fills in the defaults the rest of the generator assumes are always present
+ * (branch names, release date, skip flags) so downstream code never has to
+ * re-check them.
+ *
+ * When `--affected` is passed, the project list is also resolved here and
+ * baked into `opts.projects`, so callers see a plain list either way and don't
+ * need to know whether it came from the user or the affected scan.
+ */
+async function normalizeOpts(
+  tree: Tree,
+  schema: ReleaseGeneratorOptions,
+  git = simpleGit()
+): Promise<NormalizedReleaseGeneratorOptions> {
+  const opts = {
+    ...schema,
+    baseBranch: schema.baseBranch || 'develop',
+    releaseDate: schema.releaseDate || new Date().toISOString(),
+    skipBranch: schema.skipBranch ?? false,
+    skipPullRequest: schema.skipPullRequest ?? false,
+    targetBranch: schema.targetBranch || 'main'
+  };
+
+  if (!opts.affected) {
+    return opts;
   }
 
-  logger.info(`Switching back to starting branch ${restoreBranch}...`);
-  await git.checkout(restoreBranch);
+  return {
+    ...opts,
+    projects: await resolveAffectedReleaseProjects(tree, opts, git)
+  };
 }
 
 /**
@@ -412,6 +397,21 @@ async function resolveBotToken(): Promise<string | undefined> {
   await warnIfNotBotAuthored();
 
   return undefined;
+}
+
+/**
+ * Restores the starting Git branch after a release operation.
+ *
+ * @param restoreBranch The branch to switch back to.
+ * @param git The Git client to use.
+ */
+async function restoreStartingBranch(restoreBranch: string | null, git: SimpleGit): Promise<void> {
+  if (!restoreBranch) {
+    return;
+  }
+
+  logger.info(`Switching back to starting branch ${restoreBranch}...`);
+  await git.checkout(restoreBranch);
 }
 
 /**
