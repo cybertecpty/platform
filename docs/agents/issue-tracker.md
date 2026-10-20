@@ -11,6 +11,8 @@ Issues and PRDs for this repo live as GitHub issues. Use the `gh` CLI for all op
 - **Apply / remove labels**: `gh issue edit <number> --add-label "..."` / `--remove-label "..."`
 - **Close**: `gh issue close <number> --comment "..."`
 
+- **Type and fields**: `gh issue create` has no flag for them. Set the issue type (`Task` / `Bug` / `Feature`) with `gh api --method PATCH repos/cybertecpty/platform/issues/{n} -f type={Type}`. Priority / Effort are org-level single-select **Issue Fields** (not ProjectV2 fields): set them with the `setIssueFieldValue` GraphQL mutation via `gh api graphql --input {file}`, with the `{query, variables}` body in a JSON file. Don't add issues to a project board.
+
 Infer the repo from `git remote -v` — `gh` does this automatically when run inside a clone.
 
 ## Claiming an issue

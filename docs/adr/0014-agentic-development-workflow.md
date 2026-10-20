@@ -169,3 +169,26 @@ What does not change:
 
 The "single point of failure" risk above now reads: the maintainer is the only approver and the
 only bypass actor on `main`.
+
+## Amendment (2026-10-20): `gh` replaces the GitHub MCP
+
+The locked parameter "the GitHub MCP server authenticates as the maintainer. Agents use it for
+reading … and for creating backlog issues" no longer holds. The MCP server has been unreliable, so
+agents use `gh` (and `gh api` / `gh api graphql`) for all GitHub work, reads included, and do not
+use the MCP at all. `docs/agents/conventions.md` §1 "GitHub access: `gh` only" is authoritative.
+
+What changes:
+
+- Reads (diffs, threads, CI, issues, search) go through `gh`, on whichever account it currently
+  rests on.
+- Backlog issues are created with `gh` while it rests on the maintainer account, so they stay
+  personal-authored; the agent does not switch to the bot for them.
+- The "two GitHub identities per agent session" risk shrinks to the `gh` account switch alone.
+  The remaining boundary is still convention, not enforcement, except for the
+  `guard-bot-identity` hook's coverage of bot-owned `gh pr` writes.
+
+What does not change: the bot still authors all code commits and PRs, the maintainer is still the
+only approver, and no agent gets bypass rights.
+
+If the MCP is brought back, record it as a further amendment; the "MCP read/write split" wording in
+"If a second maintainer or reviewer joins" then applies again.

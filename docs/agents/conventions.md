@@ -102,14 +102,16 @@ alone is not proof. `develop` squash-merges, so `git branch -d` refuses a merged
 ("not fully merged"); once `MERGED` is confirmed, `git branch -D` is expected. The commands
 are in [§5 Clean up](#clean-up).
 
-### GitHub MCP boundary
+### GitHub access: `gh` only
 
-- The GitHub MCP server authenticates as the **personal** account here. Use it for
-  **reading** — PR diffs, review threads, CI status, issues, search.
-- Do **not** use it to commit, push, create/merge PRs, comment, or resolve threads
-  for bot-authored code work — that path is `git` + `gh` as the bot.
-- Exception: creating/updating **backlog issues** through the GitHub MCP is fine.
-  Backlog issues are intentionally personal-authored, not bot-attributed products.
+- Do **not** use the GitHub MCP server for any GitHub work, reads included — it has been
+  unreliable. Use `gh` (and `gh api` / `gh api graphql` where no subcommand exists).
+- Bot-authored code work (commit, push, create/merge PRs, comment, resolve threads) runs
+  as `cybertec-bot` per the invariants above.
+- **Backlog issues** are intentionally personal-authored, not bot-attributed: create and
+  update them with `gh` while it rests on `djmcgrath101` — don't switch to the bot for them.
+  Issue type and the Priority / Effort fields are set as in
+  [`issue-tracker.md`](issue-tracker.md).
 
 ---
 

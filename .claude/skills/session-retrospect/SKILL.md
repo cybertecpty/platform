@@ -65,7 +65,7 @@ Prefix project-scoped names `platform-…`.
 Deferred work becomes a GitHub issue on `cybertecpty/platform` (see
 [`docs/agents/issue-tracker.md`](../../../docs/agents/issue-tracker.md)). Don't add it to
 a project board. Prefer the `mattpocock-skills:to-tickets` skill for anything that is more than a single well-scoped issue (vertical slices + blocking edges); use
-a single `mcp__github__issue_write` create call otherwise. An issue _is_ the durable record —
+a single `gh issue create` create call otherwise. An issue _is_ the durable record —
 creating it here is the completed action, no later commit step.
 
 ## Workflow
@@ -113,7 +113,7 @@ for approval (`AskUserQuestion` if a routing choice is genuinely ambiguous, else
   (`.claude/skills/commit-push-pr`). **Never** append to a branch/PR opened earlier this
   session without first confirming it is still open (`gh pr view {n} --json state,mergedAt`)
   — a merged PR's branch is auto-deleted and a later push silently strands a ref.
-- **Pending-work issues** — create with `mcp__github__issue_write` (or `to-tickets`).
+- **Pending-work issues** — create with `gh issue create` (or `to-tickets`).
 
 ### 6. Close out
 
