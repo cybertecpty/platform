@@ -18,36 +18,6 @@ export type LighthouseCategory = (typeof LIGHTHOUSE_CATEGORIES)[number];
 
 /** Lighthouse emulates a phone by default; `desktop` switches to its desktop profile. */
 export const LIGHTHOUSE_PRESETS = ['mobile', 'desktop'] as const;
-export type LighthousePreset = (typeof LIGHTHOUSE_PRESETS)[number];
-
-export interface LighthouseThresholds {
-  /** Lowest acceptable score per category. Lighthouse reports 0-1, so 0.95 is "95 out of 100". */
-  minScores: Record<LighthouseCategory, number>;
-  /** Largest Contentful Paint budget: how long until the biggest element is on screen. */
-  maxLcpMs: number;
-  /** Cumulative Layout Shift budget: how much the page jumps around while loading. */
-  maxCls: number;
-}
-
-/**
- * A per-app or per-path change to the workspace thresholds. Only the given fields change.
- * Lowering one is a documented exception (ADR 0016), so say why next to it.
- */
-export interface LighthouseThresholdOverrides {
-  minScores?: Partial<Record<LighthouseCategory, number>>;
-  maxLcpMs?: number;
-  maxCls?: number;
-}
-
-export interface LighthousePathOptions {
-  /** Route to audit, resolved against Playwright's `baseURL` (e.g. `/about`). */
-  path: string;
-  /** Presets for this path; defaults to the app-wide `presets`. */
-  presets?: readonly LighthousePreset[];
-  /** Applied on top of the app-wide `thresholds`. */
-  thresholds?: LighthouseThresholdOverrides;
-}
-
 export interface DefineLighthouseTestsOptions {
   /** Routes to audit. Required, so each app says which routes it covers. */
   paths: readonly (string | LighthousePathOptions)[];
@@ -61,6 +31,36 @@ export interface LighthouseMetrics {
   scores: Record<LighthouseCategory, number>;
   lcpMs: number;
   cls: number;
+}
+
+export interface LighthousePathOptions {
+  /** Route to audit, resolved against Playwright's `baseURL` (e.g. `/about`). */
+  path: string;
+  /** Presets for this path; defaults to the app-wide `presets`. */
+  presets?: readonly LighthousePreset[];
+  /** Applied on top of the app-wide `thresholds`. */
+  thresholds?: LighthouseThresholdOverrides;
+}
+
+export type LighthousePreset = (typeof LIGHTHOUSE_PRESETS)[number];
+
+/**
+ * A per-app or per-path change to the workspace thresholds. Only the given fields change.
+ * Lowering one is a documented exception (ADR 0016), so say why next to it.
+ */
+export interface LighthouseThresholdOverrides {
+  minScores?: Partial<Record<LighthouseCategory, number>>;
+  maxLcpMs?: number;
+  maxCls?: number;
+}
+
+export interface LighthouseThresholds {
+  /** Lowest acceptable score per category. Lighthouse reports 0-1, so 0.95 is "95 out of 100". */
+  minScores: Record<LighthouseCategory, number>;
+  /** Largest Contentful Paint budget: how long until the biggest element is on screen. */
+  maxLcpMs: number;
+  /** Cumulative Layout Shift budget: how much the page jumps around while loading. */
+  maxCls: number;
 }
 
 /** The workspace bar (ADR 0016). Lowering a number here needs an ADR amendment. */

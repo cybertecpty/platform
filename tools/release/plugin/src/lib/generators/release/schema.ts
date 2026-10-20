@@ -1,5 +1,10 @@
 import { SetRequired } from 'type-fest';
 
+export type NormalizedReleaseGeneratorOptions = SetRequired<
+  ReleaseGeneratorOptions,
+  'baseBranch' | 'releaseDate' | 'skipBranch' | 'skipPullRequest' | 'targetBranch'
+>;
+
 export interface ReleaseGeneratorOptions {
   /**
    * Release only affected projects from the nx.json release project set.
@@ -70,8 +75,3 @@ export interface ReleaseGeneratorOptions {
    */
   readonly vers?: string;
 }
-
-export type NormalizedReleaseGeneratorOptions = SetRequired<
-  ReleaseGeneratorOptions,
-  'baseBranch' | 'releaseDate' | 'skipBranch' | 'skipPullRequest' | 'targetBranch'
->;

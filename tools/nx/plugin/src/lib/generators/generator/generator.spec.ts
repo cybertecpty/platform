@@ -86,6 +86,15 @@ function fakeGeneratorGenerator(
   return Promise.resolve();
 }
 
+/** The options `@nx/plugin:generator` was called with on the most recent run. */
+function forwardedOptions() {
+  return lastCallArg(nxGeneratorGeneratorMock, 1, '`@nx/plugin:generator`');
+}
+
+function run(tree: Tree, options: Partial<NxGenGeneratorOptions> & { name: string }) {
+  return nxGenGenerator(tree, { project: 'demo-plugin', ...options });
+}
+
 function seedPlugin(tree: Tree): void {
   addProjectConfiguration(tree, 'demo-plugin', {
     root: PLUGIN_ROOT,
@@ -110,15 +119,6 @@ function seedPlugin(tree: Tree): void {
 function setProjectTags(tree: Tree, tags: string[]): void {
   const config = readProjectConfiguration(tree, 'demo-plugin');
   updateProjectConfiguration(tree, 'demo-plugin', { ...config, tags });
-}
-
-function run(tree: Tree, options: Partial<NxGenGeneratorOptions> & { name: string }) {
-  return nxGenGenerator(tree, { project: 'demo-plugin', ...options });
-}
-
-/** The options `@nx/plugin:generator` was called with on the most recent run. */
-function forwardedOptions() {
-  return lastCallArg(nxGeneratorGeneratorMock, 1, '`@nx/plugin:generator`');
 }
 
 describe('nxGenGenerator', () => {

@@ -3,18 +3,6 @@ import { logger } from '@nx/devkit';
 import { simpleGit, type SimpleGit } from 'simple-git';
 
 /**
- * Inputs shared by {@link resolveReleaseBranchName} and {@link checkoutReleaseBranch}.
- */
-export interface ReleaseBranchOptions {
-  /** The branch a new release branch is cut from (e.g. `develop`). */
-  readonly baseBranch: string;
-  /** The release date as an ISO string; its date part names the release branch. */
-  readonly releaseDate: string;
-  /** Commit straight to {@link baseBranch} instead of creating a `release/<date>` branch. */
-  readonly skipBranch: boolean;
-}
-
-/**
  * The outcome of {@link checkoutReleaseBranch}.
  */
 export type CheckoutReleaseBranchResult = {
@@ -29,25 +17,15 @@ export type CheckoutReleaseBranchResult = {
 };
 
 /**
- * Works out the {@link CheckoutReleaseBranchResult.restoreBranch} value: the
- * branch to return to afterwards, or `null` when there is nothing to restore
- * because HEAD was already on `releaseBranch` or was detached (`currentBranch`
- * is `''` in a detached `HEAD`, and `null` is never passed today).
+ * Inputs shared by {@link resolveReleaseBranchName} and {@link checkoutReleaseBranch}.
  */
-function getRestoreBranch(currentBranch: string | null, releaseBranch: string): string | null {
-  return currentBranch && currentBranch !== releaseBranch ? currentBranch : null;
-}
-
-/**
- * The branch this release's artifacts belong on: `release/<date>` (the date part
- * of `releaseDate`), or `baseBranch` itself when `skipBranch` is set.
- *
- * This is the single home of the `release/<date>` naming convention — both the
- * dry-run path (which only needs the name) and {@link checkoutReleaseBranch}
- * derive it here.
- */
-export function resolveReleaseBranchName(opts: ReleaseBranchOptions): string {
-  return opts.skipBranch ? opts.baseBranch : `release/${opts.releaseDate.split('T')[0]}`;
+export interface ReleaseBranchOptions {
+  /** The branch a new release branch is cut from (e.g. `develop`). */
+  readonly baseBranch: string;
+  /** The release date as an ISO string; its date part names the release branch. */
+  readonly releaseDate: string;
+  /** Commit straight to {@link baseBranch} instead of creating a `release/<date>` branch. */
+  readonly skipBranch: boolean;
 }
 
 /**
@@ -116,4 +94,26 @@ export async function checkoutReleaseBranch(
     releaseBranch,
     restoreBranch: getRestoreBranch(currentBranch, releaseBranch)
   };
+}
+
+/**
+ * The branch this release's artifacts belong on: `release/<date>` (the date part
+ * of `releaseDate`), or `baseBranch` itself when `skipBranch` is set.
+ *
+ * This is the single home of the `release/<date>` naming convention — both the
+ * dry-run path (which only needs the name) and {@link checkoutReleaseBranch}
+ * derive it here.
+ */
+export function resolveReleaseBranchName(opts: ReleaseBranchOptions): string {
+  return opts.skipBranch ? opts.baseBranch : `release/${opts.releaseDate.split('T')[0]}`;
+}
+
+/**
+ * Works out the {@link CheckoutReleaseBranchResult.restoreBranch} value: the
+ * branch to return to afterwards, or `null` when there is nothing to restore
+ * because HEAD was already on `releaseBranch` or was detached (`currentBranch`
+ * is `''` in a detached `HEAD`, and `null` is never passed today).
+ */
+function getRestoreBranch(currentBranch: string | null, releaseBranch: string): string | null {
+  return currentBranch && currentBranch !== releaseBranch ? currentBranch : null;
 }

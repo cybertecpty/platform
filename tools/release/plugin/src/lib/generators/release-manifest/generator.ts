@@ -63,23 +63,6 @@ export async function releaseManifestGenerator(
 }
 
 /**
- * Resolves the directory the manifest is written to, relative to the project
- * root — the project root itself unless `--dirPath` moves it. Throws when
- * `--dirPath` would leave the project root (a `..` segment).
- */
-function resolveManifestDir(root: string, dirPath: string | undefined): string {
-  const relativeDir = dirPath ?? '';
-
-  if (relativeDir.split(/[/\\]/).includes('..')) {
-    throw new Error(
-      `"${dirPath}" is not a valid --dirPath: it must stay within the project root (no \`..\` segments).`
-    );
-  }
-
-  return joinPathFragments(root, relativeDir);
-}
-
-/**
  * Parses `input` and re-serializes it as a canonical ISO 8601 UTC string.
  * Defaults to the current time. Throws when `input` is not a parseable date.
  */
@@ -121,6 +104,23 @@ async function resolveAuthor(explicit: string | undefined): Promise<string> {
   const email = (await gitLocalUserEmail()).trim();
 
   return email === '' ? name : `${name} (${email})`;
+}
+
+/**
+ * Resolves the directory the manifest is written to, relative to the project
+ * root — the project root itself unless `--dirPath` moves it. Throws when
+ * `--dirPath` would leave the project root (a `..` segment).
+ */
+function resolveManifestDir(root: string, dirPath: string | undefined): string {
+  const relativeDir = dirPath ?? '';
+
+  if (relativeDir.split(/[/\\]/).includes('..')) {
+    throw new Error(
+      `"${dirPath}" is not a valid --dirPath: it must stay within the project root (no \`..\` segments).`
+    );
+  }
+
+  return joinPathFragments(root, relativeDir);
 }
 
 export default releaseManifestGenerator;

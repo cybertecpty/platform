@@ -15,13 +15,13 @@ const nxPluginGeneratorMock = nxPluginGenerator as jest.MockedFunction<typeof nx
 /** Stand-in for `@nx/plugin:plugin`. */
 const fakeNxPluginGenerator = createFakeLibraryGenerator();
 
-function run(tree: Tree, options: Partial<NxPluginGeneratorOptions> & { group: string }) {
-  return pluginGenerator(tree, options);
-}
-
 /** The options `@nx/plugin:plugin` was called with on the most recent run. */
 function forwardedOptions() {
   return lastCallArg(nxPluginGeneratorMock, 1, '`@nx/plugin:plugin`');
+}
+
+function run(tree: Tree, options: Partial<NxPluginGeneratorOptions> & { group: string }) {
+  return pluginGenerator(tree, options);
 }
 
 describe('pluginGenerator', () => {

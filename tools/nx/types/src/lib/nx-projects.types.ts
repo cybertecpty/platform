@@ -2,12 +2,6 @@ import { SetRequired } from 'type-fest';
 import { NxProjectLibType } from './nx-libs.types';
 
 /**
- * Bundlers accepted by the underlying `@nx/*:library` generators. `none` means
- * the library is not buildable.
- */
-export type NxProjectBundler = 'esbuild' | 'none' | 'rollup' | 'swc' | 'tsc' | 'vite';
-
-/**
  * The fully-resolved project options the generators consume: `name`,
  * `directory`, and `tags` are always present, and the ergonomic `buildable`
  * flag has been replaced by the concrete `bundler` the generator expects.
@@ -19,6 +13,12 @@ export type NormalizedNxProjectOptions<
   bundler: NxProjectBundler;
   directory: string;
 };
+
+/**
+ * Bundlers accepted by the underlying `@nx/*:library` generators. `none` means
+ * the library is not buildable.
+ */
+export type NxProjectBundler = 'esbuild' | 'none' | 'rollup' | 'swc' | 'tsc' | 'vite';
 
 /**
  * Common options for all Nx project generators.

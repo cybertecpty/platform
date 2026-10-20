@@ -6,9 +6,6 @@ import {
 import type { libraryGenerator } from '@nx/js';
 import { Except } from 'type-fest';
 
-/** Options accepted by `@nx/js`'s `libraryGenerator`, in its installed version. */
-type NxJsLibraryGeneratorSchema = Parameters<typeof libraryGenerator>[1];
-
 /**
  * The `type:` values this generator may scaffold — the framework-agnostic subset of
  * the ADR 0004 closed type set. `core`/`feature`/`ui`/`data-access` are Angular-only
@@ -79,3 +76,6 @@ export type LibGeneratorOptions = Except<NxProjectOptions, 'buildable' | 'scope'
  */
 export type NormalizedLibGeneratorOptions = LibGeneratorOptions &
   Except<NormalizedNxProjectOptions<NxProjectScope, JsLibType>, 'bundler'>;
+
+/** Options accepted by `@nx/js`'s `libraryGenerator`, in its installed version. */
+type NxJsLibraryGeneratorSchema = Parameters<typeof libraryGenerator>[1];

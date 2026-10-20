@@ -5,13 +5,6 @@ import { expect, test, type Page } from '@playwright/test';
 // DOM; it catches roughly a third of real accessibility problems (contrast, names,
 // landmarks, target size), so this is a floor, not an audit.
 
-export interface AxeViewport {
-  /** Shown in the test title, e.g. `mobile`. */
-  name: string;
-  width: number;
-  height: number;
-}
-
 export interface AxePathOptions {
   /** Route to scan, resolved against Playwright's `baseURL` (e.g. `/about`). */
   path: string;
@@ -20,6 +13,13 @@ export interface AxePathOptions {
    * menu, submit an empty form).
    */
   setup?: (page: Page) => Promise<void>;
+}
+
+export interface AxeViewport {
+  /** Shown in the test title, e.g. `mobile`. */
+  name: string;
+  width: number;
+  height: number;
 }
 
 export interface DefineAxeTestsOptions {
