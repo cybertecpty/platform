@@ -122,9 +122,9 @@ export default [
     // stripping erases only `import type`: a plain import of a type from a `@cybertecpty/*`
     // alias survives stripping and fails at load, because those aliases are tsconfig paths.
     // The separate-statement style is pinned: `{ type X }` strips to an empty import that
-    // still loads the module, so `no-import-type-side-effects` rejects it. With the project service the rule reads `emitDecoratorMetadata`
-    // / `experimentalDecorators` from tsconfig.base.json and leaves alone the imports that
-    // decorated classes need at runtime.
+    // still loads the module, so `no-import-type-side-effects` rejects it. With the project
+    // service the rule reads `emitDecoratorMetadata` / `experimentalDecorators` from
+    // tsconfig.base.json and leaves alone the imports that decorated classes need at runtime.
     files: ['**/*.{ts,tsx,cts,mts}'],
     rules: {
       '@typescript-eslint/consistent-type-imports': [
