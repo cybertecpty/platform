@@ -1,0 +1,20 @@
+{
+  "name": "dotnet-utils",
+  "$schema": "../../../node_modules/nx/schemas/project-schema.json",
+  "sourceRoot": "tools/dotnet/utils/src",
+  "projectType": "library",
+  "tags": ["scope:tools", "type:utils"],
+  "targets": {
+    "build": {
+      "executor": "@nx/js:tsc",
+      "outputs": ["{options.outputPath}"],
+      "options": {
+        "outputPath": "dist/tools/dotnet/utils",
+        "main": "tools/dotnet/utils/src/index.ts",
+        "tsConfig": "tools/dotnet/utils/tsconfig.lib.json",
+        "assets": ["tools/dotnet/utils/*.md"]
+      }
+    },
+    "typecheck": {}
+  }
+}
