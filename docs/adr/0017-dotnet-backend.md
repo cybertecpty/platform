@@ -1,7 +1,8 @@
 # 17. ASP.NET Core as the backend stack, replacing NestJS
 
 - Status: accepted (amended 2026-10-20: the TypeScript test runner is **Vitest**, not Jest —
-  see ADR 0018. Every .NET decision here stands.)
+  see ADR 0018. Every .NET decision here stands. Amended 2026-10-21: scratch observations of
+  `@nx/dotnet`, recorded at the end.)
 - Date: 2026-10-20
 - Deciders: djmcgrath
 - Supersedes: the backend half of ADR 0005 (`application-frameworks`) — its Angular,
@@ -383,3 +384,54 @@ changes here.
   understated: it was really three (Jest, Vitest for Astro, xUnit) and is now two.
 - The `@nx/nest:library` generator-defaults entry this ADR orphaned is deleted by ADR 0018's
   migration rather than by the `@nx/nest` removal ticket — whichever lands first takes it.
+
+## Amendment (2026-10-21): what a scratch `@nx/dotnet` workspace showed
+
+- Status: accepted
+- Deciders: djmcgrath
+- Implemented by: issue #195 (the DIY boundary check)
+
+"Unverified until the first .NET project exists" above left six decisions resting on the
+plugin's documentation. Before building the boundary check, a **throwaway** experiment checked
+the ones it depends on: a scratch worktree off `develop`, `@nx/dotnet@23.1.1` (the workspace Nx
+version) added and registered in `nx.json`, two `net10.0` class libraries under `backend/`
+(`Domain`, and `Api` with a `ProjectReference` to it), the .NET 10 SDK (10.0.102), then
+`nx graph` and `nx show project`. It was deleted afterwards. It is weaker evidence than the
+walking skeleton the original wording calls for, so the items below stay open until that
+skeleton confirms them on the real layout.
+
+### Observed
+
+- **Item 1, tags.** A `project.json` beside the `.csproj` containing only `"tags": [...]` is
+  merged into the node: `tags` came through, and the plugin's inferred targets (`build`,
+  `build:release`, `restore`, `clean`, `watch`, `pack`) stayed. Without it, tags are empty.
+  The plugin infers none of its own. ADR 0004's three explicit tags therefore work as this ADR
+  required.
+- **Item 2, edges.** A `ProjectReference` appears as a `static` graph dependency
+  (`Api` -> `Domain`) with no further configuration.
+- **Item 3, feasibility.** The edges and tags the check needs are in the project graph. The
+  matrix half is done: it lives in `nx-dep-constraints.const.mts` (#216), read by the ESLint
+  config.
+- **Item 0, partly.** `@nx/dotnet` has a release at the pinned workspace version and installs
+  there. Its source shows no module-boundaries rule. Its project generators were not checked,
+  so "ships no project generators" (hence `dotnet new`) is still read from documentation.
+- **Item 6, partly.** The plugin's analyzer read `net10.0` projects under the .NET 10 SDK and
+  produced nodes. Nothing was built or tested, so full support is not confirmed.
+
+Two facts the check relies on, not in the original wording: every .NET node carries
+`metadata.technologies: ["dotnet", "C#"]`, which is how the check tells .NET projects from
+TypeScript ones; and project names keep the `.csproj` casing (`Api`, `Domain`), not kebab-case.
+
+### Still unverified
+
+- **Nested project roots.** This ADR puts test projects in a `tests/` folder inside the project
+  they test. The experiment used sibling projects, so whether the plugin handles nested roots
+  and still emits correct edges and tags is unobserved.
+- **Items 4 and 5** (OpenAPI client generation; `type:testing` and `type:app`) were not
+  touched.
+
+### Effect on the decision
+
+None. The DIY check stands, and the fallback in issue #195 (compiler-enforced layering only)
+is not needed. #195 builds the check over the `@nx/dotnet` graph, using the `technologies`
+metadata to select .NET projects and the `type:` axis only, as that issue specifies.
