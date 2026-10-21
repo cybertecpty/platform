@@ -422,13 +422,35 @@ Two facts the check relies on, not in the original wording: every .NET node carr
 `metadata.technologies: ["dotnet", "C#"]`, which is how the check tells .NET projects from
 TypeScript ones; and project names keep the `.csproj` casing (`Api`, `Domain`), not kebab-case.
 
+### A second scratch run: nested roots and a test project's edges
+
+A second throwaway workspace, built the same way, put an xUnit project inside each of a class
+library and a web app, under a `tests/` folder as the Layout section describes, with explicit
+tags on all four projects.
+
+- **Nested roots work.** All four were separate projects with their own roots and tags, and
+  each test project had an edge to the project it tests. Test projects were given a `test`
+  target and the app `run` and `publish`.
+- **The parent project must exclude the nested folder.** A `.csproj` compiles `**/*.cs` by
+  default, so the library pulled in the nested test project's source and failed to build.
+  `<Compile Remove="tests/**" />` in the parent fixed it. Every project that has a `tests/`
+  folder needs that line, which this ADR did not say.
+- **Names keep the `.csproj` file name**, dots included (`CheckoutApi.Tests`), so the Nx project
+  name is not kebab-case as the Layout section assumes. A scaffolding tool has to derive the
+  `.csproj` name accordingly or set the Nx name explicitly.
+- **Unverified item 5 is feasible in the graph.** A test project tagged `type:testing`
+  referencing the app tagged `type:app` shows up as an ordinary edge. ADR 0004 forbids it with
+  `notDependOnLibsWithTags`, and the boundary check built under #195 does not enforce that
+  clause (it covers the `type:` "may depend on" half only). That edge is therefore **not
+  flagged for .NET**, unlike TypeScript, where ESLint flags it. This is accepted: the check is
+  deliberately narrower than ESLint, and item 5 itself (keep the host thin, or amend the
+  matrix for host-reference integration tests) is **still undecided** and stays with the walking
+  skeleton.
+
 ### Still unverified
 
-- **Nested project roots.** This ADR puts test projects in a `tests/` folder inside the project
-  they test. The experiment used sibling projects, so whether the plugin handles nested roots
-  and still emits correct edges and tags is unobserved.
-- **Items 4 and 5** (OpenAPI client generation; `type:testing` and `type:app`) were not
-  touched.
+- **Items 4 and 5** (OpenAPI client generation; whether `type:testing` may reference `type:app`)
+  were not decided. The second run shows only that item 5's edge exists and is not enforced.
 
 ### Effect on the decision
 
