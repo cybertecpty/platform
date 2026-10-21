@@ -1,6 +1,7 @@
 # 17. ASP.NET Core as the backend stack, replacing NestJS
 
-- Status: accepted
+- Status: accepted (amended 2026-10-20: the TypeScript test runner is **Vitest**, not Jest —
+  see ADR 0018. Every .NET decision here stands.)
 - Date: 2026-10-20
 - Deciders: djmcgrath
 - Supersedes: the backend half of ADR 0005 (`application-frameworks`) — its Angular,
@@ -319,6 +320,9 @@ gets a dated amendment either way.
   2026-10-20 amendment.
 - ADR 0007 (`jest-test-runner`) — Jest for Angular and TypeScript libs, the 80% CI-gated
   coverage floor this ADR mirrors for xUnit. See its 2026-10-20 amendment.
+- ADR 0018 (`vitest-test-runner`) — supersedes ADR 0007's runner choice. The TypeScript
+  runner named in this ADR's locked parameters is now Vitest; the 80% CI-gated floor this
+  ADR mirrors for xUnit is unchanged.
 - ADR 0003 (`frontend-bundle-hygiene`) — the zod and lodash entry-point bans, unchanged.
 - ADRs 0009 / 0010 (`lib-directory-layout`, `app-directory-layout`) — the paths and derived
   names .NET projects follow.
@@ -330,3 +334,52 @@ gets a dated amendment either way.
 - Nx docs: the `@nx/dotnet` plugin overview; Nx Conformance (Enterprise-only).
 - .NET docs: `global.json` SDK pinning, the .NET support policy (LTS vs STS), ASP.NET Core
   OpenAPI support, `dotnet format`, and the SDK's built-in analyzer rule sets.
+
+## Amendment (2026-10-20): the TypeScript test runner is Vitest — see ADR 0018
+
+- Status: accepted
+- Deciders: djmcgrath
+- Implemented by: ADR 0018 (`vitest-test-runner`)
+
+This ADR named **Jest** as the runner for Angular and TypeScript libs, and its 2026-10-20
+amendment to ADR 0007 argued that nothing on the TypeScript side had changed. ADR 0018
+reopens that on different grounds — **Angular 22 made Vitest its own default** and
+deprecated Karma — and supersedes ADR 0007's runner choice. This amendment records what that
+changes here.
+
+### Superseded here
+
+- **The locked parameter** "Test runners: xUnit (+ coverlet) for .NET, Jest for Angular and
+  TypeScript libs, Vitest for Astro sites" — read it as **"xUnit (+ coverlet) for .NET,
+  Vitest for every TypeScript project"**. Astro is no longer an exception, so the list is two
+  runners, not three.
+- **The "Tests — xUnit with coverlet" bullet** reading "**Jest remains the runner for Angular
+  and TypeScript libs** (ADR 0007) … The Astro/Vitest exception is likewise unchanged" — read
+  "Jest" as **"Vitest"**, and drop the Astro clause: there is no exception left to be
+  unchanged.
+- The **one-runner-per-language** principle that bullet asserted is **not** superseded. It
+  still holds, and the count is still one runner per language. Only TypeScript's runner
+  changed.
+
+### Unchanged here
+
+- **Every .NET decision**: xUnit with coverlet, the 80% floor gated in CI only, test projects
+  as separate `.csproj` files in a `tests/` folder inside the project they test and tagged
+  `type:testing`.
+- **The coverage policy is still one number across both languages** — 80%, CI-gated — which
+  was the point of mirroring ADR 0007 in the first place. ADR 0018 carries that policy
+  forward verbatim onto Vitest.
+- **The coverlet wiring consequence stands**: coverlet output still has to reach
+  `.github/scripts/coverage-report.cjs` via `coverage/{projectRoot}` or .NET projects stay
+  absent from the PR comment. Vitest's v8 provider writes the same report files Jest did, so
+  that script is untouched on both sides.
+- **Unverified item 5** (`type:testing` may not depend on `type:app`, which
+  `WebApplicationFactory` integration tests need) is a tag-matrix question, not a runner
+  question, and is unaffected.
+
+### Consequences
+
+- The "two test runners" count in Negative / risks above becomes accurate rather than
+  understated: it was really three (Jest, Vitest for Astro, xUnit) and is now two.
+- The `@nx/nest:library` generator-defaults entry this ADR orphaned is deleted by ADR 0018's
+  migration rather than by the `@nx/nest` removal ticket — whichever lands first takes it.
