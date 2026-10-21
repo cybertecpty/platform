@@ -1,1 +1,1 @@
-export * from './lib/dotnet-utils';
+export * from './lib/nx-dotnet-projects.utils';
