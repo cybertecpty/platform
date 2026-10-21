@@ -178,7 +178,7 @@ different branch between your commit and your push. `HEAD` then pushes their bra
 a stray branch on the bot remote, and your PR fails with "No commits between develop and
 {branch}".
 
-`pnpm verify` mirrors the required `ci` check on affected projects (conventions §9). Don't push
+`pnpm verify` mirrors the required `lint-and-test-affected` check on affected projects (conventions §9). Don't push
 until it passes; on Windows, prefix `NX_NO_CLOUD=true` if Nx Cloud teardown fails with `EISDIR`.
 
 Never `origin` for bot work — `origin` is HTTPS via GCM (maintainer), not the bot's key.
@@ -221,7 +221,7 @@ Branch protection is live (`docs/agents/conventions.md` §2), so this is safe:
 gh pr merge {n} --repo cybertecpty/platform --auto --squash
 ```
 
-Auto-merge pre-arms and then waits for the required `ci` check **and** the maintainer's
+Auto-merge pre-arms and then waits for the required `lint-and-test-affected` check **and** the maintainer's
 approval — it will not merge unreviewed. If the bot is not authorized for the branch, report
 that; do not grant bypass to force a self-merge.
 

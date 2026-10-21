@@ -30,7 +30,7 @@ concurrency:
   cancel-in-progress: ${{ github.event_name == 'pull_request' }}
 
 jobs:
-  ci:
+  lint-and-test-affected:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v7

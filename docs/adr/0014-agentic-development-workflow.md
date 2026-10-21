@@ -68,7 +68,7 @@ approver.**
 
 - One issue → one branch → one PR into `develop` (ADR 0002). Coupled-issue exceptions are
   deliberate, and dependent work waits for the base PR to _merge_.
-- `develop` and `main` are protected: PR required, one maintainer approval, passing `ci`, all
+- `develop` and `main` are protected: PR required, one maintainer approval, passing `lint-and-test-affected`, all
   review threads resolved, no force-push or deletion. The maintainer (admin) is the only bypass.
 - The bot arms `gh pr merge --auto --squash`. That only pre-arms the merge; it still waits on CI
   and the maintainer's approval. The bot is never granted bypass rights, and if it loses

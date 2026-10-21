@@ -15,7 +15,7 @@ only fixes where an e2e project lives and what it's called. Nothing records whic
 workspace uses or what quality bar a web app's production build has to meet.
 
 #115 made that bar real for `cybertec-io`: an axe accessibility check inside the Playwright e2e
-suite and a Lighthouse audit as its own Nx target, both run by the required `ci` check. Their
+suite and a Lighthouse audit as its own Nx target, both run by the required `lint-and-test-affected` check. Their
 thresholds live only in spec files. Someone could relax a number, swap a tool, or skip the gate
 on the next web app without knowing it was a deliberate choice.
 
@@ -24,7 +24,7 @@ on the next web app without knowing it was a deliberate choice.
 - **Test the shipped output.** Gates run against the production build, not the dev server.
 - **One browser toolchain.** e2e, accessibility and performance checks share one browser and
   one runner instead of each bringing its own.
-- **Fail the PR, not a dashboard.** A regression must fail the required `ci` check; a report
+- **Fail the PR, not a dashboard.** A regression must fail the required `lint-and-test-affected` check; a report
   nobody reads doesn't count.
 - **No outside services.** The gate must not depend on, or send data to, a third-party service
   (same reasoning as ADR 0007's rejection of Codecov).
@@ -204,7 +204,7 @@ Revisit each with the first app that needs it.
   `.github/workflows/deploy-affected.yml` (#188)
 
 The Nx Cloud organization was disabled for exceeding the free plan, and `nx record` failed the
-required `ci` check on every PR. The usage does not reset until Nov 1. Options:
+required check (then named `ci`) on every PR. The usage does not reset until Nov 1. Options:
 
 1. **Upgrade to the paid Team plan.** Rejected: the maintainer does not want to pay for Nx Cloud.
 2. **Wait for the Nov 1 reset.** Rejected: the required check, and so every merge, is blocked for
