@@ -1,6 +1,9 @@
 # 7. Jest as the workspace test runner
 
-- Status: accepted
+- Status: accepted (**runner choice superseded 2026-10-20 — the TypeScript runner is Vitest,
+  see ADR 0018**. The 80% CI-gated coverage floor, the reporting layer, `passWithNoTests`,
+  the `type:types` exemption and `nx test {project}` as the entry point stand, and the
+  dated amendments below remain in force except where ADR 0018 names them.)
 - Date: 2026-09-02
 - Deciders: djmcgrath
 - Implemented by: `unitTestRunner: jest` in the `nx.json` generator defaults for
