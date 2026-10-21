@@ -93,7 +93,7 @@ does not change ADR 0014's core rule: `cybertec-bot`, the agent identity, still 
 - **The bypass is wider than the job.** GitHub enforces the bypass by actor, not by what is
   pushed; the "merge only, abort on conflict" rule is enforced by the job's code, not by the
   ruleset.
-- **Required checks are skipped on the push.** `ci` still runs on the resulting `develop` commit
+- **Required checks are skipped on the push.** `lint-and-test-affected` still runs on the resulting `develop` commit
   (push trigger), but after the fact.
 - **One more credential to manage.** The App key has no expiry by default, but must be rotated if
   compromised.
