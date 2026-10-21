@@ -49,10 +49,9 @@ jobs:
 
       - run: pnpm install --frozen-lockfile
 
-      # The e2e and lighthouse targets launch Chromium through Playwright. Nx Cloud task
-      # distribution used to run them on agents with a browser; on this single runner the
-      # job installs it. The download is cached per Playwright version; the system
-      # dependencies (`--with-deps`) are not part of the cache, so the install always runs.
+      # The e2e and lighthouse targets launch Chromium through Playwright. The download is
+      # cached per Playwright version; the system dependencies (`--with-deps`) are not part
+      # of the cache, so the install always runs.
       - id: playwright
         run: echo "version=$(pnpm exec playwright --version | cut -d' ' -f2)" >> "$GITHUB_OUTPUT"
       - uses: actions/cache@v6
