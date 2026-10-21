@@ -15,5 +15,12 @@
     "**/.nx/cache/**": true,
     "**/node_modules/**": true
   },
-  "eslint.validate": ["json"]
+  "eslint.validate": [
+    "javascript",
+    "javascriptreact",
+    "typescript",
+    "typescriptreact",
+    "json",
+    "jsonc"
+  ]
 }
