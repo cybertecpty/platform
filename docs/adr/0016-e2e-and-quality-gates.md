@@ -217,5 +217,8 @@ CI and the deploy workflow set `NX_NO_CLOUD=true`. `nx start-ci-run`, `nx record
 keep up. The Nx Cloud remote cache and self-healing are gone too, which also affects the
 mentions in ADR 0001 (distributed agents) and ADR 0006 (remote cache absorbing CI lint time).
 
+The one runner has no browser, so `lint-and-test-affected.yml` installs Playwright's Chromium
+itself (#212). Without that step `e2e` and `lighthouse` fail with "Executable doesn't exist".
+
 `nxCloudId` stays in `nx.json`, so re-enabling Nx Cloud is a revert of the #188 changes to
 `lint-and-test-affected.yml` and `deploy-affected.yml`, plus the docs notes listed above.
