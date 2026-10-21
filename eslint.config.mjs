@@ -157,6 +157,16 @@ export default [
     }
   },
   {
+    // `import type` guards code that bare Node loads with type stripping. Specs run under
+    // Jest / Vitest, whose transforms drop type-only imports, so the rule only adds friction
+    // there. Test artifacts (`*.fixture.ts` and the like) stay covered: other code can import them.
+    files: ['**/*.{spec,test}.{ts,tsx,cts,mts}'],
+    rules: {
+      '@typescript-eslint/consistent-type-imports': 'off',
+      '@typescript-eslint/no-import-type-side-effects': 'off'
+    }
+  },
+  {
     // Bundle hygiene (all code, all extensions): lodash's CommonJS entry points
     // defeat tree-shaking, so every runtime import must go through lodash-es. The
     // TS-aware rule lets `import type` through since it is erased at build time.
