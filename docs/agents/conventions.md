@@ -136,7 +136,9 @@ on both branches:
   CODEOWNERS review is requested but not itself gating; approvals dismissed on any new
   push);
 - the `lint-and-test-affected` GitHub Actions check must pass (non-strict — the branch need not be up to
-  date first);
+  date first). The check name is the workflow job id, so renaming the job changes the required
+  context: swap it in both rulesets **before** the rename PR merges (the PR can't report the old
+  name, so add-then-merge-then-drop deadlocks), then rebase or re-run open PRs;
 - all review threads resolved before merge;
 - no force-push, no branch deletion;
 - merge methods: squash or merge commit.
