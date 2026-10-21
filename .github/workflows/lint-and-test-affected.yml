@@ -49,6 +49,18 @@ jobs:
 
       - run: pnpm install --frozen-lockfile
 
+      # The e2e and lighthouse targets launch Chromium through Playwright. Nx Cloud task
+      # distribution used to run them on agents with a browser; on this single runner the
+      # job installs it. The download is cached per Playwright version; the system
+      # dependencies (`--with-deps`) are not part of the cache, so the install always runs.
+      - id: playwright
+        run: echo "version=$(pnpm exec playwright --version | cut -d' ' -f2)" >> "$GITHUB_OUTPUT"
+      - uses: actions/cache@v6
+        with:
+          path: ~/.cache/ms-playwright
+          key: playwright-${{ runner.os }}-${{ steps.playwright.outputs.version }}
+      - run: pnpm exec playwright install --with-deps chromium
+
       # Unit-test the CI-only coverage reporter and the Claude Code hooks (plain
       # Node, not Nx projects). `pnpm verify` runs the same step locally.
       - run: node --test .github/scripts/*.test.cjs .claude/hooks/*.test.cjs
