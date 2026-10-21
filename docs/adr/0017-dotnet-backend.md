@@ -420,7 +420,9 @@ skeleton confirms them on the real layout.
 
 Two facts the check relies on, not in the original wording: every .NET node carries
 `metadata.technologies: ["dotnet", "C#"]`, which is how the check tells .NET projects from
-TypeScript ones; and project names keep the `.csproj` casing (`Api`, `Domain`), not kebab-case.
+TypeScript ones; and, by default, the plugin names a project after its `.csproj` file (`Api`,
+`Domain`), not kebab-case. The next section shows an explicit `name` in `project.json` overrides
+that.
 
 ### A second scratch run: nested roots and a test project's edges
 
@@ -435,9 +437,15 @@ tags on all four projects.
   default, so the library pulled in the nested test project's source and failed to build.
   `<Compile Remove="tests/**" />` in the parent fixed it. Every project that has a `tests/`
   folder needs that line, which this ADR did not say.
-- **Names keep the `.csproj` file name**, dots included (`CheckoutApi.Tests`), so the Nx project
-  name is not kebab-case as the Layout section assumes. A scaffolding tool has to derive the
-  `.csproj` name accordingly or set the Nx name explicitly.
+- **By default a project is named after its `.csproj` file**, dots included
+  (`CheckoutApi.Tests`), which is not the kebab-case name the Layout section requires. **An
+  explicit `"name"` in the project's `project.json` overrides it**: a third scratch run named
+  the projects `checkout-api` and `checkout-api-tests` while the files stayed
+  `CheckoutApi.csproj` and `CheckoutApi.Tests.csproj`. The graph nodes, the edge between them
+  and the roots all used the kebab-case names, and `nx build checkout-api` and
+  `nx test checkout-api-tests` built and ran the PascalCase projects. So the Layout section
+  stands: kebab-case Nx name, PascalCase `.csproj` and assembly name, with the `project.json`
+  carrying an explicit `name` as well as the three tags.
 - **Unverified item 5 is feasible in the graph.** A test project tagged `type:testing`
   referencing the app tagged `type:app` shows up as an ordinary edge. ADR 0004 forbids it with
   `notDependOnLibsWithTags`, and the boundary check built under #195 does not enforce that
