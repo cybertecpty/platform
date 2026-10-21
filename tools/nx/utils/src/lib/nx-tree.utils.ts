@@ -1,4 +1,5 @@
-import { Tree, joinPathFragments } from '@nx/devkit';
+import type { Tree } from '@nx/devkit';
+import { joinPathFragments } from '@nx/devkit';
 
 /**
  * Recursively lists every file under `dir`, workspace-relative, regardless of

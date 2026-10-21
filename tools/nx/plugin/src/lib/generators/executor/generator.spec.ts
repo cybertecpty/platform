@@ -1,17 +1,17 @@
 import { lastCallArg } from '@cybertecpty/jest-testing';
+import type { Tree } from '@nx/devkit';
 import * as devkit from '@nx/devkit';
 import {
   addProjectConfiguration,
   names,
   readJson,
   readProjectConfiguration,
-  Tree,
   updateProjectConfiguration
 } from '@nx/devkit';
 import { createTreeWithEmptyWorkspace } from '@nx/devkit/testing';
 import { executorGenerator as nxExecutorGenerator } from '@nx/plugin/generators';
 import { nxExecGenerator } from './generator';
-import { NxExecGeneratorOptions } from './schema';
+import type { NxExecGeneratorOptions } from './schema';
 
 jest.mock('@nx/plugin/generators', () => ({
   executorGenerator: jest.fn()

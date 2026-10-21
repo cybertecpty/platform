@@ -1,5 +1,6 @@
 import { assertValidPathSegment, readProjectPackageJson } from '@cybertecpty/nx-utils';
-import { formatFiles, generateFiles, joinPathFragments, names, Tree } from '@nx/devkit';
+import type { Tree } from '@nx/devkit';
+import { formatFiles, generateFiles, joinPathFragments, names } from '@nx/devkit';
 import { generatorGenerator as nxGeneratorGenerator } from '@nx/plugin/generators';
 import {
   addPluginExports,
@@ -10,7 +11,7 @@ import {
   sortPluginCollection,
   sortPluginDependencies
 } from '../../utils/plugin-project.utils';
-import { NxGenGeneratorOptions } from './schema';
+import type { NxGenGeneratorOptions } from './schema';
 
 /** Path, relative to a plugin's root, that holds its generator folders. */
 const GENERATORS_DIR = 'src/lib/generators';

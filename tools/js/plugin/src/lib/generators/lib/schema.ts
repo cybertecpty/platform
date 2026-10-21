@@ -1,10 +1,10 @@
-import {
+import type {
   NormalizedNxProjectOptions,
   NxProjectOptions,
   NxProjectScope
 } from '@cybertecpty/nx-types';
 import type { libraryGenerator } from '@nx/js';
-import { Except } from 'type-fest';
+import type { Except } from 'type-fest';
 
 /**
  * The `type:` values this generator may scaffold — the framework-agnostic subset of

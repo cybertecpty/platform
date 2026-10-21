@@ -1,5 +1,6 @@
 import { assertValidPathSegment, readProjectPackageJson } from '@cybertecpty/nx-utils';
-import { formatFiles, generateFiles, joinPathFragments, names, Tree } from '@nx/devkit';
+import type { Tree } from '@nx/devkit';
+import { formatFiles, generateFiles, joinPathFragments, names } from '@nx/devkit';
 import { executorGenerator as nxExecutorGenerator } from '@nx/plugin/generators';
 import {
   addPluginExports,
@@ -10,7 +11,7 @@ import {
   sortPluginCollection,
   sortPluginDependencies
 } from '../../utils/plugin-project.utils';
-import { NxExecGeneratorOptions } from './schema';
+import type { NxExecGeneratorOptions } from './schema';
 
 /** Path, relative to a plugin's root, that holds its executor folders. */
 const EXECUTORS_DIR = 'src/lib/executors';

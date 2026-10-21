@@ -1,10 +1,5 @@
-import {
-  addProjectConfiguration,
-  readJson,
-  readProjectConfiguration,
-  Tree,
-  writeJson
-} from '@nx/devkit';
+import type { Tree } from '@nx/devkit';
+import { addProjectConfiguration, readJson, readProjectConfiguration, writeJson } from '@nx/devkit';
 import { createTreeWithEmptyWorkspace } from '@nx/devkit/testing';
 import {
   addTsConfigTypes,

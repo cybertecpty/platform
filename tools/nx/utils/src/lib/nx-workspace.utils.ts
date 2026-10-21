@@ -1,5 +1,6 @@
-import { readJson, Tree } from '@nx/devkit';
-import { PackageJson } from 'type-fest';
+import type { Tree } from '@nx/devkit';
+import { readJson } from '@nx/devkit';
+import type { PackageJson } from 'type-fest';
 
 /**
  * Returns the npm scope of the workspace derived from the root `package.json` name,

@@ -1,12 +1,13 @@
 import { lastCallArg } from '@cybertecpty/jest-testing';
 import { createExecutorContextFixture } from '@cybertecpty/nx-testing';
+import type * as NxUtils from '@cybertecpty/nx-utils';
 import { runCommand } from '@cybertecpty/nx-utils';
 import { logger, type ExecutorContext, type TargetConfiguration } from '@nx/devkit';
 import { join } from 'node:path';
 import swaDeployExecutor, { TOKEN_VARIABLE } from './executor';
 
 jest.mock('@cybertecpty/nx-utils', () => ({
-  ...jest.requireActual<typeof import('@cybertecpty/nx-utils')>('@cybertecpty/nx-utils'),
+  ...jest.requireActual<typeof NxUtils>('@cybertecpty/nx-utils'),
   runCommand: jest.fn()
 }));
 

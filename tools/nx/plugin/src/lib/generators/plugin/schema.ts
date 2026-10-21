@@ -1,6 +1,6 @@
-import { NormalizedNxProjectOptions, NxProjectOptions } from '@cybertecpty/nx-types';
+import type { NormalizedNxProjectOptions, NxProjectOptions } from '@cybertecpty/nx-types';
 import type { pluginGenerator } from '@nx/plugin/generators';
-import { Except, SetRequired } from 'type-fest';
+import type { Except, SetRequired } from 'type-fest';
 
 /**
  * `NxPluginGeneratorOptions` after the generator has resolved `name`,

@@ -1,4 +1,4 @@
-import { NxProjectOptions } from '@cybertecpty/nx-types';
+import type { NxProjectOptions } from '@cybertecpty/nx-types';
 import { createProjectTags, isProjectOfType, NxProjectTags } from './nx-project-tags.utils';
 
 describe('nx-project-tags.utils', () => {

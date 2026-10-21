@@ -1,6 +1,7 @@
 import { gitTagsMatching } from '@cybertecpty/git-utils';
-import { VersionData } from '@cybertecpty/nx-types';
-import { compare, diff, RELEASE_TYPES, ReleaseType, valid } from 'semver';
+import type { VersionData } from '@cybertecpty/nx-types';
+import type { ReleaseType } from 'semver';
+import { compare, diff, RELEASE_TYPES, valid } from 'semver';
 
 export type WorkspaceReleaseType = Extract<ReleaseType, 'major' | 'minor' | 'patch'>;
 
