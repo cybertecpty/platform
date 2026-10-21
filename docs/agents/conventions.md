@@ -309,9 +309,11 @@ git worktree remove ../platform-{name}
 git branch -D {branch}
 ```
 
-- Ignored files (`node_modules`, `.nx`) don't block `git worktree remove`; leftover
-  _untracked_ files do. If it refuses, check `git status` in the worktree for anything you
-  want, then rerun with `--force`, which throws away uncommitted work.
+- Leftover _untracked_ files block `git worktree remove`, and on Windows an installed
+  `node_modules` can block it too ("Directory not empty"), even after the Nx daemon is stopped.
+  If it refuses, check `git status` in the worktree for anything you want. The worktree
+  registration is usually dropped anyway, so `git branch -D` works and you don't need to rerun
+  with `--force` (which throws away uncommitted work).
 - If a folder is left behind, delete it by hand once the process holding it has stopped, then
   run `git worktree prune`.
 
