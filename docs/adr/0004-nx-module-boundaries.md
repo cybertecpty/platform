@@ -337,3 +337,37 @@ exists.
 test, which this matrix forbids. ADR 0017 lists this as unverified with two options — keep
 the host thin so tests target a referenced lib, or amend this matrix for that one edge. The
 first .NET project decides; if the matrix changes, that is an amendment to this ADR.
+
+## Amendment (2026-10-22): the matrix lives in `nx-utils`, and the .NET check reads it there
+
+- Status: accepted
+- Deciders: djmcgrath
+- Implemented by: issue #195 (the .NET boundary check) and #216 (moving the matrix)
+
+The `depConstraints` matrix is no longer inlined in `eslint.config.mjs`. It is
+`DEP_CONSTRAINTS` in `tools/nx/utils/src/lib/nx-dep-constraints.const.mts`, with the same
+rows and comments, and its `DepConstraint` types live in `nx-types`. ADR 0017's .NET boundary
+check reads the same array, so the matrix stays the single source of truth.
+
+### Two import routes, and why
+
+- **The ESLint config** imports the file by relative path. Bare Node loads it with type
+  stripping, which is why it is an `.mts` file that avoids value imports.
+- **Everything else**, including the .NET check in `dotnet-plugin`, imports it through the
+  `@cybertecpty/nx-utils/dep-constraints` path alias in `tsconfig.base.json`, not through the
+  `@cybertecpty/nx-utils` barrel. Jest does not transform `.mts` files, so a barrel that
+  re-exported the matrix would make every spec that imports the barrel fail with
+  `SyntaxError: Unexpected token 'export'` (seen in `nx-plugin` and `js-plugin`). The alias
+  keeps the file out of the barrel without a second copy of the matrix or Jest config changes.
+
+The alias exists because of the test runner. ADR 0018 moves the TypeScript projects to Vitest,
+which transforms `.mts` files itself. After that migration, check whether exporting the matrix
+from the barrel works and the alias can go.
+
+### What the .NET check covers
+
+The check compares the `type:` tags of a .NET project and the .NET projects it references,
+using each row's `onlyDependOnLibsWithTags`. It does not apply `scope:` or `domain:` rows, and
+it does not apply `notDependOnLibsWithTags`, so a `type:testing` project that references a
+`type:app` project is not flagged for .NET, although ESLint flags it for TypeScript. See ADR
+0017's 2026-10-21 amendment and the open edge above.
