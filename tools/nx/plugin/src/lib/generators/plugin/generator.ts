@@ -1,8 +1,9 @@
 import {
   addTypecheckTarget,
-  createProjectTags,
+  formatProjectTags,
   projectDirFromOpts,
   projectNameFromOpts,
+  projectTagsFromOptions,
   sortTsConfigBasePaths
 } from '@cybertecpty/nx-utils';
 import {
@@ -34,7 +35,7 @@ export async function pluginGenerator(
   const projectOptions = { ...options, scope: 'tools' as const, type: 'plugin' as const };
   const name = projectNameFromOpts(projectOptions);
   const directory = projectDirFromOpts(projectOptions);
-  const tags = createProjectTags(projectOptions).toString();
+  const tags = formatProjectTags(projectTagsFromOptions(projectOptions));
   const unitTestRunner = options.unitTestRunner ?? 'jest';
 
   const projectTask = await nxPluginGenerator(tree, {

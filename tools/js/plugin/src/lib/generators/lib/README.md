@@ -19,7 +19,7 @@ directory, and tag conventions (ADR 0009).
   gets no `domain:` tag — so `--domain` with `--scope=tools` is rejected, not silently dropped.
 - Derives the project's `name`, `directory`, and `scope:`/`type:`/`domain:` tags from
   `--domain`/`--group`/`--name` via the shared `@cybertecpty/nx-utils` helpers
-  (`projectNameFromOpts`, `projectDirFromOpts`, `createProjectTags`) rather than taking a raw
+  (`projectNameFromOpts`, `projectDirFromOpts`, `projectTagsFromOptions`) rather than taking a raw
   `--directory`.
 - Forwards every other option to `@nx/js:library` unchanged, with workspace defaults applied
   where the native generator's own default doesn't match this workspace's conventions

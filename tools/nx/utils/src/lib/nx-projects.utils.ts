@@ -7,9 +7,9 @@ import {
 } from '@cybertecpty/nx-types';
 import { joinPathFragments, logger, readJson, type Tree } from '@nx/devkit';
 import type { PackageJson } from 'type-fest';
-import { domainToSegments, projectDomainToName } from './nx-domain.utils';
+import { domainPathToName, splitDomainPath } from './nx-domain.utils';
 import { assertValidPathSegment } from './nx-path-segment.utils';
-import { createProjectTags } from './nx-project-tags.utils';
+import { formatProjectTags, projectTagsFromOptions } from './nx-project-tags.utils';
 
 /**
  * Maps every `NxProjectScope` member to `true`. Its only purpose is to be the
@@ -112,7 +112,7 @@ export function normalizeProjectOptions<T extends NxProjectOptions>(
     bundler,
     directory,
     name,
-    tags: createProjectTags(options).toString()
+    tags: formatProjectTags(projectTagsFromOptions(options))
   };
 }
 
@@ -149,7 +149,7 @@ export function projectDirFromOpts(opts: NxProjectOptions): string {
   let dir = topLevelDir;
 
   if (domain) {
-    dir = joinPathFragments(dir, ...domainToSegments(domain));
+    dir = joinPathFragments(dir, ...splitDomainPath(domain));
   }
 
   if (group) {
@@ -201,7 +201,7 @@ export function projectNameFromOpts(opts: NxProjectOptions): string {
   const dropsSharedFromName = domain === 'shared' && Boolean(group);
 
   if (domain && !dropsSharedFromName) {
-    name = projectDomainToName(domain);
+    name = domainPathToName(domain);
   }
 
   if (group) {
