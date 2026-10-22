@@ -366,8 +366,9 @@ from the barrel works and the alias can go.
 
 ### What the .NET check covers
 
-The check compares the `type:` tags of a .NET project and the .NET projects it references,
-using each row's `onlyDependOnLibsWithTags`. It does not apply `scope:` or `domain:` rows, and
-it does not apply `notDependOnLibsWithTags`, so a `type:testing` project that references a
-`type:app` project is not flagged for .NET, although ESLint flags it for TypeScript. See ADR
-0017's 2026-10-21 amendment and the open edge above.
+The check applies the `type:` and `domain:` rows to the edges between a .NET project and the
+.NET projects it references, using each row's `onlyDependOnLibsWithTags`. It skips the
+`scope:` rows: every .NET project is `scope:backend`, so any edge between two of them already
+satisfies that row. It does not apply `notDependOnLibsWithTags`, so a `type:testing` project
+that references a `type:app` project is not flagged for .NET, although ESLint flags it for
+TypeScript. See ADR 0017's 2026-10-21 amendment and the open edge above.

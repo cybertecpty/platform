@@ -464,4 +464,5 @@ tags on all four projects.
 
 None. The DIY check stands, and the fallback in issue #195 (compiler-enforced layering only)
 is not needed. #195 builds the check over the `@nx/dotnet` graph, using the `technologies`
-metadata to select .NET projects and the `type:` axis only, as that issue specifies.
+metadata to select .NET projects, applying the `type:` and `domain:` rows of ADR 0004's
+matrix. It skips `scope:`, which every .NET project satisfies as `scope:backend`.
