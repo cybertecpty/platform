@@ -12,9 +12,13 @@ import type { DepConstraint } from '@cybertecpty/nx-types';
  * (those are `tsconfig` paths, not packages, and only `import type` is erased before Node
  * looks); non-erasable syntax such as an `enum` or a parameter property fails to parse; and a
  * `.ts` file here would be read as CommonJS, since this lib's `package.json` declares
- * `"type": "commonjs"`, leaving the named export invisible to an ESM importer. Import it
- * directly rather than through the `@cybertecpty/nx-utils` barrel, which pulls in modules that
- * break all three.
+ * `"type": "commonjs"`, leaving the named export invisible to an ESM importer.
+ *
+ * Do not re-export it from the `@cybertecpty/nx-utils` barrel. The barrel pulls in modules that
+ * break all three of the above, and Jest does not transform `.mts` files, so every spec that
+ * imports the barrel would fail with `SyntaxError: Unexpected token 'export'`. Other projects
+ * import it through the `@cybertecpty/nx-utils/dep-constraints` path alias in
+ * `tsconfig.base.json`, which points straight at this file.
  */
 export const DEP_CONSTRAINTS: ReadonlyArray<DepConstraint> = [
   {
