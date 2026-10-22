@@ -143,13 +143,13 @@ describe('nx-project-tags.utils', () => {
     it('adds predefined tag if valid', () => {
       const tags = new NxProjectTags();
       tags.addPredefinedTag('scope', 'tools');
-      expect(tags.hasTag('scope', 'tools')).toBe(true);
+      expect(tags.hasTag('scope:tools')).toBe(true);
     });
 
     it('does not add invalid predefined tag', () => {
       const tags = new NxProjectTags();
       tags.addPredefinedTag('scope', 'node' as any); // not in predefined
-      expect(tags.hasTag('scope', 'node')).toBe(false);
+      expect(tags.hasTag('scope:node')).toBe(false);
     });
 
     it('converts to string correctly', () => {
@@ -178,6 +178,107 @@ describe('nx-project-tags.utils', () => {
       const tags = new NxProjectTags();
       tags.addTagsString('type:ui,ui:material');
       expect(tags.toRecord()).toEqual({ type: ['ui'], ui: ['material'] });
+    });
+
+    describe('hasTag', () => {
+      const projectTags = new NxProjectTags('scope:backend,type:api,type:services,domain:shared');
+
+      describe('with an exact key:value tag', () => {
+        it.each(['scope:backend', 'type:api', 'type:services', 'domain:shared'])(
+          'is true for the tag %s that the project has',
+          tag => {
+            expect(projectTags.hasTag(tag)).toBe(true);
+          }
+        );
+
+        it.each(['scope:frontend', 'type:infra', 'domain:checkout'])(
+          'is false for the tag %s that the project does not have',
+          tag => {
+            expect(projectTags.hasTag(tag)).toBe(false);
+          }
+        );
+
+        it('is false when the key exists but not with that value', () => {
+          expect(projectTags.hasTag('type:app')).toBe(false);
+        });
+
+        it('is false for a key the project does not have at all', () => {
+          expect(projectTags.hasTag('framework:angular')).toBe(false);
+        });
+
+        it('is false for every tag when the project has no tags', () => {
+          expect(new NxProjectTags().hasTag('type:api')).toBe(false);
+        });
+
+        it('is false for a tag without a value', () => {
+          expect(projectTags.hasTag('type')).toBe(false);
+        });
+      });
+
+      describe('with a bare wildcard', () => {
+        it('is true for a project that has tags', () => {
+          expect(projectTags.hasTag('*')).toBe(true);
+        });
+
+        it('is true even for a project without tags', () => {
+          expect(new NxProjectTags().hasTag('*')).toBe(true);
+        });
+      });
+
+      describe('with a wildcard pattern', () => {
+        it('is true when any tag has the prefix before the wildcard', () => {
+          expect(projectTags.hasTag('type:*')).toBe(true);
+          expect(projectTags.hasTag('scope:*')).toBe(true);
+        });
+
+        it('is false when no tag has that prefix', () => {
+          expect(projectTags.hasTag('framework:*')).toBe(false);
+        });
+
+        it('matches a wildcard in the value position of a specific key only', () => {
+          expect(new NxProjectTags('scope:backend').hasTag('type:*')).toBe(false);
+        });
+
+        it('matches a wildcard in the key position', () => {
+          expect(projectTags.hasTag('*:shared')).toBe(true);
+          expect(projectTags.hasTag('*:nothing')).toBe(false);
+        });
+
+        it('matches a wildcard in the middle of a tag', () => {
+          expect(projectTags.hasTag('type:ser*s')).toBe(true);
+          expect(projectTags.hasTag('type:ser*x')).toBe(false);
+        });
+
+        it('is false for a project without tags', () => {
+          expect(new NxProjectTags().hasTag('type:*')).toBe(false);
+        });
+
+        it('treats regular-expression characters other than the wildcard literally', () => {
+          const tags = new NxProjectTags('type:a.b');
+
+          expect(tags.hasTag('type:a.*')).toBe(true);
+          expect(new NxProjectTags('type:axb').hasTag('type:a.b*')).toBe(false);
+        });
+      });
+
+      describe('with a regular-expression tag', () => {
+        it('is true when any tag matches the expression', () => {
+          expect(projectTags.hasTag('/^type:(api|app)$/')).toBe(true);
+        });
+
+        it('is false when no tag matches the expression', () => {
+          expect(projectTags.hasTag('/^type:(app|ui)$/')).toBe(false);
+        });
+
+        it('matches against the whole key:value tag', () => {
+          expect(projectTags.hasTag('/^scope:/')).toBe(true);
+          expect(projectTags.hasTag('/^backend$/')).toBe(false);
+        });
+
+        it('is false for a project without tags', () => {
+          expect(new NxProjectTags().hasTag('/.*/')).toBe(false);
+        });
+      });
     });
   });
 });

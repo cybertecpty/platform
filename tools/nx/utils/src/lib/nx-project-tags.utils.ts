@@ -1,6 +1,6 @@
 import { NxProjectOptions, type NxProjectType } from '@cybertecpty/nx-types';
 import { MapPrimitivePropsToArrays, NonNullableProps } from '@cybertecpty/shared-types';
-import { UniqMultiMap } from '@cybertecpty/shared-utils';
+import { UniqMultiMap, wildcardToRegExp } from '@cybertecpty/shared-utils';
 import type { ProjectConfiguration } from '@nx/devkit';
 import { ArrayElement, Simplify } from 'type-fest';
 import { projectDomainToName } from './nx-domain.utils';
@@ -139,7 +139,35 @@ export class NxProjectTags {
     return this._projectTagsMap.getAll(key);
   }
 
-  hasTag(key: string, value: string): boolean {
+  /**
+   * Determines whether a specific tag or tag pattern exists in the collection of project tags.
+   * Supports exact matches, wildcard patterns, and regular expressions.
+   *
+   * @param tag - The tag or tag pattern to check for.
+   * @returns `true` if the tag exists in the collection; otherwise, `false`.
+   */
+  hasTag(tag: string): boolean {
+    if (tag === '*') return true;
+
+    const projectTags = this.toArray();
+
+    // if the tag is a regex, check if the project tags matches the regex
+    if (tag.startsWith('/') && tag.endsWith('/')) {
+      const regex = new RegExp(tag.substring(1, tag.length - 1));
+
+      return projectTags.some(t => regex.test(t));
+    }
+
+    // if the tag contains a wildcard, check if the project tags match the wildcard pattern
+    if (tag.includes('*')) {
+      const regex = wildcardToRegExp(tag);
+
+      return projectTags.some(t => regex.test(t));
+    }
+
+    // When the tag is a simple key:value pair, check if it exists in the project tags
+    const [key, value] = tag.split(NxProjectTags.TAG_SEPARATOR);
+
     return this._projectTagsMap.hasValue(key, value);
   }
 
@@ -240,5 +268,5 @@ export function isProjectOfType(
   project: Pick<ProjectConfiguration, 'tags'>,
   type: NxProjectType
 ): boolean {
-  return new NxProjectTags(project.tags).hasTag('type', type);
+  return new NxProjectTags(project.tags).hasTag(`type:${type}`);
 }
