@@ -1,4 +1,4 @@
-import { type Tree } from '@nx/devkit';
+import type { Tree } from '@nx/devkit';
 import { createTreeWithEmptyWorkspace } from '@nx/devkit/testing';
 import { listFilesRecursively } from './nx-tree.utils';
 

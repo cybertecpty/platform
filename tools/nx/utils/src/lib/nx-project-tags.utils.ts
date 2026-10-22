@@ -1,8 +1,8 @@
-import { NxProjectOptions, type NxProjectType } from '@cybertecpty/nx-types';
-import { MapPrimitivePropsToArrays, NonNullableProps } from '@cybertecpty/shared-types';
+import type { NxProjectOptions, NxProjectType } from '@cybertecpty/nx-types';
+import type { MapPrimitivePropsToArrays, NonNullableProps } from '@cybertecpty/shared-types';
 import { UniqMultiMap } from '@cybertecpty/shared-utils';
 import type { ProjectConfiguration } from '@nx/devkit';
-import { ArrayElement, Simplify } from 'type-fest';
+import type { ArrayElement, Simplify } from 'type-fest';
 import { projectDomainToName } from './nx-domain.utils';
 import { NX_PROJECT_SCOPES, NX_PROJECT_TYPES } from './nx-projects.utils';
 

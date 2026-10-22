@@ -19,6 +19,11 @@ Moved here from `docs/agents/conventions.md` §8. Loads when editing an ESLint c
   footguns), `eslint-plugin-jest` `flat/recommended` on spec files and test
   artifacts (`*.{mock,stub,fake,fixture}.ts` and plurals, `.claude/rules/testing.md`), `@typescript-eslint/no-deprecated` on all TS (flags
   `@deprecated` symbols — the one `strictTypeChecked` rule promoted),
+  `@typescript-eslint/consistent-type-imports` (separate `import type` statements; Node's type
+  stripping erases only those, and a plain import of a type from a `@cybertecpty/*` alias fails
+  at load) with `no-import-type-side-effects`; the project service lets the rule read the
+  decorator-metadata compiler options, so decorated classes keep their runtime imports (both
+  rules are off for `*.{spec,test}.ts`, which Jest / Vitest transform),
   `@eslint-community/eslint-plugin-eslint-comments`, and a curated list of
   `eslint-plugin-unicorn` rules (never its preset), and `eslint-plugin-perfectionist`'s
   `sort-modules` alone on TS files, which enforces conventions §8's declaration order.
