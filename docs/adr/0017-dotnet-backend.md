@@ -446,23 +446,32 @@ tags on all four projects.
   `nx test checkout-api-tests` built and ran the PascalCase projects. So the Layout section
   stands: kebab-case Nx name, PascalCase `.csproj` and assembly name, with the `project.json`
   carrying an explicit `name` as well as the three tags.
-- **Unverified item 5 is feasible in the graph.** A test project tagged `type:testing`
-  referencing the app tagged `type:app` shows up as an ordinary edge. ADR 0004 forbids it with
-  `notDependOnLibsWithTags`, and the boundary check built under #195 does not enforce that
-  clause (it covers the `type:` "may depend on" half only). That edge is therefore **not
-  flagged for .NET**, unlike TypeScript, where ESLint flags it. This is accepted: the check is
-  deliberately narrower than ESLint, and item 5 itself (keep the host thin, or amend the
-  matrix for host-reference integration tests) is **still undecided** and stays with the walking
-  skeleton.
+- **Unverified item 5 shows up as an ordinary graph edge.** A test project tagged
+  `type:testing` referencing the app tagged `type:app` is a normal dependency. ADR 0004 forbids
+  it with `notDependOnLibsWithTags`, and the boundary check built under #195 enforces that
+  clause for .NET, on direct references only, so such a project fails the check as it fails
+  ESLint for TypeScript.
+- **Item 5's decision: try the thin host first.** The matrix stays as it is. Keep the host
+  project thin and have integration tests reference the library that holds the logic, not the
+  app. The walking skeleton tests whether that is enough. Whether integration tests that boot
+  the host can avoid referencing it is not yet verified.
+- **The fallback, if it is not enough, is more than one row.** Nx enforces every row that
+  applies to a project, and rows only add restrictions, so a combo row cannot exempt backend
+  tests from the base `type:testing` row. The exemption means taking the `type:app` ban off the
+  `type:testing` row and adding combo rows (`type:testing` with each of `scope:frontend`,
+  `scope:shared` and `scope:tools`) that ban `type:app` for those scopes. That is an amendment
+  to ADR 0004.
 
 ### Still unverified
 
-- **Items 4 and 5** (OpenAPI client generation; whether `type:testing` may reference `type:app`)
-  were not decided. The second run shows only that item 5's edge exists and is not enforced.
+- **Items 4 and 5** (OpenAPI client generation; whether the thin host is enough for
+  integration tests) are not settled. The second run shows only that item 5's edge exists and
+  that the check enforces the ban on it.
 
 ### Effect on the decision
 
 None. The DIY check stands, and the fallback in issue #195 (compiler-enforced layering only)
 is not needed. #195 builds the check over the `@nx/dotnet` graph, using the `technologies`
-metadata to select .NET projects, applying the `type:` and `domain:` rows of ADR 0004's
-matrix. It skips `scope:`, which every .NET project satisfies as `scope:backend`.
+metadata to select .NET projects, applying every row of ADR 0004's matrix, whatever its tag
+axis, including `notDependOnLibsWithTags` on direct references. ADR 0019 records how the check
+runs and where its rules come from, with the alternatives considered.

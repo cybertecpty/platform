@@ -346,8 +346,8 @@ first .NET project decides; if the matrix changes, that is an amendment to this 
 
 The `depConstraints` matrix is no longer inlined in `eslint.config.mjs`. It is
 `DEP_CONSTRAINTS` in `tools/nx/utils/src/lib/nx-dep-constraints.const.mts`, with the same
-rows and comments, and its `DepConstraint` types live in `nx-types`. ADR 0017's .NET boundary
-check reads the same array, so the matrix stays the single source of truth.
+rows and comments, and its `DependencyConstraint` type lives in `nx-types`. ADR 0017's .NET
+boundary check reads the same array, so the matrix stays the single source of truth.
 
 ### Two import routes, and why
 
@@ -366,9 +366,20 @@ from the barrel works and the alias can go.
 
 ### What the .NET check covers
 
-The check applies the `type:` and `domain:` rows to the edges between a .NET project and the
-.NET projects it references, using each row's `onlyDependOnLibsWithTags`. It skips the
-`scope:` rows: every .NET project is `scope:backend`, so any edge between two of them already
-satisfies that row. It does not apply `notDependOnLibsWithTags`, so a `type:testing` project
-that references a `type:app` project is not flagged for .NET, although ESLint flags it for
-TypeScript. See ADR 0017's 2026-10-21 amendment and the open edge above.
+The check applies every row of the matrix, whatever its tag axis (`scope:`, `type:` or
+`domain:`), to the edges between a .NET project and the .NET projects it references. For each
+row whose source tags the project has, the referenced project must have at least one of the
+row's `onlyDependOnLibsWithTags` and none of its `notDependOnLibsWithTags`. The latter applies
+to direct references only: a `type:testing` project that references a `type:app` project fails
+for .NET, as it does for TypeScript. Unlike ESLint it does not follow references through other
+projects. As in ESLint, a .NET project that no row applies to fails the check, and implicit
+dependencies (from `implicitDependencies`, not a `ProjectReference`) are not checked.
+
+Because every axis is checked, each `project.json` beside a `.csproj` needs its `scope:` tag as
+well as `type:` and `domain:`. For edges between .NET projects the `scope:` rows are met
+automatically, since every .NET project is `scope:backend`.
+
+That makes the open edge above bite for .NET integration tests. The first attempt is to keep
+the host thin so tests reference a library, not the app; ADR 0017's 2026-10-21 amendment records
+that decision and the fallback if it does not work. ADR 0019 records the design of the check as
+a whole and the alternatives it was weighed against.
