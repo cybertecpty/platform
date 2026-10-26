@@ -3,6 +3,7 @@ export {
   findProjectForPath
 } from 'nx/src/project-graph/utils/find-project-for-path';
 export * from './lib/nx-affected.utils';
+export * from './lib/nx-dep-constraints.utils';
 export * from './lib/nx-domain.utils';
 export * from './lib/nx-env.utils';
 export * from './lib/nx-executor.utils';

@@ -1,4 +1,4 @@
-import type { DepConstraint } from '@cybertecpty/nx-types';
+import type { DependencyConstraint } from '@cybertecpty/nx-types';
 
 /**
  * ADR 0004's dependency-constraint matrix — the single source of truth for which `scope:`,
@@ -20,7 +20,7 @@ import type { DepConstraint } from '@cybertecpty/nx-types';
  * import it through the `@cybertecpty/nx-utils/dep-constraints` path alias in
  * `tsconfig.base.json`, which points straight at this file.
  */
-export const DEP_CONSTRAINTS: ReadonlyArray<DepConstraint> = [
+export const DEP_CONSTRAINTS: ReadonlyArray<DependencyConstraint> = [
   {
     // domain:shared is the cross-domain fallback: not tied to any product
     // domain and importable by every domain. It may only depend on other

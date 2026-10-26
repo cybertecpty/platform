@@ -14,7 +14,7 @@ export type ComboSourceTagConstraint = {
  * or a combo source tag constraint.
  * This is used to enforce rules on how projects can depend on each other based on their tags.
  */
-export type DepConstraint = SingleSourceTagConstraint | ComboSourceTagConstraint;
+export type DependencyConstraint = SingleSourceTagConstraint | ComboSourceTagConstraint;
 
 /**
  * Defines a constraint for a single source tag.
