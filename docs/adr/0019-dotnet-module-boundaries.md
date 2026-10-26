@@ -160,6 +160,11 @@ Both check direct references only and apply every row regardless of tag axis.
 - **The `.mts` loading path exists because of Jest.** The alias and the lazy `import()` are there
   because Jest does not transform `.mts` files. After the Vitest migration (ADR 0018), check
   whether the matrix can be exported from the `nx-utils` barrel and the alias dropped.
+- **The alias cannot be a literal `import()` specifier.** When `@nx/js:tsc` builds the plugin it
+  rewrites the alias to point at the `.mts` file in `nx-utils`' build output, and TypeScript 6.0.3
+  crashes ("Debug Failure") resolving that mapping. The executor therefore holds the specifier in
+  a constant and casts the result to its type, which leaves that one import unchecked by the
+  compiler.
 - **More machinery:** a plugin project, an executor and a `createNodes` to maintain, against a
   root script's single file.
 - **It relies on `@nx/dotnet` behaviour observed at 23.1.1:** the `static` edges, the
