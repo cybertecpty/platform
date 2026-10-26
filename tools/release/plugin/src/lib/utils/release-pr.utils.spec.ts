@@ -1,7 +1,8 @@
 import { gitCommitsBetween, type GitLogEntry } from '@cybertecpty/git-utils';
+import { createDependencyGraphFixture, createProjectNodeFixture } from '@cybertecpty/nx-testing';
 import type { ProjectChangelogs } from '@cybertecpty/nx-types';
 import { createProjectRootMappings, findProjectForPath } from '@cybertecpty/nx-utils';
-import { createProjectGraphAsync, type ProjectGraph } from '@nx/devkit';
+import { createProjectGraphAsync } from '@nx/devkit';
 import simpleGit, { type SimpleGit } from 'simple-git';
 
 import {
@@ -296,7 +297,7 @@ describe('renderReleasePrBody', () => {
 
 describe('createProjectForFile', () => {
   it('resolves a file to its project through the graph root mappings', async () => {
-    const graph = { nodes: { 'pkg-a': {} }, dependencies: {} } as unknown as ProjectGraph;
+    const graph = createDependencyGraphFixture([createProjectNodeFixture({ name: 'pkg-a' })]);
     const mappings = new Map([['libs/pkg-a', 'pkg-a']]);
     mockCreateProjectGraphAsync.mockResolvedValue(graph);
     mockCreateProjectRootMappings.mockReturnValue(mappings);
