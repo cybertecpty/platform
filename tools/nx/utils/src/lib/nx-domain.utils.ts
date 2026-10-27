@@ -1,4 +1,4 @@
-import { NxProjectOptions } from '@cybertecpty/nx-types';
+import type { NxProjectOptions } from '@cybertecpty/nx-types';
 import { assertValidPathSegment } from './nx-path-segment.utils';
 
 /**

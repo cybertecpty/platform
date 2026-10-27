@@ -6,11 +6,16 @@ import {
   getGithubAuthenticatedUser,
   updatePullRequest
 } from '@cybertecpty/github-utils';
-import { NxReleaseChangelogResult, ProjectChangelogs, VersionData } from '@cybertecpty/nx-types';
+import type {
+  NxReleaseChangelogResult,
+  ProjectChangelogs,
+  VersionData
+} from '@cybertecpty/nx-types';
 import { dryRunEnabled, verboseEnabled } from '@cybertecpty/nx-utils';
 import { formatFiles, logger, type Tree } from '@nx/devkit';
 import { releaseChangelog, releaseVersion } from 'nx/release';
-import simpleGit, { SimpleGit } from 'simple-git';
+import type { SimpleGit } from 'simple-git';
+import simpleGit from 'simple-git';
 import { checkoutReleaseBranch, resolveReleaseBranchName } from '../../utils/release-branch.utils';
 import { buildReleasePrBody } from '../../utils/release-pr.utils';
 import {

@@ -1,5 +1,5 @@
-import { SetRequired } from 'type-fest';
-import { NxProjectLibType } from './nx-libs.types';
+import type { SetRequired } from 'type-fest';
+import type { NxProjectLibType } from './nx-libs.types';
 
 /**
  * The fully-resolved project options the generators consume: `name`,

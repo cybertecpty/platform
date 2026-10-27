@@ -1,5 +1,6 @@
 import { orderByKeys } from '@cybertecpty/shared-utils';
-import { readProjectConfiguration, Tree, updateJson, updateProjectConfiguration } from '@nx/devkit';
+import type { Tree } from '@nx/devkit';
+import { readProjectConfiguration, updateJson, updateProjectConfiguration } from '@nx/devkit';
 
 /** Minimal shape of the root tsconfig relevant to `sortTsConfigBasePaths`. */
 interface TsConfigWithPaths {

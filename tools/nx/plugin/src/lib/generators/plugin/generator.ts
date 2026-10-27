@@ -6,17 +6,16 @@ import {
   projectTagsFromOptions,
   sortTsConfigBasePaths
 } from '@cybertecpty/nx-utils';
+import type { GeneratorCallback, Tree } from '@nx/devkit';
 import {
   formatFiles,
   generateFiles,
-  GeneratorCallback,
   joinPathFragments,
   readProjectConfiguration,
-  runTasksInSerial,
-  Tree
+  runTasksInSerial
 } from '@nx/devkit';
 import { pluginGenerator as nxPluginGenerator } from '@nx/plugin/generators';
-import { NxPluginGeneratorOptions } from './schema';
+import type { NxPluginGeneratorOptions } from './schema';
 
 /**
  * Workspace `nx-plugin` generator — a thin wrapper over `@nx/plugin:plugin`.

@@ -1,5 +1,5 @@
 import type { generatorGenerator } from '@nx/plugin/generators';
-import { Except } from 'type-fest';
+import type { Except } from 'type-fest';
 
 /**
  * Inputs to the workspace `nx-gen` generator — a thin wrapper over

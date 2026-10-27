@@ -1,7 +1,8 @@
 import { gitMergeBase, gitTagsMatching } from '@cybertecpty/git-utils';
-import { VersionData } from '@cybertecpty/nx-types';
+import type { VersionData } from '@cybertecpty/nx-types';
 import { findMatchingProjects, getAffectedGraphNodes, type NxArgs } from '@cybertecpty/nx-utils';
-import { createProjectGraphAsync, logger, readNxJson, Tree, type ProjectGraph } from '@nx/devkit';
+import type { Tree } from '@nx/devkit';
+import { createProjectGraphAsync, logger, readNxJson, type ProjectGraph } from '@nx/devkit';
 import simpleGit, { type SimpleGit } from 'simple-git';
 
 /**

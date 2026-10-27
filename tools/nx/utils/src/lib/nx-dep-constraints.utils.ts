@@ -1,9 +1,9 @@
-import {
+import type {
   ComboSourceTagConstraint,
   DependencyConstraint,
   SingleSourceTagConstraint
 } from '@cybertecpty/nx-types';
-import { ProjectGraphProjectNode } from '@nx/devkit';
+import type { ProjectGraphProjectNode } from '@nx/devkit';
 import { join } from 'node:path';
 import { hasProjectTag } from './nx-project-tags.utils';
 

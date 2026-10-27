@@ -1,10 +1,11 @@
 import { lastCallArg } from '@cybertecpty/jest-testing';
 import { createFakeLibraryGenerator, createWorkspaceTreeFixture } from '@cybertecpty/nx-testing';
+import type { Tree } from '@nx/devkit';
 import * as devkit from '@nx/devkit';
-import { addProjectConfiguration, readJson, Tree } from '@nx/devkit';
+import { addProjectConfiguration, readJson } from '@nx/devkit';
 import { libraryGenerator as nxJsLibraryGenerator } from '@nx/js';
 import { libGenerator } from './generator';
-import { LibGeneratorOptions } from './schema';
+import type { LibGeneratorOptions } from './schema';
 
 jest.mock('@nx/js', () => ({
   libraryGenerator: jest.fn()

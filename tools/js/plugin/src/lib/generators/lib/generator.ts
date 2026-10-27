@@ -8,17 +8,16 @@ import {
   removeTsConfigTypes,
   sortTsConfigBasePaths
 } from '@cybertecpty/nx-utils';
+import type { GeneratorCallback, Tree } from '@nx/devkit';
 import {
   formatFiles,
-  GeneratorCallback,
   joinPathFragments,
   logger,
   readProjectConfiguration,
-  runTasksInSerial,
-  Tree
+  runTasksInSerial
 } from '@nx/devkit';
 import { libraryGenerator as nxJsLibraryGenerator } from '@nx/js';
-import { LibGeneratorOptions } from './schema';
+import type { LibGeneratorOptions } from './schema';
 
 /**
  * Workspace `ts-lib` generator — a thin wrapper over `@nx/js:library`.
