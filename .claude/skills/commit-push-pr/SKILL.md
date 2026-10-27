@@ -337,7 +337,7 @@ When a commit addresses a tracked issue, append the number to the subject:
 ### Pre-commit hook
 
 Moved here from conventions §8. A `husky` `pre-commit` hook runs `lint-staged` on every
-`git commit` (#24): staged `*.{ts,tsx,cts,mts,js,jsx,cjs,mjs}` get `eslint-utils`' `eslint-fix-mechanical`
+`git commit` (#24): staged `*.{ts,tsx,cts,mts,js,jsx,cjs,mjs}` get `scripts/eslint-fix-mechanical.cjs`
 (autofix limited to mechanical rules; other findings are reported and fail the commit) then
 `nx format:write`; staged `*.{json,md,mdx,html,css,scss,yml,yaml}` get `nx format:write`.
 lint-staged re-stages what it changed, so the commit lands clean.
