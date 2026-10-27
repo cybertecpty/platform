@@ -1,7 +1,8 @@
 # 17. ASP.NET Core as the backend stack, replacing NestJS
 
 - Status: accepted (amended 2026-10-20: the TypeScript test runner is **Vitest**, not Jest —
-  see ADR 0018. Every .NET decision here stands.)
+  see ADR 0018. Every .NET decision here stands. Amended 2026-10-21: scratch observations of
+  `@nx/dotnet`, recorded at the end.)
 - Date: 2026-10-20
 - Deciders: djmcgrath
 - Supersedes: the backend half of ADR 0005 (`application-frameworks`) — its Angular,
@@ -383,3 +384,94 @@ changes here.
   understated: it was really three (Jest, Vitest for Astro, xUnit) and is now two.
 - The `@nx/nest:library` generator-defaults entry this ADR orphaned is deleted by ADR 0018's
   migration rather than by the `@nx/nest` removal ticket — whichever lands first takes it.
+
+## Amendment (2026-10-21): what a scratch `@nx/dotnet` workspace showed
+
+- Status: accepted
+- Deciders: djmcgrath
+- Implemented by: issue #195 (the DIY boundary check)
+
+"Unverified until the first .NET project exists" above left six decisions resting on the
+plugin's documentation. Before building the boundary check, a **throwaway** experiment checked
+the ones it depends on: a scratch worktree off `develop`, `@nx/dotnet@23.1.1` (the workspace Nx
+version) added and registered in `nx.json`, two `net10.0` class libraries under `backend/`
+(`Domain`, and `Api` with a `ProjectReference` to it), the .NET 10 SDK (10.0.102), then
+`nx graph` and `nx show project`. It was deleted afterwards. It is weaker evidence than the
+walking skeleton the original wording calls for, so the items below stay open until that
+skeleton confirms them on the real layout.
+
+### Observed
+
+- **Item 1, tags.** A `project.json` beside the `.csproj` containing only `"tags": [...]` is
+  merged into the node: `tags` came through, and the plugin's inferred targets (`build`,
+  `build:release`, `restore`, `clean`, `watch`, `pack`) stayed. Without it, tags are empty.
+  The plugin infers none of its own. ADR 0004's three explicit tags therefore work as this ADR
+  required.
+- **Item 2, edges.** A `ProjectReference` appears as a `static` graph dependency
+  (`Api` -> `Domain`) with no further configuration.
+- **Item 3, feasibility.** The edges and tags the check needs are in the project graph. The
+  matrix half is done: it lives in `nx-dep-constraints.const.mts` (#216), read by the ESLint
+  config.
+- **Item 0, partly.** `@nx/dotnet` has a release at the pinned workspace version and installs
+  there. Its source shows no module-boundaries rule. Its project generators were not checked,
+  so "ships no project generators" (hence `dotnet new`) is still read from documentation.
+- **Item 6, partly.** The plugin's analyzer read `net10.0` projects under the .NET 10 SDK and
+  produced nodes. Nothing was built or tested, so full support is not confirmed.
+
+Two facts the check relies on, not in the original wording: every .NET node carries
+`metadata.technologies: ["dotnet", "C#"]`, which is how the check tells .NET projects from
+TypeScript ones; and, by default, the plugin names a project after its `.csproj` file (`Api`,
+`Domain`), not kebab-case. The next section shows an explicit `name` in `project.json` overrides
+that.
+
+### A second scratch run: nested roots and a test project's edges
+
+A second throwaway workspace, built the same way, put an xUnit project inside each of a class
+library and a web app, under a `tests/` folder as the Layout section describes, with explicit
+tags on all four projects.
+
+- **Nested roots work.** All four were separate projects with their own roots and tags, and
+  each test project had an edge to the project it tests. Test projects were given a `test`
+  target and the app `run` and `publish`.
+- **The parent project must exclude the nested folder.** A `.csproj` compiles `**/*.cs` by
+  default, so the library pulled in the nested test project's source and failed to build.
+  `<Compile Remove="tests/**" />` in the parent fixed it. Every project that has a `tests/`
+  folder needs that line, which this ADR did not say.
+- **By default a project is named after its `.csproj` file**, dots included
+  (`CheckoutApi.Tests`), which is not the kebab-case name the Layout section requires. **An
+  explicit `"name"` in the project's `project.json` overrides it**: a third scratch run named
+  the projects `checkout-api` and `checkout-api-tests` while the files stayed
+  `CheckoutApi.csproj` and `CheckoutApi.Tests.csproj`. The graph nodes, the edge between them
+  and the roots all used the kebab-case names, and `nx build checkout-api` and
+  `nx test checkout-api-tests` built and ran the PascalCase projects. So the Layout section
+  stands: kebab-case Nx name, PascalCase `.csproj` and assembly name, with the `project.json`
+  carrying an explicit `name` as well as the three tags.
+- **Unverified item 5 shows up as an ordinary graph edge.** A test project tagged
+  `type:testing` referencing the app tagged `type:app` is a normal dependency. ADR 0004 forbids
+  it with `notDependOnLibsWithTags`, and the boundary check built under #195 enforces that
+  clause for .NET, on direct references only, so such a project fails the check as it fails
+  ESLint for TypeScript.
+- **Item 5's decision: try the thin host first.** The matrix stays as it is. Keep the host
+  project thin and have integration tests reference the library that holds the logic, not the
+  app. The walking skeleton tests whether that is enough. Whether integration tests that boot
+  the host can avoid referencing it is not yet verified.
+- **The fallback, if it is not enough, is more than one row.** Nx enforces every row that
+  applies to a project, and rows only add restrictions, so a combo row cannot exempt backend
+  tests from the base `type:testing` row. The exemption means taking the `type:app` ban off the
+  `type:testing` row and adding combo rows (`type:testing` with each of `scope:frontend`,
+  `scope:shared` and `scope:tools`) that ban `type:app` for those scopes. That is an amendment
+  to ADR 0004.
+
+### Still unverified
+
+- **Items 4 and 5** (OpenAPI client generation; whether the thin host is enough for
+  integration tests) are not settled. The second run shows only that item 5's edge exists and
+  that the check enforces the ban on it.
+
+### Effect on the decision
+
+None. The DIY check stands, and the fallback in issue #195 (compiler-enforced layering only)
+is not needed. #195 builds the check over the `@nx/dotnet` graph, using the `technologies`
+metadata to select .NET projects, applying every row of ADR 0004's matrix, whatever its tag
+axis, including `notDependOnLibsWithTags` on direct references. ADR 0019 records how the check
+runs and where its rules come from, with the alternatives considered.

@@ -1,11 +1,11 @@
 import { gitMergeBase } from '@cybertecpty/git-utils';
+import { createDependencyGraphFixture, createProjectNodeFixture } from '@cybertecpty/nx-testing';
 import { findMatchingProjects, getAffectedGraphNodes } from '@cybertecpty/nx-utils';
 import {
   createProjectGraphAsync,
   readNxJson,
   updateNxJson,
   type NxJsonConfiguration,
-  type ProjectGraph,
   type Tree
 } from '@nx/devkit';
 import { createTreeWithEmptyWorkspace } from '@nx/devkit/testing';
@@ -114,7 +114,10 @@ describe('readReleasePatterns', () => {
 });
 
 describe('resolveReleaseProjects', () => {
-  const graph = { nodes: { 'pkg-a': {}, 'pkg-b': {} } } as unknown as ProjectGraph;
+  const graph = createDependencyGraphFixture([
+    createProjectNodeFixture({ name: 'pkg-a' }),
+    createProjectNodeFixture({ name: 'pkg-b' })
+  ]);
 
   it('matches the release patterns against the graph nodes', () => {
     withRelease({ projects: ['pkg-a', 'pkg-b'] });
@@ -230,7 +233,7 @@ describe('resolveAffectedReleaseProjects', () => {
   });
 
   it('feeds the one created project graph to both the affected scan and the matcher', async () => {
-    const graph = { nodes: { 'pkg-a': {} }, dependencies: {} } as unknown as ProjectGraph;
+    const graph = createDependencyGraphFixture([createProjectNodeFixture({ name: 'pkg-a' })]);
     mockCreateProjectGraphAsync.mockResolvedValue(graph);
     withRelease({ projects: 'pkg-a' });
     mockFindMatchingProjects.mockReturnValue(['pkg-a']);

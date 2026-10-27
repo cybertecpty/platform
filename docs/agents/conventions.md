@@ -460,8 +460,10 @@ skill.
 
 - **Run `pnpm verify` before every push.** It mirrors the required `lint-and-test-affected` check on affected
   projects (vs `origin/develop`; fetch first): the `node --test` suites, `nx format:check`, and
-  `nx affected -t lint test build typecheck`. On a PR, CI runs the same affected set plus `e2e`
-  and `lighthouse`; on a push to `develop`/`main` it runs every project (`nx run-many`).
+  `nx affected -t lint test build typecheck check-boundaries`. On a PR, CI runs the same affected
+  set plus `e2e` and `lighthouse`; on a push to `develop`/`main` it runs every project
+  (`nx run-many`). `check-boundaries` is the inferred target on every .NET project that checks its
+  references against ADR 0004's matrix (ADR 0019); until the workspace has one, it runs nothing.
 - Run through Nx: `nx test {project}`, `nx lint {project}`, `nx run-many ...`,
   `nx affected ...`. Prefix with pnpm: `pnpm exec nx …`.
 - After TS/config/schema/barrel/generator changes, run targeted tests first, then a

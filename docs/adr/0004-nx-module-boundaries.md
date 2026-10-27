@@ -337,3 +337,52 @@ exists.
 test, which this matrix forbids. ADR 0017 lists this as unverified with two options — keep
 the host thin so tests target a referenced lib, or amend this matrix for that one edge. The
 first .NET project decides; if the matrix changes, that is an amendment to this ADR.
+
+## Amendment (2026-10-22): the matrix lives in `nx-utils`, and the .NET check reads it there
+
+- Status: accepted
+- Deciders: djmcgrath
+- Implemented by: issue #195 (the .NET boundary check) and #216 (moving the matrix)
+
+The `depConstraints` matrix is no longer inlined in `eslint.config.mjs`. It is
+`DEP_CONSTRAINTS` in `tools/nx/utils/src/lib/nx-dep-constraints.const.mts`, with the same
+rows and comments, and its `DependencyConstraint` type lives in `nx-types`. ADR 0017's .NET
+boundary check reads the same array, so the matrix stays the single source of truth.
+
+### Two routes to the matrix, and why
+
+- **The ESLint config** imports the file by relative path. Bare Node loads it with type
+  stripping, which is why it is an `.mts` file that avoids value imports.
+- **Everything else**, including the .NET check in `dotnet-plugin`, calls `loadDepConstraints()`
+  in `nx-utils`, which `require`s the file by absolute path. The matrix cannot be imported by
+  name. Jest does not transform `.mts` files, so a barrel that re-exported it would make every
+  spec that imports the barrel fail with `SyntaxError: Unexpected token 'export'` (seen in
+  `nx-plugin` and `js-plugin`). And the transpiler Nx runs plugins and executors with rewrites an
+  import of a path alias that points at the `.mts` file into a relative path with no extension,
+  which Node cannot find (seen when running the executor under Nx). An earlier version of this
+  amendment used a `@cybertecpty/nx-utils/dep-constraints` path alias for this, and it failed
+  under Nx for that reason.
+
+The loader exists because of the test runner and that transpiler. ADR 0018 moves the TypeScript
+projects to Vitest, which transforms `.mts` files itself. After that migration, check whether
+exporting the matrix from the barrel works and the loader can become a plain import.
+
+### What the .NET check covers
+
+The check applies every row of the matrix, whatever its tag axis (`scope:`, `type:` or
+`domain:`), to the edges between a .NET project and the .NET projects it references. For each
+row whose source tags the project has, the referenced project must have at least one of the
+row's `onlyDependOnLibsWithTags` and none of its `notDependOnLibsWithTags`. The latter applies
+to direct references only: a `type:testing` project that references a `type:app` project fails
+for .NET, as it does for TypeScript. Unlike ESLint it does not follow references through other
+projects. As in ESLint, a .NET project that no row applies to fails the check, and implicit
+dependencies (from `implicitDependencies`, not a `ProjectReference`) are not checked.
+
+Because every axis is checked, each `project.json` beside a `.csproj` needs its `scope:` tag as
+well as `type:` and `domain:`. For edges between .NET projects the `scope:` rows are met
+automatically, since every .NET project is `scope:backend`.
+
+That makes the open edge above bite for .NET integration tests. The first attempt is to keep
+the host thin so tests reference a library, not the app; ADR 0017's 2026-10-21 amendment records
+that decision and the fallback if it does not work. ADR 0019 records the design of the check as
+a whole and the alternatives it was weighed against.

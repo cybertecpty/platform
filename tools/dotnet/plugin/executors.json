@@ -1,0 +1,9 @@
+{
+  "executors": {
+    "check-boundaries": {
+      "implementation": "./src/lib/executors/check-boundaries/executor",
+      "schema": "./src/lib/executors/check-boundaries/schema.json",
+      "description": "Fail when a .NET project references another .NET project in a way the dependency constraints of ADR 0004 forbid."
+    }
+  }
+}

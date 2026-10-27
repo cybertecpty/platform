@@ -1,31 +1,4 @@
-/**
- * Defines a constraint for multiple source tags.
- */
-type ComboSourceTagConstraint = {
-  allSourceTags: string[];
-  onlyDependOnLibsWithTags?: string[];
-  notDependOnLibsWithTags?: string[];
-  allowedExternalImports?: string[];
-  bannedExternalImports?: string[];
-};
-
-/**
- * Defines a dependency constraint for Nx projects, which can be either a single source tag constraint
- * or a combo source tag constraint.
- * This is used to enforce rules on how projects can depend on each other based on their tags.
- */
-type DepConstraint = SingleSourceTagConstraint | ComboSourceTagConstraint;
-
-/**
- * Defines a constraint for a single source tag.
- */
-type SingleSourceTagConstraint = {
-  sourceTag: string;
-  onlyDependOnLibsWithTags?: string[];
-  notDependOnLibsWithTags?: string[];
-  allowedExternalImports?: string[];
-  bannedExternalImports?: string[];
-};
+import type { DependencyConstraint } from '@cybertecpty/nx-types';
 
 /**
  * ADR 0004's dependency-constraint matrix — the single source of truth for which `scope:`,
@@ -33,16 +6,23 @@ type SingleSourceTagConstraint = {
  * root `eslint.config.mjs` for TypeScript imports, and by the .NET boundary check for the
  * `ProjectReference` edges that rule cannot see (ADR 0017).
  *
- * Keep this module import-free and keep the `.mts` extension. `eslint.config.mjs` imports it by
- * relative path, where bare Node loads it with type stripping only, so three things break it:
- * a value import of a `@cybertecpty/*` alias cannot resolve (those are `tsconfig` paths, not
- * packages, and only `import type` is erased before Node looks); non-erasable syntax such as an
- * `enum` or a parameter property fails to parse; and a `.ts` file here would be read as
- * CommonJS, since this lib's `package.json` declares `"type": "commonjs"`, leaving the named
- * export invisible to an ESM importer. Import it directly rather than through the
- * `@cybertecpty/nx-utils` barrel, which pulls in modules that break all three.
+ * Keep this module free of value imports (`import type` is fine) and keep the `.mts` extension.
+ * `eslint.config.mjs` imports it by relative path, where bare Node loads it with type stripping
+ * only, so three things break it: a value import of a `@cybertecpty/*` alias cannot resolve
+ * (those are `tsconfig` paths, not packages, and only `import type` is erased before Node
+ * looks); non-erasable syntax such as an `enum` or a parameter property fails to parse; and a
+ * `.ts` file here would be read as CommonJS, since this lib's `package.json` declares
+ * `"type": "commonjs"`, leaving the named export invisible to an ESM importer.
+ *
+ * Do not re-export it from the `@cybertecpty/nx-utils` barrel, and do not import it by name. The
+ * barrel pulls in modules that break all three of the above. Jest does not transform `.mts`
+ * files, so every spec that imports the barrel would fail with
+ * `SyntaxError: Unexpected token 'export'`. The transpiler that Nx runs plugins and executors
+ * with rewrites an import of it to a relative path with no extension, which Node cannot find.
+ * Code other than the ESLint config calls `loadDepConstraints()` in `nx-dep-constraints.utils.ts`,
+ * which loads it by absolute path.
  */
-export const DEP_CONSTRAINTS: ReadonlyArray<DepConstraint> = [
+export const DEP_CONSTRAINTS: ReadonlyArray<DependencyConstraint> = [
   {
     // domain:shared is the cross-domain fallback: not tied to any product
     // domain and importable by every domain. It may only depend on other

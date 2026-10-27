@@ -1,9 +1,10 @@
 import {
   addTsConfigTypes,
   addTypecheckTarget,
-  createProjectTags,
+  formatProjectTags,
   projectDirFromOpts,
   projectNameFromOpts,
+  projectTagsFromOptions,
   removeTsConfigTypes,
   sortTsConfigBasePaths
 } from '@cybertecpty/nx-utils';
@@ -42,7 +43,7 @@ export async function libGenerator(
   const projectOptions = { ...options, scope };
   const name = projectNameFromOpts(projectOptions);
   const directory = projectDirFromOpts(projectOptions);
-  const tags = createProjectTags(projectOptions).toString();
+  const tags = formatProjectTags(projectTagsFromOptions(projectOptions));
   const unitTestRunner = options.unitTestRunner ?? 'jest';
 
   // A `scope:shared` lib's `typecheck` target is what keeps Node globals out of its source
