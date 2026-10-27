@@ -179,8 +179,10 @@ What remains unverified:
   relative path with no extension. A first version of this design used a path alias with a
   dynamic `import()`. It failed under Nx, and the same alias also crashed TypeScript 6.0.3
   ("Debug Failure") when `@nx/js:tsc` built the plugin. The loader works from source, where the
-  `.mts` file is: a built copy of `nx-utils` holds an `.mjs` file instead, which is fine because
-  Nx runs plugins and executors from source. The `require` is cast to its type, so the compiler
+  `.mts` file is. In a built copy of `nx-utils` the path falls back to the `.mjs` that `tsc`
+  emits beside it, but that copy cannot run outside the workspace, because it requires the
+  workspace alias `@cybertecpty/shared-utils`. That is fine, because Nx runs plugins and
+  executors from source. The `require` is cast to its type, so the compiler
   does not check that call. After the Vitest migration (ADR 0018), check whether the matrix can
   be exported from the `nx-utils` barrel and the loader replaced by a plain import.
 - **A Node warning on every Nx command when the daemon is off,** which is the default in CI. Nx
