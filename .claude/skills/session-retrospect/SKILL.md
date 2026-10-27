@@ -19,9 +19,9 @@ next session starts faster and repeats fewer mistakes.
 
 - **IS:** a whole-session sweep for lessons visible only in aggregate (a repeated mistake, a
   convention learned the hard way, a workflow friction worth encoding), routed to a durable home.
-- **IS NOT** `anthropic-skills:consolidate-memory` — that _tidies_ the existing pool (dedup,
-  prune, fix stale facts). This one _captures new_ lessons. If the pool needs tidying,
-  recommend running that separately.
+- **IS NOT** a tidy of the existing memory pool (dedup, prune, fix stale facts). This one
+  _captures new_ lessons. If the pool needs tidying, recommend a manual consolidation pass
+  (step 6) separately.
 
 ## The bar
 
@@ -118,9 +118,14 @@ for approval (`AskUserQuestion` if a routing choice is genuinely ambiguous, else
 ### 6. Close out
 
 Summarize what was written and where — commit hash / branch / PR for doc edits, number+URL
-for issues. Flag a `consolidate-memory` pass **only** on a concrete trigger: the pool exceeds
-~20 files, `MEMORY.md` is past ~70% of budget, this retrospect added/updated 3+ memories, or
-the sweep noticed stale/duplicative/contradictory entries. Otherwise say nothing.
+for issues. Recommend a **manual memory consolidation** **only** on a concrete trigger: the pool
+exceeds ~20 files, `MEMORY.md` is past ~70% of budget, this retrospect added/updated 3+
+memories, or the sweep noticed stale/duplicative/contradictory entries. Otherwise say nothing.
+
+The pass (a separate step, not part of this one): read every memory file; merge duplicates;
+delete or trim facts the repo, an ADR or git history now records; fix anything a committed doc
+contradicts (the doc wins); propose the changes in a table and wait for approval before
+writing.
 
 ## Guardrails
 
