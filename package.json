@@ -101,7 +101,7 @@
   },
   "lint-staged": {
     "*.{ts,tsx,cts,mts,js,jsx,cjs,mjs}": [
-      "eslint --fix --no-warn-ignored",
+      "node tools/eslint-fix-mechanical.mjs",
       "nx format:write --files"
     ],
     "*.{json,md,mdx,html,css,scss,yml,yaml}": [
