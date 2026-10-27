@@ -1,0 +1,40 @@
+<Project>
+
+  <PropertyGroup>
+    <TargetFramework>net10.0</TargetFramework>
+    <AnalysisLevel>latest-Recommended</AnalysisLevel>
+    <TreatWarningsAsErrors>true</TreatWarningsAsErrors>
+    <EnforceCodeStyleInBuild>true</EnforceCodeStyleInBuild>
+  </PropertyGroup>
+
+  <!-- A tested project keeps its test project in a nested tests/ folder; the parent's glob must not compile it. -->
+  <PropertyGroup>
+    <DefaultItemExcludes>$(DefaultItemExcludes);tests/**</DefaultItemExcludes>
+  </PropertyGroup>
+
+  <PropertyGroup>
+    <IsUnderTestsFolder Condition="$([System.String]::Copy('$(MSBuildProjectDirectory)/').Replace('\', '/').Contains('/tests/'))">true</IsUnderTestsFolder>
+  </PropertyGroup>
+
+  <!-- Shared defaults for every project under a tests/ folder (ADR 0017). -->
+  <PropertyGroup Condition="'$(IsUnderTestsFolder)' == 'true'">
+    <IsPackable>false</IsPackable>
+    <IsTestProject>true</IsTestProject>
+  </PropertyGroup>
+
+  <ItemGroup Condition="'$(IsUnderTestsFolder)' == 'true'">
+    <PackageReference Include="Microsoft.NET.Test.Sdk" Version="17.14.1" />
+    <PackageReference Include="xunit" Version="2.9.3" />
+    <PackageReference Include="xunit.runner.visualstudio" Version="3.1.4" />
+    <PackageReference Include="coverlet.collector" Version="6.0.4" />
+    <Using Include="Xunit" />
+  </ItemGroup>
+
+  <!-- 80% line-coverage floor, enforced in CI only (ADR 0007 / 0017). -->
+  <PropertyGroup Condition="'$(IsUnderTestsFolder)' == 'true' and '$(CI)' != ''">
+    <CollectCoverage>true</CollectCoverage>
+    <Threshold>80</Threshold>
+    <ThresholdType>line</ThresholdType>
+  </PropertyGroup>
+
+</Project>
