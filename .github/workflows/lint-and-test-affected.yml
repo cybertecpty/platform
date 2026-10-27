@@ -88,6 +88,10 @@ jobs:
       # $NX_BASE / $NX_HEAD come from nrwl/nx-set-shas above.
       - name: Check formatting of affected files
         run: pnpm exec nx format:check --base=$NX_BASE --head=$NX_HEAD
+      # The .NET counterpart of format:check (ADR 0017). Checks every .NET project against the C#
+      # rules in .editorconfig and never rewrites a file.
+      - name: Check formatting of .NET projects
+        run: dotnet format Platform.slnx --verify-no-changes
       # `lighthouse` is the cybertec-io-e2e performance/accessibility gate;
       # `e2e` also runs the axe check.
       # A PR runs only the projects it affects. A push to develop/main runs every

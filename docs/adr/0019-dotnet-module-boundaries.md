@@ -213,3 +213,18 @@ What remains unverified:
   `packages/core/src/generators/utils/generate-project.ts` for the MSBuild hook.
 - Code: `tools/nx/utils/src/lib/nx-dep-constraints.utils.ts`, `nx-dep-constraints.const.mts`,
   and `tools/dotnet/plugin`.
+
+## Amendment (2026-10-27): registered, and checked on the first project
+
+- Status: accepted
+- Deciders: djmcgrath
+- Implemented by: issue #229
+
+The plugin is registered in `nx.json` with the first .NET project, as the locked parameters
+required. On `gamers-source-api`, `gamers-source-services` and its tests project, the check passes
+with allowed references and fails on a `type:testing` project that references a `type:app`
+project, and it honours the `domain:*` wildcard of ADR 0004's 2026-10-27 amendment (unit-tested; the
+forbidden edge was a manual run). Unverified
+item 1 (the CI Node version and the real layout) is partly checked: the layout is real, but CI
+has not run it yet. Nx prints the "Failed to load the ES module" Node warning once per command,
+as predicted above.

@@ -32,6 +32,25 @@ export const DEP_CONSTRAINTS: ReadonlyArray<DependencyConstraint> = [
     onlyDependOnLibsWithTags: ['domain:shared']
   },
   {
+    // A Gamer's Source app is the composition root of its product, which spans several domains
+    // (ADR 0004, 2026-10-27 amendment), so it may depend on a project of any domain. Rows only add
+    // restrictions, so this one cannot loosen a plain `domain:gamers-source` row: libs of that domain
+    // get their isolation from combo rows on their own `type:`, never from a row the app also matches.
+    // Narrow it when a second product arrives.
+    allSourceTags: ['type:app', 'domain:gamers-source'],
+    onlyDependOnLibsWithTags: ['domain:*']
+  },
+  {
+    // Isolation for Gamer's Source libs, one row per lib `type:` that exists. It is a combo row
+    // because a plain `domain:gamers-source` row would also bind the app above.
+    allSourceTags: ['type:services', 'domain:gamers-source'],
+    onlyDependOnLibsWithTags: ['domain:gamers-source', 'domain:shared']
+  },
+  {
+    allSourceTags: ['type:testing', 'domain:gamers-source'],
+    onlyDependOnLibsWithTags: ['domain:gamers-source', 'domain:shared']
+  },
+  {
     // Backend (Node / NestJS) code. May use other backend libs and
     // environment-agnostic scope:shared libs, but never scope:frontend or
     // scope:tools — a running service must not pull in browser code or

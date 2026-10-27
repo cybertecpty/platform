@@ -35,6 +35,8 @@
     <CollectCoverage>true</CollectCoverage>
     <Threshold>80</Threshold>
     <ThresholdType>line</ThresholdType>
+    <!-- coverage/{projectRoot}, where the other test runners write their reports (ADR 0007). -->
+    <CoverletOutput>$(MSBuildThisFileDirectory)coverage/$([MSBuild]::MakeRelative('$(MSBuildThisFileDirectory)', '$(MSBuildProjectDirectory)'))/</CoverletOutput>
   </PropertyGroup>
 
 </Project>

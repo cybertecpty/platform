@@ -386,3 +386,43 @@ That makes the open edge above bite for .NET integration tests. The first attemp
 the host thin so tests reference a library, not the app; ADR 0017's 2026-10-21 amendment records
 that decision and the fallback if it does not work. ADR 0019 records the design of the check as
 a whole and the alternatives it was weighed against.
+
+## Amendment (2026-10-27): an app may depend on any domain
+
+- Status: accepted
+- Deciders: djmcgrath
+- Implemented by: issue #229; ADR 0020 (`gamers-source-domain`)
+
+The matrix above isolates product domains: a project of one domain may depend on its own domain
+and `domain:shared`. An app is the composition root of a product, which can span several domains,
+so it cannot live inside one domain's isolation.
+
+### Considered options
+
+1. **Keep every project isolated to its domain.** An app could then import only its own domain's
+   libs, so the Gamer's Source frontend and API could not compose libs of the other domains.
+2. **Tag the app `domain:shared`.** Rejected: `domain:shared` may depend only on `domain:shared`,
+   which is stricter, and the app would be tagged with a domain it does not belong to.
+3. **Let an app depend on any domain.** **(chosen)**
+
+### Decision
+
+- **A `type:app` project may depend on any `domain:*` project.** The matrix row is a combo row on
+  the app's own tags (`type:app` and `domain:gamers-source`), with `domain:*` as the allowed tag.
+  Libs keep their own domain isolation.
+- **Rows only restrict, so isolation rows are combo rows too.** A plain `domain:gamers-source` row
+  would apply to the app and cancel the exception. Each lib `type:` in a domain gets its own combo
+  row, added with the first lib of that type (ADR 0020).
+- **`domain:*` is accepted** by `@nx/enforce-module-boundaries` in `onlyDependOnLibsWithTags`
+  (the existing `type:*` row on `type:testing` already relies on it), and the .NET check applies
+  the same match. `.github/scripts/app-domain-constraint.test.cjs` checks the real matrix against
+  Nx's own matching, and `nx-dep-constraints.utils.spec.ts` checks the .NET side.
+- **Why this is acceptable:** the repo has one product. The row is narrowed when a second product
+  arrives.
+
+### Open edge: `type:testing` and `type:app`
+
+The thin host held. `gamers-source-api` holds no logic, its endpoint calls a service in
+`libs/gamers-source/services`, and that lib's tests project references the lib, not the app. The
+matrix is unchanged. Tests that boot the host (`WebApplicationFactory`) would still need a
+reference to the app, and remain unverified.
