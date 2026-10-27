@@ -78,9 +78,9 @@ jobs:
       # project: a safety net for changes the project graph doesn't connect to a
       # project, and a complete workspace coverage number (ADR 0007, 2026-10-16).
       - if: github.event_name == 'pull_request'
-        run: pnpm exec nx affected -t lint test build typecheck e2e lighthouse --base=$NX_BASE --head=$NX_HEAD
+        run: pnpm exec nx affected -t lint test build typecheck check-boundaries e2e lighthouse --base=$NX_BASE --head=$NX_HEAD
       - if: github.event_name != 'pull_request'
-        run: pnpm exec nx run-many -t lint test build typecheck e2e lighthouse
+        run: pnpm exec nx run-many -t lint test build typecheck check-boundaries e2e lighthouse
 
       # Coverage reporting (ADR 0007 amendment / issue #52). The `test` targets
       # collect coverage in CI (jest.preset.js) and declare
