@@ -12,9 +12,11 @@ import {
 import checkBoundariesExecutor from './executor';
 import type { CheckBoundariesExecutorOptions } from './schema';
 
-// Jest cannot load the real matrix, an `.mts` file, so the executor gets a small one.
-jest.mock('@cybertecpty/nx-utils/dep-constraints', () => ({
-  DEP_CONSTRAINTS: [
+// Jest cannot load the real matrix, an `.mts` file, so the executor gets a small one. The rest of
+// `nx-utils`, including the check itself, is real.
+jest.mock('@cybertecpty/nx-utils', () => ({
+  ...jest.requireActual<typeof import('@cybertecpty/nx-utils')>('@cybertecpty/nx-utils'),
+  loadDepConstraints: () => [
     { sourceTag: 'type:api', onlyDependOnLibsWithTags: ['type:services'] },
     {
       sourceTag: 'type:testing',

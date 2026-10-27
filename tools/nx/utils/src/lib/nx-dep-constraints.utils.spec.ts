@@ -1,12 +1,16 @@
 import { createProjectNodeFixture } from '@cybertecpty/nx-testing';
 import type { DependencyConstraint } from '@cybertecpty/nx-types';
 import type { ProjectGraphProjectNode } from '@nx/devkit';
+import { existsSync } from 'node:fs';
+import { basename } from 'node:path';
 import {
   checkBannedTagsViolations,
   checkDepConstraints,
   checkExpectedTagsViolations,
+  DEP_CONSTRAINTS_PATH,
   isComboSrcTagConstraint,
-  isSingleSrcTagConstraint
+  isSingleSrcTagConstraint,
+  loadDepConstraints
 } from './nx-dep-constraints.utils';
 
 const API_CONSTRAINT_FIXTURE: DependencyConstraint = {
@@ -500,5 +504,40 @@ describe('isSingleSrcTagConstraint', () => {
 
   it('is false for a constraint with several source tags', () => {
     expect(isSingleSrcTagConstraint(COMBO_CONSTRAINT_FIXTURE)).toBe(false);
+  });
+});
+
+describe('DEP_CONSTRAINTS_PATH', () => {
+  it('is the path of the matrix module, next to the constraint code', () => {
+    expect(basename(DEP_CONSTRAINTS_PATH)).toBe('nx-dep-constraints.const.mts');
+  });
+
+  it('is a file that exists, so renaming or moving the matrix module fails here', () => {
+    expect(existsSync(DEP_CONSTRAINTS_PATH)).toBe(true);
+  });
+});
+
+describe('loadDepConstraints', () => {
+  afterEach(() => {
+    jest.dontMock(DEP_CONSTRAINTS_PATH);
+    jest.resetModules();
+  });
+
+  it('returns the matrix that the matrix module exports', () => {
+    // Jest cannot load the real `.mts` module, so it is replaced for the call.
+    jest.doMock(DEP_CONSTRAINTS_PATH, () => ({
+      DEP_CONSTRAINTS: [API_CONSTRAINT_FIXTURE, TESTING_CONSTRAINT_FIXTURE]
+    }));
+
+    expect(loadDepConstraints()).toEqual([API_CONSTRAINT_FIXTURE, TESTING_CONSTRAINT_FIXTURE]);
+  });
+
+  it('loads the module from DEP_CONSTRAINTS_PATH', () => {
+    const factory = jest.fn(() => ({ DEP_CONSTRAINTS: [] }));
+    jest.doMock(DEP_CONSTRAINTS_PATH, factory);
+
+    loadDepConstraints();
+
+    expect(factory).toHaveBeenCalledTimes(1);
   });
 });

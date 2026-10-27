@@ -15,9 +15,6 @@
       "@cybertecpty/nx-testing": ["./tools/nx/testing/src/index.ts"],
       "@cybertecpty/nx-types": ["./tools/nx/types/src/index.ts"],
       "@cybertecpty/nx-utils": ["./tools/nx/utils/src/index.ts"],
-      "@cybertecpty/nx-utils/dep-constraints": [
-        "./tools/nx/utils/src/lib/nx-dep-constraints.const.mts"
-      ],
       "@cybertecpty/playwright-testing": ["./libs/shared/playwright/testing/src/index.ts"],
       "@cybertecpty/release-plugin": ["./tools/release/plugin/src/index.ts"],
       "@cybertecpty/shared-types": ["./libs/shared/types/src/index.ts"],

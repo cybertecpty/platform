@@ -1,15 +1,7 @@
-import type { DependencyConstraint } from '@cybertecpty/nx-types';
-import { checkDepConstraints } from '@cybertecpty/nx-utils';
+import { checkDepConstraints, loadDepConstraints } from '@cybertecpty/nx-utils';
 import { logger, type ProjectGraphProjectNode, type PromiseExecutor } from '@nx/devkit';
 import { isDotNetProjectNode } from '../../utils/nx-dotnet-projects.utils';
 import type { CheckBoundariesExecutorOptions } from './schema';
-
-// The matrix is loaded with a dynamic `import()` because Jest cannot load its `.mts` file
-// statically. The specifier is held in a constant, not written inline, so that TypeScript does not
-// resolve it: when `@nx/js:tsc` builds this project it points the alias at the `.mts` file in the
-// dependency's build output, and TypeScript 6.0.3 crashes ("Debug Failure") resolving that. The
-// cast below gives the import the type TypeScript cannot infer.
-const DEP_CONSTRAINTS_MODULE = '@cybertecpty/nx-utils/dep-constraints';
 
 /**
  * Fails when a .NET project references another .NET project in a way that ADR 0004's dependency
@@ -21,14 +13,14 @@ const DEP_CONSTRAINTS_MODULE = '@cybertecpty/nx-utils/dep-constraints';
  * are not .NET projects are skipped. It also fails, with a logged error, when it runs without a
  * project name or on a project that is not a .NET project.
  */
-const checkBoundariesExecutor: PromiseExecutor<CheckBoundariesExecutorOptions> = async (
+const checkBoundariesExecutor: PromiseExecutor<CheckBoundariesExecutorOptions> = (
   _options,
   context
 ) => {
   const projectName = context.projectName;
   if (!projectName) {
     logger.error('Cannot check module boundaries without a project name.');
-    return { success: false };
+    return Promise.resolve({ success: false });
   }
 
   const srcNode = context.projectGraph.nodes[projectName];
@@ -37,7 +29,7 @@ const checkBoundariesExecutor: PromiseExecutor<CheckBoundariesExecutorOptions> =
     logger.error(
       `Project ${projectName} is not a .NET project. The check-boundaries executor can only be run on .NET projects.`
     );
-    return { success: false };
+    return Promise.resolve({ success: false });
   }
 
   const dependencies = context.projectGraph.dependencies[projectName] || [];
@@ -45,9 +37,7 @@ const checkBoundariesExecutor: PromiseExecutor<CheckBoundariesExecutorOptions> =
 
   // Loaded once, before the loop, so that a failure to load the matrix surfaces even for a
   // project with no dependencies, instead of letting the check pass without having run.
-  const { DEP_CONSTRAINTS } = (await import(DEP_CONSTRAINTS_MODULE)) as {
-    DEP_CONSTRAINTS: ReadonlyArray<DependencyConstraint>;
-  };
+  const constraints = loadDepConstraints();
 
   for (const dependency of dependencies) {
     // An implicit dependency (`DependencyType.implicit`) comes from `implicitDependencies`, not
@@ -66,7 +56,7 @@ const checkBoundariesExecutor: PromiseExecutor<CheckBoundariesExecutorOptions> =
       continue;
     }
 
-    violations.push(...checkDepConstraints(srcNode, targetNode, DEP_CONSTRAINTS));
+    violations.push(...checkDepConstraints(srcNode, targetNode, constraints));
   }
 
   // Report every violation, across all of the project's dependencies, before failing.
@@ -74,7 +64,7 @@ const checkBoundariesExecutor: PromiseExecutor<CheckBoundariesExecutorOptions> =
     logger.error(violation);
   }
 
-  return { success: violations.length === 0 };
+  return Promise.resolve({ success: violations.length === 0 });
 };
 
 export default checkBoundariesExecutor;

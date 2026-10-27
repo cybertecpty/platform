@@ -27,7 +27,7 @@ It logs an error and fails when it runs without a project name, or on a project 
 
 ## The matrix
 
-The rules come from the shared `DEP_CONSTRAINTS` module in `nx-utils`, the same array the ESLint configuration uses. The executor loads it with a dynamic `import()` of the `@cybertecpty/nx-utils/dep-constraints` path alias (ADR 0004, 2026-10-22 amendment). It loads the matrix before looking at any dependency, so a failure to load it fails the run even for a project with no dependencies. The alias is held in a constant, not written inline in the `import()`, so that TypeScript does not resolve it: when `@nx/js:tsc` builds the plugin it points the alias at the `.mts` file in `nx-utils`' build output, and TypeScript 6.0.3 crashes ("Debug Failure") resolving that.
+The rules come from the shared `DEP_CONSTRAINTS` module in `nx-utils`, the same array the ESLint configuration uses. The executor gets it from `loadDepConstraints()` in `nx-utils`, which `require`s the module by absolute path (ADR 0004, 2026-10-22 amendment): the module is an `.mts` file that Jest cannot load and that the transpiler Nx runs executors with cannot find through an import by name. The executor loads the matrix before looking at any dependency, so a failure to load it fails the run even for a project with no dependencies.
 
 ## Options
 

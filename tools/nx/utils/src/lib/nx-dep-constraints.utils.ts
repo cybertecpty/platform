@@ -4,7 +4,18 @@ import {
   SingleSourceTagConstraint
 } from '@cybertecpty/nx-types';
 import { ProjectGraphProjectNode } from '@nx/devkit';
+import { join } from 'node:path';
 import { hasProjectTag } from './nx-project-tags.utils';
+
+/**
+ * The absolute path of the module that holds the dependency-constraint matrix, `DEP_CONSTRAINTS`.
+ *
+ * The module is an `.mts` file that the ESLint config imports by relative path, so it cannot be
+ * imported by name from here: Jest cannot load it, and the transpiler Nx uses to run plugins
+ * rewrites an import of it to a path with no extension, which Node cannot find. It is loaded by
+ * this path instead, see {@link loadDepConstraints}.
+ */
+export const DEP_CONSTRAINTS_PATH = join(__dirname, 'nx-dep-constraints.const.mts');
 
 /**
  * Reports each pattern in `bannedTags` that matches one of the target's tags.
@@ -138,6 +149,22 @@ export function isSingleSrcTagConstraint(
   constraint: DependencyConstraint
 ): constraint is SingleSourceTagConstraint {
   return 'sourceTag' in constraint;
+}
+
+/**
+ * Loads the dependency-constraint matrix from {@link DEP_CONSTRAINTS_PATH}, the same array that
+ * the ESLint config reads, so that the check for .NET projects and ESLint share one copy.
+ *
+ * It uses `require`, which Node resolves from an absolute path and can load an `.mts` file
+ * through, since Node 22.12 can `require` an ES module and strips its types.
+ */
+export function loadDepConstraints(): ReadonlyArray<DependencyConstraint> {
+  // eslint-disable-next-line @typescript-eslint/no-require-imports -- a static import of the matrix cannot be resolved; see DEP_CONSTRAINTS_PATH
+  const matrix = require(DEP_CONSTRAINTS_PATH) as {
+    DEP_CONSTRAINTS: ReadonlyArray<DependencyConstraint>;
+  };
+
+  return matrix.DEP_CONSTRAINTS;
 }
 
 /**

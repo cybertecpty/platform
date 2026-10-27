@@ -6,7 +6,6 @@
   "main": "./src/index.js",
   "types": "./src/index.d.ts",
   "dependencies": {
-    "@cybertecpty/nx-types": "0.0.1",
     "@cybertecpty/nx-utils": "0.0.1",
     "@nx/devkit": "23.1.1",
     "tslib": "^2.3.0"
