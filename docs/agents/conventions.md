@@ -463,7 +463,8 @@ skill.
   `nx affected -t lint test build typecheck check-boundaries`. On a PR, CI runs the same affected
   set plus `e2e` and `lighthouse`; on a push to `develop`/`main` it runs every project
   (`nx run-many`). `check-boundaries` is the inferred target on every .NET project that checks its
-  references against ADR 0004's matrix (ADR 0019); until the workspace has one, it runs nothing.
+  references against ADR 0004's matrix (ADR 0019); the plugin is registered in `nx.json` in the change that adds the first .NET project, and until
+  then the target does not exist.
 - Run through Nx: `nx test {project}`, `nx lint {project}`, `nx run-many ...`,
   `nx affected ...`. Prefix with pnpm: `pnpm exec nx …`.
 - After TS/config/schema/barrel/generator changes, run targeted tests first, then a

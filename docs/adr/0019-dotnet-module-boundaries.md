@@ -93,7 +93,9 @@ project by an inferred target, reading the ADR 0004 matrix from its shared modul
   `loadDepConstraints()` in `nx-utils`, which `require`s the file by absolute path (ADR 0004,
   2026-10-22 amendment).
 - **The plugin** is registered in `nx.json` as `@cybertecpty/dotnet-plugin`, with the target name
-  as its option. Its `createNodes` looks for `*.csproj`, `*.fsproj` and `*.vbproj` files and adds
+  as its option, **in the change that adds the workspace's first .NET project**. Until then it
+  stays unregistered, so the Node warning below does not print on every command for a check that
+  has nothing to run. Its `createNodes` looks for `*.csproj`, `*.fsproj` and `*.vbproj` files and adds
   the target to the project in the folder of each.
 - **Where it runs in CI:** `check-boundaries` is part of the `nx affected` and `nx run-many`
   target lists in the required `lint-and-test-affected` workflow, and of `pnpm verify`.
@@ -185,7 +187,7 @@ What remains unverified:
   23 loads a local TypeScript plugin with Node's native type stripping first. The plugin's
   package is CommonJS and its source uses `import`, so that attempt fails with "Failed to load
   the ES module" and Nx then falls back to its transpiler. Everything works, but the warning
-  prints once per command. Setting `NX_PREFER_NODE_STRIP_TYPES=false` removes it, at the cost of
+  prints once per command, from the moment the plugin is registered (see above). Setting `NX_PREFER_NODE_STRIP_TYPES=false` removes it, at the cost of
   changing how Nx loads every TypeScript plugin, so it is not set here.
 - **More machinery:** a plugin project, an executor and a `createNodes` to maintain, against a
   root script's single file.

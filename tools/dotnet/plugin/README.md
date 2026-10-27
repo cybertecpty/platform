@@ -8,7 +8,7 @@ Nx plugin for the workspace's .NET projects (`scope:tools`, `type:plugin`). It h
 
 ## Inferred target
 
-The plugin adds the `check-boundaries` target to every .NET project, so no `project.json` lists it. It is registered in the workspace's `nx.json`:
+The plugin adds the `check-boundaries` target to every .NET project, so no `project.json` lists it. It is registered in the workspace's `nx.json`, in the change that adds the workspace's first .NET project (until then the target does not exist, and neither does the Node warning below):
 
 ```json
 {
@@ -23,8 +23,8 @@ The plugin adds the `check-boundaries` target to every .NET project, so no `proj
 
 - Its `createNodes` (`src/lib/plugin/plugin.ts`) looks for `*.csproj`, `*.fsproj` and `*.vbproj` files and adds the target to the project in the folder of each. `targetName` is optional and defaults to `check-boundaries`.
 - The target is cached. Its inputs are the project's own files, its dependencies' files (the check reads their references and tags) and the code that runs the check, so it re-runs when any of them changes, and `nx affected` selects it when a project's references change.
-- The check needs the project's graph node to carry `dotnet` among its `technologies`, which `@nx/dotnet` adds. Without that plugin, the target is added but the executor reports that the project is not a .NET project.
-- It is part of the `nx affected` and `nx run-many` target lists in CI and in `pnpm verify`. Until the workspace has a .NET project, it runs nothing.
+- The check needs the project's graph node to carry `dotnet` among its `technologies`. This plugin sets it on each project it finds, and `@nx/dotnet` sets the same value, so the check works with or without that plugin.
+- It is part of the `nx affected` and `nx run-many` target lists in CI and in `pnpm verify`. With no .NET project, no project has the target and nothing runs.
 
 ### A Node warning in CI
 
