@@ -1,0 +1,9 @@
+{
+  "name": "@cybertecpty/eslint-utils",
+  "version": "0.0.1",
+  "private": true,
+  "type": "commonjs",
+  "dependencies": {
+    "eslint": "^9.8.0"
+  }
+}
