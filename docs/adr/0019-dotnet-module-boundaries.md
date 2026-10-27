@@ -3,8 +3,8 @@
 - Status: accepted
 - Date: 2026-10-26
 - Deciders: djmcgrath
-- Implemented by: issue #195 (the check, its executor and its inferred target; the inferred
-  target and CI wiring are still pending there), #216 (moving the matrix into a shared module)
+- Implemented by: issue #195 (the check, its executor, its inferred target and the CI wiring),
+  #216 (moving the matrix into a shared module)
 - Builds on: ADR 0004 (`nx-module-boundaries`) for the matrix, and ADR 0017 (`dotnet-backend`),
   which chose a do-it-yourself check and left how it runs open
 
@@ -89,9 +89,14 @@ project by an inferred target, reading the ADR 0004 matrix from its shared modul
   any of them changes and `nx affected` selects it when a project's references change.
 - **The check itself** is `checkDepConstraints(source, target, constraints)` in `nx-utils`: pure,
   with the constraints passed in, so `nx-utils` never loads the matrix.
-- **The matrix** is `DEP_CONSTRAINTS` in `nx-dep-constraints.const.mts`. The executor loads it
-  lazily through the `@cybertecpty/nx-utils/dep-constraints` path alias (ADR 0004, 2026-10-22
-  amendment).
+- **The matrix** is `DEP_CONSTRAINTS` in `nx-dep-constraints.const.mts`. The executor gets it from
+  `loadDepConstraints()` in `nx-utils`, which `require`s the file by absolute path (ADR 0004,
+  2026-10-22 amendment).
+- **The plugin** is registered in `nx.json` as `@cybertecpty/dotnet-plugin`, with the target name
+  as its option. Its `createNodes` looks for `*.csproj`, `*.fsproj` and `*.vbproj` files and adds
+  the target to the project in the folder of each.
+- **Where it runs in CI:** `check-boundaries` is part of the `nx affected` and `nx run-many`
+  target lists in the required `lint-and-test-affected` workflow, and of `pnpm verify`.
 - **Which projects and edges:** nodes whose `technologies` include `dotnet`; their `static`
   edges to other .NET nodes. Implicit dependencies (from `implicitDependencies`) are skipped, as
   in ESLint and `@nx-dotnet/core`, and so are targets that are not .NET nodes, such as external
@@ -126,19 +131,29 @@ project by an inferred target, reading the ADR 0004 matrix from its shared modul
 
 Both check direct references only and apply every row regardless of tag axis.
 
-## Unverified until the first .NET project exists
+## Checked in a scratch workspace, and still unverified on a real project
 
-1. **Loading the matrix at runtime.** The executor runs as compiled CommonJS and loads an
-   ES-module `.mts` file through the alias, which relies on Node loading an ES module with
-   `require` and stripping types from the `.mts` source. Node can `require` the compiled
-   `.mjs` output (checked: it yields all 19 rows), but loading the `.mts` source through the
-   alias has not been run under Nx on the CI Node version.
+A scratch workspace with `@nx/dotnet@23.1.1`, the real matrix and three class libraries that
+reference each other (one reference forbidden) checked the following on Node 22.22:
+
+- **The inferred target works.** `check-boundaries` appears on each project next to the plugin's
+  own targets, with nothing about it in the `project.json` files.
+- **The executor runs under Nx and loads the real matrix.** The project with only allowed
+  references passes. The one with a forbidden reference fails with the `source -> target:`
+  message, and `nx run-many` reports it.
+- **Caching and invalidation work.** A second run with nothing changed is a cache hit, and
+  changing a tag in a dependency's `project.json` re-runs the check and reports the new violation.
+- **The plugin builds with `@nx/js:tsc`.**
+
+What remains unverified:
+
+1. **The CI Node version and the first real project.** The scratch run used the workspace's local
+   Node. It needs to be repeated on the real walking skeleton, whose layout (nested test
+   projects, the generated client) the scratch workspace did not have.
 2. **The thin host.** The check enforces ADR 0004's ban on `type:testing` depending on
    `type:app`, so .NET integration tests that reference the app project fail it. ADR 0017's
    item 5 is to try a thin host first. If it is not enough, the fallback is a matrix change in
    ADR 0004.
-3. **The inferred target.** Its `createNodes`, cache inputs and `nx affected` selection have not
-   been built or exercised against a real graph.
 
 ## Consequences
 
@@ -157,14 +172,21 @@ Both check direct references only and apply every row regardless of tag axis.
   An MSBuild hook that calls the executor, or an analyzer for live editor feedback, would close
   this gap. Neither is built.
 - **Direct references only.** ESLint also catches a banned tag reached through other projects.
-- **The `.mts` loading path exists because of Jest.** The alias and the lazy `import()` are there
-  because Jest does not transform `.mts` files. After the Vitest migration (ADR 0018), check
-  whether the matrix can be exported from the `nx-utils` barrel and the alias dropped.
-- **The alias cannot be a literal `import()` specifier.** When `@nx/js:tsc` builds the plugin it
-  rewrites the alias to point at the `.mts` file in `nx-utils`' build output, and TypeScript 6.0.3
-  crashes ("Debug Failure") resolving that mapping. The executor therefore holds the specifier in
-  a constant and casts the result to its type, which leaves that one import unchecked by the
-  compiler.
+- **The matrix is loaded by absolute path, not by an import.** Jest does not transform `.mts`
+  files, and the transpiler Nx runs plugins with rewrites an import of an alias for one to a
+  relative path with no extension. A first version of this design used a path alias with a
+  dynamic `import()`. It failed under Nx, and the same alias also crashed TypeScript 6.0.3
+  ("Debug Failure") when `@nx/js:tsc` built the plugin. The loader works from source, where the
+  `.mts` file is: a built copy of `nx-utils` holds an `.mjs` file instead, which is fine because
+  Nx runs plugins and executors from source. The `require` is cast to its type, so the compiler
+  does not check that call. After the Vitest migration (ADR 0018), check whether the matrix can
+  be exported from the `nx-utils` barrel and the loader replaced by a plain import.
+- **A Node warning on every Nx command when the daemon is off,** which is the default in CI. Nx
+  23 loads a local TypeScript plugin with Node's native type stripping first. The plugin's
+  package is CommonJS and its source uses `import`, so that attempt fails with "Failed to load
+  the ES module" and Nx then falls back to its transpiler. Everything works, but the warning
+  prints once per command. Setting `NX_PREFER_NODE_STRIP_TYPES=false` removes it, at the cost of
+  changing how Nx loads every TypeScript plugin, so it is not set here.
 - **More machinery:** a plugin project, an executor and a `createNodes` to maintain, against a
   root script's single file.
 - **It relies on `@nx/dotnet` behaviour observed at 23.1.1:** the `static` edges, the
@@ -178,7 +200,7 @@ Both check direct references only and apply every row regardless of tag axis.
   how it is imported, and what the .NET check covers.
 - ADR 0017 (`dotnet-backend`) — chose the do-it-yourself check, and records the scratch
   `@nx/dotnet` observations and item 5 (the thin host).
-- ADR 0018 (`vitest-test-runner`) — the migration after which the matrix export can be
+- ADR 0018 (`vitest-test-runner`) — the migration after which the matrix loader can be
   reconsidered.
 - Issues #195 (this check), #216 (moving the matrix into a shared module) and #219 (the
   scaffolding generator).

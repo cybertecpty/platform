@@ -349,20 +349,23 @@ The `depConstraints` matrix is no longer inlined in `eslint.config.mjs`. It is
 rows and comments, and its `DependencyConstraint` type lives in `nx-types`. ADR 0017's .NET
 boundary check reads the same array, so the matrix stays the single source of truth.
 
-### Two import routes, and why
+### Two routes to the matrix, and why
 
 - **The ESLint config** imports the file by relative path. Bare Node loads it with type
   stripping, which is why it is an `.mts` file that avoids value imports.
-- **Everything else**, including the .NET check in `dotnet-plugin`, imports it through the
-  `@cybertecpty/nx-utils/dep-constraints` path alias in `tsconfig.base.json`, not through the
-  `@cybertecpty/nx-utils` barrel. Jest does not transform `.mts` files, so a barrel that
-  re-exported the matrix would make every spec that imports the barrel fail with
-  `SyntaxError: Unexpected token 'export'` (seen in `nx-plugin` and `js-plugin`). The alias
-  keeps the file out of the barrel without a second copy of the matrix or Jest config changes.
+- **Everything else**, including the .NET check in `dotnet-plugin`, calls `loadDepConstraints()`
+  in `nx-utils`, which `require`s the file by absolute path. The matrix cannot be imported by
+  name. Jest does not transform `.mts` files, so a barrel that re-exported it would make every
+  spec that imports the barrel fail with `SyntaxError: Unexpected token 'export'` (seen in
+  `nx-plugin` and `js-plugin`). And the transpiler Nx runs plugins and executors with rewrites an
+  import of a path alias that points at the `.mts` file into a relative path with no extension,
+  which Node cannot find (seen when running the executor under Nx). An earlier version of this
+  amendment used a `@cybertecpty/nx-utils/dep-constraints` path alias for this, and it failed
+  under Nx for that reason.
 
-The alias exists because of the test runner. ADR 0018 moves the TypeScript projects to Vitest,
-which transforms `.mts` files itself. After that migration, check whether exporting the matrix
-from the barrel works and the alias can go.
+The loader exists because of the test runner and that transpiler. ADR 0018 moves the TypeScript
+projects to Vitest, which transforms `.mts` files itself. After that migration, check whether
+exporting the matrix from the barrel works and the loader can become a plain import.
 
 ### What the .NET check covers
 
