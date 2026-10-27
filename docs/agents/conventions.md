@@ -427,6 +427,14 @@ files) on every `git commit` (#24). It's a **convenience backstop**, not the gat
 authoritative. Details (what it touches, install, `--no-verify`) are in the `commit-push-pr`
 skill.
 
+### GitHub Actions workflows
+
+Every step in a workflow under `.github/workflows/` has a `name:`, in sentence case with a verb
+first (`Install dependencies`, `Cache Playwright browsers`). Without one, the Actions UI shows the
+raw `uses:` ref or the first line of the `run:` script. A step that has an `id:` still gets a
+`name:`. Don't rename a job to change its display name: the job id is the required status check
+name (§2).
+
 ### Windows / PowerShell
 
 - No `&&` chaining in PowerShell — use `;` or separate lines.
