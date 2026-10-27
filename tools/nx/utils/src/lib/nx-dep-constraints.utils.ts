@@ -4,6 +4,7 @@ import type {
   SingleSourceTagConstraint
 } from '@cybertecpty/nx-types';
 import type { ProjectGraphProjectNode } from '@nx/devkit';
+import { existsSync } from 'node:fs';
 import { join } from 'node:path';
 import { hasProjectTag } from './nx-project-tags.utils';
 
@@ -14,8 +15,16 @@ import { hasProjectTag } from './nx-project-tags.utils';
  * imported by name from here: Jest cannot load it, and the transpiler Nx uses to run plugins
  * rewrites an import of it to a path with no extension, which Node cannot find. It is loaded by
  * this path instead, see {@link loadDepConstraints}.
+ *
+ * From the built package the module is the `.mjs` that `tsc` emits beside this file, so the path
+ * is the `.mts` source when it exists and the `.mjs` otherwise.
  */
-export const DEP_CONSTRAINTS_PATH = join(__dirname, 'nx-dep-constraints.const.mts');
+export const DEP_CONSTRAINTS_PATH = join(
+  __dirname,
+  existsSync(join(__dirname, 'nx-dep-constraints.const.mts'))
+    ? 'nx-dep-constraints.const.mts'
+    : 'nx-dep-constraints.const.mjs'
+);
 
 /**
  * Reports each pattern in `bannedTags` that matches one of the target's tags.

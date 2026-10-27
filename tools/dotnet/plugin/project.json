@@ -20,16 +20,6 @@
             "output": "./src"
           },
           {
-            "input": "./tools/dotnet/plugin/src",
-            "glob": "**/*.d.ts",
-            "output": "./src"
-          },
-          {
-            "input": "./tools/dotnet/plugin",
-            "glob": "generators.json",
-            "output": "."
-          },
-          {
             "input": "./tools/dotnet/plugin",
             "glob": "executors.json",
             "output": "."

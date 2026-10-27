@@ -1,6 +1,6 @@
 import { domainPathToName, splitDomainPath } from './nx-domain.utils';
 
-describe('domainToSegments', () => {
+describe('splitDomainPath', () => {
   it('returns a single-element array for a domain with no subdomains', () => {
     expect(splitDomainPath('billing')).toEqual(['billing']);
   });
@@ -16,7 +16,7 @@ describe('domainToSegments', () => {
   });
 });
 
-describe('projectDomainToName', () => {
+describe('domainPathToName', () => {
   it('leaves a domain with no subdomains unchanged', () => {
     expect(domainPathToName('billing')).toBe('billing');
   });

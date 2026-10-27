@@ -48,6 +48,8 @@ export function groupProjectTags(tags: readonly string[]): Record<string, string
   return record;
 }
 
+const TAG_REGEXP_CACHE = new Map<string, RegExp>();
+
 /**
  * Whether `tags` contain a tag matching `pattern`. The pattern is one of:
  * - `*`, which matches any project, even one with no tags;
@@ -62,9 +64,7 @@ export function hasProjectTag(tags: readonly string[], pattern: string): boolean
   }
 
   if (pattern.length > 2 && pattern.startsWith('/') && pattern.endsWith('/')) {
-    const regex = new RegExp(pattern.slice(1, -1));
-
-    return tags.some(tag => regex.test(tag));
+    return tags.some(tag => toTagRegExp(pattern).test(tag));
   }
 
   if (pattern.includes('*')) {
@@ -129,4 +129,27 @@ export function projectTagValues(tags: readonly string[], key: string): string[]
   const prefix = createProjectTag(key, '');
 
   return tags.filter(tag => tag.startsWith(prefix)).map(tag => tag.slice(prefix.length));
+}
+
+/**
+ * The regular expression of a `/regex/` tag pattern, compiled once per pattern.
+ *
+ * @throws If the expression is invalid, naming the pattern, so a typo in the matrix is traceable.
+ */
+function toTagRegExp(pattern: string): RegExp {
+  let regex = TAG_REGEXP_CACHE.get(pattern);
+
+  if (!regex) {
+    try {
+      regex = new RegExp(pattern.slice(1, -1));
+    } catch (error) {
+      throw new Error(
+        `Invalid regular expression in tag pattern "${pattern}": ${(error as Error).message}`
+      );
+    }
+
+    TAG_REGEXP_CACHE.set(pattern, regex);
+  }
+
+  return regex;
 }

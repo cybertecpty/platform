@@ -71,7 +71,11 @@ export function createCheckBoundariesTarget(): TargetConfiguration {
 
 /**
  * The projects, keyed by root, that one .NET project file contributes to the graph: the project in
- * the folder holding the file, with the `check-boundaries` target.
+ * the folder holding the file, marked as a .NET project (`@nx/dotnet` sets the same metadata, but
+ * the check must not depend on it being registered) and given the `check-boundaries` target.
+ *
+ * A folder holding several project files is one project, because Nx keys projects by root and
+ * MSBuild itself refuses to build such a folder without being told which file to use.
  */
 export function createNodesForProjectFile(
   projectFile: string,
@@ -82,6 +86,7 @@ export function createNodesForProjectFile(
   return {
     projects: {
       [posix.dirname(projectFile)]: {
+        metadata: { technologies: ['dotnet'] },
         targets: { [targetName]: createCheckBoundariesTarget() }
       }
     }

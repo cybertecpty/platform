@@ -79,6 +79,12 @@ describe('createNodesForProjectFile', () => {
     );
   });
 
+  it('marks the project as a .NET project, which the executor requires', () => {
+    expect(
+      createNodesForProjectFile('backend/a/A.csproj', undefined).projects?.['backend/a']?.metadata
+    ).toEqual({ technologies: ['dotnet'] });
+  });
+
   it('defaults the target name to check-boundaries', () => {
     expect(DEFAULT_CHECK_BOUNDARIES_TARGET_NAME).toBe('check-boundaries');
     expect(

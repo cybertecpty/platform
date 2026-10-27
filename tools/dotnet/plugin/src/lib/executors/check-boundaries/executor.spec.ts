@@ -79,6 +79,14 @@ describe('checkBoundariesExecutor', () => {
       expect(loggedErrors()).toEqual(['Cannot check module boundaries without a project name.']);
     });
 
+    it('fails and logs an error when the project is not in the graph', async () => {
+      await expect(runExecutor('checkout-api', [])).resolves.toEqual({ success: false });
+
+      expect(loggedErrors()).toEqual([
+        'Project checkout-api is not a .NET project. The check-boundaries executor can only be run on .NET projects.'
+      ]);
+    });
+
     it('fails and logs an error when the project is not a .NET project', async () => {
       const typescriptProject = createProjectNodeFixture({
         name: 'checkout-ui',

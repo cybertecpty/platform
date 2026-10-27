@@ -326,6 +326,12 @@ describe('nx-project-tags.utils', () => {
         expect(hasProjectTag([], '/.*/')).toBe(false);
       });
 
+      it('names the pattern when the expression is invalid', () => {
+        expect(() => hasProjectTag(tags, '/(/')).toThrow(
+          'Invalid regular expression in tag pattern "/(/"'
+        );
+      });
+
       it('treats a lone slash as an exact tag, not an empty expression', () => {
         expect(hasProjectTag(tags, '/')).toBe(false);
       });

@@ -23,9 +23,9 @@ const checkBoundariesExecutor: PromiseExecutor<CheckBoundariesExecutorOptions> =
     return Promise.resolve({ success: false });
   }
 
-  const srcNode = context.projectGraph.nodes[projectName];
+  const srcNode = context.projectGraph.nodes[projectName] as ProjectGraphProjectNode | undefined;
 
-  if (!isDotNetProjectNode(srcNode)) {
+  if (!srcNode || !isDotNetProjectNode(srcNode)) {
     logger.error(
       `Project ${projectName} is not a .NET project. The check-boundaries executor can only be run on .NET projects.`
     );
