@@ -101,7 +101,7 @@
   },
   "lint-staged": {
     "*.{ts,tsx,cts,mts,js,jsx,cjs,mjs}": [
-      "node tools/eslint/utils/src/lib/eslint-fix-mechanical.cjs",
+      "node tools/eslint/utils/bin/eslint-fix-mechanical.cjs",
       "nx format:write --files"
     ],
     "*.{json,md,mdx,html,css,scss,yml,yaml}": [

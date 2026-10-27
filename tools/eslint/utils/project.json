@@ -1,7 +1,7 @@
 {
   "name": "eslint-utils",
   "$schema": "../../../node_modules/nx/schemas/project-schema.json",
-  "sourceRoot": "tools/eslint/utils/src",
+  "sourceRoot": "tools/eslint/utils/bin",
   "projectType": "library",
   "tags": ["scope:tools", "type:utils"],
   "targets": {

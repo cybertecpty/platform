@@ -6,6 +6,6 @@
     "noEmit": true,
     "types": ["node"]
   },
-  "include": ["src/**/*.cjs"],
-  "exclude": ["jest.config.ts", "jest.config.cts", "src/**/*.spec.ts", "src/**/*.test.ts"]
+  "include": ["bin/**/*.cjs"],
+  "exclude": ["jest.config.ts", "jest.config.cts", "bin/**/*.spec.ts", "bin/**/*.test.ts"]
 }
