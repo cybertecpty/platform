@@ -34,12 +34,6 @@
       "options": {
         "targetName": "test"
       }
-    },
-    {
-      "plugin": "@cybertecpty/dotnet-plugin",
-      "options": {
-        "targetName": "check-boundaries"
-      }
     }
   ],
   "generators": {
