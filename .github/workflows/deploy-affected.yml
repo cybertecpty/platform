@@ -55,6 +55,11 @@ jobs:
           node-version-file: '.nvmrc'
           cache: 'pnpm'
 
+      # Installs the SDK pinned in global.json (ADR 0017) so .NET tasks resolve the same SDK as local.
+      - uses: actions/setup-dotnet@v5
+        with:
+          global-json-file: global.json
+
       - run: pnpm install --frozen-lockfile
 
       - id: affected
@@ -117,6 +122,11 @@ jobs:
         with:
           node-version-file: '.nvmrc'
           cache: 'pnpm'
+
+      # Installs the SDK pinned in global.json (ADR 0017) so .NET tasks resolve the same SDK as local.
+      - uses: actions/setup-dotnet@v5
+        with:
+          global-json-file: global.json
 
       - run: pnpm install --frozen-lockfile
 
