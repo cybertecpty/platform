@@ -67,7 +67,7 @@ public class CollectionServiceTests
 
         Assert.Equal("Metroid Dread", Assert.Single(page!.Items).Game.Title);
         Assert.Equal(4, page.TotalCount);
-        Assert.Equal(2, page.PageNumber);
+        Assert.Equal(2, page.Page);
     }
 
     [Fact]

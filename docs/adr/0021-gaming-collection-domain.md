@@ -36,7 +36,7 @@ live in another context:
 - `GET /collections/{collectionId}/entries?platform=&status=&page=&pageSize=` returns a page of its
   entries, each pairing a game with the owner's status, format, acquisition date and rating.
 
-The first implementation serves in-memory seed data. Auth, persistence and writes are not decided.
+The paths, errors, paging and naming follow ADR 0022. The first implementation serves in-memory seed data. Auth, persistence and writes are not decided.
 
 ### Constraint rows
 

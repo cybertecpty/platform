@@ -11,7 +11,7 @@ public sealed class CollectionService(
       [.. collections.Where(collection => collection.UserId == userId)];
 
     /// <returns>The matching page, or null when the collection does not exist.</returns>
-    public Page<CollectionEntry>? GetEntries(Guid collectionId, CollectionQuery query)
+    public PagedResult<CollectionEntry>? GetEntries(Guid collectionId, CollectionQuery query)
     {
         ArgumentNullException.ThrowIfNull(query);
 
@@ -30,6 +30,6 @@ public sealed class CollectionService(
 
         var items = matching.Skip((query.Page - 1) * query.PageSize).Take(query.PageSize).ToList();
 
-        return new Page<CollectionEntry>(items, query.Page, query.PageSize, matching.Count);
+        return new PagedResult<CollectionEntry>(items, query.Page, query.PageSize, matching.Count);
     }
 }

@@ -72,7 +72,7 @@ public class CollectionEndpointsTests
     [Fact]
     public void GetEntries_ReturnsAPage()
     {
-        Assert.IsType<Ok<Page<CollectionEntry>>>(
+        Assert.IsType<Ok<PagedResult<CollectionEntry>>>(
           CollectionEndpoints.GetEntries(SeedData.CollectionId, Service));
     }
 
