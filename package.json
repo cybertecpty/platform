@@ -7,12 +7,12 @@
     "affected:lint": "pnpm exec nx affected -t lint",
     "affected:test": "pnpm exec nx affected -t test",
     "format": "pnpm exec nx format:write",
-    "format:check": "pnpm exec nx format:check",
+    "format:check": "dotnet format Platform.slnx --verify-no-changes && pnpm exec nx format:check",
     "lint": "pnpm exec nx run-many -t lint",
     "preinstall": "npx only-allow pnpm",
     "prepare": "husky",
     "test": "pnpm exec nx run-many -t test",
-    "verify": "node --test \".github/scripts/*.test.cjs\" \".claude/hooks/*.test.cjs\" \"scripts/*.test.cjs\" && pnpm exec nx format:check --base=origin/develop && dotnet format Platform.slnx --verify-no-changes && pnpm exec nx affected -t lint test build typecheck check-boundaries --base=origin/develop"
+    "verify": "node --test \".github/scripts/*.test.cjs\" \".claude/hooks/*.test.cjs\" \"scripts/*.test.cjs\" && pnpm format:check --base=origin/develop && pnpm exec nx affected -t lint test build typecheck check-boundaries --base=origin/develop"
   },
   "private": true,
   "packageManager": "pnpm@10.34.5",

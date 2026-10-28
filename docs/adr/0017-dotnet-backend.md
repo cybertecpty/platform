@@ -511,8 +511,9 @@ settings #197 added without exercising them. A change from the earlier wording i
 
 - **`actions/setup-dotnet`** reads the SDK from `global.json` in the workflow. That the runners
   resolve it is unverified until the first CI run of this change.
-- **`dotnet format --verify-no-changes`** gained a CI step and a `pnpm verify` entry, both over
-  `Platform.slnx`. On real code it caught the template's CRLF line endings, which `.editorconfig`
+- **`dotnet format --verify-no-changes`** runs in the `format:check` script, which CI and
+  `pnpm verify` share, over `Platform.slnx`. It checks the whole solution, not only affected
+  projects. On real code it caught the template's CRLF line endings, which `.editorconfig`
   rejects.
 - **Rule severities.** With warnings as errors, the template's code failed `CA1852` (seal the
   type) and `IDE0040` (accessibility modifiers), so the scaffold needs those fixes. `CA1707`

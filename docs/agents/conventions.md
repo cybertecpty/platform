@@ -410,8 +410,9 @@ the `add-dependency` skill.
 ### Formatting
 
 Run `nx format:write --files={paths}` after editing, and actually run it before
-ticking a "prettier clean" box in a PR body — CI runs `nx format:check` and a stray
-marker fails the required check.
+ticking a "prettier clean" box in a PR body — CI runs `pnpm format:check` and a stray
+marker fails the required check. In that script `dotnet format` must stay before `nx format:check`,
+because pnpm appends the extra arguments (`--base`, `--head`) to the last command.
 
 In Claude Code, `.claude/hooks/format-edited.cjs` formats for you: a PostToolUse hook records
 each file the session writes or edits, and a Stop hook runs Prettier over that list once at
@@ -484,7 +485,8 @@ name (§2).
   set plus `e2e` and `lighthouse`; on a push to `develop`/`main` it runs every project
   (`nx run-many`). `check-boundaries` is the inferred target on every .NET project that checks its
   references against ADR 0004's matrix (ADR 0019); the plugin is registered in `nx.json`. `dotnet format Platform.slnx --verify-no-changes` is the
-  .NET format gate and runs in `pnpm verify` and CI.
+  .NET format gate. It is part of `pnpm format:check`, which `pnpm verify` and CI run, and it
+  checks the whole solution, not only affected projects.
 - Run through Nx: `nx test {project}`, `nx lint {project}`, `nx run-many ...`,
   `nx affected ...`. Prefix with pnpm: `pnpm exec nx …`.
 - After TS/config/schema/barrel/generator changes, run targeted tests first, then a
