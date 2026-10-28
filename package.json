@@ -12,7 +12,7 @@
     "preinstall": "npx only-allow pnpm",
     "prepare": "husky",
     "test": "pnpm exec nx run-many -t test",
-    "verify": "node --test \".github/scripts/*.test.cjs\" \".claude/hooks/*.test.cjs\" && pnpm exec nx format:check --base=origin/develop && pnpm exec nx affected -t lint test build typecheck check-boundaries --base=origin/develop"
+    "verify": "node --test \".github/scripts/*.test.cjs\" \".claude/hooks/*.test.cjs\" \"scripts/*.test.cjs\" && pnpm exec nx format:check --base=origin/develop && pnpm exec nx affected -t lint test build typecheck check-boundaries --base=origin/develop"
   },
   "private": true,
   "packageManager": "pnpm@10.34.5",
@@ -101,7 +101,7 @@
   },
   "lint-staged": {
     "*.{ts,tsx,cts,mts,js,jsx,cjs,mjs}": [
-      "eslint --fix --no-warn-ignored",
+      "node scripts/eslint-fix-mechanical.cjs",
       "nx format:write --files"
     ],
     "*.{json,md,mdx,html,css,scss,yml,yaml}": [

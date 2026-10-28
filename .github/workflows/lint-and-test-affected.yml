@@ -76,7 +76,7 @@ jobs:
       # Unit-test the CI-only coverage reporter and the Claude Code hooks (plain
       # Node, not Nx projects). `pnpm verify` runs the same step locally.
       - name: Run CI script and hook unit tests
-        run: node --test .github/scripts/*.test.cjs .claude/hooks/*.test.cjs
+        run: node --test .github/scripts/*.test.cjs .claude/hooks/*.test.cjs scripts/*.test.cjs
 
       # Derive the diff base/head for format:check and `nx affected`:
       # on a PR, the merge-base with the target branch; on a push, the last
