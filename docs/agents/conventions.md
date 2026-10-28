@@ -280,6 +280,11 @@ manual intervention. What to know:
 
 - **The first Nx run in a new worktree is cold:** the `.nx` cache and the Nx daemon are per
   worktree.
+- **A skill runs in the session's current directory,** which is the main clone if the session
+  started there, not your worktree. On 2026-10-28 a forked `/code-review` read the main clone's
+  working tree and reported another session's files. `cd` into the worktree for each command, and
+  point any subagent you hand a review to at the worktree path and tell it to ignore the main
+  clone.
 - **Prefix local Nx runs with `NX_NO_CLOUD=true`** if a task fails on the Nx Cloud client (on
   Windows, `EISDIR` — see the `commit-push-pr` skill). CI doesn't use Nx Cloud (#188); this is
   for local runs only.

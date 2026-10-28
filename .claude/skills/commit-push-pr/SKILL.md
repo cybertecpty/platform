@@ -178,6 +178,16 @@ different branch between your commit and your push. `HEAD` then pushes their bra
 a stray branch on the bot remote, and your PR fails with "No commits between develop and
 {branch}".
 
+To bring a newer `develop` into the branch, merge it (never force-push a shared branch). The
+default merge message fails the `commit-msg` hook, so pass a conventional one and the bot identity:
+
+```bash
+git -c user.name="cybertec-bot" -c user.email="cybertec-bot@cybertec.io" \
+  merge origin/develop -m "chore: merge develop into {branch}"
+```
+
+After resolving conflicts, commit with the same `-m`.
+
 `pnpm verify` mirrors the required `lint-and-test-affected` check on affected projects (conventions §9). Don't push
 until it passes; on Windows, prefix `NX_NO_CLOUD=true` if Nx Cloud teardown fails with `EISDIR`.
 
