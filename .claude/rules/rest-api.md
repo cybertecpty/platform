@@ -11,7 +11,7 @@ or `libs/`.
 
 ## Layout of an API library
 
-- `Dtos/` holds what crosses the wire: request and response DTOs, the enums they use, and the paging
+- `DTOs/` holds what crosses the wire: request and response DTOs, the enums they use, and the paging
   envelope. `Endpoints/` holds the route mapping, the handlers and the `Add...` / `Map...`
   extension methods. Anything else, such as services or seed data, stays in the library root.
 - Keep one namespace for the whole library, the root one. The folders are for finding files, not
