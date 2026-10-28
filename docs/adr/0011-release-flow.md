@@ -7,6 +7,7 @@
   (`tools/release/plugin/src/lib/generators/release/`, with its release-domain helpers in the
   plugin's own `src/lib/utils/`) and the supporting `@cybertecpty/git-utils` and
   `@cybertecpty/github-utils` libs, on branch `feat/release-generator` (not yet merged)
+- .NET projects (`scope:backend`) are outside this release flow until a .NET release path is decided.
 
 ## Context and problem statement
 

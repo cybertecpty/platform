@@ -97,7 +97,10 @@
     "projectsRelationship": "independent",
     "groups": {
       "apps": {
-        "projects": ["apps/*"]
+        // scope:backend is .NET only (ADR 0017), and a .NET app has no package.json for Nx to
+        // version. The .NET release path is undecided: decide it BEFORE the first .NET
+        // deployment is planned (ADR 0011).
+        "projects": ["apps/*", "!tag:scope:backend"]
       }
     },
     "version": {
