@@ -62,20 +62,25 @@ struct, and records are the usual choice because they are short and read-only.
 `CollectionDetails` is a DTO. The endpoint returns it and ASP.NET Core serializes it to JSON, so it
 is the shape of the HTTP response.
 
-An **entity** is the other side: the type that describes how data is stored. Larger systems keep
-both and map between them:
+The other side is the **domain type**, which is what the business logic works with. In our code
+that is `Collection`, in the services library. A third shape, an **entity**, describes how data is
+stored in a database. Larger systems keep these apart and map between them:
 
 ```text
-database row  ->  entity  ->  (mapping)  ->  DTO  ->  JSON over HTTP
+database row  ->  entity  ->  domain type  ->  DTO  ->  JSON over HTTP
 ```
 
 Keeping them apart means a change to storage does not silently change the API, and a column that
 must stay private never reaches a client.
 
-Today `CollectionDetails` plays both roles, because the data is in-memory seed data. When
-persistence arrives, it stays as the response DTO and a separate entity appears behind it. ADR
-0004's tags follow the split: `type:api` holds DTOs, `type:infra` holds the persistence shape, and
-`type:services` maps between them.
+Today we have two of the three. The services library returns the domain type `Collection`, and the
+API library maps it to the DTO `CollectionDetails` (see `DtoMapping`). The services library cannot
+return DTOs, because a services library may not depend on an API library. There is no entity yet,
+because the data is in-memory seed data. When persistence arrives, it adds a stored shape in an
+`infra` library behind the services.
+
+The tags follow this: `type:api` holds DTOs and maps domain types to them, `type:services` holds
+domain types and logic, and `type:infra` holds the stored shape.
 
 **Check yourself**
 
@@ -101,7 +106,7 @@ A class can list its constructor parameters right after its name:
 
 ```csharp
 public sealed class CollectionService(
-  IReadOnlyList<CollectionDetails> collections,
+  IReadOnlyList<Collection> collections,
   IReadOnlyList<CollectionEntry> entries)
 ```
 
@@ -125,14 +130,16 @@ class.
 
 ```csharp
 public sealed record Game(Guid Id, string Title, string Platform, int ReleaseYear);
-public CollectionDetails? GetCollection(Guid collectionId) // may return null
+public Collection? GetCollection(Guid collectionId) // may return null
 ```
 
 The compiler warns when a possibly-null value is used without a check, and warnings are errors in
 this repo. `is { }` tests "not null" and names the value in one step:
 
 ```csharp
-return service.GetCollection(id) is { } collection ? Results.Ok(collection) : Results.NotFound();
+return service.GetCollection(id) is { } collection
+  ? Results.Ok(collection.ToDetails())
+  : Results.NotFound();
 ```
 
 **Check yourself**
@@ -149,7 +156,7 @@ return service.GetCollection(id) is { } collection ? Results.Ok(collection) : Re
 Square brackets build a collection, and `..` spreads another one into it:
 
 ```csharp
-IReadOnlyList<CollectionDetails> mine = [.. collections.Where(c => c.UserId == userId)];
+IReadOnlyList<Collection> mine = [.. collections.Where(c => c.UserId == userId)];
 string[] errors = ["Page must be 1 or greater."];
 ```
 
@@ -282,7 +289,9 @@ Roslyn analyzers check code against rules while it builds. `CAxxxx` rules are ab
 and `IDExxxx` rules about style. With warnings as errors, a violation fails the build. We have met:
 
 - **CA1852:** seal a type that has no subtypes.
-- **CA1711:** a type name should not end in `Collection`, so the type is `CollectionDetails`.
+- **CA1711:** a type name should not end in `Collection`, so the DTO is `CollectionDetails`. The
+  domain type is called `Collection` anyway, with a suppression that says why, because that is
+  its name in the domain.
 - **CA1707:** no underscores in member names. It is off under `tests/`, where `Subject_Behaviour`
   names are the convention.
 - **IDE0040:** accessibility modifiers are required.
