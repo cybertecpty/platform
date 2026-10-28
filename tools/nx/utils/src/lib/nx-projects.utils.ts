@@ -65,6 +65,12 @@ export const NX_PROJECT_TYPES: readonly NxProjectType[] = Object.keys(
 ) as NxProjectType[];
 
 /**
+ * The backend `type:` values. The backend is .NET (ADR 0017), so these libraries are
+ * .NET projects created with `dotnet new`, not scaffolded by the TypeScript generators.
+ */
+export const BACKEND_LIB_TYPES: readonly NxProjectType[] = ['api', 'infra', 'services'];
+
+/**
  * Determines the top-level directory a project's source lives under: `apps`
  * for `type: 'app'` (ADR 0010), `tools` for `scope: 'tools'` projects, and
  * `libs` for everything else (ADR 0009).

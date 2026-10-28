@@ -1,6 +1,7 @@
 import {
   addTsConfigTypes,
   addTypecheckTarget,
+  BACKEND_LIB_TYPES,
   formatProjectTags,
   projectDirFromOpts,
   projectNameFromOpts,
@@ -17,9 +18,7 @@ import {
   runTasksInSerial
 } from '@nx/devkit';
 import { libraryGenerator as nxJsLibraryGenerator } from '@nx/js';
-import type { BackendLibType, JsLibType, LibGeneratorOptions } from './schema';
-
-const BACKEND_LIB_TYPES: readonly BackendLibType[] = ['api', 'infra', 'services'];
+import type { JsLibType, LibGeneratorOptions } from './schema';
 
 /**
  * Workspace `ts-lib` generator — a thin wrapper over `@nx/js:library`.
@@ -139,7 +138,7 @@ function assertDomainMatchesScope(
 
 /** Backend libraries are .NET projects (ADR 0017), so the backend `type:` values aren't scaffolded here. */
 function assertNotBackendType(type: LibGeneratorOptions['type']): asserts type is JsLibType {
-  if ((BACKEND_LIB_TYPES as readonly string[]).includes(type)) {
+  if (BACKEND_LIB_TYPES.includes(type)) {
     throw new Error(
       `\`type:${type}\` is a backend library type, and backend libraries are .NET projects created with \`dotnet new\`, not this generator. See ADR 0017.`
     );
