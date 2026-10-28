@@ -375,6 +375,181 @@ run time, and the guard turns that into an immediate, clear error.
 
 </details>
 
+### XML documentation comments
+
+A comment that starts with `///` and uses tags is a **documentation comment**. Editors show it in
+tooltips, and tools can build documentation from it:
+
+```csharp
+/// <summary>The products on sale until there is a database.</summary>
+/// <param name="id">The product's id.</param>
+/// <returns>The product, or null if there is none.</returns>
+public Product? Find(Guid id) => products.FirstOrDefault(p => p.Id == id);
+```
+
+Use `<see cref="Name"/>` to link to another member. An ordinary `//` comment is just text and has no
+structure the tools understand.
+
+**Check yourself**
+
+<details>
+<summary>What is the difference between <code>///</code> and <code>//</code>?</summary>
+
+<code>///</code> starts an XML documentation comment with tags that editors and doc tools read.
+<code>//</code> is a plain comment with no structure.
+
+</details>
+
+### `const` and `static readonly`
+
+Both hold a value that does not change, in different ways:
+
+```csharp
+public static class Defaults
+{
+  public const int PageSize = 25;                                         // fixed at compile time
+  public static readonly Guid AdminId = new("3f2504e0-4f89-11d3-9a0c-0305e82c3301"); // set once at run time
+}
+```
+
+- **`const`** must be a compile-time constant: numbers, `bool`, `char`, `string`, enums or `null`.
+  The compiler copies the value into the code that uses it.
+- **`readonly`** means a field can be assigned only where it is declared or in a constructor. Add
+  `static` and there is one copy for the whole type, set once when the type is first used.
+- A `Guid` is made by running a constructor, so it cannot be a `const`. It has to be
+  `static readonly`.
+
+**Check yourself**
+
+<details>
+<summary>Why can a <code>Guid</code> not be declared <code>const</code>?</summary>
+
+A <code>const</code> must be a compile-time constant, and creating a <code>Guid</code> means running
+a constructor at run time. A <code>static readonly</code> field is set once at run time.
+
+</details>
+
+### Fields and properties
+
+A **field** is a plain variable on a type. A **property** looks like a field to the caller but is
+backed by accessors (`get`, and optionally `set` or `init`):
+
+```csharp
+public sealed class Basket
+{
+  private readonly List<Product> items = [];        // field: internal detail
+  public int Count => items.Count;                  // property: computed on every read
+  public string Owner { get; init; } = "";          // auto-property: set only when created
+  public IReadOnlyList<Product> Items { get; } = []; // get-only auto-property with an initializer
+}
+```
+
+- An **auto-property** `{ get; }` makes the compiler write the hidden field and the getter. With
+  no `set`, it can only be assigned at declaration or in a constructor.
+- Properties are the norm for public data, because their implementation can change later without
+  changing how callers use them.
+
+**Check yourself**
+
+<details>
+<summary>What does <code>{ get; }</code> with no <code>set</code> allow?</summary>
+
+The value can only be assigned where the property is declared, or in a constructor. After that it is
+read-only.
+
+</details>
+
+### `IReadOnlyList<T>`
+
+An interface that gives a count and index access, and no `Add` or `Remove`. Typing a property or
+parameter as `IReadOnlyList<Product>` tells callers they may read the list but not change it through
+that type:
+
+```csharp
+public IReadOnlyList<Product> Products { get; } = [new("Widget", 9.99m)];
+```
+
+It limits what callers can do through that type. It does not by itself guarantee the data
+underneath is frozen, since something else may still hold a mutable reference to it.
+
+**Check yourself**
+
+<details>
+<summary>What can a caller not do with an <code>IReadOnlyList&lt;T&gt;</code>?</summary>
+
+Add or remove items through it. It exposes only a count, an indexer and enumeration.
+
+</details>
+
+### Target-typed `new(...)` (C# 9)
+
+When the compiler already knows the type from context, you can leave the type name out of `new`:
+
+```csharp
+Product widget = new("Widget", 9.99m);            // the declared type says it is a Product
+IReadOnlyList<Product> products = [new("Widget", 9.99m), new("Gadget", 4.50m)];
+                                                   // the list's item type says each is a Product
+```
+
+It is shorthand, and the compiler infers the same type you would have written.
+
+**Check yourself**
+
+<details>
+<summary>How does the compiler know what <code>new("Widget", 9.99m)</code> creates?</summary>
+
+From context: the declared variable type, or the item type of the collection it is placed in.
+
+</details>
+
+### Constructing a `Guid`
+
+A `Guid` is a 128-bit identifier. You can create a fresh one, or parse a fixed one from text:
+
+```csharp
+var fresh = Guid.NewGuid();                                    // different every time
+var fixedId = new Guid("3f2504e0-4f89-11d3-9a0c-0305e82c3301"); // always the same value
+```
+
+A fixed id is useful for sample data, tests and URLs, because it stays the same across restarts. A
+fresh id changes every run.
+
+**Check yourself**
+
+<details>
+<summary>When would you choose a fixed <code>Guid</code> over <code>Guid.NewGuid()</code>?</summary>
+
+When something must refer to it repeatedly, such as a test, a URL or sample data that should look the
+same after every restart.
+
+</details>
+
+### Static initialization order
+
+Static field and property initializers in a type run in the order they appear in the file, when the
+type is first used. A later initializer can use an earlier one, not the other way round:
+
+```csharp
+public static class Seed
+{
+  public static readonly Guid OwnerId = new("3f2504e0-4f89-11d3-9a0c-0305e82c3301");
+  public static IReadOnlyList<Cart> Carts { get; } = [new(OwnerId, "Main")]; // OwnerId is already set
+}
+```
+
+If `Carts` (a record with an owner id and a name) were written above `OwnerId`, it would be built while `OwnerId` still held its default
+value, with no compiler error.
+
+**Check yourself**
+
+<details>
+<summary>What goes wrong if a static initializer uses a field declared <em>below</em> it?</summary>
+
+The field has not been initialized yet, so the initializer sees its default value (an empty
+<code>Guid</code>, <code>0</code> or <code>null</code>), and the compiler does not warn about it.
+
+</details>
+
 ## ASP.NET Core
 
 ### Minimal APIs
