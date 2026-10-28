@@ -386,3 +386,55 @@ That makes the open edge above bite for .NET integration tests. The first attemp
 the host thin so tests reference a library, not the app; ADR 0017's 2026-10-21 amendment records
 that decision and the fallback if it does not work. ADR 0019 records the design of the check as
 a whole and the alternatives it was weighed against.
+
+## Amendment (2026-10-27): an app may depend on any domain, and a domain needs no ADR of its own
+
+- Status: accepted
+- Deciders: djmcgrath
+- Implemented by: issue #229
+
+The matrix above isolates product domains: a project of one domain may depend on its own domain
+and `domain:shared`. An app is the composition root of a product, which can span several domains,
+so it cannot live inside one domain's isolation.
+
+A new domain also stops needing an ADR of its own, which this ADR required ("defined by that
+domain's own ADR" above, and the locked parameter "`domain:` values grow by ADR").
+
+### Considered options
+
+1. **Keep every project isolated to its domain.** An app could then import only its own domain's
+   libs, so the Gamer's Source frontend and API could not compose libs of the other domains.
+2. **Tag the app `domain:shared`.** Rejected: `domain:shared` may depend only on `domain:shared`,
+   which is stricter, and the app would be tagged with a domain it does not belong to.
+3. **Let an app depend on any domain.** **(chosen)**
+
+### Decision
+
+- **An app may depend on any `domain:*` project.** The matrix row is a plain row on the app's domain
+  (`domain:gamers-source`), with `domain:*` as the allowed tag. Libs keep their own domain isolation.
+- **Rows only restrict, so the app row restricts nothing.** It keeps the exemption visible. The
+  consequence is that a domain should not mix apps and libs: an isolation row for the libs would
+  also bind the apps, and nothing could loosen it again. Today each domain is one or the other, so
+  plain rows suffice. If a domain ever needs both, give its libs combo rows (`allSourceTags` with the
+  lib's `type:`) so that the apps are not matched.
+- **`domain:*` is accepted** by `@nx/enforce-module-boundaries` in `onlyDependOnLibsWithTags`
+  (the existing `type:*` row on `type:testing` already relies on it), and the .NET check applies
+  the same match. `nx-dep-constraints.utils.spec.ts` tests the .NET side, and `check-boundaries`
+  exercises the real row, since `gamers-source-api` references a lib of another domain. No
+  TypeScript project crosses domains yet, so the ESLint side is not exercised until one does.
+- **Why this is acceptable:** the repo has one product, made of several domains. The row is
+  narrowed when a second product arrives.
+- **A new `domain:<product>` value needs no ADR.** It is added by tagging its projects and adding
+  its row to `DEP_CONSTRAINTS`, with a comment above it saying what the domain owns. That
+  module is the list of domains: `domain:shared`, `domain:gamers-source` (the product's apps) and
+  `domain:gaming-collection` (which games a user owns, plays and wants). An ADR is for a domain
+  whose boundaries are a real choice, such as splitting one or changing how domains relate.
+  Adding a domain applies this ADR's tag system, is cheap to reverse (a tag and a row), and an ADR
+  for it would restate the comment on its rows.
+
+### Open edge: `type:testing` and `type:app`
+
+The thin host held. `gamers-source-api` holds no logic, and maps the endpoints of
+`libs/gaming-collection/api` (another domain), and that lib's tests project references the lib, not
+the app. The matrix is unchanged. Tests that boot the host (`WebApplicationFactory`) would still need a
+reference to the app, and remain unverified.

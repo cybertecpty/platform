@@ -281,6 +281,58 @@ describe('checkDepConstraints', () => {
     });
   });
 
+  describe('with a constraint that allows a wildcard domain', () => {
+    // The shape of the matrix row that lets an app depend on any domain. Jest cannot load the real
+    // matrix (an `.mts` file), so this is a row of the same shape; `check-boundaries` on the real
+    // graph exercises the real row.
+    const appRow: DependencyConstraint = {
+      sourceTag: 'domain:gamers-source',
+      onlyDependOnLibsWithTags: ['domain:*']
+    };
+    const sharedRow: DependencyConstraint = DOMAIN_CONSTRAINT_FIXTURE;
+    const app = createProjectNodeFixture({
+      name: 'gamers-source-api',
+      tags: ['scope:backend', 'type:app', 'domain:gamers-source']
+    });
+
+    it.each(['domain:shared', 'domain:gamers-source', 'domain:another-product'])(
+      'lets the app depend on a project tagged %s',
+      domain => {
+        const target = createProjectNodeFixture({ name: 'lib', tags: [domain] });
+
+        expect(checkDepConstraints(app, target, [appRow, sharedRow])).toEqual([]);
+      }
+    );
+
+    it('still reports an app that depends on a project with no domain tag', () => {
+      const target = createProjectNodeFixture({ name: 'lib', tags: ['type:utils'] });
+
+      expect(checkDepConstraints(app, target, [appRow, sharedRow])).toEqual([
+        prefixWithEdge(
+          app,
+          target,
+          'A project tagged with "domain:gamers-source" can only depend on libs tagged with "domain:*"'
+        )
+      ]);
+    });
+
+    it('does not apply to a project of another domain', () => {
+      const source = createProjectNodeFixture({
+        name: 'gamers-source-utils',
+        tags: ['type:utils', 'domain:shared']
+      });
+      const target = createProjectNodeFixture({ name: 'lib', tags: ['domain:gamers-source'] });
+
+      expect(checkDepConstraints(source, target, [appRow, sharedRow])).toEqual([
+        prefixWithEdge(
+          source,
+          target,
+          'A project tagged with "domain:shared" can only depend on libs tagged with "domain:shared"'
+        )
+      ]);
+    });
+  });
+
   describe('with a constraint that needs several source tags', () => {
     it('applies it when the source has all of them', () => {
       const source = createProjectNodeFixture({

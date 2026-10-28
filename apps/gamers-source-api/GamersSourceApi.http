@@ -1,0 +1,6 @@
+@GamersSourceApi_HostAddress = http://localhost:5121
+
+GET {{GamersSourceApi_HostAddress}}/collections/5d1e8a42-3b7f-4c09-8e26-a9f4b1c7d300
+Accept: application/json
+
+###

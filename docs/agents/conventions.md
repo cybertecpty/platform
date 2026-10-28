@@ -55,7 +55,7 @@ policy so they're in place when the tooling lands, but don't assume they're acti
 | `cybertec-back-merge` app                                 | ✅ live — `back-merge` job in `deploy-affected.yml` (ADR 0015)  | —       |
 | pnpm (`pnpm-lock.yaml`, `pnpm exec nx`)                   | ✅ live — pnpm@10.34.5, `node-linker=isolated` (PR #17)         | —       |
 | Frontend framework (Angular 22)                           | ✅ live — `@nx/angular`, path-alias TS (ADR 0005)               | —       |
-| Backend stack (ASP.NET Core, .NET 10 LTS)                 | ❌ decided, not wired — no `@nx/dotnet`, no project (ADR 0017)  | §11     |
+| Backend stack (ASP.NET Core, .NET 10 LTS)                 | ✅ live — `@nx/dotnet`, `gamers-source-api` (ADR 0017)          | —       |
 
 Where a rule depends on unwired tooling, it says so inline.
 
@@ -410,8 +410,9 @@ the `add-dependency` skill.
 ### Formatting
 
 Run `nx format:write --files={paths}` after editing, and actually run it before
-ticking a "prettier clean" box in a PR body — CI runs `nx format:check` and a stray
-marker fails the required check.
+ticking a "prettier clean" box in a PR body — CI runs `pnpm format:check` and a stray
+marker fails the required check. In that script `dotnet format` must stay before `nx format:check`,
+because pnpm appends the extra arguments (`--base`, `--head`) to the last command.
 
 In Claude Code, `.claude/hooks/format-edited.cjs` formats for you: a PostToolUse hook records
 each file the session writes or edits, and a Stop hook runs Prettier over that list once at
@@ -465,7 +466,9 @@ name (§2).
     (ADR 0007 2026-09-23 amendment, ADR 0012).
   - **.NET uses xUnit with coverlet** (ADR 0007 2026-10-20 amendment, ADR 0017). Test
     projects are separate `.csproj` files in a `tests/` folder inside the project they
-    test, tagged `type:testing`. Nothing is wired yet — there is no .NET project.
+    test, tagged `type:testing`. The 80% gate comes from `coverlet.msbuild` (`coverlet.collector` has no threshold
+    option), and a test project can only measure code it references, so keep logic in a lib and
+    the app host thin (ADR 0017, 2026-10-27 amendment).
 - **Coverage: an 80% floor, CI-enforced** (ADR 0007 amendment) — the same number and the same
   CI-only gate for Jest, Vitest and coverlet. New runtime projects must clear 80% — check with
   `nx test {project} --coverage` before opening the PR.
@@ -481,8 +484,9 @@ name (§2).
   `nx affected -t lint test build typecheck check-boundaries`. On a PR, CI runs the same affected
   set plus `e2e` and `lighthouse`; on a push to `develop`/`main` it runs every project
   (`nx run-many`). `check-boundaries` is the inferred target on every .NET project that checks its
-  references against ADR 0004's matrix (ADR 0019); the plugin is registered in `nx.json` in the change that adds the first .NET project, and until
-  then the target does not exist.
+  references against ADR 0004's matrix (ADR 0019); the plugin is registered in `nx.json`. `dotnet format Platform.slnx --verify-no-changes` is the
+  .NET format gate. It is part of `pnpm format:check`, which `pnpm verify` and CI run, and it
+  checks the whole solution, not only affected projects.
 - Run through Nx: `nx test {project}`, `nx lint {project}`, `nx run-many ...`,
   `nx affected ...`. Prefix with pnpm: `pnpm exec nx …`.
 - After TS/config/schema/barrel/generator changes, run targeted tests first, then a
@@ -527,11 +531,10 @@ path → tier table is in the `review-pr` skill.
     `@angular/*` packages. Angular upgrades run through `nx migrate`.
   - .NET is integrated through `@nx/dotnet` with `dotnet new` for scaffolding (no Nx
     generators for .NET), pinned to .NET 10 LTS via `global.json`, with a `project.json`
-    beside each `.csproj` carrying the three tags (ADR 0017). **None of it is wired yet** —
-    no `@nx/dotnet`, no `global.json`, no .NET project; don't assume a `dotnet` target
-    exists.
+    beside each `.csproj` carrying the three tags (ADR 0017). The root solution is `Platform.slnx`; add every
+    new .NET project to it.
   - `type:models` is the **generated TypeScript client lib** derived from the backend's
     OpenAPI document — `scope:frontend`, derived output, never hand-edited (ADR 0017). ADR
     0003's zod bans are unchanged.
   - `@nx/enforce-module-boundaries` only reads TypeScript imports, so ADR 0004's matrix is
-    unenforced between backend .NET projects until the DIY check in ADR 0017 exists.
+    enforced between .NET projects by the `check-boundaries` target (ADR 0019).

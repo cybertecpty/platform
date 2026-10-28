@@ -308,7 +308,8 @@ gets a dated amendment either way.
 - **`type:models` loses its shared source of truth.** The backend's DTOs and the frontend's
   client types are the same contract expressed twice, kept in sync by codegen rather than by
   the type system.
-- **Everything in this ADR is unverified** (see the section above). The decisions are
+- **Most of this ADR was unverified when written** (see the section above; the 2026-10-27
+  amendment records what the first project confirmed). The decisions are
   reasoned, not demonstrated, and the first real project is expected to correct some of them.
 - `.NET 10` LTS-only upgrades mean up to a year behind the newest SDK features, by choice.
 
@@ -475,3 +476,56 @@ is not needed. #195 builds the check over the `@nx/dotnet` graph, using the `tec
 metadata to select .NET projects, applying every row of ADR 0004's matrix, whatever its tag
 axis, including `notDependOnLibsWithTags` on direct references. ADR 0019 records how the check
 runs and where its rules come from, with the alternatives considered.
+
+## Amendment (2026-10-27): what the first .NET project showed
+
+- Status: accepted
+- Deciders: djmcgrath
+- Implemented by: issue #229 (`apps/gamers-source-api`, `libs/gaming-collection/api`)
+
+The first project checks the items of "Unverified until the first .NET project exists" and the
+settings #197 added without exercising them. A change from the earlier wording is marked.
+
+### Items 0 to 6
+
+- **Item 0.** `@nx/dotnet` 23.1.1 is installed and registered in `nx.json`. It adds `build`,
+  `build:release`, `restore`, `clean`, `watch`, `publish` and `run`, plus `test` on a test
+  project. It has no project generators, so `dotnet new` stands.
+- **Item 1, tags.** Confirmed on the real layout: tags and `name` in the `project.json` beside the
+  `.csproj` reach the project. The `.nx` graph names the projects `gamers-source-api`,
+  `gaming-collection-api` and `gaming-collection-api-tests`.
+- **Item 2, edges.** Confirmed: a `ProjectReference` is an edge, and `check-boundaries` failed in
+  a manual run on a forbidden one (`type:testing` to `type:app`, not kept as a test) and passes on an allowed one.
+- **Item 3, the boundary check.** Confirmed on the real graph, including the `domain:*` wildcard: the
+  app (`domain:gamers-source`) references a lib of `domain:gaming-collection`, and the check passes.
+  Unit tests cover the wildcard as well.
+- **Item 4, OpenAPI client.** Still unverified. The template maps an OpenAPI endpoint in
+  development, which was not exercised, and nothing generates a client from it.
+- **Item 5, the thin host.** Held for unit-level tests (ADR 0004, 2026-10-27 amendment). Tests that
+  boot the host are unverified. **A tests project must cover code it references, so each tested
+  project needs logic in a lib**: with no code to instrument, coverlet reports 0% and the 80% gate
+  fails.
+- **Item 6, .NET 10.** The plugin, the SDK pin and `net10.0` build, test and run together.
+
+### #197 settings
+
+- **`actions/setup-dotnet`** reads the SDK from `global.json` in the workflow. That the runners
+  resolve it is unverified until the first CI run of this change.
+- **`dotnet format --verify-no-changes`** runs in the `format:check` script, which CI and
+  `pnpm verify` share, over `Platform.slnx`. It checks the whole solution, not only affected
+  projects. On real code it caught the template's CRLF line endings, which `.editorconfig`
+  rejects.
+- **Rule severities.** With warnings as errors, the template's code failed `CA1852` (seal the
+  type) and `IDE0040` (accessibility modifiers), so the scaffold needs those fixes. `CA1707`
+  rejected `Subject_Behaviour` test names, so `.editorconfig` turns it off under `tests/`.
+- **Package versions.** `Microsoft.NET.Test.Sdk` 17.14.1, `xunit` 2.9.3,
+  `xunit.runner.visualstudio` 3.1.4 and `coverlet.msbuild` 6.0.4 restore and run on .NET 10. The
+  template's `Microsoft.AspNetCore.OpenApi` 10.0.2 pulls in `Microsoft.OpenApi` 2.0.0, which has a
+  known high-severity advisory, and restore fails on it under warnings as errors (`NU1903`);
+  10.0.14 does not.
+- **The 80% gate.** With `CI` set, an under-covered change (1 of 4 methods, 25%) fails the test
+  target with "The minimum line coverage is below the specified 80", and without it the same run
+  passes. The real tests project passes at 100%. Reports are written to `coverage/{projectRoot}`.
+- **Duplicate package references.** `dotnet new xunit` lists packages that `Directory.Build.props`
+  already adds, and the duplicates fail restore (`NU1504`). The scaffolded `.csproj` must drop its
+  own `PackageReference` and `Using` items.
