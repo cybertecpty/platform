@@ -41,7 +41,12 @@ const APP_TAGS = ['scope:backend', 'type:app', 'domain:gamers-source'];
 
 describe('the gamers-source app row of the dependency constraints', () => {
   it('lets the app depend on a project of any domain', () => {
-    for (const domain of ['domain:shared', 'domain:gamers-source', 'domain:another-product']) {
+    for (const domain of [
+      'domain:shared',
+      'domain:gamers-source',
+      'domain:gaming-collection',
+      'domain:another-product'
+    ]) {
       assert.equal(domainEdgeAllowed(APP_TAGS, [domain]), true, domain);
     }
   });
@@ -54,22 +59,22 @@ describe('the gamers-source app row of the dependency constraints', () => {
 
     assert.equal(rows(APP_TAGS).length, 1);
     assert.equal(rows(['scope:backend', 'type:app', 'domain:shared']).length, 0);
-    assert.equal(rows(['scope:backend', 'type:services', 'domain:gamers-source']).length, 0);
+    assert.equal(rows(['scope:backend', 'type:api', 'domain:gaming-collection']).length, 0);
   });
 
-  it('keeps a gamers-source lib to its own domain and domain:shared', () => {
-    const services = ['scope:backend', 'type:services', 'domain:gamers-source'];
+  it('keeps a gaming-collection lib to its own domain and domain:shared', () => {
+    const api = ['scope:backend', 'type:api', 'domain:gaming-collection'];
 
-    assert.equal(domainEdgeAllowed(services, ['domain:gamers-source']), true);
-    assert.equal(domainEdgeAllowed(services, ['domain:shared']), true);
-    assert.equal(domainEdgeAllowed(services, ['domain:another-product']), false);
+    assert.equal(domainEdgeAllowed(api, ['domain:gaming-collection']), true);
+    assert.equal(domainEdgeAllowed(api, ['domain:shared']), true);
+    assert.equal(domainEdgeAllowed(api, ['domain:gamers-source']), false);
   });
 
-  it('keeps a gamers-source tests project to its own domain and domain:shared', () => {
-    const tests = ['scope:backend', 'type:testing', 'domain:gamers-source'];
+  it('keeps a gaming-collection tests project to its own domain and domain:shared', () => {
+    const tests = ['scope:backend', 'type:testing', 'domain:gaming-collection'];
 
-    assert.equal(domainEdgeAllowed(tests, ['domain:gamers-source']), true);
-    assert.equal(domainEdgeAllowed(tests, ['domain:another-product']), false);
+    assert.equal(domainEdgeAllowed(tests, ['domain:gaming-collection']), true);
+    assert.equal(domainEdgeAllowed(tests, ['domain:gamers-source']), false);
   });
 
   it('leaves domain:shared projects unable to depend on a product domain', () => {

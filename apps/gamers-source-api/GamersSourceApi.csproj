@@ -10,7 +10,7 @@
   </ItemGroup>
 
   <ItemGroup>
-    <ProjectReference Include="../../libs/gamers-source/services/GamersSourceServices.csproj" />
+    <ProjectReference Include="../../libs/gaming-collection/api/GamingCollectionApi.csproj" />
   </ItemGroup>
 
 </Project>

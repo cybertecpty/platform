@@ -6,7 +6,7 @@
   </PropertyGroup>
 
   <ItemGroup>
-    <ProjectReference Include="../GamersSourceServices.csproj" />
+    <ProjectReference Include="../GamingCollectionApi.csproj" />
   </ItemGroup>
 
 </Project>

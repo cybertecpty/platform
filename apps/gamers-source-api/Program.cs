@@ -1,13 +1,11 @@
-using GamersSourceServices;
+using GamingCollectionApi;
 
 var builder = WebApplication.CreateBuilder(args);
 
 // Add services to the container.
 // Learn more about configuring OpenAPI at https://aka.ms/aspnet/openapi
 builder.Services.AddOpenApi();
-builder.Services.AddSingleton(TimeProvider.System);
-builder.Services.AddSingleton(Random.Shared);
-builder.Services.AddSingleton<WeatherForecastService>();
+builder.Services.AddGamingCollection();
 
 var app = builder.Build();
 
@@ -19,7 +17,6 @@ if (app.Environment.IsDevelopment())
 
 app.UseHttpsRedirection();
 
-app.MapGet("/weatherforecast", (WeatherForecastService service) => service.GetForecast(5))
-    .WithName("GetWeatherForecast");
+app.MapGamingCollectionEndpoints();
 
 app.Run();

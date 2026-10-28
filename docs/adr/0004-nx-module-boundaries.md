@@ -417,12 +417,13 @@ so it cannot live inside one domain's isolation.
   (the existing `type:*` row on `type:testing` already relies on it), and the .NET check applies
   the same match. `.github/scripts/app-domain-constraint.test.cjs` checks the real matrix against
   Nx's own matching, and `nx-dep-constraints.utils.spec.ts` checks the .NET side.
-- **Why this is acceptable:** the repo has one product. The row is narrowed when a second product
-  arrives.
+- **Why this is acceptable:** the repo has one product, made of several domains. The row is
+  narrowed when a second product arrives.
 
 ### Open edge: `type:testing` and `type:app`
 
-The thin host held. `gamers-source-api` holds no logic, its endpoint calls a service in
-`libs/gamers-source/services`, and that lib's tests project references the lib, not the app. The
+The thin host held. `gamers-source-api` holds no logic, and maps the endpoints of
+`libs/gaming-collection/api` (another domain), and that lib's tests project references the lib,
+not the app. The
 matrix is unchanged. Tests that boot the host (`WebApplicationFactory`) would still need a
 reference to the app, and remain unverified.

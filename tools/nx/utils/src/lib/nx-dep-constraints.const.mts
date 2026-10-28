@@ -41,14 +41,14 @@ export const DEP_CONSTRAINTS: ReadonlyArray<DependencyConstraint> = [
     onlyDependOnLibsWithTags: ['domain:*']
   },
   {
-    // Isolation for Gamer's Source libs, one row per lib `type:` that exists. It is a combo row
-    // because a plain `domain:gamers-source` row would also bind the app above.
-    allSourceTags: ['type:services', 'domain:gamers-source'],
-    onlyDependOnLibsWithTags: ['domain:gamers-source', 'domain:shared']
+    // Isolation for gaming-collection libs (ADR 0021), one row per lib `type:` that exists. Combo
+    // rows keep the pattern uniform with the app row above, so a domain's rows never bind an app.
+    allSourceTags: ['type:api', 'domain:gaming-collection'],
+    onlyDependOnLibsWithTags: ['domain:gaming-collection', 'domain:shared']
   },
   {
-    allSourceTags: ['type:testing', 'domain:gamers-source'],
-    onlyDependOnLibsWithTags: ['domain:gamers-source', 'domain:shared']
+    allSourceTags: ['type:testing', 'domain:gaming-collection'],
+    onlyDependOnLibsWithTags: ['domain:gaming-collection', 'domain:shared']
   },
   {
     // Backend (Node / NestJS) code. May use other backend libs and

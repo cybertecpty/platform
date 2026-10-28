@@ -481,7 +481,7 @@ runs and where its rules come from, with the alternatives considered.
 
 - Status: accepted
 - Deciders: djmcgrath
-- Implemented by: issue #229 (`apps/gamers-source-api`, `libs/gamers-source/services`)
+- Implemented by: issue #229 (`apps/gamers-source-api`, `libs/gaming-collection/api`)
 
 The first project checks the items of "Unverified until the first .NET project exists" and the
 settings #197 added without exercising them. A change from the earlier wording is marked.
@@ -493,12 +493,12 @@ settings #197 added without exercising them. A change from the earlier wording i
   project. It has no project generators, so `dotnet new` stands.
 - **Item 1, tags.** Confirmed on the real layout: tags and `name` in the `project.json` beside the
   `.csproj` reach the project. The `.nx` graph names the projects `gamers-source-api`,
-  `gamers-source-services` and `gamers-source-services-tests`.
+  `gaming-collection-api` and `gaming-collection-api-tests`.
 - **Item 2, edges.** Confirmed: a `ProjectReference` is an edge, and `check-boundaries` failed in
   a manual run on a forbidden one (`type:testing` to `type:app`, not kept as a test) and passes on an allowed one.
-- **Item 3, the boundary check.** Confirmed on the real graph. The `domain:*` wildcard is covered
-  by unit tests, not by the real graph, whose only app edge is within one domain. A manual run with
-  a temporary lib of another domain also passed.
+- **Item 3, the boundary check.** Confirmed on the real graph, including the `domain:*` wildcard: the
+  app (`domain:gamers-source`) references a lib of `domain:gaming-collection`, and the check passes.
+  Unit tests cover the wildcard as well.
 - **Item 4, OpenAPI client.** Still unverified. The template maps an OpenAPI endpoint in
   development, which was not exercised, and nothing generates a client from it.
 - **Item 5, the thin host.** Held for unit-level tests (ADR 0004, 2026-10-27 amendment). Tests that
