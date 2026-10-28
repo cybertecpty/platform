@@ -424,3 +424,43 @@ permanent exception list.
   the earlier release was taken.
 - Adding another perfectionist rule is a normal `eslint.config.mjs` edit only if it does not
   touch imports or exports; adopting a preset reopens this ADR.
+
+## Amendment (2026-10-27): pre-commit autofixes mechanical rules only
+
+### Context
+
+The pre-commit hook ran `eslint --fix` on every staged file, so every enabled fixer applied
+after the author had stopped looking at the code. Some fixers change behaviour:
+`unicorn/new-for-builtins` turns `Date()` into `new Date()`, `no-unnecessary-type-assertion`
+trusts types that may be wrong, and `no-var` changes hoisting. Nobody had chosen that for this
+ruleset (#210).
+
+### Decision
+
+Pre-commit applies autofixes for an allowlist of **mechanical** rules only. Every other finding
+is reported and fails the commit, so the author decides. A rule is mechanical only if its fix
+cannot change what the code does (ordering, import style, redundant syntax). The allowlist is
+`MECHANICAL_RULES` in `scripts/mechanical-rules.cjs`; `lint-staged` runs
+`scripts/eslint-fix-mechanical.cjs` instead of `eslint --fix`. A new autofixable rule is
+classified when it is added: allowlisted if mechanical, left off if not. `reportUnusedDisableDirectives`
+fixes carry no rule id, so they are never applied. On-save fixing in the editor stays off;
+`eslint.validate` lists the six languages so problems show in the editor.
+
+### Considered options
+
+- **Keep `eslint --fix` for everything.** Simplest, and leaves the silent rewrites.
+- **Remove autofix from pre-commit.** Safest, but loses the ordering and import-style repairs
+  this ADR's rules rely on (`sort-modules`, `prefer-node-protocol`).
+- **Allowlist (chosen).** Keeps those repairs and blocks the rest.
+- **A script in `scripts/`, not a tools project.** ESLint's CLI cannot fix by rule, so the
+  runner uses the Node API. It is an executable script with no importable code, so it sits
+  beside `.github/scripts` rather than in `tools/`. It is not in `bin/`, which `.gitignore`
+  ignores for .NET output.
+
+### Consequences
+
+- The sentences above that say `eslint --fix` and the pre-commit hook repair bare imports and
+  misordered declarations still hold: both rules are on the allowlist.
+- A commit with a semantic-rule violation fails with the lint error and changes nothing.
+- The allowlist is a second place to touch when adding an autofixable rule. A rule left off it
+  is safe, since it only means the author fixes that finding by hand.
