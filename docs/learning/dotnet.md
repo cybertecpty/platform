@@ -53,6 +53,48 @@ if they are the same object, unless the class overrides equality.
 
 </details>
 
+### DTOs and entities
+
+A **DTO** (Data Transfer Object) is a plain data carrier that crosses a boundary. It has no
+behaviour of its own. It is a **role**, not a C# feature: a DTO can be a record, a class or a
+struct, and records are the usual choice because they are short and read-only.
+
+`CollectionDetails` is a DTO. The endpoint returns it and ASP.NET Core serializes it to JSON, so it
+is the shape of the HTTP response.
+
+An **entity** is the other side: the type that describes how data is stored. Larger systems keep
+both and map between them:
+
+```text
+database row  ->  entity  ->  (mapping)  ->  DTO  ->  JSON over HTTP
+```
+
+Keeping them apart means a change to storage does not silently change the API, and a column that
+must stay private never reaches a client.
+
+Today `CollectionDetails` plays both roles, because the data is in-memory seed data. When
+persistence arrives, it stays as the response DTO and a separate entity appears behind it. ADR
+0004's tags follow the split: `type:api` holds DTOs, `type:infra` holds the persistence shape, and
+`type:services` maps between them.
+
+**Check yourself**
+
+<details>
+<summary>Is "DTO" a C# keyword or a role?</summary>
+
+A role. The C# keyword is <code>record</code> (or <code>class</code>). A DTO is any type used only
+to carry data across a boundary.
+
+</details>
+
+<details>
+<summary>Why not return the stored entity straight from an endpoint?</summary>
+
+It ties the API to the database shape, so a storage change becomes a breaking API change, and it
+can expose fields that should stay private. A separate DTO makes the API shape a deliberate choice.
+
+</details>
+
 ### Primary constructors (C# 12)
 
 A class can list its constructor parameters right after its name:
