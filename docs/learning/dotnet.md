@@ -189,6 +189,192 @@ builder.Services.AddOrders(); // reads like a method on Services
 
 The convention is `Add...` for registering services and `Map...` for registering endpoints.
 
+## Language basics
+
+### Namespaces and `using`
+
+A **namespace** groups related types and keeps their names from clashing. A **`using` directive**
+imports a namespace so you can write the short name instead of the full one:
+
+```csharp
+using System.Text.Json;
+
+namespace Shop.Orders; // file-scoped (C# 10): applies to every type in the file
+
+public sealed class OrderPrinter
+{
+  public string Print(Order order) => JsonSerializer.Serialize(order); // not System.Text.Json.JsonSerializer
+}
+```
+
+A project can also turn on **implicit usings**, which adds a standard set of `using` directives to
+every file automatically. That is why `Guid` or `List<T>` work with no `using` line.
+
+**Check yourself**
+
+<details>
+<summary>Why can a file use <code>Guid</code> with no <code>using System;</code>?</summary>
+
+The project has implicit usings enabled, which adds <code>using System;</code> and a few others to
+every file in the project.
+
+</details>
+
+### Static classes
+
+A `static` class cannot be instantiated or inherited and can hold only static members. It is the
+usual home for helper methods, constants and extension methods:
+
+```csharp
+public static class PriceMath
+{
+  public static decimal WithTax(decimal price, decimal rate) => price * (1 + rate);
+}
+```
+
+```csharp
+var gross = PriceMath.WithTax(10m, 0.2m); // called on the class, not on an object
+```
+
+**Check yourself**
+
+<details>
+<summary>Why must a class that holds extension methods be <code>static</code>?</summary>
+
+Extension methods must be static members of a static, non-generic, top-level class. The language
+requires it.
+
+</details>
+
+### Expression-bodied members
+
+When a method, property or other member is a single expression, `=>` replaces the braces and the
+`return`:
+
+```csharp
+public int Double(int x) { return x * 2; }
+public int Double(int x) => x * 2; // the same method
+```
+
+It is a shorthand for readability. The compiler produces the same code.
+
+**Check yourself**
+
+<details>
+<summary>What does <code>=></code> mean in <code>public int Double(int x) => x * 2;</code>?</summary>
+
+It marks an expression-bodied member: the method body is the single expression after the arrow, and
+its value is returned.
+
+</details>
+
+### Lambdas and LINQ
+
+A **lambda** is a short anonymous function: `x => x.Id == id` reads "given `x`, return whether its
+`Id` equals `id`". **LINQ** is a set of methods that take lambdas to query a sequence:
+
+```csharp
+var firstMatch = orders.FirstOrDefault(o => o.Id == id);   // one item, or the default
+var big = orders.Where(o => o.Total > 100).OrderBy(o => o.Total).ToList();
+var names = orders.Select(o => o.Customer);                // transform each item
+```
+
+- **`FirstOrDefault`** returns the first match, or the type's default if there is none. That is
+  `null` for a class or record, but `0` for an `int` and an empty `Guid` for a `Guid`, so a "not
+  found" check on a value type needs more care.
+- **Deferred execution:** `Where`, `Select` and `OrderBy` build a query and do not run it. It runs
+  when you enumerate it, for example with `ToList()` or a `foreach`.
+
+**Check yourself**
+
+<details>
+<summary>What does <code>FirstOrDefault</code> return when nothing matches a list of records?</summary>
+
+<code>null</code>, because the default for a reference type (a record is one) is null.
+
+</details>
+
+<details>
+<summary>When does <code>orders.Where(o => o.Total &gt; 100)</code> actually run?</summary>
+
+Not where it is written. It runs when the result is enumerated, such as by <code>ToList()</code>,
+<code>foreach</code> or <code>Count()</code>.
+
+</details>
+
+### The conditional operator
+
+`condition ? a : b` evaluates to `a` if the condition is true and `b` if not. It is an expression, so
+it can be returned directly:
+
+```csharp
+return order is { } found ? Results.Ok(found) : Results.NotFound();
+```
+
+The two branches can have different types as long as both convert to the type the result is used
+as. Here each branch is a different result type, and the method's return type, `IResult`, is what
+both convert to.
+
+**Check yourself**
+
+<details>
+<summary>Why can the two branches above return different result types?</summary>
+
+Each one converts to the method's return type, <code>IResult</code>. Since C# 9 the conditional
+operator can use that target type.
+
+</details>
+
+### Method groups
+
+Writing a method's name with no parentheses refers to the method itself, not a call to it. The
+compiler turns it into a delegate (a typed reference to a method):
+
+```csharp
+app.MapGet("/orders/{id:guid}", GetOrder); // GetOrder is passed, not called
+```
+
+`GetOrder()` would call it, and `GetOrder` hands it over so the framework can call it later, once
+per request.
+
+**Check yourself**
+
+<details>
+<summary>What is the difference between <code>GetOrder</code> and <code>GetOrder()</code>?</summary>
+
+<code>GetOrder</code> is the method itself (a method group, converted to a delegate).
+<code>GetOrder()</code> calls it now and gives its return value.
+
+</details>
+
+### Guard clauses
+
+A **guard clause** checks an argument at the top of a method and throws straight away if it is
+invalid:
+
+```csharp
+public void Add(Order order)
+{
+  ArgumentNullException.ThrowIfNull(order);
+  ArgumentOutOfRangeException.ThrowIfLessThan(order.Quantity, 1);
+  // ...
+}
+```
+
+Nullable annotations only produce compiler warnings. They do not stop a `null` arriving at run time
+from code that has them switched off, or from reflection. A guard clause fails early with a clear
+message, instead of a `NullReferenceException` several calls later.
+
+**Check yourself**
+
+<details>
+<summary>If nullable reference types are on, why still call <code>ThrowIfNull</code>?</summary>
+
+Nullable annotations are compile-time warnings only. A caller can still pass <code>null</code> at
+run time, and the guard turns that into an immediate, clear error.
+
+</details>
+
 ## ASP.NET Core
 
 ### Minimal APIs
@@ -218,6 +404,91 @@ body, if the framework cannot tell it is a registered service when the route is 
 <summary>Why is a service parameter marked <code>[FromServices]</code>?</summary>
 
 So ASP.NET Core resolves it from the services container instead of guessing it is a request body.
+
+</details>
+
+### Routes, constraints and parameter binding
+
+A **route template** such as `/orders/{orderId}` has a **route parameter** in braces. A
+**constraint** after a colon limits what it matches, and a request that does not match the route
+never reaches the handler, so the framework answers `404`:
+
+```csharp
+app.MapGet("/orders/{orderId:guid}", GetOrder);       // /orders/abc  -> 404
+app.MapGet("/orders/{orderId:int:min(1)}", GetByNumber);
+```
+
+**Parameter binding** fills the handler's parameters for you:
+
+- A parameter whose name is in the route template comes from the route, parsed to its type.
+- Another simple-typed parameter (`string`, `int`, an enum) comes from the query string.
+- A type registered as a service comes from the services container.
+- A complex type, on a method that accepts a body, comes from the request body.
+
+Attributes such as `[FromRoute]`, `[FromQuery]`, `[FromBody]` and `[FromServices]` make the source
+explicit when you do not want the framework to infer it.
+
+**Check yourself**
+
+<details>
+<summary>What happens to a request for <code>/orders/abc</code> if the route is <code>{orderId:guid}</code>?</summary>
+
+The route does not match, so the handler never runs and the response is <code>404</code>.
+
+</details>
+
+<details>
+<summary>Where does an <code>int page</code> parameter come from if the route has no <code>{page}</code>?</summary>
+
+The query string, as in <code>?page=2</code>.
+
+</details>
+
+### Results and `IResult`
+
+A handler returns an `IResult`, which describes an HTTP response and writes it when the framework
+runs it:
+
+```csharp
+Results.Ok(order);          // 200 with the object serialized as JSON
+Results.NotFound();         // 404 with no body
+Results.ValidationProblem(errors); // 400 with a problem details body
+```
+
+`Results.Ok(x)` is declared to return `IResult`, but the object behind it is the concrete type
+`Ok<T>`. `TypedResults.Ok(x)` returns that concrete type directly, which is easier to assert on in a
+test and gives the OpenAPI document more detail.
+
+**Check yourself**
+
+<details>
+<summary>What does <code>Results.NotFound()</code> send?</summary>
+
+A <code>404</code> response with no body.
+
+</details>
+
+### Builders and chaining
+
+Routes are added to an `IEndpointRouteBuilder`, the thing the app (`WebApplication`) implements. A
+`Map...` call returns a builder for the route it just added, so settings can be chained on it, and a
+method that returns the builder it was given lets its own callers chain too:
+
+```csharp
+public static IEndpointRouteBuilder MapOrders(this IEndpointRouteBuilder routes)
+{
+  routes.MapGet("/orders/{id:guid}", GetOrder).WithName("GetOrder");
+  return routes; // so app.MapOrders().MapProducts() works
+}
+```
+
+**Check yourself**
+
+<details>
+<summary>Why does <code>MapOrders</code> return <code>routes</code>?</summary>
+
+So the caller can chain further calls on it, the same way ASP.NET Core's own <code>Map...</code>
+methods allow.
 
 </details>
 
