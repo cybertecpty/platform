@@ -9,6 +9,16 @@ The checklist for ASP.NET Core endpoints. The reasons, the rejected options and 
 undecided are in ADR 0020; this file is only what to do. Loads when working on C# under `apps/`
 or `libs/`.
 
+## Layout of an API library
+
+- `Dtos/` holds what crosses the wire: request and response DTOs, the enums they use, and the paging
+  envelope. `Endpoints/` holds the route mapping, the handlers and the `Add...` / `Map...`
+  extension methods. Anything else, such as services or seed data, stays in the library root.
+- Keep one namespace for the whole library, the root one. The folders are for finding files, not
+  for sub-namespaces.
+- This suits a library with one resource. When a library has several, prefer one folder per
+  resource that holds its DTOs and endpoints together, and revisit this layout.
+
 ## Paths and methods
 
 - Paths are plural, lowercase, kebab-case nouns: `/collections`, `/collections/{collectionId}/entries`.
