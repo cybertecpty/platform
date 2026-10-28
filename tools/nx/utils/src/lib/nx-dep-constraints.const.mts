@@ -35,22 +35,19 @@ export const DEP_CONSTRAINTS: ReadonlyArray<DependencyConstraint> = [
   {
     // domain:gamers-source: the Gamer's Source product's own apps (the API host, later the Angular
     // frontend). An app is the composition root of its product, which spans several domains
-    // (ADR 0004, 2026-10-27 amendment), so it may depend on a project of any domain. Rows only add
-    // restrictions, so this one cannot loosen a plain `domain:gamers-source` row: libs of that domain
-    // get their isolation from combo rows on their own `type:`, never from a row the app also matches.
+    // (ADR 0004, 2026-10-27 amendment), so it may depend on a project of any domain. Rows only
+    // restrict, so this row restricts nothing; it keeps the exemption visible. While the domain holds
+    // only apps, a plain row is enough. If libs join it, a plain isolation row would bind the apps
+    // too, so give those libs combo rows (`allSourceTags` with their `type:`) instead.
     // Narrow it when a second product arrives.
-    allSourceTags: ['type:app', 'domain:gamers-source'],
+    sourceTag: 'domain:gamers-source',
     onlyDependOnLibsWithTags: ['domain:*']
   },
   {
     // domain:gaming-collection: which games a user owns, plays and wants (`libs/gaming-collection/*`).
-    // One isolation row per lib `type:` that exists. Combo rows keep the pattern uniform with the app
-    // row above, so a domain's rows never bind an app.
-    allSourceTags: ['type:api', 'domain:gaming-collection'],
-    onlyDependOnLibsWithTags: ['domain:gaming-collection', 'domain:shared']
-  },
-  {
-    allSourceTags: ['type:testing', 'domain:gaming-collection'],
+    // Isolated: it may depend on its own domain and domain:shared, whatever the lib's `type:`. If an
+    // app ever joins this domain, this row would bind it, so use combo rows then.
+    sourceTag: 'domain:gaming-collection',
     onlyDependOnLibsWithTags: ['domain:gaming-collection', 'domain:shared']
   },
   {

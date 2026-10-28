@@ -410,12 +410,13 @@ domain's own ADR" above, and the locked parameter "`domain:` values grow by ADR"
 
 ### Decision
 
-- **A `type:app` project may depend on any `domain:*` project.** The matrix row is a combo row on
-  the app's own tags (`type:app` and `domain:gamers-source`), with `domain:*` as the allowed tag.
-  Libs keep their own domain isolation.
-- **Rows only restrict, so isolation rows are combo rows too.** A plain `domain:gamers-source` row
-  would apply to the app and cancel the exception. Each lib `type:` in a domain gets its own combo
-  row, added with the first lib of that type.
+- **An app may depend on any `domain:*` project.** The matrix row is a plain row on the app's domain
+  (`domain:gamers-source`), with `domain:*` as the allowed tag. Libs keep their own domain isolation.
+- **Rows only restrict, so the app row restricts nothing.** It keeps the exemption visible. The
+  consequence is that a domain should not mix apps and libs: an isolation row for the libs would
+  also bind the apps, and nothing could loosen it again. Today each domain is one or the other, so
+  plain rows suffice. If a domain ever needs both, give its libs combo rows (`allSourceTags` with the
+  lib's `type:`) so that the apps are not matched.
 - **`domain:*` is accepted** by `@nx/enforce-module-boundaries` in `onlyDependOnLibsWithTags`
   (the existing `type:*` row on `type:testing` already relies on it), and the .NET check applies
   the same match. `nx-dep-constraints.utils.spec.ts` tests the .NET side, and `check-boundaries`
@@ -424,7 +425,7 @@ domain's own ADR" above, and the locked parameter "`domain:` values grow by ADR"
 - **Why this is acceptable:** the repo has one product, made of several domains. The row is
   narrowed when a second product arrives.
 - **A new `domain:<product>` value needs no ADR.** It is added by tagging its projects and adding
-  its combo rows to `DEP_CONSTRAINTS`, with a comment above them saying what the domain owns. That
+  its row to `DEP_CONSTRAINTS`, with a comment above it saying what the domain owns. That
   module is the list of domains: `domain:shared`, `domain:gamers-source` (the product's apps) and
   `domain:gaming-collection` (which games a user owns, plays and wants). An ADR is for a domain
   whose boundaries are a real choice, such as splitting one or changing how domains relate.

@@ -281,12 +281,12 @@ describe('checkDepConstraints', () => {
     });
   });
 
-  describe('with a combo constraint that allows a wildcard domain', () => {
+  describe('with a constraint that allows a wildcard domain', () => {
     // The shape of the matrix row that lets an app depend on any domain. Jest cannot load the real
     // matrix (an `.mts` file), so this is a row of the same shape; `check-boundaries` on the real
     // graph exercises the real row.
     const appRow: DependencyConstraint = {
-      allSourceTags: ['type:app', 'domain:gamers-source'],
+      sourceTag: 'domain:gamers-source',
       onlyDependOnLibsWithTags: ['domain:*']
     };
     const sharedRow: DependencyConstraint = DOMAIN_CONSTRAINT_FIXTURE;
@@ -311,12 +311,12 @@ describe('checkDepConstraints', () => {
         prefixWithEdge(
           app,
           target,
-          'A project tagged with "type:app" and "domain:gamers-source" can only depend on libs tagged with "domain:*"'
+          'A project tagged with "domain:gamers-source" can only depend on libs tagged with "domain:*"'
         )
       ]);
     });
 
-    it('does not apply to a project that is not an app', () => {
+    it('does not apply to a project of another domain', () => {
       const source = createProjectNodeFixture({
         name: 'gamers-source-utils',
         tags: ['type:utils', 'domain:shared']
