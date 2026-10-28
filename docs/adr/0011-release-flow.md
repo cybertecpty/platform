@@ -7,7 +7,9 @@
   (`tools/release/plugin/src/lib/generators/release/`, with its release-domain helpers in the
   plugin's own `src/lib/utils/`) and the supporting `@cybertecpty/git-utils` and
   `@cybertecpty/github-utils` libs, on branch `feat/release-generator` (not yet merged)
-- .NET projects (`scope:backend`) are outside this release flow until a .NET release path is decided.
+- .NET projects (`scope:backend`) are outside this release flow until a .NET release path is decided:
+  `nx.json` excludes them from the `apps` release group (`!tag:scope:backend`) because a .NET app has no
+  `package.json` for Nx to version. Decide that path before the first .NET deployment is planned.
 
 ## Context and problem statement
 
