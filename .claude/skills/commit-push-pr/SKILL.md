@@ -154,8 +154,8 @@ in the body when the commit should close an issue (subject-line `(#n)` is a refe
 closer). `develop` is the default branch (ADR 0002), so `Closes #{issue}` fires on merge to
 `develop` — don't put closing keywords in `develop → main` promotion PRs.
 
-The `pre-commit` hook (`husky` + `lint-staged`, conventions §8) runs `eslint --fix` +
-`nx format:write` on the staged files here. If you followed §8 and ran `nx format:write`
+The `pre-commit` hook (`husky` + `lint-staged`, conventions §8) runs ESLint (autofixing mechanical
+rules only) + `nx format:write` on the staged files here. If you followed §8 and ran `nx format:write`
 before staging, it's a no-op. If it changes files, they're re-staged into this commit —
 re-check `git show HEAD` and amend the PR body if a "prettier clean" box needs it. Only add
 `--no-verify` if the hook is actively failing the commit (say so in the PR).
@@ -337,7 +337,8 @@ When a commit addresses a tracked issue, append the number to the subject:
 ### Pre-commit hook
 
 Moved here from conventions §8. A `husky` `pre-commit` hook runs `lint-staged` on every
-`git commit` (#24): staged `*.{ts,tsx,cts,mts,js,jsx,cjs,mjs}` get `eslint --fix` then
+`git commit` (#24): staged `*.{ts,tsx,cts,mts,js,jsx,cjs,mjs}` get `scripts/eslint-fix-mechanical.cjs`
+(autofix limited to mechanical rules; other findings are reported and fail the commit) then
 `nx format:write`; staged `*.{json,md,mdx,html,css,scss,yml,yaml}` get `nx format:write`.
 lint-staged re-stages what it changed, so the commit lands clean.
 
