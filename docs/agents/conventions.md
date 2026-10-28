@@ -22,6 +22,7 @@ one part of the repo lives next to it and loads on demand:
 | Typed linting & the ESLint plugin layer              | `.claude/rules/linting.md`           | editing an `eslint.config.mjs`               |
 | Commitlint formatter internals                       | `.claude/rules/commitlint.md`        | working on `tools/git/utils/**`, `.husky/**` |
 | Doc placeholders, Prettier's Markdown normalization  | `.claude/rules/markdown.md`          | editing `*.md`                               |
+| REST API conventions for ASP.NET Core endpoints      | `.claude/rules/rest-api.md`          | editing C# under `apps/` or `libs/`          |
 
 `.claude/rules/*.md` are Claude Code path-scoped rules (`paths:` frontmatter); other agents should
 read the relevant file directly. Companion docs in this folder:

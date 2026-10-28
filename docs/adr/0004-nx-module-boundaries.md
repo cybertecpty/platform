@@ -438,3 +438,18 @@ The thin host held. `gamers-source-api` holds no logic, and maps the endpoints o
 `libs/gaming-collection/api` (another domain), and that lib's tests project references the lib, not
 the app. The matrix is unchanged. Tests that boot the host (`WebApplicationFactory`) would still need a
 reference to the app, and remain unverified.
+
+## Amendment (2026-10-28): `type:services` returns domain types on .NET; the API library maps them to DTOs
+
+- Status: accepted
+- Deciders: djmcgrath
+- Implemented by: issue #238; see ADR 0020 (`rest-api-conventions`)
+
+The boundary above says `type:services` "is the only layer that touches both and maps row ↔ DTO". That
+assumed shared zod contracts in `type:models`, which the 2026-10-20 amendment replaced with a client
+generated from the backend's OpenAPI document. For .NET it no longer holds.
+
+A `type:services` project may not depend on a `type:api` project, and the wire types (DTOs) live in
+the API library. So a service cannot return a DTO. **Service libraries return domain types, and the
+API library maps them to DTOs.** A service library never references an API library; the API library
+references the service library. ADR 0020 records the layout of an API library.
