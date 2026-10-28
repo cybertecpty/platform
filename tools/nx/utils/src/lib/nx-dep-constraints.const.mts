@@ -51,7 +51,7 @@ export const DEP_CONSTRAINTS: ReadonlyArray<DependencyConstraint> = [
     onlyDependOnLibsWithTags: ['domain:gaming-collection', 'domain:shared']
   },
   {
-    // Backend (Node / NestJS) code. May use other backend libs and
+    // Backend code. May use other backend libs and
     // environment-agnostic scope:shared libs, but never scope:frontend or
     // scope:tools — a running service must not pull in browser code or
     // workspace tooling.
@@ -101,7 +101,7 @@ export const DEP_CONSTRAINTS: ReadonlyArray<DependencyConstraint> = [
     ]
   },
   {
-    // Deployable applications (Angular or Nest — scope: disambiguates). The
+    // Deployable applications (Angular or .NET — scope: disambiguates). The
     // composition root: it may wire any layer, including type:infra directly
     // (the one exception to the api -> services -> infra flow). Nothing
     // depends on a type:app project in turn.

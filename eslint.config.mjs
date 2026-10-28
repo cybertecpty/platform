@@ -80,7 +80,7 @@ export default [
   // Typed linting (type-aware rules) — TS source only. `recommendedTypeChecked` pulls in
   // the rules that need the type-checker: no-floating-promises, no-misused-promises,
   // await-thenable, no-unnecessary-condition, restrict-template-expressions, and so on —
-  // the highest-value part of the ruleset for an async-heavy Angular + NestJS codebase.
+  // the highest-value part of the ruleset for an async-heavy Angular codebase.
   // `strictTypeChecked` is deliberately not used: its no-unsafe-* family fires at every
   // untyped boundary and most of it ends up disabled. Promote individual strict rules
   // in the override block below if wanted.
@@ -110,7 +110,7 @@ export default [
     // `@typescript-eslint/no-deprecated` ships in `strict-type-checked`, not
     // `recommendedTypeChecked`, so it is opted into here on its own. It flags use of
     // any symbol annotated `@deprecated` — cheap now that the type-checker is wired,
-    // and the highest-value strict rule against Angular / NestJS deprecation churn
+    // and the highest-value strict rule against Angular deprecation churn
     // across minor versions. Turned back off for JS by `disableTypeChecked` below.
     files: ['**/*.{ts,tsx,cts,mts}'],
     rules: {
