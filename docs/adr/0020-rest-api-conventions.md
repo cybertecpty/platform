@@ -122,6 +122,8 @@ guidance, chosen once, so that every endpoint looks the same.
 
 ## More information
 
+- `.claude/rules/rest-api.md`: the checklist form of these conventions, loaded when editing C#. Keep it
+  in step with this ADR.
 - ADR 0017 (`dotnet-backend`): the generated TypeScript client and the code-first contract.
 - `libs/gaming-collection/api`: the first API written to these conventions.
 - Microsoft REST API Guidelines and Google's API Improvement Proposals (AIP-121, AIP-122, AIP-158):
