@@ -3,7 +3,10 @@
  * third-party service (ADR 0007 amendment / issue #52).
  *
  * After the CI test run (coverage collected in CI via `jest.preset.js`), each
- * tested project drops `coverage/<projectRoot>/coverage-{summary,final}.json`.
+ * tested project drops `coverage/<projectRoot>/coverage-{summary,final}.json`. A .NET
+ * test project drops lcov (`coverage.info`, from coverlet — ADR 0017) instead; it is
+ * read into the same per-project totals and per-line hit counts.
+ *
  * A push runs `nx run-many` (every project); a PR runs `nx affected`, so only
  * the affected projects report. This script:
  *   1. sums the per-project `coverage-summary.json` totals into one number (the
@@ -27,6 +30,7 @@ const fs = require('node:fs');
 const path = require('node:path');
 
 const MARKER = '<!-- coverage-report -->';
+const LCOV_REPORT = 'coverage.info';
 const METRICS = ['statements', 'branches', 'functions', 'lines'];
 
 /** @param {number} n */
@@ -125,13 +129,106 @@ function lineHitMap(fileCoverage) {
 }
 
 /**
+ * Parse an lcov `.info` report into per-file line hits and function/branch counts.
+ * Only the records the reporter uses are read: `SF`, `DA`, `FNF`/`FNH`,
+ * `BRF`/`BRH`; a missing `FNF`/`BRF` summary falls back to counting
+ * `FN`/`FNDA`/`BRDA` records.
+ *
+ * @param {string} text
+ * @returns {Map<string, { lines: Map<number, number>, functions: { total: number, covered: number }, branches: { total: number, covered: number } }>}
+ */
+function parseLcov(text) {
+  const files = new Map();
+  let current = null;
+  const newFile = () => ({
+    lines: new Map(),
+    summary: {},
+    fnFound: new Set(),
+    fnHit: new Set(),
+    brFound: 0,
+    brHit: 0
+  });
+
+  for (const raw of text.split('\n')) {
+    const line = raw.trim();
+    if (line.startsWith('SF:')) {
+      current = { path: line.slice(3), ...newFile() };
+    } else if (!current) {
+      continue;
+    } else if (line === 'end_of_record') {
+      const { path: file, lines, summary, fnFound, fnHit, brFound, brHit } = current;
+      if (!files.has(file)) {
+        files.set(file, {
+          lines,
+          functions: {
+            total: summary.FNF ?? fnFound.size,
+            covered: summary.FNH ?? fnHit.size
+          },
+          branches: { total: summary.BRF ?? brFound, covered: summary.BRH ?? brHit }
+        });
+      }
+      current = null;
+    } else if (line.startsWith('DA:')) {
+      const [num, hits] = line.slice(3).split(',');
+      const n = Number(num);
+      const count = Number(hits);
+      current.lines.set(n, Math.max(current.lines.get(n) ?? 0, count));
+    } else if (line.startsWith('FN:')) {
+      current.fnFound.add(line.slice(3).split(',').slice(1).join(','));
+    } else if (line.startsWith('FNDA:')) {
+      const [hits, ...name] = line.slice(5).split(',');
+      if (Number(hits) > 0) current.fnHit.add(name.join(','));
+    } else if (line.startsWith('BRDA:')) {
+      current.brFound++;
+      const taken = line.slice(5).split(',')[3];
+      if (taken !== '-' && Number(taken) > 0) current.brHit++;
+    } else {
+      const match = /^(FNF|FNH|BRF|BRH):(\d+)$/.exec(line);
+      if (match) current.summary[match[1]] = Number(match[2]);
+    }
+  }
+  return files;
+}
+
+/**
+ * Fold parsed lcov files into a `coverage-summary.json`-shaped `total` block. .NET has
+ * no separate statement metric, so statements are reported as lines.
+ *
+ * @param {ReturnType<typeof parseLcov>} files
+ */
+function lcovTotal(files) {
+  let lines = 0;
+  let linesHit = 0;
+  let fn = 0;
+  let fnHit = 0;
+  let br = 0;
+  let brHit = 0;
+  for (const file of files.values()) {
+    lines += file.lines.size;
+    for (const count of file.lines.values()) if (count > 0) linesHit++;
+    fn += file.functions.total;
+    fnHit += file.functions.covered;
+    br += file.branches.total;
+    brHit += file.branches.covered;
+  }
+  const entry = (total, covered) => ({ total, covered, skipped: 0, pct: pct(covered, total) });
+  return {
+    statements: entry(lines, linesHit),
+    branches: entry(br, brHit),
+    functions: entry(fn, fnHit),
+    lines: entry(lines, linesHit)
+  };
+}
+
+/**
  * Patch coverage: of the lines this PR adds that Istanbul instrumented, how many
  * are hit by at least one test. Lines with no instrumented statement (blank
  * lines, `import` lines, type-only files, non-`src` files) are not counted
  * either way.
  *
  * @param {Map<string, Set<number>>} addedByFile  repo-relative path -> added line numbers
- * @param {Map<string, object>} finalByRel        repo-relative path -> Istanbul file coverage
+ * @param {Map<string, object | Map<number, number>>} finalByRel  repo-relative path -> Istanbul
+ *   file coverage, or (for lcov) a `line -> hit count` map
  */
 function patchCoverage(addedByFile, finalByRel) {
   let covered = 0;
@@ -142,7 +239,7 @@ function patchCoverage(addedByFile, finalByRel) {
   for (const [file, lines] of addedByFile) {
     const fileCoverage = finalByRel.get(file);
     if (!fileCoverage) continue;
-    const hitByLine = lineHitMap(fileCoverage);
+    const hitByLine = fileCoverage instanceof Map ? fileCoverage : lineHitMap(fileCoverage);
     let fileCovered = 0;
     let fileCoverable = 0;
     for (const line of lines) {
@@ -252,12 +349,17 @@ function findReports(root, basename) {
 /** @param {string} root */
 function collectProjects(root) {
   const coverageRoot = path.join(root, 'coverage');
-  return findReports(root, 'coverage-summary.json')
-    .map(abs => ({
-      name: path.relative(coverageRoot, path.dirname(abs)).split(path.sep).join('/'),
+  const name = abs => path.relative(coverageRoot, path.dirname(abs)).split(path.sep).join('/');
+  return [
+    ...findReports(root, 'coverage-summary.json').map(abs => ({
+      name: name(abs),
       total: readJson(abs).total
+    })),
+    ...findReports(root, LCOV_REPORT).map(abs => ({
+      name: name(abs),
+      total: lcovTotal(parseLcov(fs.readFileSync(abs, 'utf8')))
     }))
-    .sort((a, b) => a.name.localeCompare(b.name));
+  ].sort((a, b) => a.name.localeCompare(b.name));
 }
 
 /** @param {string} root */
@@ -269,6 +371,12 @@ function mergeFinalByRel(root) {
     for (const [absPath, fileCoverage] of Object.entries(data)) {
       const relPath = path.relative(root, absPath).split(path.sep).join('/');
       if (!byRel.has(relPath)) byRel.set(relPath, fileCoverage);
+    }
+  }
+  for (const abs of findReports(root, LCOV_REPORT)) {
+    for (const [absPath, file] of parseLcov(fs.readFileSync(abs, 'utf8'))) {
+      const relPath = path.relative(root, absPath).split(path.sep).join('/');
+      if (!byRel.has(relPath)) byRel.set(relPath, file.lines);
     }
   }
   return byRel;
@@ -286,6 +394,7 @@ function changedLines({ base, head }) {
       `${base}...${head}`,
       '--',
       '*.ts',
+      '*.cs',
       ':(exclude)**/*.spec.ts'
     ],
     { encoding: 'utf8', maxBuffer: 256 * 1024 * 1024 }
@@ -327,7 +436,7 @@ async function report({ github, context, core }) {
       if (!isFork) await upsertComment({ github, context, body });
       return;
     }
-    core.warning('coverage-report: no coverage-summary.json files under coverage/ — skipping.');
+    core.warning('coverage-report: no coverage reports under coverage/ — skipping.');
     return;
   }
   core.info(
@@ -360,6 +469,10 @@ module.exports = report;
 module.exports.MARKER = MARKER;
 module.exports.sumTotals = sumTotals;
 module.exports.parseAddedLines = parseAddedLines;
+module.exports.collectProjects = collectProjects;
+module.exports.mergeFinalByRel = mergeFinalByRel;
+module.exports.parseLcov = parseLcov;
+module.exports.lcovTotal = lcovTotal;
 module.exports.lineHitMap = lineHitMap;
 module.exports.patchCoverage = patchCoverage;
 module.exports.renderMarkdown = renderMarkdown;
