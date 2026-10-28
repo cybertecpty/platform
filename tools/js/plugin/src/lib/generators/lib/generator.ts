@@ -138,7 +138,9 @@ function assertDomainMatchesScope(
 
 /** Backend libraries are .NET projects (ADR 0017), so the backend `type:` values aren't scaffolded here. */
 function assertNotBackendType(type: LibGeneratorOptions['type']): asserts type is JsLibType {
-  if (BACKEND_LIB_TYPES.includes(type)) {
+  const backendTypes: readonly string[] = BACKEND_LIB_TYPES;
+
+  if (backendTypes.includes(type)) {
     throw new Error(
       `\`type:${type}\` is a backend library type, and backend libraries are .NET projects created with \`dotnet new\`, not this generator. See ADR 0017.`
     );

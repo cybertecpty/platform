@@ -1,4 +1,5 @@
 import type {
+  BackendLibType,
   NormalizedNxProjectOptions,
   NxProjectBundler,
   NxProjectOptions,
@@ -68,7 +69,7 @@ export const NX_PROJECT_TYPES: readonly NxProjectType[] = Object.keys(
  * The backend `type:` values. The backend is .NET (ADR 0017), so these libraries are
  * .NET projects created with `dotnet new`, not scaffolded by the TypeScript generators.
  */
-export const BACKEND_LIB_TYPES: readonly NxProjectType[] = ['api', 'infra', 'services'];
+export const BACKEND_LIB_TYPES: readonly BackendLibType[] = ['api', 'infra', 'services'];
 
 /**
  * Determines the top-level directory a project's source lives under: `apps`

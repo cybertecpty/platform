@@ -1,6 +1,8 @@
 import type { SetRequired } from 'type-fest';
 import type { NxProjectLibType } from './nx-libs.types';
 
+export type BackendLibType = Extract<NxProjectLibType, 'api' | 'infra' | 'services'>;
+
 /**
  * The fully-resolved project options the generators consume: `name`,
  * `directory`, and `tags` are always present, and the ergonomic `buildable`

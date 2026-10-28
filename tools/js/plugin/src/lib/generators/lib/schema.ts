@@ -1,16 +1,11 @@
 import type {
+  BackendLibType,
   NormalizedNxProjectOptions,
   NxProjectOptions,
   NxProjectScope
 } from '@cybertecpty/nx-types';
 import type { libraryGenerator } from '@nx/js';
 import type { Except } from 'type-fest';
-
-/**
- * The backend `type:` values. The backend is .NET (ADR 0017), so the generator accepts
- * these only to reject them with a pointer to `dotnet new`.
- */
-export type BackendLibType = 'api' | 'infra' | 'services';
 
 /**
  * The `type:` values this generator may scaffold — the framework-agnostic subset of
