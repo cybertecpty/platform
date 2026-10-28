@@ -387,15 +387,18 @@ the host thin so tests reference a library, not the app; ADR 0017's 2026-10-21 a
 that decision and the fallback if it does not work. ADR 0019 records the design of the check as
 a whole and the alternatives it was weighed against.
 
-## Amendment (2026-10-27): an app may depend on any domain
+## Amendment (2026-10-27): an app may depend on any domain, and a domain needs no ADR of its own
 
 - Status: accepted
 - Deciders: djmcgrath
-- Implemented by: issue #229; ADR 0020 (`gamers-source-domain`)
+- Implemented by: issue #229
 
 The matrix above isolates product domains: a project of one domain may depend on its own domain
 and `domain:shared`. An app is the composition root of a product, which can span several domains,
 so it cannot live inside one domain's isolation.
+
+A new domain also stops needing an ADR of its own, which this ADR required ("defined by that
+domain's own ADR" above, and the locked parameter "`domain:` values grow by ADR").
 
 ### Considered options
 
@@ -412,7 +415,7 @@ so it cannot live inside one domain's isolation.
   Libs keep their own domain isolation.
 - **Rows only restrict, so isolation rows are combo rows too.** A plain `domain:gamers-source` row
   would apply to the app and cancel the exception. Each lib `type:` in a domain gets its own combo
-  row, added with the first lib of that type (ADR 0020).
+  row, added with the first lib of that type.
 - **`domain:*` is accepted** by `@nx/enforce-module-boundaries` in `onlyDependOnLibsWithTags`
   (the existing `type:*` row on `type:testing` already relies on it), and the .NET check applies
   the same match. `nx-dep-constraints.utils.spec.ts` tests the .NET side, and `check-boundaries`
@@ -420,6 +423,13 @@ so it cannot live inside one domain's isolation.
   TypeScript project crosses domains yet, so the ESLint side is not exercised until one does.
 - **Why this is acceptable:** the repo has one product, made of several domains. The row is
   narrowed when a second product arrives.
+- **A new `domain:<product>` value needs no ADR.** It is added by tagging its projects and adding
+  its combo rows to `DEP_CONSTRAINTS`, with a comment above them saying what the domain owns. That
+  module is the list of domains: `domain:shared`, `domain:gamers-source` (the product's apps) and
+  `domain:gaming-collection` (which games a user owns, plays and wants). An ADR is for a domain
+  whose boundaries are a real choice, such as splitting one or changing how domains relate.
+  Adding a domain applies this ADR's tag system, is cheap to reverse (a tag and a row), and an ADR
+  for it would restate the comment on its rows.
 
 ### Open edge: `type:testing` and `type:app`
 

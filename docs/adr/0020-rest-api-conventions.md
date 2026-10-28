@@ -1,19 +1,18 @@
-# 22. REST API conventions for the ASP.NET Core backend
+# 20. REST API conventions for the ASP.NET Core backend
 
 - Status: accepted
 - Date: 2026-10-28
 - Deciders: djmcgrath
 - Implemented by: issue #229; `libs/gaming-collection/api` and `apps/gamers-source-api`
 - Builds on: ADR 0017 (`dotnet-backend`), whose generated TypeScript client makes the API
-  contract the frontend's source of truth, and ADR 0021 (`gaming-collection-domain`), the first
-  API that follows these conventions
+  contract the frontend's source of truth
 
 ## Context and problem statement
 
 ADR 0017 makes the ASP.NET Core API the source of truth for the frontend's contract: a
 TypeScript client is generated from its OpenAPI document. Once a client exists, every URL, property
 name and error shape is something other code depends on, so changing one is a breaking change
-across projects. The first endpoints (ADR 0021) are the cheapest moment to settle the choices that
+across projects. The first endpoints (`libs/gaming-collection/api`) are the cheapest moment to settle the choices that
 every later endpoint will repeat.
 
 REST is an architectural style, not a specification. There is no standard that says whether a
@@ -124,7 +123,7 @@ guidance, chosen once, so that every endpoint looks the same.
 ## More information
 
 - ADR 0017 (`dotnet-backend`): the generated TypeScript client and the code-first contract.
-- ADR 0021 (`gaming-collection-domain`): the first API written to these conventions.
+- `libs/gaming-collection/api`: the first API written to these conventions.
 - Microsoft REST API Guidelines and Google's API Improvement Proposals (AIP-121, AIP-122, AIP-158):
   the guidance these choices follow.
 - RFC 9457 (Problem Details for HTTP APIs) and RFC 9110 (HTTP Semantics, for methods and status

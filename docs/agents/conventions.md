@@ -55,7 +55,7 @@ policy so they're in place when the tooling lands, but don't assume they're acti
 | `cybertec-back-merge` app                                 | ✅ live — `back-merge` job in `deploy-affected.yml` (ADR 0015)  | —       |
 | pnpm (`pnpm-lock.yaml`, `pnpm exec nx`)                   | ✅ live — pnpm@10.34.5, `node-linker=isolated` (PR #17)         | —       |
 | Frontend framework (Angular 22)                           | ✅ live — `@nx/angular`, path-alias TS (ADR 0005)               | —       |
-| Backend stack (ASP.NET Core, .NET 10 LTS)                 | ✅ live — `@nx/dotnet`, `gamers-source-api` (ADR 0017, 0020)    | —       |
+| Backend stack (ASP.NET Core, .NET 10 LTS)                 | ✅ live — `@nx/dotnet`, `gamers-source-api` (ADR 0017)          | —       |
 
 Where a rule depends on unwired tooling, it says so inline.
 

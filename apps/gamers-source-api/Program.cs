@@ -10,7 +10,7 @@ builder.Services.AddGamingCollection();
 
 var app = builder.Build();
 
-// Every error response is a problem details document (ADR 0022), including bodiless ones such as 404.
+// Every error response is a problem details document (ADR 0020), including bodiless ones such as 404.
 app.UseStatusCodePages();
 
 // Configure the HTTP request pipeline.
