@@ -434,6 +434,6 @@ domain's own ADR" above, and the locked parameter "`domain:` values grow by ADR"
 ### Open edge: `type:testing` and `type:app`
 
 The thin host held. `gamers-source-api` holds no logic, and maps the endpoints of
-`libs/gaming-collection/api` (another domain), which calls `libs/gaming-collection/services`. Each
-lib's tests project references its own lib, not the app. The matrix is unchanged. Tests that boot the host (`WebApplicationFactory`) would still need a
+`libs/gaming-collection/api` (another domain), and that lib's tests project references the lib, not
+the app. The matrix is unchanged. Tests that boot the host (`WebApplicationFactory`) would still need a
 reference to the app, and remain unverified.

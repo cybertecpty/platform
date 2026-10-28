@@ -481,8 +481,7 @@ runs and where its rules come from, with the alternatives considered.
 
 - Status: accepted
 - Deciders: djmcgrath
-- Implemented by: issue #229 (`apps/gamers-source-api`, `libs/gaming-collection/api`,
-  `libs/gaming-collection/services`)
+- Implemented by: issue #229 (`apps/gamers-source-api`, `libs/gaming-collection/api`)
 
 The first project checks the items of "Unverified until the first .NET project exists" and the
 settings #197 added without exercising them. A change from the earlier wording is marked.
@@ -494,7 +493,7 @@ settings #197 added without exercising them. A change from the earlier wording i
   project. It has no project generators, so `dotnet new` stands.
 - **Item 1, tags.** Confirmed on the real layout: tags and `name` in the `project.json` beside the
   `.csproj` reach the project. The `.nx` graph names the projects `gamers-source-api`,
-  `gaming-collection-api`, `gaming-collection-services` and their two tests projects.
+  `gaming-collection-api` and `gaming-collection-api-tests`.
 - **Item 2, edges.** Confirmed: a `ProjectReference` is an edge, and `check-boundaries` failed in
   a manual run on a forbidden one (`type:testing` to `type:app`, not kept as a test) and passes on an allowed one.
 - **Item 3, the boundary check.** Confirmed on the real graph, including the `domain:*` wildcard: the

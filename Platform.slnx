@@ -11,10 +11,4 @@
   <Folder Name="/libs/gaming-collection/api/tests/">
     <Project Path="libs/gaming-collection/api/tests/GamingCollectionApi.Tests.csproj" />
   </Folder>
-  <Folder Name="/libs/gaming-collection/services/">
-    <Project Path="libs/gaming-collection/services/GamingCollectionServices.csproj" />
-  </Folder>
-  <Folder Name="/libs/gaming-collection/services/tests/">
-    <Project Path="libs/gaming-collection/services/tests/GamingCollectionServices.Tests.csproj" />
-  </Folder>
 </Solution>

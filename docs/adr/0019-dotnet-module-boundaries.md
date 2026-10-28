@@ -221,8 +221,7 @@ What remains unverified:
 - Implemented by: issue #229
 
 The plugin is registered in `nx.json` with the first .NET project, as the locked parameters
-required. On `gamers-source-api`, `gaming-collection-api`, `gaming-collection-services` and their tests
-projects, the check passes
+required. On `gamers-source-api`, `gaming-collection-api` and its tests project, the check passes
 with allowed references and fails on a `type:testing` project that references a `type:app`
 project, and it honours the `domain:*` wildcard of ADR 0004's 2026-10-27 amendment (the app references a lib of
 another domain, and unit tests cover it; the forbidden edge was a manual run). Unverified
