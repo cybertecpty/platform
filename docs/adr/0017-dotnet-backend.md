@@ -371,10 +371,15 @@ changes here.
 - **The coverage policy is still one number across both languages** — 80%, CI-gated — which
   was the point of mirroring ADR 0007 in the first place. ADR 0018 carries that policy
   forward verbatim onto Vitest.
-- **The coverlet wiring consequence stands**: coverlet output still has to reach
-  `.github/scripts/coverage-report.cjs` via `coverage/{projectRoot}` or .NET projects stay
-  absent from the PR comment. Vitest's v8 provider writes the same report files Jest did, so
-  that script is untouched on both sides.
+- **The coverlet wiring reaches the PR comment.** Coverlet writes `coverage.json` and lcov
+  `coverage.info` to `coverage/{projectRoot}` (`CoverletOutputFormat` in
+  `Directory.Build.props`), and `.github/scripts/coverage-report.cjs` reads the lcov file. A
+  .NET project's lines, branches and functions join the workspace total (lines also count as
+  statements, since .NET has none) and the lines a PR adds to C# count toward patch coverage.
+  The `test` target of each tests project declares `coverage/{projectRoot}` as an output in its
+  `project.json`, because the inferred target only caches `TestResults`; without it a cache hit
+  would restore no report. Vitest's v8 provider writes the same Istanbul files Jest did, so the
+  Istanbul side of the script is unchanged.
 - **Unverified item 5** (`type:testing` may not depend on `type:app`, which
   `WebApplicationFactory` integration tests need) is a tag-matrix question, not a runner
   question, and is unaffected.
