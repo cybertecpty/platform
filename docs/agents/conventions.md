@@ -427,6 +427,16 @@ A `husky` `pre-commit` hook runs `lint-staged` (ESLint autofix for mechanical ru
 authoritative. Details (what it touches, install, `--no-verify`) are in the `commit-push-pr`
 skill.
 
+### Workspace scripts
+
+Runnable workspace scripts (hook and `lint-staged` runners, one-off maintenance tools) go in the
+root `scripts/` folder as plain CommonJS (`.cjs`) that bare `node` runs with no build step. They
+are not Nx projects, so `tools/` stays for projects, and tests sit beside them as `*.test.cjs`,
+run by `node --test` in `pnpm verify` and CI. Don't name the folder `bin/`: `.gitignore` ignores
+every `bin/` for .NET build output, and git silently drops files placed there. A script owned by
+one context stays with it: CI scripts in `.github/scripts/`, Claude hooks in `.claude/hooks/`, a
+skill's scripts in its own folder, an app's scripts in `apps/{app}/scripts/`.
+
 ### GitHub Actions workflows
 
 Every step in a workflow under `.github/workflows/` has a `name:`, in sentence case with a verb
