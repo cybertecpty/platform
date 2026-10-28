@@ -283,7 +283,8 @@ describe('checkDepConstraints', () => {
 
   describe('with a combo constraint that allows a wildcard domain', () => {
     // The shape of the matrix row that lets an app depend on any domain. Jest cannot load the real
-    // matrix (an `.mts` file); .github/scripts/app-domain-constraint.test.cjs checks it against ESLint.
+    // matrix (an `.mts` file), so this is a row of the same shape; `check-boundaries` on the real
+    // graph exercises the real row.
     const appRow: DependencyConstraint = {
       allSourceTags: ['type:app', 'domain:gamers-source'],
       onlyDependOnLibsWithTags: ['domain:*']

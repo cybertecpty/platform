@@ -415,8 +415,9 @@ so it cannot live inside one domain's isolation.
   row, added with the first lib of that type (ADR 0020).
 - **`domain:*` is accepted** by `@nx/enforce-module-boundaries` in `onlyDependOnLibsWithTags`
   (the existing `type:*` row on `type:testing` already relies on it), and the .NET check applies
-  the same match. `.github/scripts/app-domain-constraint.test.cjs` checks the real matrix against
-  Nx's own matching, and `nx-dep-constraints.utils.spec.ts` checks the .NET side.
+  the same match. `nx-dep-constraints.utils.spec.ts` tests the .NET side, and `check-boundaries`
+  exercises the real row, since `gamers-source-api` references a lib of another domain. No
+  TypeScript project crosses domains yet, so the ESLint side is not exercised until one does.
 - **Why this is acceptable:** the repo has one product, made of several domains. The row is
   narrowed when a second product arrives.
 
