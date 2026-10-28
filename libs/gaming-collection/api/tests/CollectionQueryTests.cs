@@ -1,3 +1,4 @@
+using GamingCollectionServices;
 namespace GamingCollectionApi.Tests;
 
 public class CollectionQueryTests

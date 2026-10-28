@@ -1,10 +1,12 @@
+using GamingCollectionServices;
+
 namespace GamingCollectionApi;
 
 /// <summary>A game in a collection, with the owner's relationship to it.</summary>
-public sealed record CollectionEntry(
+public sealed record CollectionEntryDetails(
   Guid Id,
   Guid CollectionId,
-  Game Game,
+  GameDetails Game,
   EntryStatus Status,
   GameFormat Format,
   DateOnly? AcquiredOn,

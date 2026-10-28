@@ -1,4 +1,4 @@
-namespace GamingCollectionApi.Tests;
+namespace GamingCollectionServices.Tests;
 
 public class CollectionServiceTests
 {
@@ -27,13 +27,13 @@ public class CollectionServiceTests
     [Fact]
     public void GetEntries_ReturnsNullForAnUnknownCollection()
     {
-        Assert.Null(Service.GetEntries(Guid.NewGuid(), new CollectionQuery()));
+        Assert.Null(Service.GetEntries(Guid.NewGuid(), new EntryQuery()));
     }
 
     [Fact]
     public void GetEntries_OrdersByTitleAndCountsEveryMatch()
     {
-        var page = Service.GetEntries(SeedData.CollectionId, new CollectionQuery());
+        var page = Service.GetEntries(SeedData.CollectionId, new EntryQuery());
 
         Assert.NotNull(page);
         Assert.Equal(4, page.TotalCount);
@@ -45,7 +45,7 @@ public class CollectionServiceTests
     [Fact]
     public void GetEntries_FiltersByPlatformIgnoringCase()
     {
-        var page = Service.GetEntries(SeedData.CollectionId, new CollectionQuery(Platform: "ps5"));
+        var page = Service.GetEntries(SeedData.CollectionId, new EntryQuery(Platform: "ps5"));
 
         Assert.Equal("Elden Ring", Assert.Single(page!.Items).Game.Title);
     }
@@ -55,7 +55,7 @@ public class CollectionServiceTests
     {
         var page = Service.GetEntries(
           SeedData.CollectionId,
-          new CollectionQuery(Status: EntryStatus.Wishlist));
+          new EntryQuery(Status: EntryStatus.Wishlist));
 
         Assert.Equal("Metroid Dread", Assert.Single(page!.Items).Game.Title);
     }
@@ -63,16 +63,24 @@ public class CollectionServiceTests
     [Fact]
     public void GetEntries_PagesTheMatches()
     {
-        var page = Service.GetEntries(SeedData.CollectionId, new CollectionQuery(Page: 2, PageSize: 3));
+        var page = Service.GetEntries(SeedData.CollectionId, new EntryQuery(Page: 2, PageSize: 3));
 
         Assert.Equal("Metroid Dread", Assert.Single(page!.Items).Game.Title);
         Assert.Equal(4, page.TotalCount);
-        Assert.Equal(2, page.Page);
     }
 
     [Fact]
     public void GetEntries_RejectsANullQuery()
     {
         Assert.Throws<ArgumentNullException>(() => Service.GetEntries(SeedData.CollectionId, null!));
+    }
+
+    [Theory]
+    [InlineData(0, 25)]
+    [InlineData(1, 0)]
+    public void GetEntries_RejectsPagingBelowOne(int page, int pageSize)
+    {
+        Assert.Throws<ArgumentOutOfRangeException>(
+          () => Service.GetEntries(SeedData.CollectionId, new EntryQuery(Page: page, PageSize: pageSize)));
     }
 }

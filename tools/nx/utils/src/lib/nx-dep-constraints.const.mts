@@ -50,6 +50,10 @@ export const DEP_CONSTRAINTS: ReadonlyArray<DependencyConstraint> = [
     onlyDependOnLibsWithTags: ['domain:gaming-collection', 'domain:shared']
   },
   {
+    allSourceTags: ['type:services', 'domain:gaming-collection'],
+    onlyDependOnLibsWithTags: ['domain:gaming-collection', 'domain:shared']
+  },
+  {
     allSourceTags: ['type:testing', 'domain:gaming-collection'],
     onlyDependOnLibsWithTags: ['domain:gaming-collection', 'domain:shared']
   },

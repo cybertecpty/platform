@@ -1,0 +1,4 @@
+{
+  "name": "gaming-collection-services-tests",
+  "tags": ["scope:backend", "type:testing", "domain:gaming-collection"]
+}

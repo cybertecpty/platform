@@ -1,4 +1,5 @@
 using System.Text.Json;
+using GamingCollectionServices;
 using Microsoft.AspNetCore.Builder;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Http.HttpResults;
@@ -72,7 +73,7 @@ public class CollectionEndpointsTests
     [Fact]
     public void GetEntries_ReturnsAPage()
     {
-        Assert.IsType<Ok<PagedResult<CollectionEntry>>>(
+        Assert.IsType<Ok<PagedResult<CollectionEntryDetails>>>(
           CollectionEndpoints.GetEntries(SeedData.CollectionId, Service));
     }
 

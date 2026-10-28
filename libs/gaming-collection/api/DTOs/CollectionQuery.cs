@@ -1,3 +1,5 @@
+using GamingCollectionServices;
+
 namespace GamingCollectionApi;
 
 /// <summary>Filters and paging for the entries of one collection. Paging starts at page 1.</summary>

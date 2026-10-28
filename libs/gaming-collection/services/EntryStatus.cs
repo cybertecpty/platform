@@ -1,4 +1,4 @@
-namespace GamingCollectionApi;
+namespace GamingCollectionServices;
 
 public enum EntryStatus
 {

@@ -3,7 +3,8 @@
 - Status: accepted
 - Date: 2026-10-28
 - Deciders: djmcgrath
-- Implemented by: issue #229; `libs/gaming-collection/api` and `apps/gamers-source-api`
+- Implemented by: issue #229; `libs/gaming-collection/api`, `libs/gaming-collection/services` and
+  `apps/gamers-source-api`
 - Builds on: ADR 0017 (`dotnet-backend`), whose generated TypeScript client makes the API
   contract the frontend's source of truth
 

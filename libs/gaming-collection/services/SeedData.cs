@@ -1,4 +1,4 @@
-namespace GamingCollectionApi;
+namespace GamingCollectionServices;
 
 /// <summary>The in-memory data the API serves until it has a database.</summary>
 public static class SeedData
@@ -7,7 +7,7 @@ public static class SeedData
 
     public static readonly Guid CollectionId = new("5d1e8a42-3b7f-4c09-8e26-a9f4b1c7d300");
 
-    public static IReadOnlyList<CollectionDetails> Collections { get; } =
+    public static IReadOnlyList<Collection> Collections { get; } =
     [
       new(CollectionId, UserId, "My games")
     ];

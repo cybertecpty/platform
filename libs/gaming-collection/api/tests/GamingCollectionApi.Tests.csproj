@@ -3,6 +3,8 @@
   <PropertyGroup>
     <Nullable>enable</Nullable>
     <ImplicitUsings>enable</ImplicitUsings>
+    <!-- Gate this project on the library it tests, not on whatever else it loads. -->
+    <Include>[GamingCollectionApi]*</Include>
   </PropertyGroup>
 
   <ItemGroup>

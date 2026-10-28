@@ -11,9 +11,12 @@ or `libs/`.
 
 ## Layout of an API library
 
-- `DTOs/` holds what crosses the wire: request and response DTOs, the enums they use, and the paging
-  envelope. `Endpoints/` holds the route mapping, the handlers and the `Add...` / `Map...`
-  extension methods. Anything else, such as services or seed data, stays in the library root.
+- `DTOs/` holds what crosses the wire: request and response DTOs, the paging envelope, and the
+  mapping from domain types to DTOs. `Endpoints/` holds the route mapping, the handlers and the
+  `Add...` / `Map...` extension methods.
+- Business logic, the domain types and the data they work on live in the `type:services` library
+  (`libs/<domain>/services`), not in the API library. The API library depends on it and never the
+  reverse, so the services cannot return DTOs: they return domain types and the endpoints map them.
 - Keep one namespace for the whole library, the root one. The folders are for finding files, not
   for sub-namespaces.
 - This suits a library with one resource. When a library has several, prefer one folder per

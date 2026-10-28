@@ -1,4 +1,5 @@
 using System.Text.Json.Serialization;
+using GamingCollectionServices;
 using Microsoft.AspNetCore.Builder;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Http.Json;
@@ -38,7 +39,10 @@ public static class CollectionEndpoints
     {
         ArgumentNullException.ThrowIfNull(service);
 
-        return Results.Ok(service.FindCollections(userId));
+        IReadOnlyList<CollectionDetails> collections =
+          [.. service.FindCollections(userId).Select(collection => collection.ToDetails())];
+
+        return Results.Ok(collections);
     }
 
     public static IResult GetCollection(Guid collectionId, [FromServices] CollectionService service)
@@ -46,7 +50,7 @@ public static class CollectionEndpoints
         ArgumentNullException.ThrowIfNull(service);
 
         return service.GetCollection(collectionId) is { } collection
-          ? Results.Ok(collection)
+          ? Results.Ok(collection.ToDetails())
           : Results.NotFound();
     }
 
@@ -68,8 +72,13 @@ public static class CollectionEndpoints
             return Results.ValidationProblem(errors.ToDictionary(pair => pair.Key, pair => pair.Value));
         }
 
-        return service.GetEntries(collectionId, query) is { } result
-          ? Results.Ok(result)
-          : Results.NotFound();
+        if (service.GetEntries(collectionId, query.ToEntryQuery()) is not { } result)
+        {
+            return Results.NotFound();
+        }
+
+        IReadOnlyList<CollectionEntryDetails> items = [.. result.Items.Select(entry => entry.ToDetails())];
+
+        return Results.Ok(new PagedResult<CollectionEntryDetails>(items, page, pageSize, result.TotalCount));
     }
 }
