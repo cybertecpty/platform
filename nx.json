@@ -56,10 +56,6 @@
       "linter": "eslint",
       "unitTestRunner": "jest"
     },
-    "@nx/nest:library": {
-      "linter": "eslint",
-      "unitTestRunner": "jest"
-    },
     "@nx/plugin:plugin": {
       "linter": "eslint",
       "unitTestRunner": "jest"

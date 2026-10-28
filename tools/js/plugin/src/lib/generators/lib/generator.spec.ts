@@ -132,33 +132,23 @@ describe('libGenerator', () => {
     });
   });
 
-  describe('scope resolution for `type:infra`', () => {
-    it('derives the name, directory, and tags for `infra` without an explicit `scope`', async () => {
-      await run(tree, { domain: 'billing', type: 'infra' });
+  describe('backend library types', () => {
+    it.each(['api', 'services', 'infra'] as const)(
+      'rejects `type:%s`, pointing to `dotnet new` and ADR 0017',
+      async type => {
+        const result = run(tree, { domain: 'billing', scope: 'backend', type });
 
-      expect(forwardedOptions()).toMatchObject({
-        name: 'billing-infra',
-        directory: 'libs/billing/infra',
-        tags: 'domain:billing,scope:backend,type:infra'
-      });
-    });
+        await expect(result).rejects.toThrow('`dotnet new`');
+        await expect(result).rejects.toThrow('ADR 0017');
+        expect(nxJsLibraryGeneratorMock).not.toHaveBeenCalled();
+      }
+    );
+  });
 
-    it('accepts an explicit `scope: backend` for `infra` (agrees with the hardcoded value)', async () => {
-      await run(tree, { domain: 'billing', type: 'infra', scope: 'backend' });
-
-      expect(forwardedOptions()).toMatchObject({ tags: 'domain:billing,scope:backend,type:infra' });
-    });
-
-    it('rejects an explicit `scope` that disagrees with `backend` for `infra`', async () => {
-      await expect(
-        run(tree, { domain: 'billing', type: 'infra', scope: 'frontend' })
-      ).rejects.toThrow('`scope` cannot be "frontend" for `type:infra`');
-      expect(nxJsLibraryGeneratorMock).not.toHaveBeenCalled();
-    });
-
-    it('rejects a missing `scope` for every type except `infra`', async () => {
+  describe('scope resolution', () => {
+    it('rejects a missing `scope`', async () => {
       await expect(run(tree, { domain: 'billing', type: 'utils' })).rejects.toThrow(
-        '`scope` must be provided for every `type` except `infra`'
+        '`scope` must be provided'
       );
       expect(nxJsLibraryGeneratorMock).not.toHaveBeenCalled();
     });
