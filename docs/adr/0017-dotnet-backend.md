@@ -376,9 +376,9 @@ changes here.
   `Directory.Build.props`), and `.github/scripts/coverage-report.cjs` reads the lcov file. A
   .NET project's lines, branches and functions join the workspace total (lines also count as
   statements, since .NET has none) and the lines a PR adds to C# count toward patch coverage.
-  The `test` target of each tests project declares `coverage/{projectRoot}` as an output in its
-  `project.json`, because the inferred target only caches `TestResults`; without it a cache hit
-  would restore no report. Vitest's v8 provider writes the same Istanbul files Jest did, so the
+  `@nx/dotnet` infers only `TestResults` as an output of `test`, so `@cybertecpty/dotnet-plugin`
+  adds `{workspaceRoot}/coverage/{projectRoot}` to the `test` target of every .NET project tagged
+  `type:testing`; without it a cache hit would restore no report. Vitest's v8 provider writes the same Istanbul files Jest did, so the
   Istanbul side of the script is unchanged.
 - **Unverified item 5** (`type:testing` may not depend on `type:app`, which
   `WebApplicationFactory` integration tests need) is a tag-matrix question, not a runner
