@@ -378,7 +378,7 @@ changes here.
   statements, since .NET has none) and the lines a PR adds to C# count toward patch coverage.
   `@nx/dotnet` infers only `TestResults` as an output of `test`, so `@cybertecpty/dotnet-plugin`
   adds `{workspaceRoot}/coverage/{projectRoot}` to the `test` target of every .NET project tagged
-  `type:testing`; without it a cache hit would restore no report. Vitest's v8 provider writes the same Istanbul files Jest did, so the
+  `type:testing`; without it a cache hit would restore no report. A `node --test` guard (`.github/scripts/dotnet-coverage-output.test.cjs`) reads the resolved project graph and fails CI if such a project's `test` outputs lack it, since a plugin reorder in `nx.json` would otherwise drop it silently. Vitest's v8 provider writes the same Istanbul files Jest did, so the
   Istanbul side of the script is unchanged.
 - **Unverified item 5** (`type:testing` may not depend on `type:app`, which
   `WebApplicationFactory` integration tests need) is a tag-matrix question, not a runner

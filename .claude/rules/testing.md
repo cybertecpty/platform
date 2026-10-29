@@ -65,7 +65,7 @@ defaults. Loads when working on specs, test artifacts, `type:testing` libs, or J
   (`.github/scripts/coverage-report.cjs`, unit-tested with `node --test`). It reads .NET
   projects' coverlet lcov (`coverage.info`) beside the Istanbul files; the dotnet plugin adds
   `{workspaceRoot}/coverage/{projectRoot}` to the `test` outputs of every .NET project tagged
-  `type:testing`, so a tests project declares nothing itself (ADR 0017). Astro sites run
+  `type:testing`, so a tests project declares nothing itself (ADR 0017); `dotnet-coverage-output.test.cjs` fails CI if the resolved output is ever missing. Astro sites run
   Vitest and mirror these settings in their own `vitest.config.ts` (ADR 0007 2026-09-23
   amendment).
 - **Spec files are type-checked by the `typecheck` target, not `test`.** `ts-jest` is
