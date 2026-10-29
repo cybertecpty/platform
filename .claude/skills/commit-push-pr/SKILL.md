@@ -20,7 +20,8 @@ maintainer) and `cybertec-bot` -> `git@github-cybertec-bot:cybertecpty/platform.
 ## Before you start: check, claim, worktree
 
 Do this when you pick up an issue, before writing code. Skip it only when resuming a branch and
-worktree this session created.
+worktree this session created. `/implement {n}` commits to whatever branch is checked out, so
+run steps 1 to 3 first and implement inside the new worktree, not on `develop` in the main clone.
 
 **1. Check for an existing claim.** Someone may already own the issue. Read-only, any `gh` account:
 
