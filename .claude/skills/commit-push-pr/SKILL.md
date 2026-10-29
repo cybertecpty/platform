@@ -133,10 +133,12 @@ Never `git add -A` / `git add .` without reviewing `git status` first.
 
 ### 5. Commit as the bot
 
-Write the message to a file and pass `-F` (PowerShell mangles inline multi-line strings):
+Write the message to a file and pass `-F` (PowerShell mangles inline multi-line strings). Use a
+fresh path in the scratchpad, not a name shared between commits, and write it in its own call
+(step 7 explains why):
 
 ```bash
-cat > /tmp/commit-msg.txt << 'EOF'
+cat > {scratchpad}/commit-msg-{branch-slug}.txt << 'EOF'
 {type}({scope}): {lowercase subject}
 
 {body — lines <= 100 chars}
@@ -144,7 +146,7 @@ cat > /tmp/commit-msg.txt << 'EOF'
 Refs #{issue}
 Co-Authored-By: Claude Sonnet 5 <noreply@anthropic.com>
 EOF
-git -c user.name="cybertec-bot" -c user.email="cybertec-bot@cybertec.io" commit -F /tmp/commit-msg.txt
+git -c user.name="cybertec-bot" -c user.email="cybertec-bot@cybertec.io" commit -F {scratchpad}/commit-msg-{branch-slug}.txt
 ```
 
 Conventional Commits: `type(scope): subject`, subject **lowercase** (acronyms too), body
@@ -200,8 +202,13 @@ The `--title` must itself be a valid Conventional Commit (`type(scope): subject`
 lowercase subject) — the `commitlint` CI check blocks the PR otherwise, and since
 `develop` squash-merges it is the title that becomes the commit on `develop`.
 
+Write the body in its own call, to a file named for this branch, then create the PR in a second
+call. If a hook blocks a combined call, the write never runs and `gh pr create` submits whatever an
+earlier PR left at that path, with no error (PR #248 went out with #238's body and never closed its
+issue).
+
 ```bash
-cat > /tmp/pr-body.txt << 'EOF'
+cat > {scratchpad}/pr-body-{branch-slug}.md << 'EOF'
 ## Summary
 {bullets}
 
@@ -212,10 +219,15 @@ Refs #{issue}
 
 🤖 Generated with [Claude Code](https://claude.com/claude-code)
 EOF
-gh pr create --repo cybertecpty/platform --base develop --head {branch} --title "{title}" --body-file /tmp/pr-body.txt --reviewer djmcgrath101
 ```
 
-Capture the PR number from the `/pull/{n}` URL.
+```bash
+gh pr create --repo cybertecpty/platform --base develop --head {branch} --title "{title}" --body-file {scratchpad}/pr-body-{branch-slug}.md --reviewer djmcgrath101
+```
+
+Capture the PR number from the `/pull/{n}` URL, then check the body is yours:
+`gh pr view {n} --json body --jq .body`. If it is not, fix it with `gh pr edit {n} --body-file …`
+before arming auto-merge. A `Closes #{issue}` the body lacks does not fire on merge.
 
 `.github/CODEOWNERS` already makes GitHub auto-request the maintainer's review, so
 `--reviewer djmcgrath101` is belt-and-suspenders — keep it so the request still
