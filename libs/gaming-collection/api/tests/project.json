@@ -1,9 +1,4 @@
 {
   "name": "gaming-collection-api-tests",
-  "targets": {
-    "test": {
-      "outputs": ["{projectRoot}/TestResults", "{workspaceRoot}/coverage/{projectRoot}"]
-    }
-  },
   "tags": ["scope:backend", "type:testing", "domain:gaming-collection"]
 }

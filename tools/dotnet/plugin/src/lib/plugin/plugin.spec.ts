@@ -1,10 +1,15 @@
 import type { CreateNodesContext } from '@nx/devkit';
+import { mkdirSync, mkdtempSync, rmSync, writeFileSync } from 'node:fs';
+import { tmpdir } from 'node:os';
+import { join } from 'node:path';
 import {
+  COVERAGE_OUTPUT,
   createCheckBoundariesTarget,
   createNodes,
   createNodesForProjectFile,
   DEFAULT_CHECK_BOUNDARIES_TARGET_NAME,
-  DOTNET_PROJECT_FILE_GLOB
+  DOTNET_PROJECT_FILE_GLOB,
+  TESTING_TAG
 } from './plugin';
 
 const [, createNodesFunction] = createNodes;
@@ -67,21 +72,26 @@ describe('createNodesForProjectFile', () => {
   it('names the project root after the folder of the project file', () => {
     expect(
       Object.keys(
-        createNodesForProjectFile('backend/checkout-api/tests/CheckoutApi.Tests.csproj', undefined)
-          .projects ?? {}
+        createNodesForProjectFile(
+          'backend/checkout-api/tests/CheckoutApi.Tests.csproj',
+          undefined,
+          '/workspace'
+        ).projects ?? {}
       )
     ).toEqual(['backend/checkout-api/tests']);
   });
 
   it('uses the workspace root for a project file at the top level', () => {
-    expect(Object.keys(createNodesForProjectFile('Solo.csproj', undefined).projects ?? {})).toEqual(
-      ['.']
-    );
+    expect(
+      Object.keys(createNodesForProjectFile('Solo.csproj', undefined, '/workspace').projects ?? {})
+    ).toEqual(['.']);
   });
 
   it('marks the project as a .NET project, which the executor requires', () => {
     expect(
-      createNodesForProjectFile('backend/a/A.csproj', undefined).projects?.['backend/a']?.metadata
+      createNodesForProjectFile('backend/a/A.csproj', undefined, '/workspace').projects?.[
+        'backend/a'
+      ]?.metadata
     ).toEqual({ technologies: ['dotnet'] });
   });
 
@@ -89,7 +99,8 @@ describe('createNodesForProjectFile', () => {
     expect(DEFAULT_CHECK_BOUNDARIES_TARGET_NAME).toBe('check-boundaries');
     expect(
       Object.keys(
-        createNodesForProjectFile('backend/a/A.csproj', {}).projects?.['backend/a']?.targets ?? {}
+        createNodesForProjectFile('backend/a/A.csproj', {}, '/workspace').projects?.['backend/a']
+          ?.targets ?? {}
       )
     ).toEqual(['check-boundaries']);
   });
@@ -126,5 +137,68 @@ describe('createCheckBoundariesTarget', () => {
 
   it('returns a new object each time', () => {
     expect(createCheckBoundariesTarget()).not.toBe(createCheckBoundariesTarget());
+  });
+});
+
+describe('coverage output of a tests project', () => {
+  let workspaceRoot: string;
+
+  beforeEach(() => {
+    workspaceRoot = mkdtempSync(join(tmpdir(), 'dotnet-plugin-'));
+  });
+
+  afterEach(() => {
+    rmSync(workspaceRoot, { recursive: true, force: true });
+  });
+
+  function writeProject(root: string, projectJson: object | undefined) {
+    mkdirSync(join(workspaceRoot, root), { recursive: true });
+    if (projectJson) {
+      writeFileSync(join(workspaceRoot, root, 'project.json'), JSON.stringify(projectJson));
+    }
+  }
+
+  function testTarget(root: string) {
+    return createNodesForProjectFile(`${root}/A.csproj`, undefined, workspaceRoot).projects?.[root]
+      ?.targets?.['test'];
+  }
+
+  it('adds the coverage directory to the test target of a project tagged type:testing', () => {
+    writeProject('libs/a/tests', { tags: [TESTING_TAG] });
+
+    expect(COVERAGE_OUTPUT).toBe('{workspaceRoot}/coverage/{projectRoot}');
+    expect(testTarget('libs/a/tests')?.outputs).toEqual(['...', COVERAGE_OUTPUT]);
+  });
+
+  it('reads the tags from the workspace root the plugin is given', async () => {
+    writeProject('libs/a/tests', { tags: [TESTING_TAG] });
+
+    const [[, result]] = await createNodesFunction(['libs/a/tests/A.csproj'], undefined, {
+      ...context,
+      workspaceRoot
+    });
+
+    expect(result.projects?.['libs/a/tests']?.targets?.['test']?.outputs).toEqual([
+      '...',
+      COVERAGE_OUTPUT
+    ]);
+  });
+
+  it('leaves other .NET projects without a test target', () => {
+    writeProject('libs/a', { tags: ['type:feature'] });
+
+    expect(testTarget('libs/a')).toBeUndefined();
+  });
+
+  it('leaves a project without a project.json without a test target', () => {
+    writeProject('libs/b', undefined);
+
+    expect(testTarget('libs/b')).toBeUndefined();
+  });
+
+  it('leaves a project with no tags without a test target', () => {
+    writeProject('libs/c', {});
+
+    expect(testTarget('libs/c')).toBeUndefined();
   });
 });
