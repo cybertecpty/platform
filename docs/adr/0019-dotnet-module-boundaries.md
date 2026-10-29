@@ -228,3 +228,6 @@ another domain, and unit tests cover it; the forbidden edge was a manual run). U
 item 1 (the CI Node version and the real layout) is partly checked: the layout is real, but CI
 has not run it yet. Nx prints the "Failed to load the ES module" Node warning once per command,
 as predicted above.
+
+The plugin also infers the `format-check` and `format` targets (ADR 0017, issue #236), so its
+role is no longer only boundaries.

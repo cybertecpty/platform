@@ -7,10 +7,14 @@ import {
   COVERAGE_OUTPUT,
   createCheckBoundariesTarget,
   createCheckCoverageOutputTarget,
+  createFormatCheckTarget,
+  createFormatTarget,
   createNodes,
   createNodesForProjectFile,
   DEFAULT_CHECK_BOUNDARIES_TARGET_NAME,
   DOTNET_PROJECT_FILE_GLOB,
+  FORMAT_CHECK_TARGET_NAME,
+  FORMAT_TARGET_NAME,
   TESTING_TAG
 } from './plugin';
 
@@ -49,7 +53,9 @@ describe('createNodes', () => {
     );
 
     expect(result.projects?.['backend/checkout-api']?.targets).toEqual({
-      [DEFAULT_CHECK_BOUNDARIES_TARGET_NAME]: createCheckBoundariesTarget()
+      [DEFAULT_CHECK_BOUNDARIES_TARGET_NAME]: createCheckBoundariesTarget(),
+      [FORMAT_CHECK_TARGET_NAME]: createFormatCheckTarget(),
+      [FORMAT_TARGET_NAME]: createFormatTarget()
     });
   });
 
@@ -61,7 +67,9 @@ describe('createNodes', () => {
     );
 
     expect(Object.keys(result.projects?.['backend/checkout-api']?.targets ?? {})).toEqual([
-      'boundaries'
+      'boundaries',
+      'format-check',
+      'format'
     ]);
   });
 
@@ -104,7 +112,60 @@ describe('createNodesForProjectFile', () => {
         createNodesForProjectFile('backend/a/A.csproj', {}, '/workspace').projects?.['backend/a']
           ?.targets ?? {}
       )
-    ).toEqual(['check-boundaries']);
+    ).toEqual(['check-boundaries', 'format-check', 'format']);
+  });
+});
+
+describe('createFormatCheckTarget', () => {
+  it('runs dotnet format on the project and fails when it would change a file', () => {
+    expect(FORMAT_CHECK_TARGET_NAME).toBe('format-check');
+    expect(createFormatCheckTarget()).toMatchObject({
+      executor: 'nx:run-commands',
+      options: { command: 'dotnet format {projectRoot} --verify-no-changes' }
+    });
+  });
+
+  it('is cached', () => {
+    expect(createFormatCheckTarget().cache).toBe(true);
+  });
+
+  it('depends on the project and the workspace files that decide its rules', () => {
+    expect(createFormatCheckTarget().inputs).toEqual([
+      'default',
+      '{workspaceRoot}/.editorconfig',
+      '{workspaceRoot}/global.json',
+      '{workspaceRoot}/Directory.Build.props'
+    ]);
+  });
+
+  it('is described as a .NET target', () => {
+    expect(createFormatCheckTarget().metadata?.technologies).toEqual(['dotnet']);
+  });
+
+  it('returns a new object each time', () => {
+    expect(createFormatCheckTarget()).not.toBe(createFormatCheckTarget());
+  });
+});
+
+describe('createFormatTarget', () => {
+  it('runs dotnet format on the project and rewrites files', () => {
+    expect(FORMAT_TARGET_NAME).toBe('format');
+    expect(createFormatTarget()).toMatchObject({
+      executor: 'nx:run-commands',
+      options: { command: 'dotnet format {projectRoot}' }
+    });
+  });
+
+  it('is not cached', () => {
+    expect(createFormatTarget().cache).toBe(false);
+  });
+
+  it('is described as a .NET target', () => {
+    expect(createFormatTarget().metadata?.technologies).toEqual(['dotnet']);
+  });
+
+  it('returns a new object each time', () => {
+    expect(createFormatTarget()).not.toBe(createFormatTarget());
   });
 });
 

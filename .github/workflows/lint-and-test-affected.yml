@@ -86,9 +86,8 @@ jobs:
         uses: nrwl/nx-set-shas@v5
 
       # $NX_BASE / $NX_HEAD come from nrwl/nx-set-shas above. The `format:check` script runs
-      # `dotnet format` over the whole solution (ADR 0017), then `nx format:check` with these
-      # arguments for the affected files. The Nx command must stay last, since pnpm appends the
-      # arguments to the end of the script.
+      # `nx format:check` with these arguments for the affected files. C# is checked by the
+      # `format-check` target in the affected run below (ADR 0017).
       - name: Check formatting
         run: pnpm format:check --base=$NX_BASE --head=$NX_HEAD
       # `lighthouse` is the cybertec-io-e2e performance/accessibility gate;
@@ -98,10 +97,10 @@ jobs:
       # project, and a complete workspace coverage number (ADR 0007, 2026-10-16).
       - name: Run affected targets
         if: github.event_name == 'pull_request'
-        run: pnpm exec nx affected -t lint test build typecheck check-boundaries check-coverage-output e2e lighthouse --base=$NX_BASE --head=$NX_HEAD
+        run: pnpm exec nx affected -t lint test build typecheck check-boundaries check-coverage-output format-check e2e lighthouse --base=$NX_BASE --head=$NX_HEAD
       - name: Run all targets
         if: github.event_name != 'pull_request'
-        run: pnpm exec nx run-many -t lint test build typecheck check-boundaries check-coverage-output e2e lighthouse
+        run: pnpm exec nx run-many -t lint test build typecheck check-boundaries check-coverage-output format-check e2e lighthouse
 
       # Coverage reporting (ADR 0007 amendment / issue #52). The `test` targets
       # collect coverage in CI (jest.preset.js) and declare

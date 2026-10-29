@@ -417,8 +417,9 @@ the `add-dependency` skill.
 
 Run `nx format:write --files={paths}` after editing, and actually run it before
 ticking a "prettier clean" box in a PR body — CI runs `pnpm format:check` and a stray
-marker fails the required check. In that script `dotnet format` must stay before `nx format:check`,
-because pnpm appends the extra arguments (`--base`, `--head`) to the last command.
+marker fails the required check. C# is formatted by the inferred `format` target of each .NET
+project, not by `nx format:write`: the root `format` and `affected:format` scripts run it first, and
+`nx format:write` must stay last because pnpm appends the extra arguments to the last command.
 
 In Claude Code, `.claude/hooks/format-edited.cjs` formats for you: a PostToolUse hook records
 each file the session writes or edits, and a Stop hook runs Prettier over that list once at
@@ -490,9 +491,8 @@ name (§2).
   `nx affected -t lint test build typecheck check-boundaries check-coverage-output`. On a PR, CI runs the same affected
   set plus `e2e` and `lighthouse`; on a push to `develop`/`main` it runs every project
   (`nx run-many`). `check-boundaries` is the inferred target on every .NET project that checks its
-  references against ADR 0004's matrix (ADR 0019), and `check-coverage-output` is the one on every .NET project tagged `type:testing` that checks its `test` target caches the coverage report (ADR 0017); the plugin is registered in `nx.json`. `dotnet format Platform.slnx --verify-no-changes` is the
-  .NET format gate. It is part of `pnpm format:check`, which `pnpm verify` and CI run, and it
-  checks the whole solution, not only affected projects.
+  references against ADR 0004's matrix (ADR 0019), and `check-coverage-output` is the one on every .NET project tagged `type:testing` that checks its `test` target caches the coverage report (ADR 0017); the plugin is registered in `nx.json`. `format-check` is the .NET format gate: the inferred, cached target on every .NET project that runs
+  `dotnet format --verify-no-changes` on it, which `nx affected` narrows to changed projects.
 - Run through Nx: `nx test {project}`, `nx lint {project}`, `nx run-many ...`,
   `nx affected ...`. Prefix with pnpm: `pnpm exec nx …`.
 - After TS/config/schema/barrel/generator changes, run targeted tests first, then a

@@ -44,6 +44,12 @@ export const COVERAGE_OUTPUT = '{workspaceRoot}/coverage/{projectRoot}';
 export const CHECK_COVERAGE_OUTPUT_TARGET_NAME = 'check-coverage-output';
 
 /**
+ * The names of the inferred targets that check and fix a .NET project's formatting.
+ */
+export const FORMAT_CHECK_TARGET_NAME = 'format-check';
+export const FORMAT_TARGET_NAME = 'format';
+
+/**
  * The code the check runs, so the cached result is discarded when the rules or the logic change.
  * The matrix and `checkDepConstraints` live in `nx-utils`, which uses the tag helpers in
  * `shared-utils`, and the executor is in this plugin.
@@ -55,7 +61,8 @@ const CHECK_CODE_INPUTS = [
 ];
 
 /**
- * Adds the `check-boundaries` target (ADR 0019) to every .NET project, found by its project file.
+ * Adds the `check-boundaries` target (ADR 0019) and the `format-check` and `format` targets to every
+ * .NET project, found by its project file.
  * A project's `project.json` does not list the target.
  */
 export const createNodes: CreateNodes<CheckBoundariesPluginOptions> = [
@@ -114,9 +121,51 @@ export function createCheckCoverageOutputTarget(): TargetConfiguration {
 }
 
 /**
+ * The inferred `format-check` target of one .NET project: `dotnet format` run on the project's
+ * folder, failing when it would change a file. A folder holds one project, so a nested tests
+ * project is checked by its own target and not by its parent's.
+ *
+ * Besides the project's files, the rules (`.editorconfig`) and the SDK (`global.json`,
+ * `Directory.Build.props`) decide the result, so a change to one re-runs every project.
+ */
+export function createFormatCheckTarget(): TargetConfiguration {
+  return {
+    executor: 'nx:run-commands',
+    cache: true,
+    inputs: [
+      'default',
+      '{workspaceRoot}/.editorconfig',
+      '{workspaceRoot}/global.json',
+      '{workspaceRoot}/Directory.Build.props'
+    ],
+    options: { command: 'dotnet format {projectRoot} --verify-no-changes' },
+    metadata: {
+      technologies: ['dotnet'],
+      description: 'Fails when `dotnet format` would change a file of the project.'
+    }
+  };
+}
+
+/**
+ * The inferred `format` target of one .NET project: `dotnet format` run on the project's folder,
+ * rewriting files. Not cached, because the point is its effect on the files.
+ */
+export function createFormatTarget(): TargetConfiguration {
+  return {
+    executor: 'nx:run-commands',
+    cache: false,
+    options: { command: 'dotnet format {projectRoot}' },
+    metadata: {
+      technologies: ['dotnet'],
+      description: "Rewrites the project's files to the formatting `dotnet format` expects."
+    }
+  };
+}
+
+/**
  * The projects, keyed by root, that one .NET project file contributes to the graph: the project in
  * the folder holding the file, marked as a .NET project (`@nx/dotnet` sets the same metadata, but
- * the check must not depend on it being registered) and given the `check-boundaries` target. A
+ * the check must not depend on it being registered) and given the `check-boundaries`, `format-check` and `format` targets. A
  * project tagged `type:testing` in its `project.json` also gets the coverage report as an output of
  * its `test` target, and the `check-coverage-output` target that checks it.
  *
@@ -131,7 +180,9 @@ export function createNodesForProjectFile(
   const targetName = options?.targetName ?? DEFAULT_CHECK_BOUNDARIES_TARGET_NAME;
   const root = posix.dirname(projectFile);
   const targets: Record<string, TargetConfiguration> = {
-    [targetName]: createCheckBoundariesTarget()
+    [targetName]: createCheckBoundariesTarget(),
+    [FORMAT_CHECK_TARGET_NAME]: createFormatCheckTarget(),
+    [FORMAT_TARGET_NAME]: createFormatTarget()
   };
 
   if (hasTestingTag(workspaceRoot, root)) {
