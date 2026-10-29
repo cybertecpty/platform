@@ -487,10 +487,10 @@ name (§2).
 
 - **Run `pnpm verify` before every push.** It mirrors the required `lint-and-test-affected` check on affected
   projects (vs `origin/develop`; fetch first): the `node --test` suites, `nx format:check`, and
-  `nx affected -t lint test build typecheck check-boundaries`. On a PR, CI runs the same affected
+  `nx affected -t lint test build typecheck check-boundaries check-coverage-output`. On a PR, CI runs the same affected
   set plus `e2e` and `lighthouse`; on a push to `develop`/`main` it runs every project
   (`nx run-many`). `check-boundaries` is the inferred target on every .NET project that checks its
-  references against ADR 0004's matrix (ADR 0019); the plugin is registered in `nx.json`. `dotnet format Platform.slnx --verify-no-changes` is the
+  references against ADR 0004's matrix (ADR 0019), and `check-coverage-output` is the one on every .NET project tagged `type:testing` that checks its `test` target caches the coverage report (ADR 0017); the plugin is registered in `nx.json`. `dotnet format Platform.slnx --verify-no-changes` is the
   .NET format gate. It is part of `pnpm format:check`, which `pnpm verify` and CI run, and it
   checks the whole solution, not only affected projects.
 - Run through Nx: `nx test {project}`, `nx lint {project}`, `nx run-many ...`,

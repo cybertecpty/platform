@@ -98,10 +98,10 @@ jobs:
       # project, and a complete workspace coverage number (ADR 0007, 2026-10-16).
       - name: Run affected targets
         if: github.event_name == 'pull_request'
-        run: pnpm exec nx affected -t lint test build typecheck check-boundaries e2e lighthouse --base=$NX_BASE --head=$NX_HEAD
+        run: pnpm exec nx affected -t lint test build typecheck check-boundaries check-coverage-output e2e lighthouse --base=$NX_BASE --head=$NX_HEAD
       - name: Run all targets
         if: github.event_name != 'pull_request'
-        run: pnpm exec nx run-many -t lint test build typecheck check-boundaries e2e lighthouse
+        run: pnpm exec nx run-many -t lint test build typecheck check-boundaries check-coverage-output e2e lighthouse
 
       # Coverage reporting (ADR 0007 amendment / issue #52). The `test` targets
       # collect coverage in CI (jest.preset.js) and declare
