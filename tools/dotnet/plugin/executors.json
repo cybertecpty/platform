@@ -4,6 +4,11 @@
       "implementation": "./src/lib/executors/check-boundaries/executor",
       "schema": "./src/lib/executors/check-boundaries/schema.json",
       "description": "Fail when a .NET project references another .NET project in a way the dependency constraints of ADR 0004 forbid."
+    },
+    "check-coverage-output": {
+      "implementation": "./src/lib/executors/check-coverage-output/executor",
+      "schema": "./src/lib/executors/check-coverage-output/schema.json",
+      "description": "Fail when the test target of a .NET tests project does not cache the coverage report."
     }
   }
 }

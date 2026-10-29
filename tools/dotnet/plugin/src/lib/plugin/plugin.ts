@@ -38,6 +38,12 @@ export const TESTING_TAG = 'type:testing';
 export const COVERAGE_OUTPUT = '{workspaceRoot}/coverage/{projectRoot}';
 
 /**
+ * The name of the inferred target that checks a tests project's `test` target caches the coverage
+ * report.
+ */
+export const CHECK_COVERAGE_OUTPUT_TARGET_NAME = 'check-coverage-output';
+
+/**
  * The code the check runs, so the cached result is discarded when the rules or the logic change.
  * The matrix and `checkDepConstraints` live in `nx-utils`, which uses the tag helpers in
  * `shared-utils`, and the executor is in this plugin.
@@ -84,11 +90,35 @@ export function createCheckBoundariesTarget(): TargetConfiguration {
 }
 
 /**
+ * The inferred `check-coverage-output` target of a tests project.
+ *
+ * The result depends on the resolved outputs of `test`, which the project's own files, `nx.json`
+ * (plugin order and target defaults) and the version of `@nx/dotnet` (which infers the outputs
+ * this plugin extends) decide, so all of them are inputs.
+ */
+export function createCheckCoverageOutputTarget(): TargetConfiguration {
+  return {
+    executor: '@cybertecpty/dotnet-plugin:check-coverage-output',
+    cache: true,
+    inputs: [
+      'default',
+      '{workspaceRoot}/nx.json',
+      { externalDependencies: ['@nx/dotnet'] },
+      '{workspaceRoot}/tools/dotnet/plugin/src/**/*.ts'
+    ],
+    metadata: {
+      technologies: ['dotnet'],
+      description: "Fails when the project's test target does not cache the coverage report."
+    }
+  };
+}
+
+/**
  * The projects, keyed by root, that one .NET project file contributes to the graph: the project in
  * the folder holding the file, marked as a .NET project (`@nx/dotnet` sets the same metadata, but
  * the check must not depend on it being registered) and given the `check-boundaries` target. A
  * project tagged `type:testing` in its `project.json` also gets the coverage report as an output of
- * its `test` target.
+ * its `test` target, and the `check-coverage-output` target that checks it.
  *
  * A folder holding several project files is one project, because Nx keys projects by root and
  * MSBuild itself refuses to build such a folder without being told which file to use.
@@ -107,6 +137,7 @@ export function createNodesForProjectFile(
   if (hasTestingTag(workspaceRoot, root)) {
     // `...` keeps the outputs `@nx/dotnet` infers.
     targets['test'] = { outputs: ['...', COVERAGE_OUTPUT] };
+    targets[CHECK_COVERAGE_OUTPUT_TARGET_NAME] = createCheckCoverageOutputTarget();
   }
 
   return {

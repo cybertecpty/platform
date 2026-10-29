@@ -3,8 +3,10 @@ import { mkdirSync, mkdtempSync, rmSync, writeFileSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import {
+  CHECK_COVERAGE_OUTPUT_TARGET_NAME,
   COVERAGE_OUTPUT,
   createCheckBoundariesTarget,
+  createCheckCoverageOutputTarget,
   createNodes,
   createNodesForProjectFile,
   DEFAULT_CHECK_BOUNDARIES_TARGET_NAME,
@@ -200,5 +202,54 @@ describe('coverage output of a tests project', () => {
     writeProject('libs/c', {});
 
     expect(testTarget('libs/c')).toBeUndefined();
+  });
+});
+
+describe('createCheckCoverageOutputTarget', () => {
+  it('runs the check-coverage-output executor of this plugin, cached', () => {
+    const target = createCheckCoverageOutputTarget();
+
+    expect(target.executor).toBe('@cybertecpty/dotnet-plugin:check-coverage-output');
+    expect(target.cache).toBe(true);
+  });
+
+  it('is invalidated by whatever changes the resolved outputs of test', () => {
+    expect(createCheckCoverageOutputTarget().inputs).toEqual(
+      expect.arrayContaining([
+        'default',
+        '{workspaceRoot}/nx.json',
+        { externalDependencies: ['@nx/dotnet'] }
+      ])
+    );
+  });
+
+  describe('on a project file', () => {
+    let workspaceRoot: string;
+
+    beforeEach(() => {
+      workspaceRoot = mkdtempSync(join(tmpdir(), 'dotnet-plugin-'));
+      mkdirSync(join(workspaceRoot, 'libs/a'), { recursive: true });
+    });
+
+    afterEach(() => {
+      rmSync(workspaceRoot, { recursive: true, force: true });
+    });
+
+    const targetsOf = (tags: string[]) => {
+      writeFileSync(join(workspaceRoot, 'libs/a/project.json'), JSON.stringify({ tags }));
+      return createNodesForProjectFile('libs/a/A.csproj', undefined, workspaceRoot).projects?.[
+        'libs/a'
+      ]?.targets;
+    };
+
+    it('is added to a project tagged type:testing', () => {
+      expect(targetsOf([TESTING_TAG])?.[CHECK_COVERAGE_OUTPUT_TARGET_NAME]).toEqual(
+        createCheckCoverageOutputTarget()
+      );
+    });
+
+    it('is not added to other projects', () => {
+      expect(targetsOf(['type:feature'])?.[CHECK_COVERAGE_OUTPUT_TARGET_NAME]).toBeUndefined();
+    });
   });
 });

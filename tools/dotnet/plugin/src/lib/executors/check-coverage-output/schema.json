@@ -1,0 +1,10 @@
+{
+  "$schema": "https://json-schema.org/schema",
+  "version": 2,
+  "title": "Check the .NET coverage report is cached",
+  "description": "Fail when the test target of a .NET tests project does not cache the coverage report.",
+  "type": "object",
+  "properties": {},
+  "required": [],
+  "additionalProperties": false
+}
