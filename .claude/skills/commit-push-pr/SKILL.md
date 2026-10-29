@@ -107,7 +107,10 @@ in a shared clone, see conventions §5 (Sharing a clone) before any git write.
 If you are on `develop`/`main` with changes to ship, do not cut a branch in the main clone. Make a
 worktree and branch as in [Before you start](#before-you-start-check-claim-worktree)
 (`feat/{issue#}-{slug}`, `fix/...`, `docs/...`, `chore/...`), then copy the changed files into it
-(the stash is shared across worktrees, conventions §5). Only when you cannot make a worktree, use the shared-clone exception (conventions §5):
+(the stash is shared across worktrees, conventions §5). Once copied, compare each file's
+`git hash-object` in both trees, then restore the main clone (`git restore --staged --worktree .`
+and delete the untracked copies you moved). Do not leave the originals behind for the user to
+clean up. Only when you cannot make a worktree, use the shared-clone exception (conventions §5):
 
 ```bash
 git checkout -b {branch} develop
