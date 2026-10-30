@@ -1,4 +1,9 @@
-import { SetRequired } from 'type-fest';
+import type { SetRequired } from 'type-fest';
+
+export type NormalizedReleaseGeneratorOptions = SetRequired<
+  ReleaseGeneratorOptions,
+  'baseBranch' | 'releaseDate' | 'skipBranch' | 'skipPullRequest' | 'targetBranch'
+>;
 
 export interface ReleaseGeneratorOptions {
   /**
@@ -70,8 +75,3 @@ export interface ReleaseGeneratorOptions {
    */
   readonly vers?: string;
 }
-
-export type NormalizedReleaseGeneratorOptions = SetRequired<
-  ReleaseGeneratorOptions,
-  'baseBranch' | 'releaseDate' | 'skipBranch' | 'skipPullRequest' | 'targetBranch'
->;

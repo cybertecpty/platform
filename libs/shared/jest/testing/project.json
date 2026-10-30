@@ -1,0 +1,10 @@
+{
+  "name": "jest-testing",
+  "$schema": "../../../../node_modules/nx/schemas/project-schema.json",
+  "sourceRoot": "libs/shared/jest/testing/src",
+  "projectType": "library",
+  "tags": ["domain:shared", "scope:shared", "type:testing"],
+  "targets": {
+    "typecheck": {}
+  }
+}

@@ -18,7 +18,10 @@
       "!{projectRoot}/tsconfig.spec.json",
       "!{projectRoot}/src/test-setup.[jt]s",
       "!{projectRoot}/jest.config.[jt]s",
-      "!{projectRoot}/test-setup.[jt]s"
+      "!{projectRoot}/test-setup.[jt]s",
+      "!{projectRoot}/tests/**/*",
+      "!{projectRoot}/**/bin/**/*",
+      "!{projectRoot}/**/obj/**/*"
     ],
     "sharedGlobals": []
   },
@@ -34,6 +37,13 @@
       "options": {
         "targetName": "test"
       }
+    },
+    "@nx/dotnet",
+    {
+      "plugin": "@cybertecpty/dotnet-plugin",
+      "options": {
+        "targetName": "check-boundaries"
+      }
     }
   ],
   "generators": {
@@ -43,10 +53,6 @@
     },
     "@nx/js:library": {
       "bundler": "none",
-      "linter": "eslint",
-      "unitTestRunner": "jest"
-    },
-    "@nx/nest:library": {
       "linter": "eslint",
       "unitTestRunner": "jest"
     },
@@ -63,12 +69,23 @@
       "dependsOn": ["^build"],
       "inputs": ["production", "^production"]
     },
+    "lighthouse": {
+      "executor": "nx:run-commands",
+      "cache": true,
+      "dependsOn": ["^build"],
+      "inputs": ["default", "^production"],
+      "outputs": ["{projectRoot}/test-results"],
+      "options": {
+        "command": "playwright test --config playwright.lighthouse.config.ts",
+        "cwd": "{projectRoot}"
+      }
+    },
     "typecheck": {
       "executor": "nx:run-commands",
       "cache": true,
       "inputs": ["default", "^default", { "externalDependencies": ["typescript"] }],
       "options": {
-        "command": "tsc --noEmit -p {projectRoot}/tsconfig.spec.json"
+        "command": "tsc --noEmit -p {projectRoot}/tsconfig.lib.json && tsc --noEmit -p {projectRoot}/tsconfig.spec.json"
       }
     }
   },
@@ -76,7 +93,7 @@
     "projectsRelationship": "independent",
     "groups": {
       "apps": {
-        "projects": ["apps/*"]
+        "projects": ["apps/*", "!tag:scope:backend"]
       }
     },
     "version": {

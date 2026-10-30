@@ -1,0 +1,10 @@
+{
+  "$schema": "https://json-schema.org/schema",
+  "version": 2,
+  "title": "<%= name %> executor",
+  "description": <%- JSON.stringify(description) %>,
+  "type": "object",
+  "properties": {},
+  "required": [],
+  "additionalProperties": false
+}

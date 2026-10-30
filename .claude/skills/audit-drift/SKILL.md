@@ -49,8 +49,9 @@ Extract claims, verify each with a **read-only** probe, group findings by type:
 2. **Command / incantation references.** Documented commands assume real tools, flags, git
    remotes, `gh` accounts, branches, identifiers. Verify the _referents_ exist, read-only — a
    named git remote is present (`git remote`), a documented `gh` keyring user exists
-   (`gh auth status`), a branch the policy names exists on the remote, the `nxCloudId` in
-   `nx.json` matches what Nx Cloud reports. **Never run a state-changing command to test it.**
+   (`gh auth status`), a branch the policy names exists on the remote. **Never run a
+   state-changing command to test it.** (`nxCloudId` in `nx.json` is deliberately left unchecked:
+   Nx Cloud is disabled, #188.)
 
 3. **Structural claims.** Prose describing repo layout or behavior — directory shape, test
    runner per project, what's published vs. not, generator scope. Verify against the repo
@@ -58,7 +59,7 @@ Extract claims, verify each with a **read-only** probe, group findings by type:
    contradicts is drift.
 
 4. **Policy / workflow claims.** "Branch off `develop`, PR into `develop`", "auto-merge
-   armed", "publish on merge to `main`", "branch protection requires the `ci` check".
+   armed", "publish on merge to `main`", "branch protection requires the `lint-and-test-affected` check".
    Verify what is read-only checkable (does `develop` exist? is there a publish workflow
    under `.github/workflows`? `gh api repos/cybertecpty/platform/rulesets`) and explicitly
    mark the rest **asserted but not verifiable from here** rather than guessing.

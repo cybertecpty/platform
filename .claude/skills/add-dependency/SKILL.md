@@ -26,7 +26,17 @@ covers it — an existing dependency, an Nx plugin, or a shared helper.
   `docs/adr/0003-frontend-bundle-hygiene.md` for the entry-point rules — `lodash`
   → `lodash-es` workspace-wide, `zod` → `zod/mini` in `scope:frontend` and
   `scope:shared` code, both lint-enforced.
-- Adding a dependency is a `build` change (`build(deps): ...`); if it sets a
-  durable technical direction, it may also warrant an ADR (`write-adr` skill).
-- Framework capability (`@angular/*`, `@nestjs/*`) comes through `@nx/angular` / `@nx/nest`
-  generators and `nx add`, not hand-installed packages (conventions §11).
+- Adding a dependency is a `build` change (`build(deps): ...`). A new framework, or a new
+  test, lint or CI tool, needs a new ADR or an amendment to the one that owns its area
+  (`write-adr` skill) — e.g. ADR 0007 for unit tests, ADR 0016 for e2e and quality gates,
+  ADR 0008 for ESLint plugins. Any other dependency that sets a durable technical direction
+  may also warrant one.
+- `tools/*` projects aren't pnpm workspace packages (`pnpm-workspace.yaml` lists only
+  `packages/*` and the Astro app); their imports resolve from the root `node_modules`. To give
+  a tools project a dependency, add it to the root `package.json` (with `pnpm add -w` if it's
+  new), then also list the same version in the project's own `package.json`, which
+  `@nx/dependency-checks` lints. That second step needs no install. `tools/js/plugin`'s
+  `@nx/js` entry is an example.
+- Framework capability (`@angular/*`) comes through `@nx/angular` generators and `nx add`, not
+  hand-installed packages (conventions §11). Backend (.NET) package references are
+  `dotnet add package` against a `.csproj`, not pnpm (ADR 0017) — nothing is wired yet.

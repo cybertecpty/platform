@@ -1,8 +1,9 @@
-import { formatFiles, readJson, Tree, writeJson } from '@nx/devkit';
+import type { Tree } from '@nx/devkit';
+import { formatFiles, readJson, writeJson } from '@nx/devkit';
 import { inc, RELEASE_TYPES, valid } from 'semver';
-import { PackageJson } from 'type-fest';
+import type { PackageJson } from 'type-fest';
 import { isReleaseType } from '../../utils/release-versions.utils';
-import { PackageVersionGeneratorOptions } from './schema';
+import type { PackageVersionGeneratorOptions } from './schema';
 
 export async function packageVersionGenerator(
   tree: Tree,

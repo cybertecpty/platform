@@ -1,26 +1,15 @@
-import { readJson, Tree } from '@nx/devkit';
-import { PackageJson } from 'type-fest';
-
-/**
- * Reads the root `package.json` file of the workspace and returns its contents as a `PackageJson` object.
- * Returns `null` if the root `package.json` file does not exist or cannot be read.
- */
-export function readRootPackageJson(tree: Tree): PackageJson | null {
-  try {
-    return readJson<PackageJson>(tree, 'package.json');
-  } catch {
-    return null;
-  }
-}
+import type { Tree } from '@nx/devkit';
+import { readJson } from '@nx/devkit';
+import type { PackageJson } from 'type-fest';
 
 /**
  * Returns the npm scope of the workspace derived from the root `package.json` name,
  * including the leading `@` (e.g. `'@cybertecpty'` for `@cybertecpty/workspace`).
  *
- * Throws when the root `package.json` is missing, unreadable, or its `name` is not scoped.
+ * Throws when the root `package.json` is missing or invalid, or its `name` is not scoped.
  */
 export function getWorkspaceScope(tree: Tree): string {
-  const packageJson = readRootPackageJson(tree);
+  const packageJson = readWorkspacePackageJson(tree);
   const { name } = packageJson ?? {};
   const parts = name?.split('/');
 
@@ -31,4 +20,14 @@ export function getWorkspaceScope(tree: Tree): string {
   }
 
   return parts[0];
+}
+
+/**
+ * Reads the `package.json` at the workspace root and returns its contents as a `PackageJson`
+ * object, or `null` when the workspace has none.
+ *
+ * @throws when the file exists but is not valid JSON.
+ */
+export function readWorkspacePackageJson(tree: Tree): PackageJson | null {
+  return tree.exists('package.json') ? readJson<PackageJson>(tree, 'package.json') : null;
 }

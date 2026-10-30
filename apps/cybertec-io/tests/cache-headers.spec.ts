@@ -19,13 +19,6 @@ const distDir = join(dirname(fileURLToPath(import.meta.url)), '../../../dist/app
 const IMMUTABLE_CACHE_CONTROL = 'public, max-age=31536000, immutable';
 const IMAGE_EXT = /\.(ico|png|svg|webp|jpe?g|gif|avif)$/;
 
-/** The first route SWA would match for a URL path: exact, or a trailing `/*` prefix. */
-function routeFor(routes: Route[], path: string): Route | undefined {
-  return routes.find(({ route }) =>
-    route.endsWith('/*') ? path.startsWith(route.slice(0, -1)) : path === route
-  );
-}
-
 /** Every emitted file, as the URL path SWA serves it at. */
 function listDistFiles(): string[] {
   return readdirSync(distDir, { recursive: true, withFileTypes: true })
@@ -33,6 +26,13 @@ function listDistFiles(): string[] {
     .map(
       entry => '/' + relative(distDir, join(entry.parentPath, entry.name)).replaceAll('\\', '/')
     );
+}
+
+/** The first route SWA would match for a URL path: exact, or a trailing `/*` prefix. */
+function routeFor(routes: Route[], path: string): Route | undefined {
+  return routes.find(({ route }) =>
+    route.endsWith('/*') ? path.startsWith(route.slice(0, -1)) : path === route
+  );
 }
 
 describe('cybertec-io cache headers', () => {

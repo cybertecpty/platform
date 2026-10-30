@@ -1,0 +1,135 @@
+name: Lint and Test Affected
+
+on:
+  push:
+    branches:
+      - develop
+      - main
+  pull_request:
+
+permissions:
+  actions: read
+  contents: read
+  # The coverage step upserts a single PR comment (skipped on forks, which get a
+  # read-only token anyway).
+  pull-requests: write
+
+env:
+  # The Nx Cloud organization is disabled (over the free plan) and not being paid for, so CI
+  # runs on this one runner with no remote cache, task distribution or self-healing. To turn
+  # Nx Cloud back on: drop this variable, restore the NX_CLOUD_ACCESS_TOKEN env, and restore
+  # the `nx start-ci-run`, `nx record --` and `nx fix-ci` steps from git history (#188).
+  # `nxCloudId` stays in nx.json.
+  NX_NO_CLOUD: 'true'
+
+# Supersede stale runs on a PR (saves runner time). Push runs on
+# develop/main always finish: nrwl/nx-set-shas bases `$NX_BASE` on the last
+# successful commit, and each commit there keeps a completed result.
+concurrency:
+  group: ${{ github.workflow }}-${{ github.event.pull_request.number || github.ref }}
+  cancel-in-progress: ${{ github.event_name == 'pull_request' }}
+
+jobs:
+  lint-and-test-affected:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v7
+        with:
+          filter: tree:0
+          fetch-depth: 0
+
+      # pnpm must be on PATH before setup-node so its cache logic can find the
+      # store. Version comes from package.json's "packageManager" field.
+      - name: Set up pnpm
+        uses: pnpm/action-setup@v6
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v7
+        with:
+          node-version-file: '.nvmrc'
+          cache: 'pnpm'
+
+      # Installs the SDK pinned in global.json (ADR 0017) so .NET tasks resolve the same SDK as local.
+      - name: Set up .NET SDK
+        uses: actions/setup-dotnet@v5
+        with:
+          global-json-file: global.json
+
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile
+
+      # The .NET `build` and `test` targets run with `--no-restore`, so restore the solution once
+      # here. `dotnet format` over the whole solution used to do it as a side effect.
+      - name: Restore .NET packages
+        run: dotnet restore Platform.slnx
+
+      # The e2e and lighthouse targets launch Chromium through Playwright. The download is
+      # cached per Playwright version; the system dependencies (`--with-deps`) are not part
+      # of the cache, so the install always runs.
+      - name: Get Playwright version
+        id: playwright
+        run: echo "version=$(pnpm exec playwright --version | cut -d' ' -f2)" >> "$GITHUB_OUTPUT"
+      - name: Cache Playwright browsers
+        uses: actions/cache@v6
+        with:
+          path: ~/.cache/ms-playwright
+          key: playwright-${{ runner.os }}-${{ steps.playwright.outputs.version }}
+      - name: Install Playwright browsers
+        run: pnpm exec playwright install --with-deps chromium
+
+      # Unit-test the CI-only coverage reporter and the Claude Code hooks (plain
+      # Node, not Nx projects). `pnpm verify` runs the same step locally.
+      - name: Run CI script and hook unit tests
+        run: node --test .github/scripts/*.test.cjs .claude/hooks/*.test.cjs scripts/*.test.cjs
+
+      # Derive the diff base/head for format:check and `nx affected`:
+      # on a PR, the merge-base with the target branch; on a push, the last
+      # successful commit on this branch. Exposes $NX_BASE / $NX_HEAD. Needs
+      # `actions: read` + `fetch-depth: 0` (both set above).
+      - name: Derive Nx base and head SHAs
+        uses: nrwl/nx-set-shas@v5
+
+      # $NX_BASE / $NX_HEAD come from nrwl/nx-set-shas above. The `format:check` script runs
+      # `nx format:check` with these arguments for the affected files. C# is checked by the
+      # `format-check` target in the affected run below (ADR 0017).
+      - name: Check formatting
+        run: pnpm format:check --base=$NX_BASE --head=$NX_HEAD
+      # `lighthouse` is the cybertec-io-e2e performance/accessibility gate;
+      # `e2e` also runs the axe check.
+      # A PR runs only the projects it affects. A push to develop/main runs every
+      # project: a safety net for changes the project graph doesn't connect to a
+      # project, and a complete workspace coverage number (ADR 0007, 2026-10-16).
+      - name: Run affected targets
+        if: github.event_name == 'pull_request'
+        run: pnpm exec nx affected -t lint test build typecheck check-boundaries check-coverage-output format-check e2e lighthouse --base=$NX_BASE --head=$NX_HEAD
+      - name: Run all targets
+        if: github.event_name != 'pull_request'
+        run: pnpm exec nx run-many -t lint test build typecheck check-boundaries check-coverage-output format-check e2e lighthouse
+
+      # Coverage reporting (ADR 0007 amendment / issue #52). The `test` targets
+      # collect coverage in CI (jest.preset.js) and declare
+      # `coverage/{projectRoot}` as an output, which Nx writes (or restores from
+      # its local cache) on this runner. This step merges the reports into one
+      # number (the whole workspace on a push, the affected projects on a PR),
+      # writes the job summary, and — on a non-fork PR — upserts a single
+      # coverage comment. `always()` so a coverage-threshold failure above still
+      # produces the report.
+      - name: Coverage report
+        if: always()
+        # Reporting only — the coverage *gate* is the `test` run above. A broken
+        # reporter (or missing coverage dirs) must not block a merge.
+        continue-on-error: true
+        uses: actions/github-script@v9
+        with:
+          script: |
+            const report = require(`${process.env.GITHUB_WORKSPACE}/.github/scripts/coverage-report.cjs`);
+            await report({ github, context, core });
+
+      - name: Upload coverage report
+        if: always()
+        uses: actions/upload-artifact@v7
+        with:
+          name: coverage
+          path: coverage/
+          if-no-files-found: warn

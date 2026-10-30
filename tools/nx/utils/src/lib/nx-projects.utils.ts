@@ -1,13 +1,16 @@
-import {
+import type {
+  BackendLibType,
   NormalizedNxProjectOptions,
   NxProjectBundler,
   NxProjectOptions,
   NxProjectScope,
   NxProjectType
 } from '@cybertecpty/nx-types';
-import { joinPathFragments, logger } from '@nx/devkit';
-import { assertValidPathSegment, domainToSegments, projectDomainToName } from './nx-domain.utils';
-import { createProjectTags } from './nx-project-tags.utils';
+import { joinPathFragments, logger, readJson, type Tree } from '@nx/devkit';
+import type { PackageJson } from 'type-fest';
+import { domainPathToName, splitDomainPath } from './nx-domain.utils';
+import { assertValidPathSegment } from './nx-path-segment.utils';
+import { formatProjectTags, projectTagsFromOptions } from './nx-project-tags.utils';
 
 /**
  * Maps every `NxProjectScope` member to `true`. Its only purpose is to be the
@@ -63,6 +66,12 @@ export const NX_PROJECT_TYPES: readonly NxProjectType[] = Object.keys(
 ) as NxProjectType[];
 
 /**
+ * The backend `type:` values. The backend is .NET (ADR 0017), so these libraries are
+ * .NET projects created with `dotnet new`, not scaffolded by the TypeScript generators.
+ */
+export const BACKEND_LIB_TYPES: readonly BackendLibType[] = ['api', 'infra', 'services'];
+
+/**
  * Determines the top-level directory a project's source lives under: `apps`
  * for `type: 'app'` (ADR 0010), `tools` for `scope: 'tools'` projects, and
  * `libs` for everything else (ADR 0009).
@@ -110,7 +119,7 @@ export function normalizeProjectOptions<T extends NxProjectOptions>(
     bundler,
     directory,
     name,
-    tags: createProjectTags(options).toString()
+    tags: formatProjectTags(projectTagsFromOptions(options))
   };
 }
 
@@ -147,7 +156,7 @@ export function projectDirFromOpts(opts: NxProjectOptions): string {
   let dir = topLevelDir;
 
   if (domain) {
-    dir = joinPathFragments(dir, ...domainToSegments(domain));
+    dir = joinPathFragments(dir, ...splitDomainPath(domain));
   }
 
   if (group) {
@@ -199,7 +208,7 @@ export function projectNameFromOpts(opts: NxProjectOptions): string {
   const dropsSharedFromName = domain === 'shared' && Boolean(group);
 
   if (domain && !dropsSharedFromName) {
-    name = projectDomainToName(domain);
+    name = domainPathToName(domain);
   }
 
   if (group) {
@@ -208,6 +217,18 @@ export function projectNameFromOpts(opts: NxProjectOptions): string {
   }
 
   return `${name}-${type}`;
+}
+
+/**
+ * Reads the `package.json` in `projectRoot` and returns its contents as a `PackageJson`
+ * object, or `undefined` when the project has none.
+ *
+ * @throws when the file exists but is not valid JSON.
+ */
+export function readProjectPackageJson(tree: Tree, projectRoot: string): PackageJson | undefined {
+  const packageJsonPath = joinPathFragments(projectRoot, 'package.json');
+
+  return tree.exists(packageJsonPath) ? readJson<PackageJson>(tree, packageJsonPath) : undefined;
 }
 
 /**

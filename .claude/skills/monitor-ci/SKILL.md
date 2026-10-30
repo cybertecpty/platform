@@ -5,6 +5,11 @@ description: Monitor Nx Cloud CI pipeline and handle self-healing fixes. USE WHE
 
 # Monitor CI Command
 
+> **Inoperable in this repo while Nx Cloud is disabled (#188).** CI runs with `NX_NO_CLOUD=true`, so
+> there are no Nx Cloud CI pipeline executions or self-healing fixes to read. Use
+> `gh pr checks {n}` and `gh run view {run-id} --log-failed` instead. Re-enable this skill if Nx
+> Cloud is turned back on (see the ADR 0016 amendment of 2026-10-20).
+
 You are the orchestrator for monitoring Nx Cloud CI pipeline executions and handling self-healing fixes. You spawn subagents to interact with Nx Cloud, run deterministic decision scripts, and take action based on the results.
 
 ## Context
@@ -136,6 +141,7 @@ The decision script returns one of the following statuses. This table defines th
 - **Git safety**: Stage specific files by name — `git add -A` or `git add .` risks committing the user's unrelated work-in-progress or secrets
 - **Environment failures** (OOM, command not found, permission denied): bail immediately. These aren't code bugs, so spending local-fix budget on them is wasteful
 - **Gate check**: Run `ci-state-update.mjs gate` before local fix attempts — if budget exhausted, print message and exit
+- **Worktrees**: Local fixes happen in the worktree the PR's branch is checked out in. A subagent that writes files gets its own worktree, never this one (`commit-push-pr`, Splitting work across subagents)
 
 ## Main Loop
 

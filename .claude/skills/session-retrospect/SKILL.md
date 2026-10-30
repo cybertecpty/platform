@@ -19,9 +19,9 @@ next session starts faster and repeats fewer mistakes.
 
 - **IS:** a whole-session sweep for lessons visible only in aggregate (a repeated mistake, a
   convention learned the hard way, a workflow friction worth encoding), routed to a durable home.
-- **IS NOT** `anthropic-skills:consolidate-memory` — that _tidies_ the existing pool (dedup,
-  prune, fix stale facts). This one _captures new_ lessons. If the pool needs tidying,
-  recommend running that separately.
+- **IS NOT** a tidy of the existing memory pool (dedup, prune, fix stale facts). This one
+  _captures new_ lessons. If the pool needs tidying, recommend a manual consolidation pass
+  (step 6) separately.
 
 ## The bar
 
@@ -63,10 +63,9 @@ Prefix project-scoped names `platform-…`.
 ## Pending work → a GitHub issue
 
 Deferred work becomes a GitHub issue on `cybertecpty/platform` (see
-[`docs/agents/issue-tracker.md`](../../../docs/agents/issue-tracker.md)), added to the
-**Platform · Foundation** project board. Prefer the `mattpocock-skills:to-tickets` skill for
-anything that is more than a single well-scoped issue (vertical slices + blocking edges); use
-a single `mcp__github__issue_write` create call otherwise. An issue _is_ the durable record —
+[`docs/agents/issue-tracker.md`](../../../docs/agents/issue-tracker.md)). Don't add it to
+a project board. Prefer the `mattpocock-skills:to-tickets` skill for anything that is more than a single well-scoped issue (vertical slices + blocking edges); use
+a single `gh issue create` create call otherwise. An issue _is_ the durable record —
 creating it here is the completed action, no later commit step.
 
 ## Workflow
@@ -114,14 +113,19 @@ for approval (`AskUserQuestion` if a routing choice is genuinely ambiguous, else
   (`.claude/skills/commit-push-pr`). **Never** append to a branch/PR opened earlier this
   session without first confirming it is still open (`gh pr view {n} --json state,mergedAt`)
   — a merged PR's branch is auto-deleted and a later push silently strands a ref.
-- **Pending-work issues** — create with `mcp__github__issue_write` (or `to-tickets`).
+- **Pending-work issues** — create with `gh issue create` (or `to-tickets`).
 
 ### 6. Close out
 
 Summarize what was written and where — commit hash / branch / PR for doc edits, number+URL
-for issues. Flag a `consolidate-memory` pass **only** on a concrete trigger: the pool exceeds
-~20 files, `MEMORY.md` is past ~70% of budget, this retrospect added/updated 3+ memories, or
-the sweep noticed stale/duplicative/contradictory entries. Otherwise say nothing.
+for issues. Recommend a **manual memory consolidation** **only** on a concrete trigger: the pool
+exceeds ~20 files, `MEMORY.md` is past ~70% of budget, this retrospect added/updated 3+
+memories, or the sweep noticed stale/duplicative/contradictory entries. Otherwise say nothing.
+
+The pass (a separate step, not part of this one): read every memory file; merge duplicates;
+delete or trim facts the repo, an ADR or git history now records; fix anything a committed doc
+contradicts (the doc wins); propose the changes in a table and wait for approval before
+writing.
 
 ## Guardrails
 

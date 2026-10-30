@@ -240,3 +240,216 @@ owns, and its `depConstraints` row(s).
 - Nx docs: "Enforce Module Boundaries" and the `@nx/enforce-module-boundaries` rule
   options (`onlyDependOnLibsWithTags`, `notDependOnLibsWithTags`, `bannedExternalImports`,
   `enforceBuildableLibDependency`, `checkNestedExternalImports`).
+
+## Amendment (2026-10-17): environment-agnostic testing libs may be `scope:shared`
+
+- Status: accepted
+- Deciders: djmcgrath
+- Implemented by: `jest-testing` (`libs/shared/jest/testing`, tagged `domain:shared`,
+  `scope:shared`, `type:testing`); the `type:testing` comment in `eslint.config.mjs`;
+  issue #158
+
+The locked parameter "Testing libs are scoped `scope:frontend` or `scope:backend`, never
+`scope:shared`" rests on "a mock is environment-specific". That holds for a double of an
+Angular service or a Nest provider, but not for every test helper. `lastCallArg` (added to
+`nx-testing` in #157) only reads a Jest mock's `mock.calls`: it imports nothing and runs the
+same in a browser-environment spec as in a Node one. Under the old rule it could only live in
+a `scope:backend` or `scope:tools` lib, which frontend specs may not import. ADR 0009 already
+describes `type:testing` as spanning all three scopes, the same as `type:utils`, so the two
+ADRs disagreed.
+
+### Considered options
+
+1. **Leave general-purpose helpers in `nx-testing`** (`scope:tools`) until a spec outside
+   `tools/` needs one. No change now, but the first frontend consumer forces this decision
+   anyway, and the helper keeps an Nx name it has nothing to do with.
+2. **Move them to a `scope:backend` testing lib.** Allowed today, since `scope:tools` may import
+   `scope:backend`, but frontend specs still couldn't use it.
+3. **Allow `scope:shared` testing libs for environment-agnostic helpers.** **(chosen)**
+
+### Decision
+
+- **The locked parameter is replaced by:** a testing lib takes the `scope:` of the code its
+  helpers are tied to: `scope:frontend` for Angular doubles, `scope:backend` for Node and Nest
+  ones, `scope:tools` for helpers built on Nx devkit types. A lib whose helpers work in any
+  environment is `scope:shared`.
+- **No `depConstraints` row changes.** The `scope:shared` row already limits such a lib to other
+  `scope:shared` libs and carries the zod ban, so an environment-specific import fails
+  `nx lint` there just as it does for a `scope:shared` util. Only the `type:testing` comment in
+  `eslint.config.mjs` changes.
+- **The first such lib is `jest-testing`** (`libs/shared/jest/testing`, ADR 0009 layout). It is
+  for helpers that need nothing but Jest's own mock shape. `lastCallArg` moves there from
+  `nx-testing`, and `nx-testing` no longer exports it.
+
+### Consequences
+
+- **Positive:** frontend, backend and tools specs share one copy of each general-purpose helper.
+  ADR 0004 and ADR 0009 now agree that `type:testing` spans every scope.
+- **Negative / risk:** "works in any environment" is a judgement made when a helper is added,
+  and lint catches only imports, not runtime use. A helper that touches a Node global (`process`,
+  `Buffer`) without importing anything would pass lint in a `scope:shared` lib and fail only in
+  a browser-environment spec. Keep `scope:shared` testing helpers to plain JavaScript and Jest's
+  own APIs.
+- **Update (2026-10-19, #164):** `typecheck` now also checks each project's `tsconfig.lib.json`,
+  and no `scope:shared` lib's lib tsconfig loads `node` types, so a Node global in their source
+  fails `typecheck` and CI. A `node --test` guard (`.github/scripts/shared-lib-types.test.cjs`)
+  keeps `node` out of every `scope:shared` lib's lib tsconfig, including new ones.
+
+## Amendment (2026-10-20): the backend stack changed — see ADR 0017
+
+- Status: accepted
+- Deciders: djmcgrath
+- Implemented by: ADR 0017 (`dotnet-backend`); issue #194
+
+The backend is **ASP.NET Core on .NET**, not NestJS (ADR 0017 supersedes the backend half
+of ADR 0005). This matrix was written around Angular + NestJS; what follows is what that
+changes here.
+
+### Tag names are unchanged
+
+No `scope:` or `type:` value is added, removed or renamed, so the "value sets are closed"
+rule above is **not** reopened. Three descriptions are reworded and one changes meaning:
+
+- `scope:backend` — read "Node only (NestJS)" as **".NET only (ASP.NET Core)"**.
+- `type:app` — read "(Angular or Nest)" as **"(Angular or ASP.NET Core)"**.
+- `type:api` / `type:services` — read Nest's "controllers, resolvers, DTOs" and "injectable
+  providers" as the **ASP.NET Core** equivalents. The architectural roles are identical.
+- `type:models` **changes meaning**: it is no longer a hand-written zod wire contract shared
+  by frontend and backend, but the **generated TypeScript client lib** derived from the
+  backend's OpenAPI document — `scope:frontend`, derived output, never hand-edited. ADR
+  0003's zod bans are unaffected.
+
+### The matrix is unenforced on the backend until a DIY check exists
+
+`@nx/enforce-module-boundaries` reads **TypeScript imports only**. A C# `ProjectReference`
+is invisible to it, and `@nx/dotnet` ships no boundaries rule of its own, so every `type:`
+edge between backend .NET projects is currently unchecked. Nx Conformance would cover it but
+is Nx Enterprise-only.
+
+ADR 0017 chooses a **DIY check** over `type:` edges between backend .NET projects that reads
+**this matrix** rather than restating it — the matrix stays the single source of truth, read
+by the check instead of copied into it. Its feasibility is unverified until a real `.csproj`
+exists.
+
+### One open edge: `type:testing` may not depend on `type:app`
+
+`WebApplicationFactory`-style ASP.NET integration tests need a reference to the app under
+test, which this matrix forbids. ADR 0017 lists this as unverified with two options — keep
+the host thin so tests target a referenced lib, or amend this matrix for that one edge. The
+first .NET project decides; if the matrix changes, that is an amendment to this ADR.
+
+## Amendment (2026-10-22): the matrix lives in `nx-utils`, and the .NET check reads it there
+
+- Status: accepted
+- Deciders: djmcgrath
+- Implemented by: issue #195 (the .NET boundary check) and #216 (moving the matrix)
+
+The `depConstraints` matrix is no longer inlined in `eslint.config.mjs`. It is
+`DEP_CONSTRAINTS` in `tools/nx/utils/src/lib/nx-dep-constraints.const.mts`, with the same
+rows and comments, and its `DependencyConstraint` type lives in `nx-types`. ADR 0017's .NET
+boundary check reads the same array, so the matrix stays the single source of truth.
+
+### Two routes to the matrix, and why
+
+- **The ESLint config** imports the file by relative path. Bare Node loads it with type
+  stripping, which is why it is an `.mts` file that avoids value imports.
+- **Everything else**, including the .NET check in `dotnet-plugin`, calls `loadDepConstraints()`
+  in `nx-utils`, which `require`s the file by absolute path. The matrix cannot be imported by
+  name. Jest does not transform `.mts` files, so a barrel that re-exported it would make every
+  spec that imports the barrel fail with `SyntaxError: Unexpected token 'export'` (seen in
+  `nx-plugin` and `js-plugin`). And the transpiler Nx runs plugins and executors with rewrites an
+  import of a path alias that points at the `.mts` file into a relative path with no extension,
+  which Node cannot find (seen when running the executor under Nx). An earlier version of this
+  amendment used a `@cybertecpty/nx-utils/dep-constraints` path alias for this, and it failed
+  under Nx for that reason.
+
+The loader exists because of the test runner and that transpiler. ADR 0018 moves the TypeScript
+projects to Vitest, which transforms `.mts` files itself. After that migration, check whether
+exporting the matrix from the barrel works and the loader can become a plain import.
+
+### What the .NET check covers
+
+The check applies every row of the matrix, whatever its tag axis (`scope:`, `type:` or
+`domain:`), to the edges between a .NET project and the .NET projects it references. For each
+row whose source tags the project has, the referenced project must have at least one of the
+row's `onlyDependOnLibsWithTags` and none of its `notDependOnLibsWithTags`. The latter applies
+to direct references only: a `type:testing` project that references a `type:app` project fails
+for .NET, as it does for TypeScript. Unlike ESLint it does not follow references through other
+projects. As in ESLint, a .NET project that no row applies to fails the check, and implicit
+dependencies (from `implicitDependencies`, not a `ProjectReference`) are not checked.
+
+Because every axis is checked, each `project.json` beside a `.csproj` needs its `scope:` tag as
+well as `type:` and `domain:`. For edges between .NET projects the `scope:` rows are met
+automatically, since every .NET project is `scope:backend`.
+
+That makes the open edge above bite for .NET integration tests. The first attempt is to keep
+the host thin so tests reference a library, not the app; ADR 0017's 2026-10-21 amendment records
+that decision and the fallback if it does not work. ADR 0019 records the design of the check as
+a whole and the alternatives it was weighed against.
+
+## Amendment (2026-10-27): an app may depend on any domain, and a domain needs no ADR of its own
+
+- Status: accepted
+- Deciders: djmcgrath
+- Implemented by: issue #229
+
+The matrix above isolates product domains: a project of one domain may depend on its own domain
+and `domain:shared`. An app is the composition root of a product, which can span several domains,
+so it cannot live inside one domain's isolation.
+
+A new domain also stops needing an ADR of its own, which this ADR required ("defined by that
+domain's own ADR" above, and the locked parameter "`domain:` values grow by ADR").
+
+### Considered options
+
+1. **Keep every project isolated to its domain.** An app could then import only its own domain's
+   libs, so the Gamer's Source frontend and API could not compose libs of the other domains.
+2. **Tag the app `domain:shared`.** Rejected: `domain:shared` may depend only on `domain:shared`,
+   which is stricter, and the app would be tagged with a domain it does not belong to.
+3. **Let an app depend on any domain.** **(chosen)**
+
+### Decision
+
+- **An app may depend on any `domain:*` project.** The matrix row is a plain row on the app's domain
+  (`domain:gamers-source`), with `domain:*` as the allowed tag. Libs keep their own domain isolation.
+- **Rows only restrict, so the app row restricts nothing.** It keeps the exemption visible. The
+  consequence is that a domain should not mix apps and libs: an isolation row for the libs would
+  also bind the apps, and nothing could loosen it again. Today each domain is one or the other, so
+  plain rows suffice. If a domain ever needs both, give its libs combo rows (`allSourceTags` with the
+  lib's `type:`) so that the apps are not matched.
+- **`domain:*` is accepted** by `@nx/enforce-module-boundaries` in `onlyDependOnLibsWithTags`
+  (the existing `type:*` row on `type:testing` already relies on it), and the .NET check applies
+  the same match. `nx-dep-constraints.utils.spec.ts` tests the .NET side, and `check-boundaries`
+  exercises the real row, since `gamers-source-api` references a lib of another domain. No
+  TypeScript project crosses domains yet, so the ESLint side is not exercised until one does.
+- **Why this is acceptable:** the repo has one product, made of several domains. The row is
+  narrowed when a second product arrives.
+- **A new `domain:<product>` value needs no ADR.** It is added by tagging its projects and adding
+  its row to `DEP_CONSTRAINTS`, with a comment above it saying what the domain owns. That
+  module is the list of domains: `domain:shared`, `domain:gamers-source` (the product's apps) and
+  `domain:gaming-collection` (which games a user owns, plays and wants). An ADR is for a domain
+  whose boundaries are a real choice, such as splitting one or changing how domains relate.
+  Adding a domain applies this ADR's tag system, is cheap to reverse (a tag and a row), and an ADR
+  for it would restate the comment on its rows.
+
+### Open edge: `type:testing` and `type:app`
+
+The thin host held. `gamers-source-api` holds no logic, and maps the endpoints of
+`libs/gaming-collection/api` (another domain), and that lib's tests project references the lib, not
+the app. The matrix is unchanged. Tests that boot the host (`WebApplicationFactory`) would still need a
+reference to the app, and remain unverified.
+
+## Amendment (2026-10-28): `type:services` returns domain types on .NET; the API library maps them to DTOs
+
+- Status: accepted
+- Deciders: djmcgrath
+- Implemented by: issue #238; see ADR 0020 (`rest-api-conventions`)
+
+The boundary above says `type:services` "is the only layer that touches both and maps row ↔ DTO". That
+assumed shared zod contracts in `type:models`, which the 2026-10-20 amendment replaced with a client
+generated from the backend's OpenAPI document. For .NET it no longer holds.
+
+A `type:services` project may not depend on a `type:api` project, and the wire types (DTOs) live in
+the API library. So a service cannot return a DTO. **Service libraries return domain types, and the
+API library maps them to DTOs.** A service library never references an API library; the API library
+references the service library. ADR 0020 records the layout of an API library.

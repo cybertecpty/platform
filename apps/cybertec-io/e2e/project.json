@@ -16,17 +16,7 @@
         "cwd": "{projectRoot}"
       }
     },
-    "lighthouse": {
-      "executor": "nx:run-commands",
-      "cache": true,
-      "dependsOn": ["cybertec-io:build"],
-      "inputs": ["default", "^production"],
-      "outputs": ["{projectRoot}/test-results"],
-      "options": {
-        "command": "playwright test --config playwright.lighthouse.config.ts",
-        "cwd": "{projectRoot}"
-      }
-    },
+    "lighthouse": {},
     "smoke": {
       "executor": "nx:run-commands",
       "options": {

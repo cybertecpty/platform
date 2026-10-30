@@ -1,4 +1,7 @@
 const assert = require('node:assert/strict');
+const fs = require('node:fs');
+const os = require('node:os');
+const path = require('node:path');
 const { describe, it } = require('node:test');
 
 const {
@@ -6,6 +9,10 @@ const {
   sumTotals,
   parseAddedLines,
   lineHitMap,
+  parseLcov,
+  lcovTotal,
+  collectProjects,
+  mergeFinalByRel,
   patchCoverage,
   renderMarkdown,
   pct
@@ -155,6 +162,134 @@ describe('patchCoverage', () => {
   });
 });
 
+const SAMPLE_LCOV = [
+  'SF:/repo/libs/api/Foo.cs',
+  'FN:3,Foo::A()',
+  'FNDA:2,Foo::A()',
+  'FN:8,Foo::B()',
+  'FNDA:0,Foo::B()',
+  'DA:4,2',
+  'DA:5,2',
+  'DA:9,0',
+  'BRDA:5,0,0,1',
+  'BRDA:5,0,1,0',
+  'BRDA:5,1,0,-',
+  'LF:3',
+  'LH:2',
+  'BRF:3',
+  'BRH:1',
+  'FNF:2',
+  'FNH:1',
+  'end_of_record',
+  'SF:/repo/libs/api/Bar.cs',
+  'DA:2,1',
+  'end_of_record',
+  ''
+].join('\n');
+
+describe('parseLcov', () => {
+  it('reads per-file line hits and function and branch counts', () => {
+    const files = parseLcov(SAMPLE_LCOV);
+    const foo = files.get('/repo/libs/api/Foo.cs');
+    assert.deepEqual(
+      [...foo.lines],
+      [
+        [4, 2],
+        [5, 2],
+        [9, 0]
+      ]
+    );
+    assert.deepEqual(foo.functions, { total: 2, covered: 1 });
+    assert.deepEqual(foo.branches, { total: 3, covered: 1 });
+  });
+
+  it('counts FN, FNDA and BRDA records when the summary lines are absent', () => {
+    const files = parseLcov(SAMPLE_LCOV.replace(/^(LF|LH|BRF|BRH|FNF|FNH):.*\n/gm, ''));
+    const foo = files.get('/repo/libs/api/Foo.cs');
+    assert.deepEqual(foo.functions, { total: 2, covered: 1 });
+    assert.deepEqual(foo.branches, { total: 3, covered: 1 });
+  });
+
+  it('prefers the FNF, FNH, BRF and BRH summary lines over counting records', () => {
+    const files = parseLcov(
+      ['SF:/a.cs', 'DA:1,1', 'FNF:5', 'FNH:4', 'BRF:6', 'BRH:3', 'end_of_record'].join('\n')
+    );
+    const file = files.get('/a.cs');
+    assert.deepEqual(file.functions, { total: 5, covered: 4 });
+    assert.deepEqual(file.branches, { total: 6, covered: 3 });
+  });
+
+  it('tolerates CRLF line endings', () => {
+    const files = parseLcov(SAMPLE_LCOV.replaceAll('\n', '\r\n'));
+    assert.equal(files.get('/repo/libs/api/Bar.cs').lines.get(2), 1);
+  });
+});
+
+describe('lcovTotal', () => {
+  it('reports lines as statements and sums every file', () => {
+    const total = lcovTotal(parseLcov(SAMPLE_LCOV));
+    assert.deepEqual(total.lines, { total: 4, covered: 3, skipped: 0, pct: 75 });
+    assert.deepEqual(total.statements, total.lines);
+    assert.deepEqual(total.functions, { total: 2, covered: 1, skipped: 0, pct: 50 });
+    assert.deepEqual(total.branches, { total: 3, covered: 1, skipped: 0, pct: 33.33 });
+  });
+});
+
+describe('patchCoverage (lcov)', () => {
+  it('scores added C# lines by hit count and ignores lines lcov does not list', () => {
+    const hits = parseLcov(SAMPLE_LCOV).get('/repo/libs/api/Foo.cs').lines;
+    const added = new Map([['libs/api/Foo.cs', new Set([1, 4, 9])]]);
+    const result = patchCoverage(added, new Map([['libs/api/Foo.cs', hits]]));
+    assert.equal(result.coverable, 2);
+    assert.equal(result.covered, 1);
+  });
+});
+
+describe('collectProjects / mergeFinalByRel', () => {
+  const makeRoot = () => {
+    const root = fs.mkdtempSync(path.join(os.tmpdir(), 'cov-'));
+    const write = (rel, text) => {
+      fs.mkdirSync(path.dirname(path.join(root, rel)), { recursive: true });
+      fs.writeFileSync(path.join(root, rel), text);
+    };
+    write(
+      'coverage/libs/ts/coverage-summary.json',
+      JSON.stringify({ total: fullTotal({ s: [4, 4], b: [2, 1], f: [1, 1], l: [4, 4] }) })
+    );
+    write(
+      'coverage/libs/net/coverage.info',
+      SAMPLE_LCOV.replaceAll('/repo/', `${root.replaceAll('\\', '/')}/`)
+    );
+    write('coverage/libs/empty/other.txt', 'x');
+    return root;
+  };
+
+  it('lists TypeScript and .NET projects, skipping a project with no report', () => {
+    const root = makeRoot();
+    const projects = collectProjects(root);
+    assert.deepEqual(
+      projects.map(p => p.name),
+      ['libs/net', 'libs/ts']
+    );
+    const sum = sumTotals(projects);
+    assert.equal(sum.lines.total, 8);
+    assert.equal(sum.lines.covered, 7);
+    assert.equal(sum.branches.total, 5);
+    assert.equal(sum.functions.total, 3);
+  });
+
+  it('maps lcov files to repo-relative line hits', () => {
+    const root = makeRoot();
+    const byRel = mergeFinalByRel(root);
+    assert.equal(byRel.get('libs/api/Foo.cs').get(9), 0);
+  });
+
+  it('returns nothing when there is no coverage folder', () => {
+    const root = fs.mkdtempSync(path.join(os.tmpdir(), 'cov-'));
+    assert.deepEqual(collectProjects(root), []);
+  });
+});
+
 describe('renderMarkdown', () => {
   const projects = [
     { name: 'libs/x', total: fullTotal({ s: [10, 10], b: [2, 2], f: [1, 1], l: [10, 10] }) }
@@ -189,5 +324,30 @@ describe('renderMarkdown', () => {
       patch: { covered: 0, coverable: 0, pct: null, perFile: [] }
     });
     assert.match(md, /no instrumented lines changed/);
+  });
+});
+
+describe('renderMarkdown (affected-only PR runs)', () => {
+  const projects = [
+    { name: 'libs/x', total: fullTotal({ s: [10, 10], b: [2, 2], f: [1, 1], l: [10, 10] }) }
+  ];
+  const workspace = sumTotals(projects);
+
+  it('labels the total as the whole workspace by default', () => {
+    const md = renderMarkdown({ projects, workspace, patch: null });
+    assert.match(md, /\*\*Workspace:\*\* 100% statements/);
+  });
+
+  it('labels the total as affected projects only when affectedOnly is set', () => {
+    const md = renderMarkdown({ projects, workspace, patch: null, affectedOnly: true });
+    assert.match(md, /\*\*Affected projects:\*\* 100% statements/);
+    assert.doesNotMatch(md, /\*\*Workspace:\*\*/);
+  });
+
+  it('states that no affected project reported coverage, without a table', () => {
+    const md = renderMarkdown({ projects: [], workspace: null, patch: null, affectedOnly: true });
+    assert.ok(md.startsWith(MARKER));
+    assert.match(md, /No affected project reported coverage/);
+    assert.doesNotMatch(md, /\| Project \|/);
   });
 });

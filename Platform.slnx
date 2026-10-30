@@ -1,0 +1,14 @@
+<Solution>
+  <Folder Name="/apps/" />
+  <Folder Name="/apps/gamers-source-api/">
+    <Project Path="apps/gamers-source-api/GamersSourceApi.csproj" />
+  </Folder>
+  <Folder Name="/libs/" />
+  <Folder Name="/libs/gaming-collection/" />
+  <Folder Name="/libs/gaming-collection/api/">
+    <Project Path="libs/gaming-collection/api/GamingCollectionApi.csproj" />
+  </Folder>
+  <Folder Name="/libs/gaming-collection/api/tests/">
+    <Project Path="libs/gaming-collection/api/tests/GamingCollectionApi.Tests.csproj" />
+  </Folder>
+</Solution>

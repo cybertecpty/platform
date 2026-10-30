@@ -95,3 +95,14 @@ Chosen option: **2 — switch to pnpm.**
   and force a non-zero exit even though every task succeeded. Linux CI is unaffected. Local
   workaround: `NX_NO_CLOUD=true` for offline runs, or run tasks via WSL.
 - `docs/agents/domain.md` — ADR location and numbering convention.
+
+## Amendment (2026-10-20): no Nx Cloud agents
+
+- Status: accepted
+- Deciders: djmcgrath
+- Implemented by: #188
+
+CI no longer uses Nx Cloud (see the ADR 0016 amendment of the same date), so the "Nx Cloud
+distribution" this ADR keeps unchanged, and the requirement that distributed agents have pnpm
+available, no longer apply. The `packageManager` field still fixes the pnpm version on the one
+CI runner.

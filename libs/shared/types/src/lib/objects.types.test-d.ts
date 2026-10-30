@@ -1,6 +1,6 @@
 import { expectTypeOf } from 'expect-type';
 
-import { MapPrimitivePropsToArrays, NonNullableProps } from './objects.types';
+import type { MapPrimitivePropsToArrays, NonNullableProps } from './objects.types';
 
 /* -------------------------------------------------------------------------- */
 /*  MapPrimitivePropsToArrays                                                  */

@@ -1,8 +1,5 @@
 import type { generatorGenerator } from '@nx/plugin/generators';
-import { Except } from 'type-fest';
-
-/** Options accepted by `@nx/plugin`'s `generatorGenerator`, in its installed version. */
-type NxPluginGeneratorGeneratorSchema = Parameters<typeof generatorGenerator>[1];
+import type { Except } from 'type-fest';
 
 /**
  * Inputs to the workspace `nx-gen` generator — a thin wrapper over
@@ -40,3 +37,6 @@ export type NxGenGeneratorOptions = Except<
   /** Test runner for the generated generator's spec. Jest-only per ADR 0007. */
   unitTestRunner?: 'jest' | 'none';
 };
+
+/** Options accepted by `@nx/plugin`'s `generatorGenerator`, in its installed version. */
+type NxPluginGeneratorGeneratorSchema = Parameters<typeof generatorGenerator>[1];

@@ -8,7 +8,9 @@
   "dependencies": {
     "@cybertecpty/nx-types": "0.0.1",
     "@cybertecpty/nx-utils": "0.0.1",
+    "@cybertecpty/shared-utils": "0.0.1",
     "@nx/devkit": "23.1.1",
+    "@nx/js": "23.1.1",
     "@nx/plugin": "23.1.1",
     "tslib": "^2.3.0",
     "type-fest": "^5.9.0"

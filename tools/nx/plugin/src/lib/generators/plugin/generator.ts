@@ -1,21 +1,21 @@
 import {
   addTypecheckTarget,
-  createProjectTags,
+  formatProjectTags,
   projectDirFromOpts,
   projectNameFromOpts,
+  projectTagsFromOptions,
   sortTsConfigBasePaths
 } from '@cybertecpty/nx-utils';
+import type { GeneratorCallback, Tree } from '@nx/devkit';
 import {
   formatFiles,
   generateFiles,
-  GeneratorCallback,
   joinPathFragments,
   readProjectConfiguration,
-  runTasksInSerial,
-  Tree
+  runTasksInSerial
 } from '@nx/devkit';
 import { pluginGenerator as nxPluginGenerator } from '@nx/plugin/generators';
-import { NxPluginGeneratorOptions } from './schema';
+import type { NxPluginGeneratorOptions } from './schema';
 
 /**
  * Workspace `nx-plugin` generator — a thin wrapper over `@nx/plugin:plugin`.
@@ -34,7 +34,7 @@ export async function pluginGenerator(
   const projectOptions = { ...options, scope: 'tools' as const, type: 'plugin' as const };
   const name = projectNameFromOpts(projectOptions);
   const directory = projectDirFromOpts(projectOptions);
-  const tags = createProjectTags(projectOptions).toString();
+  const tags = formatProjectTags(projectTagsFromOptions(projectOptions));
   const unitTestRunner = options.unitTestRunner ?? 'jest';
 
   const projectTask = await nxPluginGenerator(tree, {

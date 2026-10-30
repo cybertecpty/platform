@@ -1,4 +1,4 @@
-import { Primitive, Simplify } from 'type-fest';
+import type { Primitive, Simplify } from 'type-fest';
 
 /**
  * Maps the primitive-valued members of the properties `U` of `T` to read-only

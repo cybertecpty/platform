@@ -1,9 +1,11 @@
+import { lastCallArg } from '@cybertecpty/jest-testing';
+import { createFakeLibraryGenerator, createWorkspaceTreeFixture } from '@cybertecpty/nx-testing';
+import type { Tree } from '@nx/devkit';
 import * as devkit from '@nx/devkit';
-import { addProjectConfiguration, readJson, Tree, updateJson, writeJson } from '@nx/devkit';
-import { createTreeWithEmptyWorkspace } from '@nx/devkit/testing';
+import { addProjectConfiguration, readJson } from '@nx/devkit';
 import { libraryGenerator as nxJsLibraryGenerator } from '@nx/js';
 import { libGenerator } from './generator';
-import { LibGeneratorOptions } from './schema';
+import type { LibGeneratorOptions } from './schema';
 
 jest.mock('@nx/js', () => ({
   libraryGenerator: jest.fn()
@@ -13,50 +15,23 @@ const nxJsLibraryGeneratorMock = nxJsLibraryGenerator as jest.MockedFunction<
   typeof nxJsLibraryGenerator
 >;
 
-/**
- * Stand-in for `@nx/js:library`: writes the minimal project config and
- * `tsconfig.lib.json` the real generator would, appends the new project's
- * path entry to `tsconfig.base.json` (unsorted, same as the real generator),
- * so the wrapper's post-delegation edits have a project (and tsconfigs) to
- * read, then returns a no-op task.
- */
-function fakeNxJsLibraryGenerator(tree: Tree, options: { name: string; directory: string }) {
-  addProjectConfiguration(tree, options.name, {
-    root: options.directory,
-    projectType: 'library',
-    targets: { build: {} }
-  });
-  writeJson(tree, `${options.directory}/tsconfig.lib.json`, {
+/** Stand-in for `@nx/js:library`, which also writes the `tsconfig.lib.json` the real one would. */
+const fakeNxJsLibraryGenerator = createFakeLibraryGenerator({
+  tsConfigLib: {
     compilerOptions: { outDir: '../../../dist/out-tsc', declaration: true, types: ['node'] }
-  });
-  updateJson(tree, 'tsconfig.base.json', json => {
-    json.compilerOptions.paths = {
-      ...json.compilerOptions.paths,
-      [`@cybertecpty/${options.name}`]: [`./${options.directory}/src/index.ts`]
-    };
+  }
+});
 
-    return json;
-  });
-
-  return Promise.resolve(jest.fn());
+/** The options `@nx/js:library` was called with on the most recent run. */
+function forwardedOptions() {
+  return lastCallArg(nxJsLibraryGeneratorMock, 1, '`@nx/js:library`');
 }
 
 function run(
   tree: Tree,
-  options: Partial<LibGeneratorOptions> & Pick<LibGeneratorOptions, 'domain' | 'scope' | 'type'>
+  options: Partial<LibGeneratorOptions> & Pick<LibGeneratorOptions, 'type'>
 ) {
   return libGenerator(tree, options);
-}
-
-/** The options `@nx/js:library` was called with on the most recent run. */
-function forwardedOptions() {
-  const lastCall = nxJsLibraryGeneratorMock.mock.calls.at(-1);
-
-  if (!lastCall) {
-    throw new Error('`@nx/js:library` was never called');
-  }
-
-  return lastCall[1];
 }
 
 describe('libGenerator', () => {
@@ -66,11 +41,8 @@ describe('libGenerator', () => {
 
   beforeEach(() => {
     jest.clearAllMocks();
-    tree = createTreeWithEmptyWorkspace();
-    writeJson(tree, 'tsconfig.base.json', {
-      compilerOptions: {
-        paths: { '@cybertecpty/zzz-existing': ['./tools/zzz/existing/src/index.ts'] }
-      }
+    tree = createWorkspaceTreeFixture({
+      tsConfigPaths: { '@cybertecpty/zzz-existing': ['./tools/zzz/existing/src/index.ts'] }
     });
     formatFiles = jest.spyOn(devkit, 'formatFiles').mockResolvedValue();
     loggerWarn = jest.spyOn(devkit.logger, 'warn').mockImplementation(() => undefined);
@@ -160,33 +132,49 @@ describe('libGenerator', () => {
     });
   });
 
-  describe('scope resolution for `type:infra`', () => {
-    it('derives the name, directory, and tags for `infra` without an explicit `scope`', async () => {
-      await run(tree, { domain: 'billing', type: 'infra' });
+  describe('backend library types', () => {
+    it.each(['api', 'services', 'infra'] as const)(
+      'rejects `type:%s`, pointing to `dotnet new` and ADR 0017',
+      async type => {
+        const result = run(tree, { domain: 'billing', scope: 'backend', type });
+
+        await expect(result).rejects.toThrow('`dotnet new`');
+        await expect(result).rejects.toThrow('ADR 0017');
+        expect(nxJsLibraryGeneratorMock).not.toHaveBeenCalled();
+      }
+    );
+  });
+
+  describe('scope resolution', () => {
+    it('rejects a missing `scope`', async () => {
+      await expect(run(tree, { domain: 'billing', type: 'utils' })).rejects.toThrow(
+        '`scope` must be provided'
+      );
+      expect(nxJsLibraryGeneratorMock).not.toHaveBeenCalled();
+    });
+  });
+
+  describe('`scope:tools` projects', () => {
+    it('places a tools library under `tools/[<group>/]<type>` with no `domain:` tag', async () => {
+      await run(tree, { scope: 'tools', group: 'nx', type: 'testing' });
 
       expect(forwardedOptions()).toMatchObject({
-        name: 'billing-infra',
-        directory: 'libs/billing/infra',
-        tags: 'domain:billing,scope:backend,type:infra'
+        name: 'nx-testing',
+        directory: 'tools/nx/testing',
+        tags: 'scope:tools,type:testing'
       });
     });
 
-    it('accepts an explicit `scope: backend` for `infra` (agrees with the hardcoded value)', async () => {
-      await run(tree, { domain: 'billing', type: 'infra', scope: 'backend' });
-
-      expect(forwardedOptions()).toMatchObject({ tags: 'domain:billing,scope:backend,type:infra' });
-    });
-
-    it('rejects an explicit `scope` that disagrees with `backend` for `infra`', async () => {
+    it('rejects a `domain` for a tools library — tools projects are domain-exempt', async () => {
       await expect(
-        run(tree, { domain: 'billing', type: 'infra', scope: 'frontend' })
-      ).rejects.toThrow('`scope` cannot be "frontend" for `type:infra`');
+        run(tree, { domain: 'billing', scope: 'tools', group: 'nx', type: 'utils' })
+      ).rejects.toThrow('`domain` cannot be set for `scope:tools`');
       expect(nxJsLibraryGeneratorMock).not.toHaveBeenCalled();
     });
 
-    it('rejects a missing `scope` for every type except `infra`', async () => {
-      await expect(run(tree, { domain: 'billing', type: 'utils' })).rejects.toThrow(
-        '`scope` must be provided for every `type` except `infra`'
+    it('rejects a missing `domain` for every scope except `tools`', async () => {
+      await expect(run(tree, { scope: 'backend', type: 'utils' })).rejects.toThrow(
+        '`domain` must be provided for every `scope` except `tools`'
       );
       expect(nxJsLibraryGeneratorMock).not.toHaveBeenCalled();
     });
@@ -310,6 +298,29 @@ describe('libGenerator', () => {
       const tsConfig = readJson(tree, 'libs/billing/models/tsconfig.lib.json');
 
       expect(tsConfig.compilerOptions.types).toEqual(['node']);
+    });
+
+    it('drops `node` from `tsconfig.lib.json` types for a `scope:shared` library (ADR 0004)', async () => {
+      await run(tree, { domain: 'billing', scope: 'shared', type: 'models' });
+
+      const tsConfig = readJson(tree, 'libs/billing/models/tsconfig.lib.json');
+
+      expect(tsConfig.compilerOptions.types).toEqual([]);
+    });
+
+    it('keeps `jest` but drops `node` for a `scope:shared` `type:testing` library', async () => {
+      await run(tree, { domain: 'billing', scope: 'shared', type: 'testing' });
+
+      const tsConfig = readJson(tree, 'libs/billing/testing/tsconfig.lib.json');
+
+      expect(tsConfig.compilerOptions.types).toEqual(['jest']);
+    });
+
+    it('rejects `unitTestRunner: none` for a `scope:shared` library, which would get no `typecheck`', async () => {
+      await expect(
+        run(tree, { domain: 'billing', scope: 'shared', type: 'models', unitTestRunner: 'none' })
+      ).rejects.toThrow('`unitTestRunner: none` is not allowed for `scope:shared`');
+      expect(nxJsLibraryGeneratorMock).not.toHaveBeenCalled();
     });
 
     it('forces a `type:testing` library to `bundler: none` even when a buildable bundler is requested', async () => {

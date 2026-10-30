@@ -1,0 +1,6 @@
+/**
+ * Options for the `<%= name %>` generator. Keep in step with `schema.json`.
+ */
+export interface <%= className %>GeneratorOptions {
+  name: string;
+}

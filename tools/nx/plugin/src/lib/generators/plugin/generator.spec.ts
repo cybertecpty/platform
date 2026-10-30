@@ -1,9 +1,11 @@
+import { lastCallArg } from '@cybertecpty/jest-testing';
+import { createFakeLibraryGenerator, createWorkspaceTreeFixture } from '@cybertecpty/nx-testing';
+import type { Tree } from '@nx/devkit';
 import * as devkit from '@nx/devkit';
-import { addProjectConfiguration, readJson, Tree, updateJson, writeJson } from '@nx/devkit';
-import { createTreeWithEmptyWorkspace } from '@nx/devkit/testing';
+import { addProjectConfiguration, readJson } from '@nx/devkit';
 import { pluginGenerator as nxPluginGenerator } from '@nx/plugin/generators';
 import { pluginGenerator } from './generator';
-import { NxPluginGeneratorOptions } from './schema';
+import type { NxPluginGeneratorOptions } from './schema';
 
 jest.mock('@nx/plugin/generators', () => ({
   pluginGenerator: jest.fn()
@@ -11,44 +13,16 @@ jest.mock('@nx/plugin/generators', () => ({
 
 const nxPluginGeneratorMock = nxPluginGenerator as jest.MockedFunction<typeof nxPluginGenerator>;
 
-/**
- * Stand-in for `@nx/plugin:plugin`: writes the minimal project config the
- * real generator would, and appends the new project's path entry to
- * `tsconfig.base.json` (unsorted, same as the real generator), so the
- * wrapper's post-delegation edits have a project and tsconfig to read, then
- * returns a no-op task.
- */
-function fakeNxPluginGenerator(tree: Tree, options: { name: string; directory: string }) {
-  addProjectConfiguration(tree, options.name, {
-    root: options.directory,
-    projectType: 'library',
-    targets: { build: {} }
-  });
-  updateJson(tree, 'tsconfig.base.json', json => {
-    json.compilerOptions.paths = {
-      ...json.compilerOptions.paths,
-      [`@cybertecpty/${options.name}`]: [`./${options.directory}/src/index.ts`]
-    };
+/** Stand-in for `@nx/plugin:plugin`. */
+const fakeNxPluginGenerator = createFakeLibraryGenerator();
 
-    return json;
-  });
-
-  return Promise.resolve(jest.fn());
+/** The options `@nx/plugin:plugin` was called with on the most recent run. */
+function forwardedOptions() {
+  return lastCallArg(nxPluginGeneratorMock, 1, '`@nx/plugin:plugin`');
 }
 
 function run(tree: Tree, options: Partial<NxPluginGeneratorOptions> & { group: string }) {
   return pluginGenerator(tree, options);
-}
-
-/** The options `@nx/plugin:plugin` was called with on the most recent run. */
-function forwardedOptions() {
-  const lastCall = nxPluginGeneratorMock.mock.calls.at(-1);
-
-  if (!lastCall) {
-    throw new Error('`@nx/plugin:plugin` was never called');
-  }
-
-  return lastCall[1];
 }
 
 describe('pluginGenerator', () => {
@@ -57,11 +31,8 @@ describe('pluginGenerator', () => {
 
   beforeEach(() => {
     jest.clearAllMocks();
-    tree = createTreeWithEmptyWorkspace();
-    writeJson(tree, 'tsconfig.base.json', {
-      compilerOptions: {
-        paths: { '@cybertecpty/zzz-existing': ['./tools/zzz/existing/src/index.ts'] }
-      }
+    tree = createWorkspaceTreeFixture({
+      tsConfigPaths: { '@cybertecpty/zzz-existing': ['./tools/zzz/existing/src/index.ts'] }
     });
     formatFiles = jest.spyOn(devkit, 'formatFiles').mockResolvedValue();
     nxPluginGeneratorMock.mockImplementation(

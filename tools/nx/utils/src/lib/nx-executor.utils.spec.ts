@@ -2,7 +2,7 @@ import { logger } from '@nx/devkit';
 import { spawn } from 'cross-spawn';
 import type { ChildProcess } from 'node:child_process';
 import { EventEmitter } from 'node:events';
-import { runCommand } from './run-command.utils';
+import { runCommand } from './nx-executor.utils';
 
 jest.mock('cross-spawn', () => ({ spawn: jest.fn() }));
 

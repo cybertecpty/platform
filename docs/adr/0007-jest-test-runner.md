@@ -1,6 +1,9 @@
 # 7. Jest as the workspace test runner
 
-- Status: accepted
+- Status: accepted (**runner choice superseded 2026-10-20 — the TypeScript runner is Vitest,
+  see ADR 0018**. The 80% CI-gated coverage floor, the reporting layer, `passWithNoTests`,
+  the `type:types` exemption and `nx test {project}` as the entry point stand, and the
+  dated amendments below remain in force except where ADR 0018 names them.)
 - Date: 2026-09-02
 - Deciders: djmcgrath
 - Implemented by: `unitTestRunner: jest` in the `nx.json` generator defaults for
@@ -73,7 +76,8 @@ Chosen option: **1 — Jest everywhere.**
   against a silently-broken `testMatch`. See the 2026-09-07 amendment for that
   threshold.
 - **E2E is out of scope.** Browser e2e uses Playwright (its own tooling); this ADR
-  governs the unit / integration test runner only.
+  governs the unit / integration test runner only. ADR 0016 records the e2e runner and the
+  axe / Lighthouse quality gates.
 
 ## Consequences
 
@@ -165,14 +169,14 @@ entirely inside GitHub Actions — no third-party service, consistent with the
   `text-summary`).
 - **`.github/scripts/coverage-report.cjs`** — a plain-Node script (not an Nx project;
   it runs in the `actions/github-script` runtime, which wants CommonJS) invoked from
-  `ci.yml` after `nx run-many`. It sums the per-project `coverage-summary.json` totals
+  `lint-and-test-affected.yml` after `nx run-many`. It sums the per-project `coverage-summary.json` totals
   into one workspace number (`coverage/coverage-summary.merged.json` + the job summary),
   and on a non-fork pull request computes **patch coverage** — the covered fraction of
   the `src` lines the PR adds, from the merged `coverage-final.json` maps intersected
   with `git diff` — then upserts a single PR comment (matched by an HTML marker). Its
   pure helpers are unit-tested with `node --test` (`coverage-report.test.cjs`), run as
   its own CI step.
-- **`ci.yml`** uploads the per-project `coverage/` tree as a build artifact and adds
+- **`lint-and-test-affected.yml`** uploads the per-project `coverage/` tree as a build artifact and adds
   `pull-requests: write` for the comment.
 - Nx hydrates each project's `coverage/{projectRoot}` output onto the main runner after
   the distributed run (the inferred `test` target already declares it as an output), so
@@ -253,3 +257,94 @@ Container API, `astro/container`) runs inside Vite through `getViteConfig` from
   components doesn't map back to source reliably enough to gate on.
 - The Container API was still `experimental_`-prefixed when last checked. Confirm its
   status before using it for component tests.
+
+## Amendment (2026-10-16): affected-only coverage on pull requests
+
+- Status: accepted
+- Deciders: djmcgrath
+- Implemented by: `.github/workflows/lint-and-test-affected.yml`,
+  `.github/scripts/coverage-report.cjs`
+
+The reporting layer above assumed CI ran `nx run-many`, so every project reported coverage and
+the PR comment's **Workspace** line covered the whole workspace. CI now runs
+`nx affected -t lint test build typecheck e2e lighthouse` on a pull request and keeps
+`nx run-many` for pushes to `develop` and `main`. A PR run only produces coverage reports for
+the affected projects.
+
+### Decision
+
+- **On a PR, the summed line is labelled "Affected projects"**, not "Workspace", and the
+  per-project table lists only the affected projects. Patch coverage is unchanged: it only
+  ever looked at the lines the PR adds.
+- **A PR that affects no tested project still updates the comment**, to say no affected
+  project reported coverage, so an earlier push's numbers don't linger.
+- **The workspace number comes from push runs.** A push to `develop` or `main` runs every
+  project, so its job summary and the uploaded `coverage/` artifact carry the full workspace
+  number.
+- The 80% gate is unchanged. It was always per project, and every affected project with a
+  `test` target still runs it.
+
+### Consequences
+
+- A PR's coverage comment no longer shows how the whole workspace stands. Look at the latest
+  `develop` run for that.
+- A change the project graph doesn't connect to a project isn't tested on the PR. The full
+  run on `develop` catches it right after merge.
+
+## Amendment (2026-10-20): CI has no distributed run
+
+- Status: accepted
+- Deciders: djmcgrath
+- Implemented by: `.github/workflows/lint-and-test-affected.yml` (`NX_NO_CLOUD`); issues #188, #191
+
+The coverage reporting layer above says Nx hydrates each project's `coverage/{projectRoot}`
+output onto the main runner "after the distributed run". That described Nx Cloud task
+distribution. The Nx Cloud organization is disabled and not being paid for (#188), so CI
+runs every task on the one runner and there is no distributed run.
+
+### Decision
+
+- **Nothing about the reporting layer changes.** `coverage-report.cjs` still reads each
+  project's `coverage/{projectRoot}` reports from the runner's workspace. They are now written
+  there by the `test` targets themselves, with no hydration step in between.
+- **Read "the distributed run" above as "the `nx` run".** The remaining decisions in this
+  ADR do not depend on distribution or on the Nx Cloud remote cache.
+
+### Consequences
+
+- If Nx Cloud is turned back on, distribution would again put the reports on other agents, and
+  hydration back to the main runner would again be what the script relies on.
+
+## Amendment (2026-10-20): the backend stack changed — xUnit for .NET
+
+- Status: accepted
+- Deciders: djmcgrath
+- Implemented by: ADR 0017 (`dotnet-backend`); issue #194
+
+The backend is **ASP.NET Core on .NET**, not NestJS (ADR 0017 supersedes the backend half of
+ADR 0005). Jest cannot run C#, so "one runner" no longer means one runner workspace-wide.
+
+### Decision
+
+- **Jest stays the runner for Angular and TypeScript libs** — the `nx.json` generator
+  defaults, `jest.preset.js`, `passWithNoTests`, the 80% CI-gated `coverageThreshold` and
+  `nx test {project}` as the entry point are all unchanged. The Astro/Vitest exception
+  (2026-09-23 amendment) is unchanged.
+- **xUnit with coverlet is the .NET test runner**, with an **80% floor gated in CI only** —
+  the same number and the same CI-only enforcement as `collectCoverage: !!process.env.CI`
+  above, for the same reason: keep the local inner loop fast.
+- **Test projects are separate `.csproj` files** nested in a `tests/` folder inside the
+  project they test, tagged `type:testing`.
+- The reasoning above for rejecting Vitest — `@nx/nest` scaffolding only Jest, and Nest DI
+  needing `emitDecoratorMetadata` — was specific to NestJS and is now moot. It is **not** a
+  reason to revisit Jest for Angular and TypeScript libs: one runner per language is still
+  the goal, and nothing has changed on the TypeScript side.
+
+### Consequences
+
+- Two unit-test runners in the workspace, one per language, plus Vitest for Astro. The 80%
+  floor and the CI-only gate are identical across all of them, so the policy stays one
+  number.
+- CI needs a .NET SDK as well as Node, and coverlet output has to reach the coverage
+  reporting layer above (which reads `coverage/{projectRoot}` per project) or .NET projects
+  will be absent from the PR comment. That wiring is separate work.

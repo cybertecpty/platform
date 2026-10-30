@@ -68,7 +68,7 @@ approver.**
 
 - One issue → one branch → one PR into `develop` (ADR 0002). Coupled-issue exceptions are
   deliberate, and dependent work waits for the base PR to _merge_.
-- `develop` and `main` are protected: PR required, one maintainer approval, passing `ci`, all
+- `develop` and `main` are protected: PR required, one maintainer approval, passing `lint-and-test-affected`, all
   review threads resolved, no force-push or deletion. The maintainer (admin) is the only bypass.
 - The bot arms `gh pr merge --auto --squash`. That only pre-arms the merge; it still waits on CI
   and the maintainer's approval. The bot is never granted bypass rights, and if it loses
@@ -152,3 +152,43 @@ Making any of these changes supersedes this section and should be recorded as an
 - ADR 0002 — `develop` as default branch; ADR 0011 — release flow (agent-driven release
   generator under the same protection model).
 - `.claude/skills/`: `commit-push-pr`, `address-pr-feedback`, `audit-drift`, `session-retrospect`.
+
+## Amendment (2026-10-16): back-merge bypass (ADR 0015)
+
+The locked parameter "the maintainer (admin) is the only bypass" no longer holds for `develop`.
+ADR 0015 adds the `cybertec-back-merge` GitHub App as a bypass actor on `protect-develop` so the
+`deploy-affected.yml` workflow can merge `main` back into `develop` after every push to `main`.
+
+What does not change:
+
+- `cybertec-bot` and every agent session still have no bypass; agent work still reaches `develop`
+  only through an approved PR.
+- `protect-main` keeps the maintainer as its only bypass.
+- The App can only land a merge of commits already approved into `main`. It aborts on conflict and
+  never adds content of its own (ADR 0015, "What the job may do").
+
+The "single point of failure" risk above now reads: the maintainer is the only approver and the
+only bypass actor on `main`.
+
+## Amendment (2026-10-20): `gh` replaces the GitHub MCP
+
+The locked parameter "the GitHub MCP server authenticates as the maintainer. Agents use it for
+reading … and for creating backlog issues" no longer holds. The MCP server has been unreliable, so
+agents use `gh` (and `gh api` / `gh api graphql`) for all GitHub work, reads included, and do not
+use the MCP at all. `docs/agents/conventions.md` §1 "GitHub access: `gh` only" is authoritative.
+
+What changes:
+
+- Reads (diffs, threads, CI, issues, search) go through `gh`, on whichever account it currently
+  rests on.
+- Backlog issues are created with `gh` while it rests on the maintainer account, so they stay
+  personal-authored; the agent does not switch to the bot for them.
+- The "two GitHub identities per agent session" risk shrinks to the `gh` account switch alone.
+  The remaining boundary is still convention, not enforcement, except for the
+  `guard-bot-identity` hook's coverage of bot-owned `gh pr` writes.
+
+What does not change: the bot still authors all code commits and PRs, the maintainer is still the
+only approver, and no agent gets bypass rights.
+
+If the MCP is brought back, record it as a further amendment; the "MCP read/write split" wording in
+"If a second maintainer or reviewer joins" then applies again.

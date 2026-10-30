@@ -1,11 +1,7 @@
-import { SetRequired } from 'type-fest';
-import { NxProjectLibType } from './nx-libs.types';
+import type { SetRequired } from 'type-fest';
+import type { NxProjectLibType } from './nx-libs.types';
 
-/**
- * Bundlers accepted by the underlying `@nx/*:library` generators. `none` means
- * the library is not buildable.
- */
-export type NxProjectBundler = 'esbuild' | 'none' | 'rollup' | 'swc' | 'tsc' | 'vite';
+export type BackendLibType = Extract<NxProjectLibType, 'api' | 'infra' | 'services'>;
 
 /**
  * The fully-resolved project options the generators consume: `name`,
@@ -19,6 +15,12 @@ export type NormalizedNxProjectOptions<
   bundler: NxProjectBundler;
   directory: string;
 };
+
+/**
+ * Bundlers accepted by the underlying `@nx/*:library` generators. `none` means
+ * the library is not buildable.
+ */
+export type NxProjectBundler = 'esbuild' | 'none' | 'rollup' | 'swc' | 'tsc' | 'vite';
 
 /**
  * Common options for all Nx project generators.

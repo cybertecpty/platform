@@ -5,8 +5,11 @@ import vitest from '@vitest/eslint-plugin';
 import eslintConfigPrettier from 'eslint-config-prettier';
 import astro from 'eslint-plugin-astro';
 import jest from 'eslint-plugin-jest';
+import perfectionist from 'eslint-plugin-perfectionist';
 import playwright from 'eslint-plugin-playwright';
+import unicorn from 'eslint-plugin-unicorn';
 import tseslint from 'typescript-eslint';
+import { DEP_CONSTRAINTS } from './tools/nx/utils/src/lib/nx-dep-constraints.const.mts';
 
 // Projects that test with Vitest instead of Jest: Astro content sites only (ADR 0007,
 // 2026-09-23 amendment). Flat config globs can't read project tags, so they are listed
@@ -18,6 +21,13 @@ const vitestSpecFiles = ['apps/cybertec-io/**/*.{spec,test}.ts'];
 // 2026-10-09 amendment), so this overlaps vitestSpecFiles; both test-runner blocks
 // below ignore these files.
 const playwrightSpecFiles = ['apps/*/e2e/**/*.spec.ts'];
+
+// The shared Playwright lib's gate code (`defineLighthouseTests`, `defineAxeTests`) calls
+// Playwright's `test()` / `expect`, so it gets the Playwright rules too. Matched by folder,
+// not suffix. The lib's own unit specs run under Jest, so they are left out here and keep
+// the Jest block.
+const playwrightLibFiles = ['libs/shared/playwright/**/*.ts'];
+const playwrightLibIgnores = ['libs/shared/playwright/**/*.spec.ts'];
 
 // The two globs above are workspace-root-relative, but flat config resolves `files` /
 // `ignores` against the directory of the config file ESLint loaded — and per-project lint
@@ -62,208 +72,7 @@ export default [
         {
           enforceBuildableLibDependency: true,
           allow: ['^.*/eslint(\\.base)?\\.config\\.[cm]?[jt]s$'],
-          depConstraints: [
-            {
-              // domain:shared is the cross-domain fallback: not tied to any product
-              // domain and importable by every domain. It may only depend on other
-              // domain:shared code — never on a product domain. Each product domain
-              // adds its own `domain:<name>` row via that domain's ADR (ADR 0004).
-              sourceTag: 'domain:shared',
-              onlyDependOnLibsWithTags: ['domain:shared']
-            },
-            {
-              // Backend (Node / NestJS) code. May use other backend libs and
-              // environment-agnostic scope:shared libs, but never scope:frontend or
-              // scope:tools — a running service must not pull in browser code or
-              // workspace tooling.
-              sourceTag: 'scope:backend',
-              onlyDependOnLibsWithTags: ['scope:shared', 'scope:backend']
-            },
-            {
-              // Frontend (browser) code must keep bundles small: zod's classic API
-              // (`zod`, `zod/v4`) is not tree-shakeable, so browser code imports schema
-              // builders from zod/mini and core errors/types from zod/v4/core. Backend
-              // code has no bundle budget and is not constrained (see scope:backend).
-              // See ADR 0003.
-              sourceTag: 'scope:frontend',
-              onlyDependOnLibsWithTags: ['scope:frontend', 'scope:shared'],
-              bannedExternalImports: ['zod', 'zod/v4']
-            },
-            {
-              // Shared code can be pulled into a browser bundle, so it carries the
-              // same zod restriction as scope:frontend: type:models wire contracts
-              // (and any other shared code) use zod/mini + zod/v4/core, never the
-              // classic API. zod/mini runs fine on the backend too. See ADR 0003.
-              sourceTag: 'scope:shared',
-              onlyDependOnLibsWithTags: ['scope:shared'],
-              bannedExternalImports: ['zod', 'zod/v4']
-            },
-            {
-              // Plugins, generators, executors and their support libs. May reach into
-              // scope:backend because some tooling performs backend-side operations
-              // (codegen against schemas, migration helpers). The reverse is blocked:
-              // scope:backend cannot import scope:tools.
-              sourceTag: 'scope:tools',
-              onlyDependOnLibsWithTags: ['scope:tools', 'scope:shared', 'scope:backend']
-            },
-            {
-              // api libs contain controllers and backend request plumbing — the public
-              // API surface. Wire contracts (zod schemas + inferred types) live in shared
-              // type:models libs. Data access flows api -> type:services -> type:infra:
-              // api never imports type:infra directly, only type:services does. (An
-              // app's own composition root may also wire infra — see type:app.)
-              sourceTag: 'type:api',
-              onlyDependOnLibsWithTags: [
-                'type:api',
-                'type:services',
-                'type:models',
-                'type:types',
-                'type:utils'
-              ]
-            },
-            {
-              // Deployable applications (Angular or Nest — scope: disambiguates). The
-              // composition root: it may wire any layer, including type:infra directly
-              // (the one exception to the api -> services -> infra flow). Nothing
-              // depends on a type:app project in turn.
-              sourceTag: 'type:app',
-              onlyDependOnLibsWithTags: [
-                'type:api',
-                'type:core',
-                'type:data-access',
-                'type:feature',
-                'type:infra',
-                'type:models',
-                'type:services',
-                'type:testing',
-                'type:types',
-                'type:ui',
-                'type:utils'
-              ]
-            },
-            {
-              // Eagerly-loaded Angular libs: root providers, app config, guards,
-              // interceptors — what the app must have at bootstrap. Cannot depend on
-              // type:feature: an eager lib statically importing a lazy one defeats the
-              // split. One type:core lib per app, so no self-reference.
-              sourceTag: 'type:core',
-              onlyDependOnLibsWithTags: [
-                'type:data-access',
-                'type:models',
-                'type:testing',
-                'type:types',
-                'type:ui',
-                'type:utils'
-              ]
-            },
-            {
-              // Frontend data access: NgRx state, HTTP clients, facades. Talks to the
-              // backend over the wire (type:models contracts) — never imports backend
-              // libs (scope rules enforce that) or UI/feature libs.
-              sourceTag: 'type:data-access',
-              onlyDependOnLibsWithTags: [
-                'type:data-access',
-                'type:models',
-                'type:types',
-                'type:testing',
-                'type:utils'
-              ]
-            },
-            {
-              // e2e projects drive a deployed app from the outside (HTTP / browser).
-              // They may use shared wire contracts and test helpers but never reach
-              // into app-internal libs (feature, ui, services, infra, ...).
-              sourceTag: 'type:e2e',
-              onlyDependOnLibsWithTags: [
-                'type:e2e',
-                'type:models',
-                'type:testing',
-                'type:types',
-                'type:utils'
-              ]
-            },
-            {
-              // Lazy-loaded, routed Angular feature areas: smart components wired to
-              // type:data-access and composed from type:ui. No self-reference — each
-              // feature is its own lazy boundary; shared behaviour moves down to
-              // data-access / ui / utils rather than feature-to-feature imports.
-              sourceTag: 'type:feature',
-              onlyDependOnLibsWithTags: [
-                'type:data-access',
-                'type:models',
-                'type:testing',
-                'type:types',
-                'type:ui',
-                'type:utils'
-              ]
-            },
-            {
-              // Persistence layer: drizzle schema, inferred row types, connection and
-              // external-client factories. Backend-only (scope rules keep frontend out).
-              // Owns the persistence shape; it does NOT import type:models — the wire
-              // contract is a separate representation, and mapping row <-> DTO is
-              // type:services' job. Shared shape primitives go through type:types.
-              sourceTag: 'type:infra',
-              onlyDependOnLibsWithTags: ['type:infra', 'type:types', 'type:utils']
-            },
-            {
-              // services libs are the abstraction layer between type:api and type:infra.
-              // They contain injectable providers with business logic and data access.
-              sourceTag: 'type:services',
-              onlyDependOnLibsWithTags: [
-                'type:services',
-                'type:infra',
-                'type:models',
-                'type:types',
-                'type:utils'
-              ]
-            },
-            {
-              // Wire contracts: zod schemas + inferred types, the shared FE/BE source
-              // of truth for request/response shapes. Kept lean — types, utils, and
-              // other model libs only. (scope:shared, so the zod/mini ban applies.)
-              sourceTag: 'type:models',
-              onlyDependOnLibsWithTags: ['type:models', 'type:types', 'type:utils']
-            },
-            {
-              // Nx generators / executors and their support code. Runs at build/tooling
-              // time only (scope:tools), so it stays off the application layers —
-              // other plugin libs, types, and utils only.
-              sourceTag: 'type:plugin',
-              onlyDependOnLibsWithTags: ['type:plugin', 'type:types', 'type:utils']
-            },
-            {
-              // Test helpers, mocks, fixtures, builders. May depend on any typed lib so
-              // it can build doubles for it — except type:app and type:e2e, which are
-              // leaf projects nothing should import (notDependOnLibsWithTags is
-              // transitive). Scoped frontend or backend, never shared, so a mock does
-              // not leak across environments.
-              sourceTag: 'type:testing',
-              onlyDependOnLibsWithTags: ['type:*'],
-              notDependOnLibsWithTags: ['type:app', 'type:e2e']
-            },
-            {
-              // Pure type-only exports: interfaces, type aliases, enums-as-const. Zero
-              // runtime, zero dependencies — may import nothing but other type:types
-              // libs. This is the leaf the whole graph can safely depend on.
-              sourceTag: 'type:types',
-              onlyDependOnLibsWithTags: ['type:types']
-            },
-            {
-              // Presentational Angular components: inputs/outputs only, no injected
-              // data services. Types its inputs against type:types, not type:models —
-              // the view layer stays decoupled from the wire shape.
-              sourceTag: 'type:ui',
-              onlyDependOnLibsWithTags: ['type:testing', 'type:types', 'type:ui', 'type:utils']
-            },
-            {
-              // Stateless, isomorphic helper functions. Depends on type:types and other
-              // util libs only — never type:models (that would couple generic helpers
-              // to domain shapes and risks a models <-> utils cycle).
-              sourceTag: 'type:utils',
-              onlyDependOnLibsWithTags: ['type:types', 'type:utils']
-            }
-          ]
+          depConstraints: DEP_CONSTRAINTS
         }
       ]
     }
@@ -271,7 +80,7 @@ export default [
   // Typed linting (type-aware rules) — TS source only. `recommendedTypeChecked` pulls in
   // the rules that need the type-checker: no-floating-promises, no-misused-promises,
   // await-thenable, no-unnecessary-condition, restrict-template-expressions, and so on —
-  // the highest-value part of the ruleset for an async-heavy Angular + NestJS codebase.
+  // the highest-value part of the ruleset for an async-heavy Angular codebase.
   // `strictTypeChecked` is deliberately not used: its no-unsafe-* family fires at every
   // untyped boundary and most of it ends up disabled. Promote individual strict rules
   // in the override block below if wanted.
@@ -301,11 +110,28 @@ export default [
     // `@typescript-eslint/no-deprecated` ships in `strict-type-checked`, not
     // `recommendedTypeChecked`, so it is opted into here on its own. It flags use of
     // any symbol annotated `@deprecated` — cheap now that the type-checker is wired,
-    // and the highest-value strict rule against Angular / NestJS deprecation churn
+    // and the highest-value strict rule against Angular deprecation churn
     // across minor versions. Turned back off for JS by `disableTypeChecked` below.
     files: ['**/*.{ts,tsx,cts,mts}'],
     rules: {
       '@typescript-eslint/no-deprecated': 'error'
+    }
+  },
+  {
+    // Type-only imports must be written `import type { X } from 'a'`. Node's type
+    // stripping erases only `import type`: a plain import of a type from a `@cybertecpty/*`
+    // alias survives stripping and fails at load, because those aliases are tsconfig paths.
+    // The separate-statement style is pinned: `{ type X }` strips to an empty import that
+    // still loads the module, so `no-import-type-side-effects` rejects it. With the project
+    // service the rule reads `emitDecoratorMetadata` / `experimentalDecorators` from
+    // tsconfig.base.json and leaves alone the imports that decorated classes need at runtime.
+    files: ['**/*.{ts,tsx,cts,mts}'],
+    rules: {
+      '@typescript-eslint/consistent-type-imports': [
+        'error',
+        { prefer: 'type-imports', fixStyle: 'separate-type-imports' }
+      ],
+      '@typescript-eslint/no-import-type-side-effects': 'error'
     }
   },
   {
@@ -331,6 +157,16 @@ export default [
     }
   },
   {
+    // `import type` guards code that bare Node loads with type stripping. Specs run under
+    // Jest / Vitest, whose transforms drop type-only imports, so the rule only adds friction
+    // there. Test artifacts (`*.fixture.ts` and the like) stay covered: other code can import them.
+    files: ['**/*.{spec,test}.{ts,tsx,cts,mts}'],
+    rules: {
+      '@typescript-eslint/consistent-type-imports': 'off',
+      '@typescript-eslint/no-import-type-side-effects': 'off'
+    }
+  },
+  {
     // Bundle hygiene (all code, all extensions): lodash's CommonJS entry points
     // defeat tree-shaking, so every runtime import must go through lodash-es. The
     // TS-aware rule lets `import type` through since it is erased at build time.
@@ -346,6 +182,46 @@ export default [
       ]
     }
   },
+  {
+    // eslint-plugin-unicorn: a curated list of bug-catching rules, never its opinionated
+    // `recommended` preset. Held at ^65 until the ESLint 10 migration. See ADR 0008,
+    // 2026-10-16 amendment.
+    files: ['**/*.{ts,tsx,cts,mts,js,jsx,cjs,mjs}'],
+    plugins: { unicorn },
+    rules: {
+      'unicorn/prefer-node-protocol': 'error',
+      'unicorn/error-message': 'error',
+      'unicorn/throw-new-error': 'error',
+      'unicorn/new-for-builtins': 'error',
+      'unicorn/no-instanceof-builtins': 'error',
+      'unicorn/no-thenable': 'error',
+      'unicorn/no-await-in-promise-methods': 'error',
+      'unicorn/no-single-promise-in-promise-methods': 'error',
+      'unicorn/no-array-fill-with-reference-type': 'error',
+      'unicorn/no-unused-array-method-return': 'error',
+      'unicorn/no-negation-in-equality-check': 'error',
+      'unicorn/no-accessor-recursion': 'error',
+      'unicorn/no-new-buffer': 'error',
+      'unicorn/no-invalid-remove-event-listener': 'error',
+      'unicorn/prefer-structured-clone': 'error'
+    }
+  },
+  {
+    // Declaration order (conventions §8): type declarations before runtime ones, exported
+    // functions before private helpers, alphabetized within each group. Only `sort-modules`,
+    // never the plugin's presets, and none of its import/export rules: import order belongs
+    // to prettier-plugin-organize-imports. The rule leaves `const` / `let`, expression
+    // statements and control flow where they are and sorts only the runs between them; class
+    // and enum dependencies are tracked. See ADR 0008, 2026-10-20 amendment.
+    files: ['**/*.{ts,tsx,cts,mts}'],
+    plugins: { perfectionist },
+    rules: {
+      'perfectionist/sort-modules': [
+        'error',
+        { groups: [['interface', 'type', 'enum'], 'class', 'export-function', 'function'] }
+      ]
+    }
+  },
   // NgRx SignalStore lint rules. Spread the plugin's flat config (the `ngrx/base`
   // plugin registration + the signals rule set) and narrow each entry to app/lib
   // TS source. NgRx is Angular-only, but the workspace has no frontend path
@@ -355,12 +231,13 @@ export default [
   // non-NgRx files. Revisit (per-project spread) when the Angular ADR lands.
   ...ngrx.configs.signals.map(config => ({ ...config, files: ['{apps,libs}/**/*.ts'] })),
   {
-    // Jest lint rules for spec/mock files. `flat/recommended` brings the plugin,
-    // the jest globals, and the recommended rule set (no-focused-tests,
+    // Jest lint rules for spec files and test artifacts (doubles and fixtures —
+    // `<name>.<kind>.ts`, ADR 0008 2026-10-17 amendment). `flat/recommended` brings the
+    // plugin, the jest globals, and the recommended rule set (no-focused-tests,
     // no-disabled-tests, valid-expect, ...); the overrides below relax
     // TS rules that are noise in test code.
     basePath: workspaceRoot,
-    files: ['**/*.{spec,test}.ts', '**/*.{mock,mocks}.ts'],
+    files: ['**/*.{spec,test}.ts', '**/*.{mock,mocks,stub,stubs,fake,fakes,fixture,fixtures}.ts'],
     ignores: [...vitestSpecFiles, ...playwrightSpecFiles],
     ...jest.configs['flat/recommended'],
     rules: {
@@ -397,6 +274,14 @@ export default [
       ...playwright.configs['flat/recommended'].rules,
       '@nx/enforce-module-boundaries': 'off'
     }
+  },
+  {
+    // The same Playwright rules for the shared lib's gate code (see `playwrightLibFiles`).
+    // Unlike the specs above, it is production code of a lib, so module boundaries stay on.
+    basePath: workspaceRoot,
+    files: playwrightLibFiles,
+    ignores: playwrightLibIgnores,
+    ...playwright.configs['flat/recommended']
   },
   // Astro components (ADR 0012). `flat/recommended` parses `.astro` files and lints their
   // frontmatter and `<script>` blocks as virtual `*.astro/*.{js,ts}` files. Its

@@ -2,18 +2,23 @@
  * Workspace coverage reporting for CI — runs entirely inside GitHub Actions, no
  * third-party service (ADR 0007 amendment / issue #52).
  *
- * After `nx run-many -t test` (coverage collected in CI via `jest.preset.js`),
- * every project drops `coverage/<projectRoot>/coverage-{summary,final}.json`.
- * This script:
- *   1. sums the per-project `coverage-summary.json` totals into one workspace
- *      number and writes `coverage/coverage-summary.merged.json`;
+ * After the CI test run (coverage collected in CI via `jest.preset.js`), each
+ * tested project drops `coverage/<projectRoot>/coverage-{summary,final}.json`. A .NET
+ * test project drops lcov (`coverage.info`, from coverlet — ADR 0017) instead; it is
+ * read into the same per-project totals and per-line hit counts.
+ *
+ * A push runs `nx run-many` (every project); a PR runs `nx affected`, so only
+ * the affected projects report. This script:
+ *   1. sums the per-project `coverage-summary.json` totals into one number (the
+ *      workspace on a push, the affected projects on a PR) and writes
+ *      `coverage/coverage-summary.merged.json`;
  *   2. on a pull request, computes patch coverage — the covered fraction of the
  *      source lines the PR adds — from the merged `coverage-final.json` maps and
  *      `git diff`;
  *   3. writes a Markdown report to the job summary and, on a non-fork PR,
  *      upserts it as a single PR comment (matched by MARKER).
  *
- * Invoked from `.github/workflows/ci.yml` via `actions/github-script`:
+ * Invoked from `.github/workflows/lint-and-test-affected.yml` via `actions/github-script`:
  *   const report = require(`${process.env.GITHUB_WORKSPACE}/.github/scripts/coverage-report.cjs`);
  *   await report({ github, context, core });
  *
@@ -25,6 +30,7 @@ const fs = require('node:fs');
 const path = require('node:path');
 
 const MARKER = '<!-- coverage-report -->';
+const LCOV_REPORT = 'coverage.info';
 const METRICS = ['statements', 'branches', 'functions', 'lines'];
 
 /** @param {number} n */
@@ -123,13 +129,106 @@ function lineHitMap(fileCoverage) {
 }
 
 /**
+ * Parse an lcov `.info` report into per-file line hits and function/branch counts.
+ * Only the records the reporter uses are read: `SF`, `DA`, `FNF`/`FNH`,
+ * `BRF`/`BRH`; a missing `FNF`/`BRF` summary falls back to counting
+ * `FN`/`FNDA`/`BRDA` records.
+ *
+ * @param {string} text
+ * @returns {Map<string, { lines: Map<number, number>, functions: { total: number, covered: number }, branches: { total: number, covered: number } }>}
+ */
+function parseLcov(text) {
+  const files = new Map();
+  let current = null;
+  const newFile = () => ({
+    lines: new Map(),
+    summary: {},
+    fnFound: new Set(),
+    fnHit: new Set(),
+    brFound: 0,
+    brHit: 0
+  });
+
+  for (const raw of text.split('\n')) {
+    const line = raw.trim();
+    if (line.startsWith('SF:')) {
+      current = { path: line.slice(3), ...newFile() };
+    } else if (!current) {
+      continue;
+    } else if (line === 'end_of_record') {
+      const { path: file, lines, summary, fnFound, fnHit, brFound, brHit } = current;
+      if (!files.has(file)) {
+        files.set(file, {
+          lines,
+          functions: {
+            total: summary.FNF ?? fnFound.size,
+            covered: summary.FNH ?? fnHit.size
+          },
+          branches: { total: summary.BRF ?? brFound, covered: summary.BRH ?? brHit }
+        });
+      }
+      current = null;
+    } else if (line.startsWith('DA:')) {
+      const [num, hits] = line.slice(3).split(',');
+      const n = Number(num);
+      const count = Number(hits);
+      current.lines.set(n, Math.max(current.lines.get(n) ?? 0, count));
+    } else if (line.startsWith('FN:')) {
+      current.fnFound.add(line.slice(3).split(',').slice(1).join(','));
+    } else if (line.startsWith('FNDA:')) {
+      const [hits, ...name] = line.slice(5).split(',');
+      if (Number(hits) > 0) current.fnHit.add(name.join(','));
+    } else if (line.startsWith('BRDA:')) {
+      current.brFound++;
+      const taken = line.slice(5).split(',')[3];
+      if (taken !== '-' && Number(taken) > 0) current.brHit++;
+    } else {
+      const match = /^(FNF|FNH|BRF|BRH):(\d+)$/.exec(line);
+      if (match) current.summary[match[1]] = Number(match[2]);
+    }
+  }
+  return files;
+}
+
+/**
+ * Fold parsed lcov files into a `coverage-summary.json`-shaped `total` block. .NET has
+ * no separate statement metric, so statements are reported as lines.
+ *
+ * @param {ReturnType<typeof parseLcov>} files
+ */
+function lcovTotal(files) {
+  let lines = 0;
+  let linesHit = 0;
+  let fn = 0;
+  let fnHit = 0;
+  let br = 0;
+  let brHit = 0;
+  for (const file of files.values()) {
+    lines += file.lines.size;
+    for (const count of file.lines.values()) if (count > 0) linesHit++;
+    fn += file.functions.total;
+    fnHit += file.functions.covered;
+    br += file.branches.total;
+    brHit += file.branches.covered;
+  }
+  const entry = (total, covered) => ({ total, covered, skipped: 0, pct: pct(covered, total) });
+  return {
+    statements: entry(lines, linesHit),
+    branches: entry(br, brHit),
+    functions: entry(fn, fnHit),
+    lines: entry(lines, linesHit)
+  };
+}
+
+/**
  * Patch coverage: of the lines this PR adds that Istanbul instrumented, how many
  * are hit by at least one test. Lines with no instrumented statement (blank
  * lines, `import` lines, type-only files, non-`src` files) are not counted
  * either way.
  *
  * @param {Map<string, Set<number>>} addedByFile  repo-relative path -> added line numbers
- * @param {Map<string, object>} finalByRel        repo-relative path -> Istanbul file coverage
+ * @param {Map<string, object | Map<number, number>>} finalByRel  repo-relative path -> Istanbul
+ *   file coverage, or (for lcov) a `line -> hit count` map
  */
 function patchCoverage(addedByFile, finalByRel) {
   let covered = 0;
@@ -140,7 +239,7 @@ function patchCoverage(addedByFile, finalByRel) {
   for (const [file, lines] of addedByFile) {
     const fileCoverage = finalByRel.get(file);
     if (!fileCoverage) continue;
-    const hitByLine = lineHitMap(fileCoverage);
+    const hitByLine = fileCoverage instanceof Map ? fileCoverage : lineHitMap(fileCoverage);
     let fileCovered = 0;
     let fileCoverable = 0;
     for (const line of lines) {
@@ -177,19 +276,26 @@ function oneLine(totals) {
  * @param {{
  *   projects: { name: string, total: Record<string, { pct: number }> }[],
  *   workspace: Record<string, { pct: number }>,
- *   patch: { covered: number, coverable: number, pct: number | null, perFile: { file: string, covered: number, coverable: number, pct: number }[] } | null
- * }} input
+ *   patch: { covered: number, coverable: number, pct: number | null, perFile: { file: string, covered: number, coverable: number, pct: number }[] } | null,
+ *   affectedOnly?: boolean
+ * }} input  `affectedOnly`: a PR run, which tests only the affected projects, so the
+ *   total covers those rather than the whole workspace.
  */
-function renderMarkdown({ projects, workspace, patch }) {
+function renderMarkdown({ projects, workspace, patch, affectedOnly = false }) {
   const lines = [MARKER, '', '## Test coverage', ''];
-  lines.push(`**Workspace:** ${oneLine(workspace)}`, '');
-  lines.push('| Project | Statements | Branches | Functions | Lines |');
-  lines.push('| --- | --: | --: | --: | --: |');
-  for (const project of projects) {
-    const cells = METRICS.map(m => `${project.total[m].pct}%`);
-    lines.push(`| ${project.name} | ${cells.join(' | ')} |`);
+  if (projects.length === 0) {
+    lines.push('No affected project reported coverage.', '');
+  } else {
+    const label = affectedOnly ? 'Affected projects' : 'Workspace';
+    lines.push(`**${label}:** ${oneLine(workspace)}`, '');
+    lines.push('| Project | Statements | Branches | Functions | Lines |');
+    lines.push('| --- | --: | --: | --: | --: |');
+    for (const project of projects) {
+      const cells = METRICS.map(m => `${project.total[m].pct}%`);
+      lines.push(`| ${project.name} | ${cells.join(' | ')} |`);
+    }
+    lines.push('');
   }
-  lines.push('');
 
   if (patch) {
     if (patch.pct === null) {
@@ -243,12 +349,17 @@ function findReports(root, basename) {
 /** @param {string} root */
 function collectProjects(root) {
   const coverageRoot = path.join(root, 'coverage');
-  return findReports(root, 'coverage-summary.json')
-    .map(abs => ({
-      name: path.relative(coverageRoot, path.dirname(abs)).split(path.sep).join('/'),
+  const name = abs => path.relative(coverageRoot, path.dirname(abs)).split(path.sep).join('/');
+  return [
+    ...findReports(root, 'coverage-summary.json').map(abs => ({
+      name: name(abs),
       total: readJson(abs).total
+    })),
+    ...findReports(root, LCOV_REPORT).map(abs => ({
+      name: name(abs),
+      total: lcovTotal(parseLcov(fs.readFileSync(abs, 'utf8')))
     }))
-    .sort((a, b) => a.name.localeCompare(b.name));
+  ].sort((a, b) => a.name.localeCompare(b.name));
 }
 
 /** @param {string} root */
@@ -260,6 +371,12 @@ function mergeFinalByRel(root) {
     for (const [absPath, fileCoverage] of Object.entries(data)) {
       const relPath = path.relative(root, absPath).split(path.sep).join('/');
       if (!byRel.has(relPath)) byRel.set(relPath, fileCoverage);
+    }
+  }
+  for (const abs of findReports(root, LCOV_REPORT)) {
+    for (const [absPath, file] of parseLcov(fs.readFileSync(abs, 'utf8'))) {
+      const relPath = path.relative(root, absPath).split(path.sep).join('/');
+      if (!byRel.has(relPath)) byRel.set(relPath, file.lines);
     }
   }
   return byRel;
@@ -277,6 +394,7 @@ function changedLines({ base, head }) {
       `${base}...${head}`,
       '--',
       '*.ts',
+      '*.cs',
       ':(exclude)**/*.spec.ts'
     ],
     { encoding: 'utf8', maxBuffer: 256 * 1024 * 1024 }
@@ -305,10 +423,20 @@ async function upsertComment({ github, context, body }) {
 /** @param {{ github: any, context: any, core: any }} args */
 async function report({ github, context, core }) {
   const root = process.env.GITHUB_WORKSPACE ?? process.cwd();
+  const isPullRequest = context.eventName === 'pull_request';
+  const isFork = context.payload.pull_request?.head?.repo?.fork ?? false;
 
   const projects = collectProjects(root);
   if (projects.length === 0) {
-    core.warning('coverage-report: no coverage-summary.json files under coverage/ — skipping.');
+    if (isPullRequest) {
+      // A PR that affects no tested project: replace any earlier coverage
+      // comment so it doesn't show numbers from a previous push.
+      const body = renderMarkdown({ projects, workspace: null, patch: null, affectedOnly: true });
+      await core.summary.addRaw(body).write();
+      if (!isFork) await upsertComment({ github, context, body });
+      return;
+    }
+    core.warning('coverage-report: no coverage reports under coverage/ — skipping.');
     return;
   }
   core.info(
@@ -323,17 +451,16 @@ async function report({ github, context, core }) {
   core.info(`coverage-report: workspace ${oneLine(workspace)}`);
 
   let patch = null;
-  if (context.eventName === 'pull_request') {
+  if (isPullRequest) {
     const base = process.env.NX_BASE || context.payload.pull_request.base.sha;
     const head = process.env.NX_HEAD || context.payload.pull_request.head.sha;
     patch = patchCoverage(changedLines({ base, head }), mergeFinalByRel(root));
   }
 
-  const body = renderMarkdown({ projects, workspace, patch });
+  const body = renderMarkdown({ projects, workspace, patch, affectedOnly: isPullRequest });
   await core.summary.addRaw(body).write();
 
-  const isFork = context.payload.pull_request?.head?.repo?.fork ?? false;
-  if (context.eventName === 'pull_request' && !isFork) {
+  if (isPullRequest && !isFork) {
     await upsertComment({ github, context, body });
   }
 }
@@ -342,6 +469,10 @@ module.exports = report;
 module.exports.MARKER = MARKER;
 module.exports.sumTotals = sumTotals;
 module.exports.parseAddedLines = parseAddedLines;
+module.exports.collectProjects = collectProjects;
+module.exports.mergeFinalByRel = mergeFinalByRel;
+module.exports.parseLcov = parseLcov;
+module.exports.lcovTotal = lcovTotal;
 module.exports.lineHitMap = lineHitMap;
 module.exports.patchCoverage = patchCoverage;
 module.exports.renderMarkdown = renderMarkdown;

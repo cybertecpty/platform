@@ -1,0 +1,67 @@
+{
+  "$schema": "https://json-schema.org/schema",
+  "cli": "nx",
+  "$id": "NxExecGenerator",
+  "title": "Scaffold an executor inside a workspace plugin",
+  "description": "Wrap `@nx/plugin:executor` with the workspace conventions: the executor lands at `src/lib/executors/<directory>/executor.ts` in the target plugin, with a type-checked `schema.ts` exporting an `Options` interface, a strict `schema.json`, a minimal starter and spec, a README, and a re-export from the plugin's `src/index.ts`.",
+  "type": "object",
+  "examples": [
+    {
+      "command": "nx g nx-exec swa-deploy --project=azure-plugin",
+      "description": "Adds a `swa-deploy` executor at `tools/azure/plugin/src/lib/executors/swa-deploy/executor.ts`."
+    },
+    {
+      "command": "nx g nx-exec deploy --project=azure-plugin --directory=swa-deploy",
+      "description": "Adds an executor whose folder (`swa-deploy/`) differs from its collection key (`deploy`)."
+    }
+  ],
+  "properties": {
+    "name": {
+      "type": "string",
+      "description": "The executor name — its key in the target plugin's executors collection and, unless `directory` overrides it, its folder under `src/lib/executors/`. Lowercase alphanumeric words joined by single hyphens, starting with a letter (it becomes part of TypeScript identifiers).",
+      "pattern": "^[a-z][a-z0-9]*(?:-[a-z0-9]+)*$",
+      "x-priority": "important",
+      "$default": {
+        "$source": "argv",
+        "index": 0
+      }
+    },
+    "project": {
+      "type": "string",
+      "description": "The plugin project to add the executor to. Must be tagged `type:plugin`.",
+      "x-priority": "important",
+      "x-prompt": "Which plugin project should the executor be added to?",
+      "$default": {
+        "$source": "projectName"
+      }
+    },
+    "directory": {
+      "type": "string",
+      "description": "Folder segment under the plugin's `src/lib/executors/`. Defaults to `name`; set it when the folder should differ from the collection key.",
+      "pattern": "^[a-z0-9]+(?:-[a-z0-9]+)*$"
+    },
+    "description": {
+      "type": "string",
+      "description": "Executor description, recorded in the plugin's `executors.json`, the executor's `schema.json` and its README."
+    },
+    "unitTestRunner": {
+      "type": "string",
+      "enum": ["jest", "none"],
+      "default": "jest",
+      "description": "Test runner for the generated executor's spec. The workspace standardizes on Jest (ADR 0007)."
+    },
+    "skipLintChecks": {
+      "type": "boolean",
+      "default": false,
+      "description": "Do not add an eslint configuration for the plugin's json files."
+    },
+    "skipFormat": {
+      "type": "boolean",
+      "default": false,
+      "description": "Skip formatting files.",
+      "x-priority": "internal"
+    }
+  },
+  "required": ["name", "project"],
+  "additionalProperties": false
+}

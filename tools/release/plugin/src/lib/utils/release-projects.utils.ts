@@ -1,7 +1,8 @@
 import { gitMergeBase, gitTagsMatching } from '@cybertecpty/git-utils';
-import { VersionData } from '@cybertecpty/nx-types';
+import type { VersionData } from '@cybertecpty/nx-types';
 import { findMatchingProjects, getAffectedGraphNodes, type NxArgs } from '@cybertecpty/nx-utils';
-import { createProjectGraphAsync, logger, readNxJson, Tree, type ProjectGraph } from '@nx/devkit';
+import type { Tree } from '@nx/devkit';
+import { createProjectGraphAsync, logger, readNxJson, type ProjectGraph } from '@nx/devkit';
 import simpleGit, { type SimpleGit } from 'simple-git';
 
 /**
@@ -21,19 +22,60 @@ export interface AffectedReleaseProjectsOptions {
 }
 
 /**
- * Builds the `NxArgs` for {@link getAffectedGraphNodes}. `base` is resolved to a
- * concrete revision ({@link resolveAffectedBase}); `head` is pinned to `HEAD` so
- * the scan is the committed `base..HEAD` diff and ignores working-tree state —
- * this runs before the release branch is cut, so the tree may still be dirty.
+ * Reads the release project patterns from `nx.json`, without touching the
+ * project graph.
+ *
+ * Nx accepts the releasable set in one of two mutually exclusive forms, and we
+ * support both:
+ * - `release.projects`: a pattern or list of patterns at the top level.
+ * - `release.groups`: named groups, each with its own `projects` patterns; the
+ *   releasable set is the union across every group.
+ *
+ * One of the two forms is required config for us — without it there's no way to
+ * know what "affected release projects" even means — so a config with neither
+ * is a hard error. Patterns that simply match no project yet are not: the
+ * caller treats an empty match as "nothing to release".
  */
-async function createAffectedNxArgs(
+export function readReleasePatterns(tree: Tree): string[] {
+  const release = readNxJson(tree)?.release;
+
+  const patterns = release?.groups
+    ? Object.values(release.groups).flatMap(group => toProjectPatternArray(group.projects))
+    : toProjectPatternArray(release?.projects);
+
+  if (patterns.length === 0) {
+    throw new Error(
+      'nx.json configures no releasable projects: set release.projects or release.groups.'
+    );
+  }
+
+  return patterns;
+}
+
+/**
+ * Picks the commit that marks the start of this release's changes. Everything
+ * between it and HEAD is "the work in this release"; the affected-project scan
+ * uses it as its starting point.
+ *
+ * We measure from the released branch (`targetBranch`, normally `main`) because
+ * a release is "what's new since the last release". A caller can override with
+ * an explicit `base`.
+ *
+ * Why the merge-base instead of the branch name directly: `main` keeps moving
+ * (e.g. a hotfix lands on it after this release branch was cut). Comparing
+ * against `main`'s current tip would treat that unrelated commit as missing
+ * from our branch and flag the projects it touched. The merge-base is the last
+ * commit our branch and `main` share, i.e. the point our branch split off, so
+ * only our own commits get counted. Falls back to the branch name if the
+ * merge-base can't be found (e.g. a shallow clone without `main`).
+ */
+export async function resolveAffectedBase(
   opts: AffectedReleaseProjectsOptions,
-  git: SimpleGit
-): Promise<NxArgs> {
-  return {
-    base: await resolveAffectedBase(opts, git),
-    head: 'HEAD'
-  };
+  git: SimpleGit = simpleGit()
+): Promise<string> {
+  const ref = opts.base ?? opts.targetBranch;
+
+  return (await gitMergeBase(ref, 'HEAD', git)) ?? ref;
 }
 
 /**
@@ -71,6 +113,16 @@ export async function resolveAffectedReleaseProjects(
 }
 
 /**
+ * Resolves `nx.json`'s release config into the concrete project names present
+ * in `projectGraph`. Patterns are project names, globs, or tag/directory
+ * selectors; `findMatchingProjects` matches them against the graph and de-dupes.
+ * See {@link readReleasePatterns} for the accepted config shapes.
+ */
+export function resolveReleaseProjects(tree: Tree, projectGraph: ProjectGraph): string[] {
+  return findMatchingProjects(readReleasePatterns(tree), projectGraph.nodes);
+}
+
+/**
  * Intersects the configured releasable set with the projects the affected scan
  * flagged, keeping the release-config order (it drives the release sequence). A
  * releasable project that wasn't touched is dropped — releasing an unchanged
@@ -83,73 +135,6 @@ export function selectAffectedReleaseProjects(
   const affected = new Set(affectedProjectNames);
 
   return releaseProjects.filter(projectName => affected.has(projectName));
-}
-
-/**
- * Picks the commit that marks the start of this release's changes. Everything
- * between it and HEAD is "the work in this release"; the affected-project scan
- * uses it as its starting point.
- *
- * We measure from the released branch (`targetBranch`, normally `main`) because
- * a release is "what's new since the last release". A caller can override with
- * an explicit `base`.
- *
- * Why the merge-base instead of the branch name directly: `main` keeps moving
- * (e.g. a hotfix lands on it after this release branch was cut). Comparing
- * against `main`'s current tip would treat that unrelated commit as missing
- * from our branch and flag the projects it touched. The merge-base is the last
- * commit our branch and `main` share, i.e. the point our branch split off, so
- * only our own commits get counted. Falls back to the branch name if the
- * merge-base can't be found (e.g. a shallow clone without `main`).
- */
-export async function resolveAffectedBase(
-  opts: AffectedReleaseProjectsOptions,
-  git: SimpleGit = simpleGit()
-): Promise<string> {
-  const ref = opts.base ?? opts.targetBranch;
-
-  return (await gitMergeBase(ref, 'HEAD', git)) ?? ref;
-}
-
-/**
- * Reads the release project patterns from `nx.json`, without touching the
- * project graph.
- *
- * Nx accepts the releasable set in one of two mutually exclusive forms, and we
- * support both:
- * - `release.projects`: a pattern or list of patterns at the top level.
- * - `release.groups`: named groups, each with its own `projects` patterns; the
- *   releasable set is the union across every group.
- *
- * One of the two forms is required config for us — without it there's no way to
- * know what "affected release projects" even means — so a config with neither
- * is a hard error. Patterns that simply match no project yet are not: the
- * caller treats an empty match as "nothing to release".
- */
-export function readReleasePatterns(tree: Tree): string[] {
-  const release = readNxJson(tree)?.release;
-
-  const patterns = release?.groups
-    ? Object.values(release.groups).flatMap(group => toProjectPatternArray(group.projects))
-    : toProjectPatternArray(release?.projects);
-
-  if (patterns.length === 0) {
-    throw new Error(
-      'nx.json configures no releasable projects: set release.projects or release.groups.'
-    );
-  }
-
-  return patterns;
-}
-
-/**
- * Resolves `nx.json`'s release config into the concrete project names present
- * in `projectGraph`. Patterns are project names, globs, or tag/directory
- * selectors; `findMatchingProjects` matches them against the graph and de-dupes.
- * See {@link readReleasePatterns} for the accepted config shapes.
- */
-export function resolveReleaseProjects(tree: Tree, projectGraph: ProjectGraph): string[] {
-  return findMatchingProjects(readReleasePatterns(tree), projectGraph.nodes);
 }
 
 /**
@@ -197,6 +182,22 @@ export async function tagReleasedProjects(
   }
 
   return createdTags;
+}
+
+/**
+ * Builds the `NxArgs` for {@link getAffectedGraphNodes}. `base` is resolved to a
+ * concrete revision ({@link resolveAffectedBase}); `head` is pinned to `HEAD` so
+ * the scan is the committed `base..HEAD` diff and ignores working-tree state —
+ * this runs before the release branch is cut, so the tree may still be dirty.
+ */
+async function createAffectedNxArgs(
+  opts: AffectedReleaseProjectsOptions,
+  git: SimpleGit
+): Promise<NxArgs> {
+  return {
+    base: await resolveAffectedBase(opts, git),
+    head: 'HEAD'
+  };
 }
 
 /**

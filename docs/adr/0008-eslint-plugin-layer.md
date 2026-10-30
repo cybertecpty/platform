@@ -237,3 +237,230 @@ description, pair with an `eslint-enable` when it is a block disable, and not be
   `flat/recommended`; `@typescript-eslint/no-deprecated`;
   `@eslint-community/eslint-plugin-eslint-comments` `require-description` +
   `disable-enable-pair`; ESLint `linterOptions.reportUnusedDisableDirectives`.
+
+## Amendment (2026-10-16): `eslint-plugin-unicorn`, a curated rule list
+
+- Status: proposed
+- Deciders: djmcgrath
+- Implemented by: the `unicorn` block in `eslint.config.mjs`; the `eslint-plugin-unicorn`
+  devDependency (#128)
+
+The workspace imports Node built-ins with the `node:` prefix (`node:path`,
+`node:child_process`), but nothing enforced it: four bare imports passed lint, typecheck and
+the pre-commit hooks on the #123 branch and were only caught in review. `eslint-plugin-unicorn`
+enforces the prefix (`prefer-node-protocol`, with an automatic fix) and carries a number of
+rules that catch real bugs rather than style.
+
+### Decision
+
+- **Add `eslint-plugin-unicorn` to the plugin layer**, in its own block on
+  `**/*.{ts,tsx,cts,mts,js,jsx,cjs,mjs}`, next to the bundle-hygiene and NgRx blocks.
+- **A curated list of rules, never a preset.** `recommended` is opinionated and conflicts with
+  this repo (file-name casing, `no-null`, `prevent-abbreviations`, `prefer-module`). Enabled,
+  all `error`:
+
+  | Rule                                   | Catches                                                        |
+  | -------------------------------------- | -------------------------------------------------------------- |
+  | `prefer-node-protocol`                 | `'path'` instead of `'node:path'` (auto-fix)                   |
+  | `error-message`                        | `new Error()` with no message                                  |
+  | `throw-new-error`                      | `throw Error('x')` without `new`                               |
+  | `new-for-builtins`                     | `Date()` returning a string; `new String()` and other wrappers |
+  | `no-instanceof-builtins`               | `x instanceof Array`, wrong across realms (Jest VM contexts)   |
+  | `no-thenable`                          | objects with a `then` property                                 |
+  | `no-await-in-promise-methods`          | `Promise.all([await a, await b])`, which serializes            |
+  | `no-single-promise-in-promise-methods` | `Promise.all([x])`                                             |
+  | `no-array-fill-with-reference-type`    | `new Array(n).fill({})` sharing one object                     |
+  | `no-unused-array-method-return`        | ignored `.map()` / `.filter()` / `.find()` results             |
+  | `no-negation-in-equality-check`        | `!a === b`                                                     |
+  | `no-accessor-recursion`                | a getter or setter that calls itself                           |
+  | `no-new-buffer`                        | deprecated, unsafe `new Buffer()`                              |
+  | `no-invalid-remove-event-listener`     | `removeEventListener('x', fn.bind(this))`                      |
+  | `prefer-structured-clone`              | `JSON.parse(JSON.stringify(x))` deep copies                    |
+
+  `no-instanceof-builtins` keeps its default `loose` strategy, which doesn't cover `Error`;
+  widening it to `strict` is a separate call.
+
+- **Left off deliberately.** `prefer-module` and `prefer-top-level-await` (the `tools/`
+  projects are CommonJS), `no-null` (Angular APIs use `null`), `no-process-exit` (scripts exit
+  with codes). `no-abusive-eslint-disable` duplicates the `eslint-comments` contract above, and
+  `no-unnecessary-await` duplicates `@typescript-eslint/await-thenable` (ADR 0006) on TS files,
+  which is nearly all the code; plain JS goes without it.
+  `no-array-callback-reference` and the style rules are too noisy for their value.
+- **Pinned to `^65.0.1`.** Every release from 66.0.0 declares `eslint: ">=10.4"`; the
+  workspace is on ESLint 9. 65.0.1 is the newest release that supports ESLint 9
+  (`>=9.38.0`). Moving past 65 waits on the ESLint 10 migration.
+
+### Considered options (for `node:` enforcement alone)
+
+- **ESLint's `no-restricted-imports` built from `module.builtinModules`.** No new dependency,
+  but no automatic fix, and it would collide with the ADR 0003 lodash ban: in flat config a
+  later block's options for the same rule replace an earlier block's, so both bans would have
+  to share one option set.
+- **`eslint-plugin-import-x` (`enforce-node-protocol-usage`) or `eslint-plugin-n`
+  (`prefer-node-protocol`).** They cover only the `node:` part, and each is as large as
+  unicorn.
+
+### Consequences
+
+- Bare built-in imports and the bug patterns above fail `nx lint`; `eslint --fix` (and the
+  pre-commit hook) rewrites bare imports automatically.
+- Run at `warn` first across the workspace: zero findings for every rule (217 files), so none
+  was dropped and nothing needed fixing.
+- One more version pin, held back a major by the ESLint 9 peer range.
+- Adding a rule from the plugin is a normal `eslint.config.mjs` edit; adopting a preset
+  reopens this ADR.
+
+## Amendment (2026-10-17): Jest block covers every test-artifact suffix
+
+- Status: proposed
+- Deciders: djmcgrath
+- Implemented by: the Jest block's `files` in `eslint.config.mjs`; the naming convention in
+  `.claude/rules/testing.md` (#136)
+
+Test helpers outside spec files are named `<name>.<kind>.ts`, where the kind says what the
+artifact is: a test double (`mock`, `stub`, `fake`) or test data (`fixture`), each with a plural
+form for a file holding several. The Jest block only matched `*.{mock,mocks}.ts`, so a
+`*.fixture.ts` (the first being `nx-executor-context.fixture.ts` in `nx-testing`) got neither the
+Jest globals nor the test-code relaxations.
+
+### Decision
+
+- **The locked Jest glob widens** from `**/*.{mock,mocks}.ts` to
+  `**/*.{mock,mocks,stub,stubs,fake,fakes,fixture,fixtures}.ts`, next to
+  `**/*.{spec,test}.ts`. `flat/recommended` and the four relaxations are unchanged.
+- **No `spy` or `dummy` suffix.** Spies are created inline (`jest.spyOn`) and dummies are
+  literals; neither warrants its own file.
+- **No `builder` suffix.** A test-data builder (a function returning valid data with per-test
+  overrides) is a `.fixture`. `*.builder.ts` would collide with production builders (query or URL
+  builders) and with Angular CLI builders, the Architect counterpart of Nx executors, and the
+  glob would then wrongly lint them as test code. `.factory` was rejected for the same reason
+  (Angular injection factories).
+
+### Consequences
+
+- These suffixes are reserved for test artifacts. A production file using one of them would get
+  Jest globals and relaxed rules. `mock`, `stub`, `fake` and `fixture` have no common production
+  meaning, which is why they were chosen.
+- Coverage is unaffected: the preset still counts these files, so fixtures and fakes in a
+  `type:testing` lib need their own specs.
+
+## Amendment (2026-10-20): `eslint-plugin-perfectionist`, `sort-modules` only
+
+- Status: proposed
+- Deciders: djmcgrath
+- Implemented by: the `perfectionist` block in `eslint.config.mjs`; the
+  `eslint-plugin-perfectionist` devDependency (#169)
+
+Conventions §8 says new or substantially reorganized TypeScript files put type declarations
+before runtime implementation and alphabetize within groups. Nothing enforced it, so it
+depended on reviewers remembering. In #166 a file grew across several review rounds, ended up
+with runtime state above its types and unsorted constants and exports, and nobody noticed until
+the maintainer asked.
+
+### Decision
+
+- **Add `eslint-plugin-perfectionist` and enable only `perfectionist/sort-modules`**, `error`,
+  on `**/*.{ts,tsx,cts,mts}`. It orders top-level declarations and has an autofix.
+- **Groups, in order:** `interface` / `type` / `enum` (one group), `class`, exported
+  `function`s, private `function`s. Alphabetical within a group (the plugin's default
+  `alphabetical`, case-insensitive). The exported-before-private split follows the order applied
+  by hand in #166; types are not split by export status.
+- **Never a preset.** The plugin's `recommended-*` configs also sort object keys, union members,
+  JSX props, classes and more, which goes well beyond §8 and would churn the whole repo.
+- **Imports and exports stay with the formatter.** `prettier-plugin-organize-imports` owns import
+  order (conventions §8, "don't hand-sort imports"). Perfectionist's `sort-imports`,
+  `sort-named-imports`, `sort-exports` and `sort-named-exports` stay off, as they would fight
+  it. `sort-modules` itself skips `import` and `export * from` and leaves `export { a }`
+  re-exports alone.
+
+### What the rule can and cannot reorder (v5.12.1, read from the source)
+
+- **`const` / `let` are never moved.** A variable declaration (including `export const`), an
+  expression statement or a control-flow statement ends the current sorting run. Only the
+  consecutive function, class, enum, interface and type declarations between two such statements
+  are sorted, and nothing moves across one. This is what keeps runtime-order-sensitive code
+  (`const` initializers, module state, `jest.mock` calls, side-effecting statements) out of
+  reach. The cost is that the rule sees a type declared _after_ a `const` and a function declared
+  _before_ it as unrelated, so "types first" holds within each run, not across the whole file.
+- **Class and enum dependencies are tracked.** With the default
+  `useExperimentalDependencyDetection: true`, a class (`extends`, static initializers,
+  decorators) or an enum (initializers) is never moved above a declaration it depends on in
+  the same run. Function declarations are hoisted, so moving them is safe.
+- The plugin's source marks the legacy dependency detection for removal once
+  `useExperimentalDependencyDetection` is the only mode, so the config leaves that option at its
+  default (`true`) rather than setting it.
+- The `class` group is an addition to §8's two-part rule (types, then runtime): classes are
+  runtime declarations with tracked dependencies, so they sit between the types and the
+  functions.
+
+### Rollout
+
+Run over the TypeScript sources in `apps/`, `libs/` and `tools/` before choosing, the rule found
+**44 errors in 28 files**, all fixable (46 in 29 files if exported and private functions share a
+group). The cleanup is a mechanical, comment-preserving move of whole declarations, so the rule
+is `error` from the start and the same PR autofixes the existing code, rather than starting at
+`warn` or scoping by path with a follow-up. Conventions §8 says "new/substantially-reorganized
+files", but a lint rule cannot tell old from new, and a 28-file cleanup is cheaper than a
+permanent exception list.
+
+### Considered options
+
+- **`@typescript-eslint/member-ordering`.** Orders class and interface members only, not
+  top-level declarations.
+- **A custom rule.** More code to own for a rule the plugin already has.
+- **`sort-modules` with `type: 'usage'`.** Sorts by use rather than alphabetically, which is not
+  what §8 says.
+
+### Consequences
+
+- Misordered declarations fail `nx lint`, and `eslint --fix` (and the pre-commit hook) repairs
+  them. Imports stay with the formatter, so `nx format:check` and `nx lint` do not disagree.
+- Not every §8 violation is caught: a type declared below a `const` is not hoisted above the
+  functions that precede it. Reviewers still own the cross-barrier case.
+- One more version pin (`eslint-plugin-perfectionist` 5.12.1, peer `eslint ^8.45 || ^9 || ^10`,
+  so it is not held back by the ESLint 9 workspace). It is pinned exactly rather than with a
+  caret because the dependency and barrier behavior above was verified against this release and
+  a sort rule's output changes with its version. 5.13.0 was published the day this was added, so
+  the earlier release was taken.
+- Adding another perfectionist rule is a normal `eslint.config.mjs` edit only if it does not
+  touch imports or exports; adopting a preset reopens this ADR.
+
+## Amendment (2026-10-27): pre-commit autofixes mechanical rules only
+
+### Context
+
+The pre-commit hook ran `eslint --fix` on every staged file, so every enabled fixer applied
+after the author had stopped looking at the code. Some fixers change behaviour:
+`unicorn/new-for-builtins` turns `Date()` into `new Date()`, `no-unnecessary-type-assertion`
+trusts types that may be wrong, and `no-var` changes hoisting. Nobody had chosen that for this
+ruleset (#210).
+
+### Decision
+
+Pre-commit applies autofixes for an allowlist of **mechanical** rules only. Every other finding
+is reported and fails the commit, so the author decides. A rule is mechanical only if its fix
+cannot change what the code does (ordering, import style, redundant syntax). The allowlist is
+`MECHANICAL_RULES` in `scripts/mechanical-rules.cjs`; `lint-staged` runs
+`scripts/eslint-fix-mechanical.cjs` instead of `eslint --fix`. A new autofixable rule is
+classified when it is added: allowlisted if mechanical, left off if not. `reportUnusedDisableDirectives`
+fixes carry no rule id, so they are never applied. On-save fixing in the editor stays off;
+`eslint.validate` lists the six languages so problems show in the editor.
+
+### Considered options
+
+- **Keep `eslint --fix` for everything.** Simplest, and leaves the silent rewrites.
+- **Remove autofix from pre-commit.** Safest, but loses the ordering and import-style repairs
+  this ADR's rules rely on (`sort-modules`, `prefer-node-protocol`).
+- **Allowlist (chosen).** Keeps those repairs and blocks the rest.
+- **A script in `scripts/`, not a tools project.** ESLint's CLI cannot fix by rule, so the
+  runner uses the Node API. It is an executable script with no importable code, so it sits
+  beside `.github/scripts` rather than in `tools/`. It is not in `bin/`, which `.gitignore`
+  ignores for .NET output.
+
+### Consequences
+
+- The sentences above that say `eslint --fix` and the pre-commit hook repair bare imports and
+  misordered declarations still hold: both rules are on the allowlist.
+- A commit with a semantic-rule violation fails with the lint error and changes nothing.
+- The allowlist is a second place to touch when adding an autofixable rule. A rule left off it
+  is safe, since it only means the author fixes that finding by hand.

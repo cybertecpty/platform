@@ -19,6 +19,11 @@ export interface CreatePullRequestOptions {
   readonly token?: string;
 }
 
+/** Shape of a single PR record returned by `gh pr list --json number`. */
+export interface GithubPullRequestRef {
+  readonly number: number;
+}
+
 /**
  * Options for updating an existing release pull request.
  */
@@ -31,11 +36,6 @@ export interface UpdatePullRequestOptions {
   readonly title: string;
   /** Token to edit the PR with instead of the active `gh` account. */
   readonly token?: string;
-}
-
-/** Shape of a single PR record returned by `gh pr list --json number`. */
-export interface GithubPullRequestRef {
-  readonly number: number;
 }
 
 /**

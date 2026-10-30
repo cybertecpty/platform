@@ -1,6 +1,6 @@
 import { expectTypeOf } from 'expect-type';
 
-import { ReleaseManifest } from './release.types';
+import type { ReleaseManifest } from './release.types';
 
 /* -------------------------------------------------------------------------- */
 /*  ReleaseManifest                                                            */

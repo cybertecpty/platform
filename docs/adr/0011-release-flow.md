@@ -7,12 +7,15 @@
   (`tools/release/plugin/src/lib/generators/release/`, with its release-domain helpers in the
   plugin's own `src/lib/utils/`) and the supporting `@cybertecpty/git-utils` and
   `@cybertecpty/github-utils` libs, on branch `feat/release-generator` (not yet merged)
+- .NET projects (`scope:backend`) are outside this release flow until a .NET release path is decided:
+  `nx.json` excludes them from the `apps` release group (`!tag:scope:backend`) because a .NET app has no
+  `package.json` for Nx to version. Decide that path before the first .NET deployment is planned.
 
 ## Context and problem statement
 
 This workspace releases projects independently (`nx.json` `release.projectsRelationship:
 "independent"`, groups `packages/*` / `apps/*`). Branch protection on `main`
-(`docs/agents/conventions.md` §2) requires a pull request, one maintainer approval, and the `ci`
+(`docs/agents/conventions.md` §2) requires a pull request, one maintainer approval, and the `lint-and-test-affected`
 check — no direct pushes, no bypass actor. `develop → main` promotion PRs merge as **merge
 commits, not squash**, specifically so the `{project}@{version}` tags a release creates survive
 onto `main` (ADR 0002).
@@ -81,7 +84,7 @@ Chosen option: **3**.
   carrying per-project changelog sections plus a "workspace changes" section surfacing PR
   commits no project changelog covers (tooling, docs, infra) — grouped by the project they
   touched. Subject to the same branch protection as any other PR into `main`: one maintainer
-  approval, `ci`, no bypass.
+  approval, `lint-and-test-affected`, no bypass.
 - **Release manifest.** `release-manifest.json` per released project — author, project, version,
   release date, and the commit the release was built from — intended as that project's own
   runtime source of truth for release metadata.
