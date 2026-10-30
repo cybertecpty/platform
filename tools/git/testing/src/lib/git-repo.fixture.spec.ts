@@ -1,6 +1,6 @@
 import { existsSync } from 'node:fs';
 
-import { createGitRepoFixture } from './git-repo.fixture';
+import { cloneGitRepoFixture, createGitRepoFixture } from './git-repo.fixture';
 
 describe('createGitRepoFixture', () => {
   it('creates a repository on main with a usable local identity', async () => {
@@ -50,6 +50,39 @@ describe('createGitRepoFixture', () => {
     } finally {
       a.cleanup();
       b.cleanup();
+    }
+  });
+});
+
+describe('cloneGitRepoFixture', () => {
+  it('clones the source as origin and sees commits made on it afterwards', async () => {
+    const origin = await createGitRepoFixture();
+    const root = await origin.commit('root');
+    const clone = await cloneGitRepoFixture(origin);
+
+    try {
+      expect((await clone.git.revparse(['HEAD'])).trim()).toBe(root);
+
+      const later = await origin.commit('later');
+      await clone.git.fetch('origin');
+
+      expect((await clone.git.revparse(['origin/main'])).trim()).toBe(later);
+    } finally {
+      clone.cleanup();
+      origin.cleanup();
+    }
+  });
+
+  it('can commit in the clone with its own identity', async () => {
+    const origin = await createGitRepoFixture();
+    await origin.commit('root');
+    const clone = await cloneGitRepoFixture(origin);
+
+    try {
+      await expect(clone.commit('local')).resolves.toMatch(/^[0-9a-f]{40}$/);
+    } finally {
+      clone.cleanup();
+      origin.cleanup();
     }
   });
 });

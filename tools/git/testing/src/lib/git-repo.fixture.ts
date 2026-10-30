@@ -18,14 +18,33 @@ export interface GitRepoFixture {
 }
 
 /**
+ * Clones `source` into a fresh temp directory, so `source` is the clone's
+ * `origin`. Commit on `source` after cloning to put `origin` ahead of the clone.
+ * The clone checks out `source`'s current branch.
+ */
+export async function cloneGitRepoFixture(source: GitRepoFixture): Promise<GitRepoFixture> {
+  const dir = mkdtempSync(join(tmpdir(), 'git-repo-fixture-'));
+
+  await simpleGit().clone(source.dir, dir);
+
+  return configureGitRepoFixture(dir);
+}
+
+/**
  * Creates an empty repository on branch `main` in a fresh temp directory, with a
  * local identity and signing off so commits and tags work on any machine.
  */
 export async function createGitRepoFixture(): Promise<GitRepoFixture> {
   const dir = mkdtempSync(join(tmpdir(), 'git-repo-fixture-'));
+
+  await simpleGit(dir).raw(['init', '--initial-branch=main']);
+
+  return configureGitRepoFixture(dir);
+}
+
+async function configureGitRepoFixture(dir: string): Promise<GitRepoFixture> {
   const git = simpleGit(dir);
 
-  await git.raw(['init', '--initial-branch=main']);
   await git.addConfig('user.name', 'Fixture', false, 'local');
   await git.addConfig('user.email', 'fixture@example.com', false, 'local');
   await git.addConfig('commit.gpgsign', 'false', false, 'local');
