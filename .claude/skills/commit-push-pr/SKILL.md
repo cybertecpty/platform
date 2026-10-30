@@ -270,15 +270,9 @@ worktree, then the stale local branch — but only after confirming `MERGED` via
 `gh pr list --state merged --head {branch}`. `develop` squash-merges, so `git branch -d` refuses
 ("not fully merged") — the squash commit is not the branch tip. Once `MERGED` is confirmed,
 `git branch -D` is expected. The worktree goes first because git refuses to delete a branch that
-is still checked out in one. The full recipe is conventions §5 (Clean up):
-
-```bash
-# in the worktree: stop the Nx daemon, which holds files open on Windows
-pnpm exec nx daemon --stop
-# then from the main clone
-git worktree remove ../platform-{name}
-git branch -D {branch}
-```
+is still checked out in one. On Windows `git worktree remove` fails on an installed `node_modules`
+unless every `node_modules` is deleted first, so use the sequence in conventions §5 (Clean up)
+rather than a bare `git worktree remove`.
 
 Scope this strictly to what **this session created**: the worktree you ran `git worktree add` for
 and the branch you cut, named explicitly. Name each path and branch; never loop over
@@ -290,8 +284,8 @@ the same steps. If you claimed the issue and abandoned it without merging, relea
 (Before you start, step 2).
 
 If `git worktree remove` refuses, check `git status` in the worktree for untracked files you want
-before using `--force`, which discards uncommitted work. If a folder is left behind, delete it
-once the holding process has stopped, then run `git worktree prune`.
+before using `--force`, which discards uncommitted work. If a folder is left behind, run
+`git worktree prune` and ask the maintainer to delete it (conventions §5).
 
 ## Constraints
 
