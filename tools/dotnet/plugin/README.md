@@ -28,6 +28,14 @@ The plugin adds the `check-boundaries` target to every .NET project, so no `proj
 - A project whose `project.json` tags it `type:testing` also gets `{workspaceRoot}/coverage/{projectRoot}` added to the outputs of its `test` target (after `@nx/dotnet`'s own, via `...`). Coverlet writes its report there, so a cache hit restores it and the PR coverage comment keeps the project. This depends on the plugin being listed after `@nx/dotnet` in `nx.json`, and the plugin reads `project.json` without Nx noticing a change to it, so such a project also gets a cached `check-coverage-output` target that checks the resolved graph and fails, naming the project, when the `test` outputs lack the directory.
 - It is part of the `nx affected` and `nx run-many` target lists in CI and in `pnpm verify`. With no .NET project, no project has the target and nothing runs.
 
+### The check at `dotnet build`
+
+The repo's `Directory.Build.targets` adds a `CheckModuleBoundaries` target to every .NET project. It runs before the build and calls `pnpm exec nx run <project>:check-boundaries`, so a forbidden `ProjectReference` fails `dotnet build` and an IDE build with the check's `source -> target:` messages, and a repeat build is served from the Nx cache (ADR 0019).
+
+- The Nx project name is read from the `"name"` in the project's `project.json`, so every .NET project needs one. The build fails, naming the file, when it is missing.
+- Node and pnpm must be installed wherever the project builds. When `pnpm` cannot run, the build fails with a message saying so rather than skipping the check. Build with `-p:SkipBoundaryCheck=true` where Node is not available, such as a container image build; the check then runs only through Nx and in CI.
+- Design-time builds in an IDE do not run the check, and neither does a build that Nx itself runs (`NX_TASK_TARGET_PROJECT` is set), where `check-boundaries` is already its own Nx task and Nx rejects a nested run of it.
+
 ### A Node warning in CI
 
 With the Nx daemon off, which is the default in CI, every Nx command prints one line from Node: `Warning: Failed to load the ES module: …/plugin.ts`. Nx 23 loads a local TypeScript plugin with Node's native type stripping first, which fails for a `.ts` file with `import` statements in a CommonJS package, and then falls back to its transpiler. Everything works. Setting `NX_PREFER_NODE_STRIP_TYPES=false` removes the line, but it changes how Nx loads every local TypeScript plugin, so it is not set here (ADR 0019).

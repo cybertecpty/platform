@@ -326,3 +326,36 @@ the generator and its stale-file check, the `Directory.Build.props` with
 `DisableTransitiveProjectReferences`, a build of every real project with that setting, and a
 `.vscode/settings.json` that sets `dotnet.backgroundAnalysis.analyzerDiagnosticsScope` to
 `fullSolution`.
+
+## Amendment (2026-10-30): the check also runs at `dotnet build`
+
+- Status: accepted
+- Deciders: djmcgrath
+- Implemented by: issue #221
+
+Option 5 is now chosen, in a form that avoids its original objections. The root
+`Directory.Build.targets` adds a `CheckModuleBoundaries` target, before `BeforeBuild`, to every .NET
+project. It runs `pnpm exec nx run <project>:check-boundaries`, the same cached executor as CI, so
+a forbidden `ProjectReference` fails `dotnet build` and an IDE build with the check's
+`source -> target:` messages, and Nx does not rebuild anything on a repeat build with no relevant
+change. It does not build a project graph of its own.
+
+- **Where it lives:** a shared file that MSBuild imports on its own, not a line in each `.csproj`.
+  No project can lack it, and the scaffolding generator (#219) needs no change for it.
+- **Project name:** read from the `"name"` in the project's `project.json`, because Nx names a
+  project after that file, not after the `.csproj`. A project without one fails the build, naming
+  the file.
+- **Node or pnpm missing:** the build fails with a message that says so. Skipping would let a
+  violation pass on any machine without Node. `-p:SkipBoundaryCheck=true` opts out for builds that
+  cannot have Node, such as a container image build; the check still runs in CI.
+- **Inside an Nx task** (`NX_TASK_TARGET_PROJECT` is set, as when `nx build` runs `dotnet build`) the hook
+  is skipped: Nx runs `check-boundaries` as a task of its own, and refuses a nested run of the same
+  task as a recursive invocation. CI found this; a local run served from the cache had hidden it.
+- **Design-time builds** do not run it, so an IDE's background evaluation stays fast; its real
+  builds do.
+- **Cost:** `gamers-source-api` and its one reference, measured on one Windows machine: 1.5s
+  warm with the check skipped, 6.9s warm with it served from the Nx cache, 14.7s with a cold Nx
+  cache. The roughly 5s overhead is `pnpm` and Nx start-up.
+
+The Negative consequence "Nothing fails at `dotnet build`" no longer holds where Node is installed.
+Live feedback while typing is still a separate matter (see the 2026-10-29 amendment).
