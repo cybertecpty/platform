@@ -234,7 +234,7 @@ role is no longer only boundaries.
 
 ## Amendment (2026-10-29): Roslyn analyzers for live editor feedback
 
-- Status: accepted, provisional until the editor check below is done
+- Status: accepted
 - Deciders: djmcgrath
 - Implemented by: issue #222 (a spike; no integration was built)
 
@@ -278,14 +278,18 @@ everything it uses directly. The Nx check looks at direct references only.
 
 ### Is it live in the editor?
 
-Not shown. Both packages report a project-level diagnostic with no source location. The
-`ArchonAnalysers` README says its fix is available "from Error List window (not in-editor, due to
-compilation-level diagnostics)", and `ReferenceCop`'s check is an MSBuild task that runs at build.
-The spike ran from a terminal and could not look at VS Code with C# Dev Kit, Rider or Visual Studio,
-so there is no screenshot and no measured delay. **That check is open** and decides whether the
-recommendation below holds: add a forbidden `ProjectReference` to a scratch project that has
-`ArchonAnalysers` and note when, and whether, a squiggle or a Problems entry appears in each editor
-that matters, without a build.
+Yes in VS Code, once full-solution analysis is on. The maintainer opened the scratch solution and
+first saw nothing in `Api/Api.csproj`: both packages report a project-level diagnostic with no
+source location, and the `ArchonAnalysers` README says its fix is available "from Error List window
+(not in-editor, due to compilation-level diagnostics)". After setting
+`dotnet.backgroundAnalysis.analyzerDiagnosticsScope` to `fullSolution`, a red squiggle appeared in
+`Api.csproj` for `ARCHON003`. The default scope analyzes open files only, so the setting is
+required, and it can be committed in `.vscode/settings.json`. `ReferenceCop`'s check is an MSBuild
+task that runs at build, so it was not expected to appear live and was not tried in an editor.
+
+Not checked: the delay between editing and the squiggle (not timed), and Rider and Visual Studio.
+The maintainer named only VS Code as an editor that matters; Visual Studio has an equivalent
+"Entire solution" background analysis option, which a follow-up should confirm.
 
 ### Maturity
 
@@ -294,16 +298,23 @@ Both would break on a matrix change only through the generator, which does not e
 
 ### Recommendation
 
-**Do not adopt an analyzer now.** For what they give today, they cost too much: a generated
-flattened rule file that can go stale, `DisableTransitiveProjectReferences` to avoid reporting the
-intended layering, and no evidence that a violation appears while editing. The gap ADR 0019 names
-(nothing fails at `dotnet build` or in the IDE) is better closed by option 5, an MSBuild target that
-calls the cached `check-boundaries` executor, which already reads the matrix, covers the same
-direct-reference semantics and needs no new package. That belongs in its own ticket.
+**Adopt `ArchonAnalysers` for live editor feedback, as a follow-up to the Nx check, not a
+replacement for it.** It is the only candidate that showed a live diagnostic, and a violation in
+`Api.csproj` produced a squiggle in VS Code. The Nx check stays the authority in CI: it fails closed
+on untagged projects and reads the matrix directly, which the generated rule file does not.
 
-Revisit if the editor check shows a live diagnostic in the editor that matters. A follow-up would
-then build: (1) an Nx generator or check that writes `.archonanalysers` from the matrix and each
-project's tags and `AssemblyName`, failing `check-boundaries` when it is stale; (2) a
-`Directory.Build.props` that adds the package, points `ArchonSettingsFile` at it and sets
-`DisableTransitiveProjectReferences`; and (3) a repo-wide build with that setting on the real
-projects to find the references it breaks.
+The costs are real and the follow-up must handle them:
+
+1. A generator, in the existing `dotnet-plugin`, that writes `.archonanalysers` from the matrix and
+   each project's tags and `AssemblyName`, plus a check that fails `check-boundaries` when the file
+   is stale. Without it the rules drift from the matrix.
+2. A `Directory.Build.props` that adds the package, points `ArchonSettingsFile` at the file and
+   sets `DisableTransitiveProjectReferences`. Without that setting the analyzer reports the
+   intended `api -> services -> infra` flow.
+3. A build of every real project with that setting, to find the references it breaks, before it is
+   turned on.
+4. A `.vscode/settings.json` that sets `dotnet.backgroundAnalysis.analyzerDiagnosticsScope` to
+   `fullSolution`, and a note for Visual Studio and Rider users.
+
+Decide in the follow-up ticket whether `ARCHON003` should fail `dotnet build` (a separate ticket
+per #222), or stay a warning so that the editor feedback does not change the build.
