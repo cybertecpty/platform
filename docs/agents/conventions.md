@@ -309,25 +309,34 @@ manual intervention. What to know:
 ### Clean up
 
 Once the PR is confirmed `MERGED` (Post-merge cleanup, §1), remove the worktree, then its
-branch — git refuses to delete a branch that is still checked out in a worktree. Stop what is
-running in the worktree first: on Windows a dev server or the Nx daemon keeps files open, and
-`git worktree remove` can leave the folder behind.
+branch — git refuses to delete a branch that is still checked out in a worktree.
 
-```bash
+On Windows, `nx daemon --stop` stops only the daemon. The Nx JS-plugin worker it started
+(`nx\dist\src\plugins\js`) is orphaned and keeps running for a few seconds, holding files under
+the worktree open. `git worktree remove` run in that window deletes what it can, drops the
+registration, and fails with "Directory not empty", leaving the folder. Wait for every process
+whose command line names the worktree to exit before removing it, and run the removal from the
+main clone, never from inside the worktree.
+
+```powershell
 # in the worktree
 pnpm exec nx daemon --stop
+# wait for the plugin worker (and any dev server) to exit
+while (Get-CimInstance Win32_Process | Where-Object { $_.ProcessId -ne $PID -and $_.CommandLine -like '*platform-{name}*' }) { Start-Sleep 1 }
 # then from the main clone
 git worktree remove ../platform-{name}
 git branch -D {branch}
 ```
 
-- Leftover _untracked_ files block `git worktree remove`, and on Windows an installed
-  `node_modules` can block it too ("Directory not empty"), even after the Nx daemon is stopped.
-  If it refuses, check `git status` in the worktree for anything you want. The worktree
-  registration is usually dropped anyway, so `git branch -D` works and you don't need to rerun
-  with `--force` (which throws away uncommitted work).
-- If a folder is left behind, delete it by hand once the process holding it has stopped, then
-  run `git worktree prune`.
+- Leftover _untracked_ files also block `git worktree remove`. If it refuses, check `git status`
+  in the worktree for anything you want. The worktree registration is usually dropped anyway, so
+  `git branch -D` works and you don't need to rerun with `--force` (which throws away
+  uncommitted work).
+- If a folder is left behind, list what still holds it
+  (`Get-CimInstance Win32_Process | Where-Object { $_.CommandLine -like '*platform-{name}*' }`),
+  stop only those processes, then run `git worktree prune`. If you still can't delete the
+  folder, stop and ask the maintainer to delete it: the auto-mode classifier refuses an agent's
+  `rm -rf` / `Remove-Item -Recurse -Force`, and the repo has no allow rule for it.
 
 ### Sharing a clone (the exception)
 
