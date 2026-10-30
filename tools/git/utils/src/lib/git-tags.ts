@@ -11,11 +11,17 @@ export async function gitTagCommit(
   tagName: string,
   git: SimpleGit = simpleGit()
 ): Promise<string | null> {
-  if (!(await git.raw(['tag', '--list', tagName])).trim()) {
-    return null;
-  }
+  // An exact ref lookup, not `git tag --list`, which reads the name as a glob.
+  // --quiet prints nothing for a missing ref, and simple-git resolves that
+  // empty exit-1 result; any other failure still throws.
+  const commit = await git.raw([
+    'rev-parse',
+    '--verify',
+    '--quiet',
+    `refs/tags/${tagName}^{commit}`
+  ]);
 
-  return (await git.raw(['rev-list', '-n', '1', `refs/tags/${tagName}`])).trim();
+  return commit.trim() || null;
 }
 
 /**
