@@ -365,7 +365,8 @@ When a commit addresses a tracked issue, append the number to the subject:
 Moved here from conventions §8. A `husky` `pre-commit` hook runs `lint-staged` on every
 `git commit` (#24): staged `*.{ts,tsx,cts,mts,js,jsx,cjs,mjs}` get `scripts/eslint-fix-mechanical.cjs`
 (autofix limited to mechanical rules; other findings are reported and fail the commit) then
-`nx format:write`; staged `*.{json,md,mdx,html,css,scss,yml,yaml}` get `nx format:write`.
+`nx format:write`; staged `*.{json,md,mdx,html,css,scss,yml,yaml}` get `nx format:write`; staged
+`*.cs` get `scripts/dotnet-format-staged.cjs` (`dotnet format` on the staged files).
 lint-staged re-stages what it changed, so the commit lands clean.
 
 - It's a **convenience backstop**, not the gate. CI (`nx format:check`,
