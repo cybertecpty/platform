@@ -298,23 +298,24 @@ Both would break on a matrix change only through the generator, which does not e
 
 ### Recommendation
 
-**Adopt `ArchonAnalysers` for live editor feedback, as a follow-up to the Nx check, not a
-replacement for it.** It is the only candidate that showed a live diagnostic, and a violation in
-`Api.csproj` produced a squiggle in VS Code. The Nx check stays the authority in CI: it fails closed
-on untagged projects and reads the matrix directly, which the generated rule file does not.
+**Do not adopt an analyzer.** `ArchonAnalysers` does give live feedback in VS Code, so the
+technology works. The deciding problem is the rule file: it is a flattened copy of the matrix, and
+it goes stale whenever the matrix or any project's tags change. ADR 0017 requires one source for the
+rules, and a generated copy is a second one. A stale-file check would catch the drift, but it only
+adds another failure for a developer to fix, in return for editor feedback on a mistake the Nx check
+already fails in CI.
 
-The costs are real and the follow-up must handle them:
+Two further costs point the same way: `DisableTransitiveProjectReferences` must be set build-wide
+to avoid reporting the intended `api -> services -> infra` flow, and `ArchonAnalysers` 1.0.0 is two
+days old with a settings format that already changed once.
 
-1. A generator, in the existing `dotnet-plugin`, that writes `.archonanalysers` from the matrix and
-   each project's tags and `AssemblyName`, plus a check that fails `check-boundaries` when the file
-   is stale. Without it the rules drift from the matrix.
-2. A `Directory.Build.props` that adds the package, points `ArchonSettingsFile` at the file and
-   sets `DisableTransitiveProjectReferences`. Without that setting the analyzer reports the
-   intended `api -> services -> infra` flow.
-3. A build of every real project with that setting, to find the references it breaks, before it is
-   turned on.
-4. A `.vscode/settings.json` that sets `dotnet.backgroundAnalysis.analyzerDiagnosticsScope` to
-   `fullSolution`, and a note for Visual Studio and Rider users.
+The gap ADR 0019 names (nothing fails at `dotnet build`) is better closed by option 5, an MSBuild
+target that calls the cached `check-boundaries` executor. It reads the matrix directly, has the same
+direct-reference semantics and needs no new package. That belongs in its own ticket.
 
-Decide in the follow-up ticket whether `ARCHON003` should fail `dotnet build` (a separate ticket
-per #222), or stay a warning so that the editor feedback does not change the build.
+Revisit if an analyzer appears that reads the matrix, or the tags in `project.json`, at build time
+instead of from a generated file. If `ArchonAnalysers` is adopted anyway, the follow-up would build
+the generator and its stale-file check, the `Directory.Build.props` with
+`DisableTransitiveProjectReferences`, a build of every real project with that setting, and a
+`.vscode/settings.json` that sets `dotnet.backgroundAnalysis.analyzerDiagnosticsScope` to
+`fullSolution`.
