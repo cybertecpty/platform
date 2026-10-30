@@ -348,6 +348,9 @@ change. It does not build a project graph of its own.
 - **Node or pnpm missing:** the build fails with a message that says so. Skipping would let a
   violation pass on any machine without Node. `-p:SkipBoundaryCheck=true` opts out for builds that
   cannot have Node, such as a container image build; the check still runs in CI.
+- **Inside an Nx task** (`NX_TASK_TARGET_PROJECT` is set, as when `nx build` runs `dotnet build`) the hook
+  is skipped: Nx runs `check-boundaries` as a task of its own, and refuses a nested run of the same
+  task as a recursive invocation. CI found this; a local run served from the cache had hidden it.
 - **Design-time builds** do not run it, so an IDE's background evaluation stays fast; its real
   builds do.
 - **Cost:** `gamers-source-api` and its one reference, measured on one Windows machine: 1.5s

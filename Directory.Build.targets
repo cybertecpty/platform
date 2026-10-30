@@ -4,6 +4,8 @@
     Fails the build of a .NET project that breaks a module boundary (ADR 0019). It runs the cached
     Nx `check-boundaries` target of the project, so a repeat build with no relevant change is served
     from the Nx cache. Needs Node and pnpm; set SkipBoundaryCheck=true to build without them.
+    It is skipped inside an Nx task (NX_TASK_TARGET_PROJECT is set): Nx runs check-boundaries as a task of
+    its own there, and refuses a nested run of the same task.
   -->
   <PropertyGroup>
     <BoundaryCheckProjectJson>$(MSBuildProjectDirectory)/project.json</BoundaryCheckProjectJson>
@@ -11,7 +13,7 @@
 
   <Target Name="CheckModuleBoundaries"
           BeforeTargets="BeforeBuild"
-          Condition="'$(SkipBoundaryCheck)' != 'true' and '$(DesignTimeBuild)' != 'true'">
+          Condition="'$(SkipBoundaryCheck)' != 'true' and '$(DesignTimeBuild)' != 'true' and '$(NX_TASK_TARGET_PROJECT)' == ''">
 
     <Error Condition="!Exists('$(BoundaryCheckProjectJson)')"
            Text="Cannot check module boundaries: $(BoundaryCheckProjectJson) does not exist. Every .NET project needs a project.json that names it for Nx." />

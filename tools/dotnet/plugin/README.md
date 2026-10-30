@@ -34,7 +34,7 @@ The repo's `Directory.Build.targets` adds a `CheckModuleBoundaries` target to ev
 
 - The Nx project name is read from the `"name"` in the project's `project.json`, so every .NET project needs one. The build fails, naming the file, when it is missing.
 - Node and pnpm must be installed wherever the project builds. When `pnpm` cannot run, the build fails with a message saying so rather than skipping the check. Build with `-p:SkipBoundaryCheck=true` where Node is not available, such as a container image build; the check then runs only through Nx and in CI.
-- Design-time builds in an IDE do not run the check.
+- Design-time builds in an IDE do not run the check, and neither does a build that Nx itself runs (`NX_TASK_TARGET_PROJECT` is set), where `check-boundaries` is already its own Nx task and Nx rejects a nested run of it.
 
 ### A Node warning in CI
 
