@@ -518,6 +518,10 @@ name (§2).
   build check (`nx run-many -t build -p {affected}` or the narrowest equivalent) when
   declaration emit or compilation could be affected.
 - After Nx config changes, reset the Nx graph before trusting results.
+- **A green `pnpm verify` served from the Nx cache proves nothing about a command that only runs on
+  a cache miss.** After changing something Nx runs as a task's command (an MSBuild hook, a target,
+  an executor), run the affected targets with `--skip-nx-cache` before pushing. CI starts cold: the
+  #221 build hook passed `verify` locally and failed in CI as a recursive Nx task.
 - Diagnose CI failures from the real run log, not by guessing.
 - If your agent has no automatic format hook, run
   `nx format:write --files={paths}` after editing.
