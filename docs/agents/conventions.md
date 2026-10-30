@@ -311,32 +311,38 @@ manual intervention. What to know:
 Once the PR is confirmed `MERGED` (Post-merge cleanup, §1), remove the worktree, then its
 branch — git refuses to delete a branch that is still checked out in a worktree.
 
-On Windows, `nx daemon --stop` stops only the daemon. The Nx JS-plugin worker it started
-(`nx\dist\src\plugins\js`) is orphaned and keeps running for a few seconds, holding files under
-the worktree open. `git worktree remove` run in that window deletes what it can, drops the
-registration, and fails with "Directory not empty", leaving the folder. Wait for every process
-whose command line names the worktree to exit before removing it, and run the removal from the
-main clone, never from inside the worktree.
+On Windows, `git worktree remove` cannot delete a worktree that has an installed `node_modules`.
+pnpm fills `node_modules` with junctions (the workspace root and each project that has its own),
+and git deletes what it can, drops the registration, then fails with "Directory not empty",
+leaving the folder. This happens on a fresh install that never ran Nx. Removing only the root
+`node_modules` was not enough while `apps/cybertec-io/node_modules` remained; removing every
+`node_modules` first let `git worktree remove` finish.
 
 ```powershell
-# in the worktree
-pnpm exec nx daemon --stop
-# wait for the plugin worker (and any dev server) to exit
-while (Get-CimInstance Win32_Process | Where-Object { $_.ProcessId -ne $PID -and $_.CommandLine -like '*platform-{name}*' }) { Start-Sleep 1 }
-# then from the main clone
-git worktree remove ../platform-{name}
+# from the main clone, never from inside the worktree
+$wt = (Resolve-Path ../platform-{name}).Path
+pnpm --dir $wt exec nx daemon --stop
+Remove-Item -Recurse -Force "$wt
+ode_modules", "$wtapps*
+ode_modules", "$wtpackages*
+ode_modules" -ErrorAction SilentlyContinue
+git worktree remove $wt
 git branch -D {branch}
 ```
 
+- Stop the Nx daemon first: its JS-plugin worker can outlive `nx daemon --stop` for a few seconds
+  and, if it is still running, a dev server or editor holding the folder open blocks deletion too.
+  List holders with
+  `Get-CimInstance Win32_Process | Where-Object { $_.ProcessId -ne $PID -and $_.CommandLine -like "*$wt*" }`
+  and stop them with `Stop-Process -Id <pid>`.
 - Leftover _untracked_ files also block `git worktree remove`. If it refuses, check `git status`
   in the worktree for anything you want. The worktree registration is usually dropped anyway, so
   `git branch -D` works and you don't need to rerun with `--force` (which throws away
   uncommitted work).
-- If a folder is left behind, list what still holds it
-  (`Get-CimInstance Win32_Process | Where-Object { $_.CommandLine -like '*platform-{name}*' }`),
-  stop only those processes, then run `git worktree prune`. If you still can't delete the
-  folder, stop and ask the maintainer to delete it: the auto-mode classifier refuses an agent's
-  `rm -rf` / `Remove-Item -Recurse -Force`, and the repo has no allow rule for it.
+- If the `Remove-Item` is refused or a folder is still left behind, run `git worktree prune`, then
+  stop and ask the maintainer to delete it. An agent does not delete it itself: the auto-mode
+  classifier refuses `rm -rf` and `Remove-Item -Recurse -Force`, and a repo-wide allow rule for
+  them would also cover deleting the wrong folder.
 
 ### Sharing a clone (the exception)
 
