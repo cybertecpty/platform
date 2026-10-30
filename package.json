@@ -1,6 +1,6 @@
 {
   "name": "@cybertecpty/platform",
-  "version": "1.2.0",
+  "version": "1.3.0",
   "license": "PolyForm-Noncommercial-1.0.0",
   "scripts": {
     "affected:format": "pnpm exec nx affected -t format && pnpm exec nx format:write --affected",
