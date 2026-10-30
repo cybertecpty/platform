@@ -172,7 +172,8 @@ What remains unverified:
 
 - **Nothing fails at `dotnet build` or in the IDE.** Violations show up through Nx and CI only.
   An MSBuild hook that calls the executor, or an analyzer for live editor feedback, would close
-  this gap. Neither is built.
+  this gap. Neither is built. (The hook is built: the 2026-10-30 amendment closes this gap for
+  `dotnet build`. Live editor feedback is still open.)
 - **Direct references only.** ESLint also catches a banned tag reached through other projects.
 - **The matrix is loaded by absolute path, not by an import.** Jest does not transform `.mts`
   files, and the transpiler Nx runs plugins with rewrites an import of an alias for one to a
