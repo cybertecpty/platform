@@ -1,6 +1,6 @@
 import simpleGit, { type SimpleGit } from 'simple-git';
 
-import { gitTagsMatching } from './git-tags';
+import { gitTagCommit, gitTagsMatching } from './git-tags';
 
 jest.mock('simple-git', () => ({ __esModule: true, default: jest.fn() }));
 
@@ -8,6 +8,33 @@ const mockSimpleGit = jest.mocked(simpleGit);
 
 const fakeGit = (all: string[]): SimpleGit =>
   ({ tags: () => Promise.resolve({ all }) }) as unknown as SimpleGit;
+
+describe('gitTagCommit', () => {
+  const fakeRawGit = (raw: jest.Mock): SimpleGit => ({ raw }) as unknown as SimpleGit;
+
+  it('returns the commit the tag points at', async () => {
+    const raw = jest.fn().mockResolvedValueOnce('app@1.0.0\n').mockResolvedValueOnce('abc123\n');
+
+    await expect(gitTagCommit('app@1.0.0', fakeRawGit(raw))).resolves.toBe('abc123');
+    expect(raw).toHaveBeenLastCalledWith(['rev-list', '-n', '1', 'refs/tags/app@1.0.0']);
+  });
+
+  it('returns null when the tag does not exist', async () => {
+    const raw = jest.fn().mockResolvedValue('');
+
+    await expect(gitTagCommit('app@1.0.0', fakeRawGit(raw))).resolves.toBeNull();
+    expect(raw).toHaveBeenCalledTimes(1);
+  });
+
+  it('rethrows a git failure instead of reporting a missing tag', async () => {
+    const raw = jest
+      .fn()
+      .mockResolvedValueOnce('app@1.0.0\n')
+      .mockRejectedValueOnce(new Error('fatal: corrupt'));
+
+    await expect(gitTagCommit('app@1.0.0', fakeRawGit(raw))).rejects.toThrow('fatal: corrupt');
+  });
+});
 
 describe('gitTagsMatching', () => {
   it('keeps only the tags that contain the given substring', async () => {

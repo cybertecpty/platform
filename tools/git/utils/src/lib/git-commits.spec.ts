@@ -1,6 +1,11 @@
 import simpleGit, { type SimpleGit } from 'simple-git';
 
-import { gitCommitsBetween, gitMergeBase, lastGitCommitHash } from './git-commits';
+import {
+  gitCommitsBetween,
+  gitMergeBase,
+  isAncestorCommit,
+  lastGitCommitHash
+} from './git-commits';
 
 jest.mock('simple-git', () => ({ __esModule: true, default: jest.fn() }));
 
@@ -8,6 +13,29 @@ const mockSimpleGit = jest.mocked(simpleGit);
 
 const fakeGit = (overrides: Record<string, unknown>): SimpleGit =>
   overrides as unknown as SimpleGit;
+
+describe('isAncestorCommit', () => {
+  it('is true when no commit of the ancestor lies outside the descendant', async () => {
+    const raw = jest.fn(() => Promise.resolve(''));
+
+    await expect(isAncestorCommit('aaa', 'main', fakeGit({ raw }))).resolves.toBe(true);
+    expect(raw).toHaveBeenCalledWith(['rev-list', '-n', '1', 'aaa', '^main']);
+  });
+
+  it('is false when the ancestor has a commit the descendant lacks', async () => {
+    const raw = jest.fn(() => Promise.resolve('aaa\n'));
+
+    await expect(isAncestorCommit('aaa', 'main', fakeGit({ raw }))).resolves.toBe(false);
+  });
+
+  it('rethrows an unknown revision', async () => {
+    const raw = jest.fn(() => Promise.reject(new Error('fatal: bad revision')));
+
+    await expect(isAncestorCommit('nope', 'main', fakeGit({ raw }))).rejects.toThrow(
+      'bad revision'
+    );
+  });
+});
 
 describe('gitCommitsBetween', () => {
   it('requests an asymmetric --no-merges range parsed with --name-status', async () => {

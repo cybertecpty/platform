@@ -87,6 +87,24 @@ export async function gitMergeBase(
 }
 
 /**
+ * Whether `ancestor` is reachable from `descendant` (a commit is its own ancestor).
+ *
+ * Reads `git rev-list` output instead of `merge-base --is-ancestor`'s exit code:
+ * simple-git resolves a non-zero exit that prints nothing to stderr, so that
+ * command would report "yes" for every pair. An unknown revision still throws.
+ *
+ * @param ancestor The revision that may be an ancestor — a hash, tag, or branch name.
+ * @param descendant The revision it may be reachable from.
+ */
+export async function isAncestorCommit(
+  ancestor: string,
+  descendant: string,
+  git: SimpleGit = simpleGit()
+): Promise<boolean> {
+  return !(await git.raw(['rev-list', '-n', '1', ancestor, `^${descendant}`])).trim();
+}
+
+/**
  * Gets the hash of the commit at `HEAD` (the most recent commit on the current
  * branch, or the checked-out commit when `HEAD` is detached).
  *

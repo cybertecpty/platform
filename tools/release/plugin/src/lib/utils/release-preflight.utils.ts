@@ -1,4 +1,4 @@
-import { gitBranchExists } from '@cybertecpty/git-utils';
+import { gitBranchExists, gitTagCommit, isAncestorCommit } from '@cybertecpty/git-utils';
 import type { VersionData } from '@cybertecpty/nx-types';
 import { logger } from '@nx/devkit';
 import { simpleGit, type SimpleGit } from 'simple-git';
@@ -83,13 +83,13 @@ export async function assertReleaseTagsAvailable(
     }
 
     const tagName = `${project}@${newVersion}`;
-    const tagCommit = await resolveTagCommit(tagName, git);
+    const tagCommit = await gitTagCommit(tagName, git);
 
     if (tagCommit === null) {
       continue;
     }
 
-    if (branchExists && (await isAncestor(tagCommit, releaseBranch, git))) {
+    if (branchExists && (await isAncestorCommit(tagCommit, releaseBranch, git))) {
       continue;
     }
 
@@ -98,24 +98,5 @@ export async function assertReleaseTagsAvailable(
         `${releaseBranch}. Releasing again would duplicate it; check that the previous release was ` +
         `back-merged into the base branch.`
     );
-  }
-}
-
-/** Whether `commit` is reachable from `ref` (`git merge-base --is-ancestor`). */
-async function isAncestor(commit: string, ref: string, git: SimpleGit): Promise<boolean> {
-  try {
-    await git.raw(['merge-base', '--is-ancestor', commit, ref]);
-    return true;
-  } catch {
-    return false;
-  }
-}
-
-/** The commit a tag points at, or `null` when the tag does not exist. */
-async function resolveTagCommit(tagName: string, git: SimpleGit): Promise<string | null> {
-  try {
-    return (await git.raw(['rev-list', '-n', '1', `refs/tags/${tagName}`])).trim() || null;
-  } catch {
-    return null;
   }
 }
