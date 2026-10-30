@@ -16,6 +16,10 @@ mechanics, not the rationale.
    releasable projects and what's actually changed since the merge-base with `targetBranch` (or
    an explicit `--base`). If nothing matches, logs and returns a no-op — nothing else in the
    list below runs.
+   Then runs a preflight that fails before any side effect: `origin/<targetBranch>` must not
+   have commits `origin/<baseBranch>` lacks (back-merge first; with `--dry-run` this only
+   warns), and, unless `--skipTag`, no tag the run would create may already exist off the
+   release branch. A same-day re-run on its existing `release/<date>` branch still passes.
 3. Cuts (or reuses) the release branch — `release/<releaseDate>` off `baseBranch` — unless
    `--skipBranch` commits straight to `baseBranch` instead. Skipped entirely in a dry run
    (`--dry-run` / `NX_DRY_RUN`): only the branch name is resolved, the working tree is untouched.
