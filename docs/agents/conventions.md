@@ -257,6 +257,7 @@ git fetch origin
 git worktree add --no-track -b {branch} ../platform-{name} origin/develop
 cd ../platform-{name}
 pnpm install --frozen-lockfile
+dotnet restore Platform.slnx
 ```
 
 - `--no-track` keeps the branch from tracking `origin/develop`; you push through the
@@ -266,6 +267,9 @@ pnpm install --frozen-lockfile
 - **`pnpm install` is mandatory before the first commit.** `core.hooksPath` is the relative
   `.husky/_`, which `pnpm install` generates. A worktree that hasn't run it has no hooks, and
   it fails silently: no `commit-msg` check, no `lint-staged`.
+- **`dotnet restore Platform.slnx`** is needed before `pnpm verify`: the .NET `build` and `test`
+  targets run with `--no-restore`, so a worktree without it fails with `NETSDK1004`. CI runs the
+  same step.
 - `.env` is gitignored, so a new worktree has none. It only matters for deploys; copy it from
   the main clone if you need one.
 - From here, work as in any clone: run everything from inside the worktree and ship with the

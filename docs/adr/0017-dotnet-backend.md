@@ -515,7 +515,8 @@ settings #197 added without exercising them. A change from the earlier wording i
 ### #197 settings
 
 - **`actions/setup-dotnet`** reads the SDK from `global.json` in the workflow. That the runners
-  resolve it is unverified until the first CI run of this change.
+  resolve it is unverified until the first CI run of this change. CI also runs `dotnet restore
+Platform.slnx`, because the `build` and `test` targets use `--no-restore`.
 - **`dotnet format --verify-no-changes`** is the inferred, cached `format-check` target of every
   .NET project (issue #236), so `nx affected` narrows it to changed projects. `.editorconfig`,
   `global.json` and `Directory.Build.props` are inputs, so a change to one re-runs every project.
