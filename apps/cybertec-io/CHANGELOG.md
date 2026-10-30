@@ -1,3 +1,10 @@
+## 1.3.0 (2026-10-16)
+
+### 🚀 Features
+
+- **cybertec-io:** add cache headers for static assets ([#93](https://github.com/cybertecpty/platform/pull/93), [#139](https://github.com/cybertecpty/platform/pull/139))
+- **azure-plugin:** add a swa-deploy executor for static web apps ([#129](https://github.com/cybertecpty/platform/pull/129), [#123](https://github.com/cybertecpty/platform/issues/123))
+
 ## 1.2.0 (2026-10-15)
 
 ### 🚀 Features
