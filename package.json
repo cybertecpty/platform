@@ -104,6 +104,9 @@
     ],
     "*.{json,md,mdx,html,css,scss,yml,yaml}": [
       "nx format:write --files"
+    ],
+    "*.cs": [
+      "node scripts/dotnet-format-staged.cjs"
     ]
   }
 }
