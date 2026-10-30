@@ -1,5 +1,5 @@
+import { createGitRepoFixture, type GitRepoFixture } from '@cybertecpty/git-testing';
 import { isAncestorCommit } from './git-commits';
-import { createGitRepoFixture, type GitRepoFixture } from './git-repo.fixture';
 
 describe('isAncestorCommit (real git)', () => {
   let repo: GitRepoFixture;

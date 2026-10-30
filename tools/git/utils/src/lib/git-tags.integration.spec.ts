@@ -1,4 +1,4 @@
-import { createGitRepoFixture, type GitRepoFixture } from './git-repo.fixture';
+import { createGitRepoFixture, type GitRepoFixture } from '@cybertecpty/git-testing';
 import { gitTagCommit } from './git-tags';
 
 describe('gitTagCommit (real git)', () => {
