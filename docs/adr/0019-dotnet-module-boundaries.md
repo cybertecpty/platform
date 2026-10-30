@@ -231,3 +231,91 @@ as predicted above.
 
 The plugin also infers the `format-check` and `format` targets (ADR 0017, issue #236), so its
 role is no longer only boundaries.
+
+## Amendment (2026-10-29): Roslyn analyzers for live editor feedback
+
+- Status: accepted
+- Deciders: djmcgrath
+- Implemented by: issue #222 (a spike; no integration was built)
+
+Option 6 left open whether a Roslyn analyzer could give editor feedback for a forbidden
+`ProjectReference` without a second hand-kept copy of the matrix. A scratch solution (three class
+libraries, one forbidden reference, .NET SDK 10.0.102) tried the candidates that act on project
+references.
+
+### What each analyzer did
+
+| Package (version)                       | Reads                                                                                   | Result                                                                                                                                                                                                                        |
+| --------------------------------------- | --------------------------------------------------------------------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `ArchonAnalysers` 1.0.0 (2026-10-27)    | `.archonanalysers`: `archon_003.forbidden_references = Source->Target` by assembly name | `dotnet build` fails with `CSC : error ARCHON003: Assembly 'Api' cannot reference 'Infra'. This reference is forbidden by architectural rules.`, attached to the `.csproj` with no line.                                      |
+| `ReferenceCop` 0.0.8-alpha (2025-12-24) | `ReferenceCop.config` rules plus a `<ProjectTag>` element in every `.csproj`            | `dotnet build` fails with `ReferenceCop error RC0001: Illegal reference '..\Infra\Infra.csproj' must be removed, as its usage is forbidden by rule 'ApiNotInfra'`. Alpha, and the check is an MSBuild task, not a Roslyn one. |
+| `StructureGuard` 0.0.1-preview5         | C# rules in a custom analyzer project                                                   | Not run: it checks namespaces inside one assembly, not project references, so it cannot express the matrix.                                                                                                                   |
+
+`SeamGuard`, named in the original option, has no NuGet package. `ArchUnitNET` and `NsDepCop` check
+types and namespaces, not project references.
+
+### Can the rules come from the matrix?
+
+Yes for `ArchonAnalysers`, with a generator. A 30-line Node script read `DEP_CONSTRAINTS`, took each
+project's tags, applied every row to each ordered pair of projects and wrote the forbidden pairs as
+one `archon_003.forbidden_references` line (`Api->Infra, Infra->Api, Infra->Models, Models->Api,
+Models->Infra` for three projects). The matrix stays the only hand-written source, but the output is
+a flattened pair list over assembly names, so it must be regenerated whenever the matrix or any
+project's tags change, and an Nx check that the file is current would be needed. Nx project names
+are kebab-case and assembly names are not (`GamersSourceApi`), so the generator must read each
+`AssemblyName`. `ReferenceCop` cannot be generated from the matrix without also copying every
+project's tags into its `.csproj`, a second copy of what `project.json` holds.
+
+### Does it differ from the Nx check?
+
+`ArchonAnalysers` matches the assemblies the compiler sees, and by default those include transitive
+project references. With `Api -> Models -> Infra`, a rule `Api->Infra` fires on `Api`, which only
+references `Models`. ADR 0004 makes `type:api -> type:services -> type:infra` the intended flow, so
+the matrix forbids `api -> infra` and the analyzer would report the intended architecture. Setting
+`DisableTransitiveProjectReferences` to `true` in a `Directory.Build.props` made the same build
+pass, but it changes what every project can compile against, so each project must then reference
+everything it uses directly. The Nx check looks at direct references only.
+
+### Is it live in the editor?
+
+Yes in VS Code, once full-solution analysis is on. The maintainer opened the scratch solution and
+first saw nothing in `Api/Api.csproj`: both packages report a project-level diagnostic with no
+source location, and the `ArchonAnalysers` README says its fix is available "from Error List window
+(not in-editor, due to compilation-level diagnostics)". After setting
+`dotnet.backgroundAnalysis.analyzerDiagnosticsScope` to `fullSolution`, a red squiggle appeared in
+`Api.csproj` for `ARCHON003`. The default scope analyzes open files only, so the setting is
+required, and it can be committed in `.vscode/settings.json`. `ReferenceCop`'s check is an MSBuild
+task that runs at build, so it was not expected to appear live and was not tried in an editor.
+
+Not checked: the delay between editing and the squiggle (not timed), and Rider and Visual Studio.
+The maintainer named only VS Code as an editor that matters; Visual Studio has an equivalent
+"Entire solution" background analysis option, which a follow-up should confirm.
+
+### Maturity
+
+`ArchonAnalysers` 1.0.0 was released on 2026-10-27, after 0.4.0 in January and 0.5.0 in September 2026. Its settings file format changed in 1.0.0, and the old `.editorconfig` keys now report a migration error. `ReferenceCop` is an alpha whose last release was in December 2025.
+Both would break on a matrix change only through the generator, which does not exist.
+
+### Recommendation
+
+**Do not adopt an analyzer.** `ArchonAnalysers` does give live feedback in VS Code, so the
+technology works. The deciding problem is the rule file: it is a flattened copy of the matrix, and
+it goes stale whenever the matrix or any project's tags change. ADR 0017 requires one source for the
+rules, and a generated copy is a second one. A stale-file check would catch the drift, but it only
+adds another failure for a developer to fix, in return for editor feedback on a mistake the Nx check
+already fails in CI.
+
+Two further costs point the same way: `DisableTransitiveProjectReferences` must be set build-wide
+to avoid reporting the intended `api -> services -> infra` flow, and `ArchonAnalysers` 1.0.0 is two
+days old with a settings format that already changed once.
+
+The gap ADR 0019 names (nothing fails at `dotnet build`) is better closed by option 5, an MSBuild
+target that calls the cached `check-boundaries` executor. It reads the matrix directly, has the same
+direct-reference semantics and needs no new package. That belongs in its own ticket.
+
+Revisit if an analyzer appears that reads the matrix, or the tags in `project.json`, at build time
+instead of from a generated file. If `ArchonAnalysers` is adopted anyway, the follow-up would build
+the generator and its stale-file check, the `Directory.Build.props` with
+`DisableTransitiveProjectReferences`, a build of every real project with that setting, and a
+`.vscode/settings.json` that sets `dotnet.backgroundAnalysis.analyzerDiagnosticsScope` to
+`fullSolution`.
