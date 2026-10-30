@@ -41,22 +41,22 @@ The repo is a fresh rebuild (`dfc4c32 chore: first commit`, 2026-08-31). Some ru
 below describe the **intended** setup and are **not wired yet** — treated here as
 policy so they're in place when the tooling lands, but don't assume they're active:
 
-| Area                                                      | Now                                                             | Planned |
-| --------------------------------------------------------- | --------------------------------------------------------------- | ------- |
-| Bot PR flow (`cybertec-bot`, `cybertecpty/bots` team)     | ✅ live                                                         | —       |
-| CI (`lint-and-test-affected.yml`)                         | ✅ live — one runner, `NX_NO_CLOUD=true` (#188)                 | —       |
-| Nx Cloud (distribution, remote cache, self-healing)       | ❌ none — org disabled over the free plan; not paid for (#188)  | —       |
-| Branch protection on `develop` / `main`                   | ✅ live — rulesets `protect-develop` / `protect-main`           | —       |
-| Reviewer routing (`.github/CODEOWNERS` → `@djmcgrath101`) | ✅ live — auto-requests maintainer review on every PR           | —       |
-| Automated PR reviewer (e.g. Copilot code review)          | ❌ none — needs a paid plan; maintainer review only (#110)      | later   |
-| Pre-commit hook (`husky` + `lint-staged`)                 | ✅ live — formats staged files, autofixes mechanical lint (#24) | —       |
-| Claude Code hooks (`.claude/hooks/`, `settings.json`)     | ✅ live — bot-identity guard, end-of-turn format (§1, §8)       | —       |
-| Commitlint / `commit-msg` hook                            | ✅ live — `commit-msg` hook + CI PR-title check (#32)           | §3      |
-| `@cybertecpty/*` publish on merge to `main`               | ❌ no release flow, no packages                                 | §2      |
-| `cybertec-back-merge` app                                 | ✅ live — `back-merge` job in `deploy-affected.yml` (ADR 0015)  | —       |
-| pnpm (`pnpm-lock.yaml`, `pnpm exec nx`)                   | ✅ live — pnpm@10.34.5, `node-linker=isolated` (PR #17)         | —       |
-| Frontend framework (Angular 22)                           | ✅ live — `@nx/angular`, path-alias TS (ADR 0005)               | —       |
-| Backend stack (ASP.NET Core, .NET 10 LTS)                 | ✅ live — `@nx/dotnet`, `gamers-source-api` (ADR 0017)          | —       |
+| Area                                                      | Now                                                                        | Planned |
+| --------------------------------------------------------- | -------------------------------------------------------------------------- | ------- |
+| Bot PR flow (`cybertec-bot`, `cybertecpty/bots` team)     | ✅ live                                                                    | —       |
+| CI (`lint-and-test-affected.yml`)                         | ✅ live — one runner, `NX_NO_CLOUD=true` (#188)                            | —       |
+| Nx Cloud (distribution, remote cache, self-healing)       | ❌ none — org disabled over the free plan; not paid for (#188)             | —       |
+| Branch protection on `develop` / `main`                   | ✅ live — rulesets `protect-develop` / `protect-main`                      | —       |
+| Reviewer routing (`.github/CODEOWNERS` → `@djmcgrath101`) | ✅ live — auto-requests maintainer review on every PR                      | —       |
+| Automated PR reviewer (e.g. Copilot code review)          | ❌ none — needs a paid plan; maintainer review only (#110)                 | later   |
+| Pre-commit hook (`husky` + `lint-staged`)                 | ✅ live — formats staged files (incl. C#), autofixes mechanical lint (#24) | —       |
+| Claude Code hooks (`.claude/hooks/`, `settings.json`)     | ✅ live — bot-identity guard, end-of-turn format (§1, §8)                  | —       |
+| Commitlint / `commit-msg` hook                            | ✅ live — `commit-msg` hook + CI PR-title check (#32)                      | §3      |
+| `@cybertecpty/*` publish on merge to `main`               | ❌ no release flow, no packages                                            | §2      |
+| `cybertec-back-merge` app                                 | ✅ live — `back-merge` job in `deploy-affected.yml` (ADR 0015)             | —       |
+| pnpm (`pnpm-lock.yaml`, `pnpm exec nx`)                   | ✅ live — pnpm@10.34.5, `node-linker=isolated` (PR #17)                    | —       |
+| Frontend framework (Angular 22)                           | ✅ live — `@nx/angular`, path-alias TS (ADR 0005)                          | —       |
+| Backend stack (ASP.NET Core, .NET 10 LTS)                 | ✅ live — `@nx/dotnet`, `gamers-source-api` (ADR 0017)                     | —       |
 
 Where a rule depends on unwired tooling, it says so inline.
 
@@ -435,7 +435,7 @@ shared clone is untouched. Other agents without the hook still run `nx format:wr
 ### Pre-commit hook
 
 A `husky` `pre-commit` hook runs `lint-staged` (ESLint autofix for mechanical rules only +
-`nx format:write` on staged files) on every `git commit` (#24). It's a **convenience backstop**, not the gate — CI stays
+`nx format:write` on staged files, `dotnet format` on staged `.cs`) on every `git commit` (#24). It's a **convenience backstop**, not the gate — CI stays
 authoritative. Details (what it touches, install, `--no-verify`) are in the `commit-push-pr`
 skill.
 
