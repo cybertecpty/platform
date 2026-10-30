@@ -1,0 +1,44 @@
+<Project>
+
+  <!--
+    Fails the build of a .NET project that breaks a module boundary (ADR 0019). It runs the cached
+    Nx `check-boundaries` target of the project, so a repeat build with no relevant change is served
+    from the Nx cache. Needs Node and pnpm; set SkipBoundaryCheck=true to build without them.
+  -->
+  <PropertyGroup>
+    <BoundaryCheckProjectJson>$(MSBuildProjectDirectory)/project.json</BoundaryCheckProjectJson>
+  </PropertyGroup>
+
+  <Target Name="CheckModuleBoundaries"
+          BeforeTargets="BeforeBuild"
+          Condition="'$(SkipBoundaryCheck)' != 'true' and '$(DesignTimeBuild)' != 'true'">
+
+    <Error Condition="!Exists('$(BoundaryCheckProjectJson)')"
+           Text="Cannot check module boundaries: $(BoundaryCheckProjectJson) does not exist. Every .NET project needs a project.json that names it for Nx." />
+
+    <PropertyGroup>
+      <BoundaryCheckProjectName>$([System.Text.RegularExpressions.Regex]::Match($([System.IO.File]::ReadAllText('$(BoundaryCheckProjectJson)')), '"name"\s*:\s*"([^"]+)"').Groups[1].Value)</BoundaryCheckProjectName>
+    </PropertyGroup>
+
+    <Error Condition="'$(BoundaryCheckProjectName)' == ''"
+           Text="Cannot check module boundaries: $(BoundaryCheckProjectJson) has no &quot;name&quot;." />
+
+    <Exec Command="pnpm --version"
+          WorkingDirectory="$(MSBuildThisFileDirectory)"
+          IgnoreExitCode="true"
+          IgnoreStandardErrorWarningFormat="true"
+          StandardOutputImportance="low"
+          StandardErrorImportance="low">
+      <Output TaskParameter="ExitCode" PropertyName="BoundaryCheckPnpmExitCode" />
+    </Exec>
+
+    <Error Condition="'$(BoundaryCheckPnpmExitCode)' != '0'"
+           Text="The module boundary check needs Node and pnpm, and 'pnpm' could not be run. Install them (see README), or build with -p:SkipBoundaryCheck=true to skip the check." />
+
+    <!-- Node prints warnings such as the NO_COLOR one to stderr; they are not MSBuild diagnostics and TreatWarningsAsErrors must not turn them into errors. -->
+    <Exec Command="pnpm exec nx run $(BoundaryCheckProjectName):check-boundaries --output-style=stream"
+          WorkingDirectory="$(MSBuildThisFileDirectory)"
+          IgnoreStandardErrorWarningFormat="true" />
+  </Target>
+
+</Project>
