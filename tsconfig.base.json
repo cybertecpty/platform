@@ -6,6 +6,7 @@
       "@cybertecpty/azure-plugin": ["./tools/azure/plugin/src/index.ts"],
       "@cybertecpty/dotnet-plugin": ["./tools/dotnet/plugin/src/index.ts"],
       "@cybertecpty/fs-utils": ["./libs/shared/fs/utils/src/index.ts"],
+      "@cybertecpty/git-testing": ["./tools/git/testing/src/index.ts"],
       "@cybertecpty/git-utils": ["./tools/git/utils/src/index.ts"],
       "@cybertecpty/github-utils": ["./tools/github/utils/src/index.ts"],
       "@cybertecpty/jest-testing": ["./libs/shared/jest/testing/src/index.ts"],
