@@ -154,12 +154,14 @@ real two-parent merge (`--no-ff`), never a squash. On conflict it aborts and fai
 back-merge by hand on a `chore/back-merge-main-{date}` branch through a normal PR, merged
 as a **merge commit**.
 
+**Release PRs (live).** Release PRs into `main` merge as **merge commits, not squash** —
+squashing orphans the `{project}@{version}` tag the release generator creates on the release
+branch, breaking the next release's baseline. The same goes for a hand back-merge into `develop`:
+a squash leaves `main`'s history out of `develop`, so the tag is unreachable from it.
+
 **Intended (not wired yet — see §0):**
 
-- `main` publishes `@cybertecpty/*` to npm on merge, once a release flow and
-  publishable packages exist. Release PRs into `main` merge as **merge commits, not
-  squash** — squashing orphans the `{project}@{version}` tag the release generator
-  creates on the release branch, breaking the next release's baseline.
+- `main` publishes `@cybertecpty/*` to npm on merge, once publishable packages exist.
 
 ---
 
