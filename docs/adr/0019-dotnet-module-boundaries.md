@@ -251,8 +251,15 @@ references.
 | `ReferenceCop` 0.0.8-alpha (2025-12-24) | `ReferenceCop.config` rules plus a `<ProjectTag>` element in every `.csproj`            | `dotnet build` fails with `ReferenceCop error RC0001: Illegal reference '..\Infra\Infra.csproj' must be removed, as its usage is forbidden by rule 'ApiNotInfra'`. Alpha, and the check is an MSBuild task, not a Roslyn one. |
 | `StructureGuard` 0.0.1-preview5         | C# rules in a custom analyzer project                                                   | Not run: it checks namespaces inside one assembly, not project references, so it cannot express the matrix.                                                                                                                   |
 
-`SeamGuard`, named in the original option, has no NuGet package. `ArchUnitNET` and `NsDepCop` check
-types and namespaces, not project references.
+`SeamGuard`, named in the original option, ships as `SeamGuard.Analyzer` (0.2.0.4, an MSBuild-wide
+Roslyn analyzer configured in `.seamguard/config.json`). It was tried after this amendment was first
+written: a per-project `projectReferences.deny` list fails `dotnet build` on a direct forbidden
+reference with `CSC : error SGA006: Project 'Api' has forbidden project reference 'Infra'`, and does
+not report a reference reached only through another project, so it needs no
+`DisableTransitiveProjectReferences`. Its rules are still a flattened per-project list, generated
+from the matrix the same way as `ArchonAnalysers`' file, so the staleness problem below applies to
+it equally. Whether its diagnostic shows live in an editor was not checked. `ArchUnitNET` and
+`NsDepCop` were not tried; they are aimed at types and namespaces, not project references.
 
 ### Can the rules come from the matrix?
 
