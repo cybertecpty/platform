@@ -3,21 +3,25 @@ import { createDependencyGraphFixture, createProjectNodeFixture } from '@cyberte
 import { findMatchingProjects, getAffectedGraphNodes } from '@cybertecpty/nx-utils';
 import {
   createProjectGraphAsync,
+  logger,
   readNxJson,
   updateNxJson,
   type NxJsonConfiguration,
   type Tree
 } from '@nx/devkit';
 import { createTreeWithEmptyWorkspace } from '@nx/devkit/testing';
+import { releaseChangelog } from 'nx/release';
 import simpleGit, { type SimpleGit } from 'simple-git';
 
 import {
+  getReleaseCommandOptions,
   partitionReleasableProjects,
   readReleasePatterns,
   resolveAffectedBase,
   resolveAffectedReleaseProjects,
   resolveReleaseProjects,
-  selectAffectedReleaseProjects
+  selectAffectedReleaseProjects,
+  selectReleasableProjects
 } from './release-projects.utils';
 
 jest.mock('@cybertecpty/git-utils', () => ({
@@ -34,6 +38,10 @@ jest.mock('@nx/devkit', () => ({
   createProjectGraphAsync: jest.fn()
 }));
 
+jest.mock('nx/release', () => ({
+  releaseChangelog: jest.fn()
+}));
+
 jest.mock('simple-git', () => ({
   __esModule: true,
   default: jest.fn(),
@@ -45,6 +53,7 @@ const mockFindMatchingProjects = jest.mocked(findMatchingProjects);
 const mockGetAffectedGraphNodes = jest.mocked(getAffectedGraphNodes);
 const mockCreateProjectGraphAsync = jest.mocked(createProjectGraphAsync);
 const mockSimpleGit = jest.mocked(simpleGit);
+const mockReleaseChangelog = jest.mocked(releaseChangelog);
 
 /** A throwaway git client; every function under test has its git calls mocked. */
 const gitStub = {} as SimpleGit;
@@ -353,5 +362,95 @@ describe('partitionReleasableProjects', () => {
       released: [],
       skipped: []
     });
+  });
+});
+
+describe('getReleaseCommandOptions', () => {
+  it('stages Nx release changes without committing, tagging or pushing', () => {
+    expect(getReleaseCommandOptions(false)).toEqual({
+      dryRun: false,
+      gitCommit: false,
+      gitPush: false,
+      gitTag: false,
+      stageChanges: true
+    });
+  });
+
+  it('carries the dry-run flag through', () => {
+    expect(getReleaseCommandOptions(true).dryRun).toBe(true);
+  });
+});
+
+describe('selectReleasableProjects', () => {
+  const graph = { preview: true } as unknown as Parameters<typeof selectReleasableProjects>[2];
+  const versionData = {
+    'pkg-a': { currentVersion: '1.0.0', newVersion: '1.1.0', dependentProjects: [] },
+    'pkg-b': { currentVersion: '1.0.0', newVersion: '1.0.1', dependentProjects: [] },
+    'pkg-c': { currentVersion: '1.0.0', newVersion: null, dependentProjects: [] }
+  };
+  const changelogsFor = (...projects: string[]) =>
+    ({
+      projectChangelogs: Object.fromEntries(
+        projects.map(project => [
+          project,
+          { contents: '## 1.1.0 entry', postGitTask: null, releaseVersion: {} }
+        ])
+      ),
+      workspaceChangelog: undefined
+    }) as unknown as Awaited<ReturnType<typeof releaseChangelog>>;
+
+  beforeEach(() => {
+    jest.spyOn(logger, 'info').mockImplementation(() => undefined);
+  });
+
+  it('previews the changelog as a write-free dry run from the given version data and graph', async () => {
+    mockReleaseChangelog.mockResolvedValue(changelogsFor('pkg-a'));
+
+    await selectReleasableProjects(
+      { firstRelease: true, projects: ['pkg-a', 'pkg-b'] },
+      versionData,
+      graph
+    );
+
+    expect(mockReleaseChangelog).toHaveBeenCalledWith({
+      createRelease: false,
+      dryRun: true,
+      firstRelease: true,
+      gitCommit: false,
+      gitPush: false,
+      gitTag: false,
+      projects: ['pkg-a', 'pkg-b'],
+      releaseGraph: graph,
+      stageChanges: true,
+      verbose: false,
+      versionData
+    });
+  });
+
+  it('keeps projects with changelog entries, skips the rest, and logs each skipped one', async () => {
+    mockReleaseChangelog.mockResolvedValue(changelogsFor('pkg-a'));
+
+    await expect(selectReleasableProjects({}, versionData, graph)).resolves.toEqual({
+      projects: ['pkg-a'],
+      released: ['pkg-a']
+    });
+    expect(logger.info).toHaveBeenCalledTimes(1);
+    expect(logger.info).toHaveBeenCalledWith(expect.stringContaining('Skipping pkg-b'));
+  });
+
+  it('returns nothing when every versioned project is skipped', async () => {
+    mockReleaseChangelog.mockResolvedValue(changelogsFor());
+
+    await expect(selectReleasableProjects({}, versionData, graph)).resolves.toEqual({
+      projects: [],
+      released: []
+    });
+  });
+
+  it('keeps every versioned project and the requested projects when skipChangelog is set', async () => {
+    await expect(
+      selectReleasableProjects({ projects: ['pkg-a'], skipChangelog: true }, versionData, graph)
+    ).resolves.toEqual({ projects: ['pkg-a'], released: ['pkg-a', 'pkg-b'] });
+    expect(mockReleaseChangelog).not.toHaveBeenCalled();
   });
 });

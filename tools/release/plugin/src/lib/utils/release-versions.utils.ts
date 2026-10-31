@@ -47,6 +47,16 @@ export function isReleaseType(value: string): value is ReleaseType {
 }
 
 /**
+ * Narrows version data to the named projects, preserving each project's entry as Nx produced it.
+ */
+export function pickVersionData(
+  versionData: VersionData,
+  projects: readonly string[]
+): VersionData {
+  return Object.fromEntries(projects.map(project => [project, versionData[project]]));
+}
+
+/**
  * Resolves the project release level from its version change.
  *
  * @param currentVersion The current version of the project.

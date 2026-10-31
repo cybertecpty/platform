@@ -20,8 +20,8 @@ import {
   assertReleaseTagsAvailable
 } from '../../utils/release-preflight.utils';
 import {
-  partitionReleasableProjects,
   resolveAffectedReleaseProjects,
+  selectReleasableProjects,
   tagReleasedProjects
 } from '../../utils/release-projects.utils';
 import { resolveWorkspaceReleaseType } from '../../utils/release-versions.utils';
@@ -67,12 +67,15 @@ jest.mock('../../utils/release-pr.utils', () => ({
 }));
 
 jest.mock('../../utils/release-projects.utils', () => ({
-  partitionReleasableProjects: jest.fn(),
+  getReleaseCommandOptions: jest.requireActual('../../utils/release-projects.utils')
+    .getReleaseCommandOptions,
+  selectReleasableProjects: jest.fn(),
   resolveAffectedReleaseProjects: jest.fn(),
   tagReleasedProjects: jest.fn()
 }));
 
 jest.mock('../../utils/release-versions.utils', () => ({
+  pickVersionData: jest.requireActual('../../utils/release-versions.utils').pickVersionData,
   resolveWorkspaceReleaseType: jest.fn()
 }));
 
@@ -123,7 +126,7 @@ const mockResolveAffectedReleaseProjects = jest.mocked(resolveAffectedReleasePro
 const mockResolveReleaseBranchName = jest.mocked(resolveReleaseBranchName);
 const mockResolveWorkspaceReleaseType = jest.mocked(resolveWorkspaceReleaseType);
 const mockTagReleasedProjects = jest.mocked(tagReleasedProjects);
-const mockPartitionReleasableProjects = jest.mocked(partitionReleasableProjects);
+const mockSelectReleasableProjects = jest.mocked(selectReleasableProjects);
 const mockAssertBaseIncludesTarget = jest.mocked(assertBaseIncludesTarget);
 const mockAssertReleaseTagsAvailable = jest.mocked(assertReleaseTagsAvailable);
 const mockFormatFiles = jest.mocked(formatFiles);
@@ -208,10 +211,11 @@ describe('releaseGenerator', () => {
     );
     mockLastGitCommitHash.mockResolvedValue('abc1234567');
     mockTagReleasedProjects.mockResolvedValue([]);
-    mockPartitionReleasableProjects.mockImplementation(versionData => ({
-      released: Object.keys(versionData).filter(project => versionData[project].newVersion),
-      skipped: []
-    }));
+    mockSelectReleasableProjects.mockImplementation((_opts, versionData) => {
+      const released = Object.keys(versionData).filter(project => versionData[project].newVersion);
+
+      return Promise.resolve({ released, projects: released });
+    });
     mockBuildReleasePrBody.mockResolvedValue('pr body');
     mockFindOpenPullRequest.mockResolvedValue(null);
     mockCreatePullRequest.mockResolvedValue('https://github.com/cybertecpty/platform/pull/1');
@@ -419,7 +423,9 @@ describe('releaseGenerator', () => {
     });
 
     it("reuses releaseVersion's releaseGraph in the releaseChangelog call", async () => {
-      mockReleaseVersion.mockResolvedValue(versionResult(buildVersionData({}), FAKE_RELEASE_GRAPH));
+      mockReleaseVersion.mockResolvedValue(
+        versionResult(buildVersionData({ 'pkg-a': '1.1.0' }), FAKE_RELEASE_GRAPH)
+      );
 
       await releaseGenerator(tree, options());
 
@@ -447,124 +453,63 @@ describe('releaseGenerator', () => {
   });
 
   describe('projects with nothing to release', () => {
-    it('releases only the projects the partition keeps and logs each skipped one', async () => {
-      mockReleaseVersion.mockResolvedValue(
-        versionResult(buildVersionData({ 'pkg-a': '1.1.0', 'pkg-b': '1.0.1' }))
+    const previewData = buildVersionData({ 'pkg-a': '1.1.0', 'pkg-b': '1.0.1' });
+    const previewGraph = { preview: true } as unknown as ReleaseVersionResult['releaseGraph'];
+
+    it('selects from the preview pass, using the requested options', async () => {
+      mockReleaseVersion.mockResolvedValueOnce(versionResult(previewData, previewGraph));
+
+      await releaseGenerator(
+        tree,
+        options({ firstRelease: true, projects: ['pkg-a', 'pkg-b'], skipChangelog: true })
       );
-      mockPartitionReleasableProjects.mockReturnValue({ released: ['pkg-a'], skipped: ['pkg-b'] });
+
+      expect(mockSelectReleasableProjects).toHaveBeenCalledWith(
+        expect.objectContaining({
+          firstRelease: true,
+          projects: ['pkg-a', 'pkg-b'],
+          skipChangelog: true
+        }),
+        previewData,
+        previewGraph
+      );
+    });
+
+    it('runs the real passes only on the selected projects and from their own results', async () => {
+      const realData = buildVersionData({ 'pkg-a': '1.1.0' });
+      const realGraph = { real: true } as unknown as ReleaseVersionResult['releaseGraph'];
+      mockReleaseVersion
+        .mockResolvedValueOnce(versionResult(previewData, previewGraph))
+        .mockResolvedValueOnce(versionResult(realData, realGraph));
+      mockSelectReleasableProjects.mockResolvedValue({ released: ['pkg-a'], projects: ['pkg-a'] });
 
       await releaseGenerator(tree, options());
 
-      expect(logger.info).toHaveBeenCalledWith(expect.stringContaining('Skipping pkg-b'));
       expect(mockReleaseVersion).toHaveBeenLastCalledWith(
         expect.objectContaining({ dryRun: false, projects: ['pkg-a'] })
       );
-      expect(mockReleaseChangelog).toHaveBeenLastCalledWith(
-        expect.objectContaining({ dryRun: false, projects: ['pkg-a'] })
+      expect(mockReleaseChangelog).toHaveBeenCalledTimes(1);
+      expect(mockReleaseChangelog).toHaveBeenCalledWith(
+        expect.objectContaining({
+          dryRun: false,
+          projects: ['pkg-a'],
+          releaseGraph: realGraph,
+          versionData: realData
+        })
       );
     });
 
-    describe('the preview passes', () => {
-      const previewData = buildVersionData({ 'pkg-a': '1.1.0', 'pkg-b': '1.0.1' });
-      const previewGraph = { preview: true } as unknown as ReleaseVersionResult['releaseGraph'];
-      const previewChangelogs = {
-        'pkg-a': { contents: '## 1.1.0', postGitTask: null, releaseVersion: {} }
-      } as unknown as ProjectChangelogs;
+    it('checks tag availability for the released projects only', async () => {
+      mockReleaseVersion.mockResolvedValueOnce(versionResult(previewData, previewGraph));
+      mockSelectReleasableProjects.mockResolvedValue({ released: ['pkg-a'], projects: ['pkg-a'] });
 
-      beforeEach(() => {
-        mockReleaseVersion.mockResolvedValueOnce(versionResult(previewData, previewGraph));
-        mockReleaseChangelog.mockResolvedValueOnce(changelogResult(previewChangelogs));
-        mockPartitionReleasableProjects.mockReturnValue({
-          released: ['pkg-a'],
-          skipped: ['pkg-b']
-        });
-      });
+      await releaseGenerator(tree, options());
 
-      it('runs releaseVersion as a write-free dry run with the requested projects and specifier', async () => {
-        await releaseGenerator(
-          tree,
-          options({ firstRelease: true, projects: ['pkg-a', 'pkg-b'], vers: 'minor' })
-        );
-
-        expect(mockReleaseVersion.mock.calls[0][0]).toEqual({
-          dryRun: true,
-          firstRelease: true,
-          gitCommit: false,
-          gitPush: false,
-          gitTag: false,
-          projects: ['pkg-a', 'pkg-b'],
-          specifier: 'minor',
-          stageChanges: true
-        });
-      });
-
-      it("previews the changelog from the preview's version data and release graph", async () => {
-        await releaseGenerator(tree, options({ firstRelease: true, projects: ['pkg-a', 'pkg-b'] }));
-
-        expect(mockReleaseChangelog.mock.calls[0][0]).toEqual(
-          expect.objectContaining({
-            createRelease: false,
-            dryRun: true,
-            firstRelease: true,
-            projects: ['pkg-a', 'pkg-b'],
-            releaseGraph: previewGraph,
-            versionData: previewData
-          })
-        );
-      });
-
-      it('partitions the preview version data against the preview changelogs', async () => {
-        await releaseGenerator(tree, options());
-
-        expect(mockPartitionReleasableProjects).toHaveBeenCalledTimes(1);
-        expect(mockPartitionReleasableProjects).toHaveBeenCalledWith(
-          previewData,
-          previewChangelogs
-        );
-      });
-
-      it('checks tag availability for the released projects only', async () => {
-        await releaseGenerator(tree, options());
-
-        expect(mockAssertReleaseTagsAvailable).toHaveBeenCalledWith(
-          { 'pkg-a': previewData['pkg-a'] },
-          'release/2026-09-11',
-          gitClient
-        );
-      });
-
-      it('runs the real passes from their own results, not the preview', async () => {
-        const realData = buildVersionData({ 'pkg-a': '1.1.0' });
-        const realGraph = { real: true } as unknown as ReleaseVersionResult['releaseGraph'];
-        mockReleaseVersion.mockResolvedValueOnce(versionResult(realData, realGraph));
-
-        await releaseGenerator(tree, options());
-
-        expect(mockReleaseChangelog).toHaveBeenCalledTimes(2);
-        expect(mockReleaseChangelog.mock.calls[1][0]).toEqual(
-          expect.objectContaining({
-            dryRun: false,
-            projects: ['pkg-a'],
-            releaseGraph: realGraph,
-            versionData: realData
-          })
-        );
-      });
-    });
-
-    it('passes the requested projects through unchanged when skipChangelog leaves nothing to inspect', async () => {
-      await releaseGenerator(tree, options({ projects: ['pkg-a'], skipChangelog: true }));
-
-      expect(mockReleaseVersion).toHaveBeenLastCalledWith(
-        expect.objectContaining({ dryRun: false, projects: ['pkg-a'] })
+      expect(mockAssertReleaseTagsAvailable).toHaveBeenCalledWith(
+        { 'pkg-a': previewData['pkg-a'] },
+        'release/2026-09-11',
+        gitClient
       );
-    });
-
-    it('keeps every versioned project when skipChangelog leaves no entries to inspect', async () => {
-      await releaseGenerator(tree, options({ skipChangelog: true }));
-
-      expect(mockPartitionReleasableProjects).not.toHaveBeenCalled();
-      expect(mockReleaseChangelog).not.toHaveBeenCalled();
     });
 
     describe('when every project is skipped', () => {
@@ -574,7 +519,7 @@ describe('releaseGenerator', () => {
           releaseBranch: 'release/2026-09-11',
           restoreBranch: 'feature/x'
         });
-        mockPartitionReleasableProjects.mockReturnValue({ released: [], skipped: ['pkg-a'] });
+        mockSelectReleasableProjects.mockResolvedValue({ released: [], projects: [] });
       });
 
       it('exits cleanly with no commit, tag or PR', async () => {
