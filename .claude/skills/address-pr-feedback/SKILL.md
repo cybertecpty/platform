@@ -96,7 +96,16 @@ Then:
 Be candid, not deferential — automated reviewers raise plenty of false positives. A reasoned
 "intentional because X" is a valid outcome.
 
-### 4. Reply to threads (threaded, keyed by the first comment's databaseId)
+### 4. Switch to the bot, then reply to threads (threaded, keyed by the first comment's databaseId)
+
+Replies and thread resolutions are bot writes. Switch first and check the switch worked; never
+silence its output, because a failed switch leaves `gh` on the maintainer and the replies post
+under their name (they cannot be re-attributed, only deleted and reposted):
+
+```bash
+gh auth switch --user cybertec-bot
+gh api user --jq .login   # must print cybertec-bot; stop if not
+```
 
 ```bash
 gh api "repos/cybertecpty/platform/pulls/$PR/comments/{comment_id}/replies" -f body="{explanation}"
@@ -119,7 +128,6 @@ Report verification results honestly. Do not force-push.
 ### 6. Resolve ONLY the fixed threads
 
 ```bash
-gh auth switch --user cybertec-bot
 gh api graphql -f query='mutation($t:ID!){ resolveReviewThread(input:{threadId:$t}){ thread{ id isResolved } } }' -F t={thread-node-id}
 # repeat per fixed thread
 gh auth switch --user djmcgrath101
