@@ -326,10 +326,9 @@ leaving the folder. This happens on a fresh install that never ran Nx. Removing 
 # from the main clone, never from inside the worktree
 $wt = (Resolve-Path ../platform-{name}).Path
 pnpm --dir $wt exec nx daemon --stop
-Remove-Item -Recurse -Force "$wt
-ode_modules", "$wtapps*
-ode_modules", "$wtpackages*
-ode_modules" -ErrorAction SilentlyContinue
+$nm = Get-ChildItem -LiteralPath $wt -Directory -Filter node_modules -Recurse -Depth 4 -Force |
+  Where-Object { $_.FullName -notmatch 'node_modules\\.+node_modules' }
+Remove-Item -Recurse -Force $nm.FullName -ErrorAction SilentlyContinue
 git worktree remove $wt
 git branch -D {branch}
 ```
