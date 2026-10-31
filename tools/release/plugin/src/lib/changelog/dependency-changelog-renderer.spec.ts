@@ -1,4 +1,4 @@
-import { createProjectGraphAsync, type ProjectGraph } from '@nx/devkit';
+import { createProjectGraphAsync, readJsonFile, type ProjectGraph } from '@nx/devkit';
 import type { ChangelogChange } from 'nx/release/changelog-renderer';
 
 import { findDependencyChanges } from '../utils/release-dependency-changes.utils';
@@ -6,7 +6,8 @@ import DependencyChangelogRenderer from './dependency-changelog-renderer';
 
 jest.mock('@nx/devkit', () => ({
   ...jest.requireActual('@nx/devkit'),
-  createProjectGraphAsync: jest.fn()
+  createProjectGraphAsync: jest.fn(),
+  readJsonFile: jest.fn()
 }));
 
 jest.mock('../utils/release-dependency-changes.utils', () => ({
@@ -42,6 +43,9 @@ const render = (project: string | null, changes: ChangelogChange[]): Promise<str
 
 beforeEach(() => {
   jest.mocked(createProjectGraphAsync).mockResolvedValue(projectGraph);
+  jest
+    .mocked(readJsonFile)
+    .mockReturnValue({ release: { releaseTag: { pattern: '{projectName}@{version}' } } });
 });
 
 describe('DependencyChangelogRenderer', () => {
@@ -54,7 +58,8 @@ describe('DependencyChangelogRenderer', () => {
       commitTypes,
       knownHashes: ['aaaaaaa'],
       project: 'web',
-      projectGraph
+      projectGraph,
+      releaseTagPattern: '{projectName}@{version}'
     });
     expect(contents).toContain('in the app');
     expect(contents).toContain('from a library');

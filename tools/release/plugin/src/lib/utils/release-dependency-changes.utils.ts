@@ -20,6 +20,8 @@ export interface DependencyChangesOptions {
   readonly project: string;
   /** The workspace project graph. */
   readonly projectGraph: ProjectGraph;
+  /** The release tag pattern from `nx.json`, e.g. `{projectName}@{version}`. */
+  readonly releaseTagPattern: string;
 }
 
 const SHORT_HASH_LENGTH = 7;
@@ -66,7 +68,10 @@ export async function findDependencyChanges(
     return [];
   }
 
-  const lastRelease = await gitLatestTagMatching(`${project}@*`, git);
+  const lastRelease = await gitLatestTagMatching(
+    releaseTagGlob(options.releaseTagPattern, project),
+    git
+  );
   const commits = await gitCommitsBetween(lastRelease, 'HEAD', git);
   const changes: ChangelogChange[] = [];
 
@@ -88,6 +93,14 @@ export async function findDependencyChanges(
   }
 
   return changes;
+}
+
+/**
+ * Turns a release tag pattern into a glob matching the project's release tags: the project name
+ * is filled in and every other placeholder (the version, the release group) matches anything.
+ */
+export function releaseTagGlob(pattern: string, project: string): string {
+  return pattern.replaceAll('{projectName}', project).replaceAll(/\{[^}]+\}/g, '*');
 }
 
 function isUnder(file: string, root: string): boolean {

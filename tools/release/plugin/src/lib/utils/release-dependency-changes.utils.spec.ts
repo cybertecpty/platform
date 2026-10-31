@@ -6,6 +6,7 @@ import { dirname, join } from 'node:path';
 import {
   collectDependencyRoots,
   findDependencyChanges,
+  releaseTagGlob,
   type ConventionalCommitTypes
 } from './release-dependency-changes.utils';
 
@@ -15,6 +16,8 @@ const commitTypes: ConventionalCommitTypes = {
   fix: { changelog: { hidden: false } },
   off: { changelog: false }
 };
+
+const TAG_PATTERN = '{projectName}@{version}';
 
 const graph = createDependencyGraphFixture(
   [
@@ -55,6 +58,16 @@ describe('collectDependencyRoots', () => {
   });
 });
 
+describe('releaseTagGlob', () => {
+  it('fills in the project and matches any version', () => {
+    expect(releaseTagGlob('{projectName}@{version}', 'web')).toBe('web@*');
+  });
+
+  it('matches any release group and keeps the rest of a custom pattern', () => {
+    expect(releaseTagGlob('{releaseGroupName}/{projectName}-v{version}', 'web')).toBe('*/web-v*');
+  });
+});
+
 describe('findDependencyChanges', () => {
   let repo: GitRepoFixture;
 
@@ -67,8 +80,11 @@ describe('findDependencyChanges', () => {
     return (await repo.git.revparse(['HEAD'])).trim();
   };
 
-  const find = (knownHashes: string[] = [], project = 'web') =>
-    findDependencyChanges({ commitTypes, knownHashes, project, projectGraph: graph }, repo.git);
+  const find = (knownHashes: string[] = [], project = 'web', releaseTagPattern = TAG_PATTERN) =>
+    findDependencyChanges(
+      { commitTypes, knownHashes, project, projectGraph: graph, releaseTagPattern },
+      repo.git
+    );
 
   beforeEach(async () => {
     repo = await createGitRepoFixture();
@@ -95,6 +111,16 @@ describe('findDependencyChanges', () => {
         shortHash: hash.slice(0, 7),
         type: 'fix'
       }
+    ]);
+  });
+
+  it('finds the last release through a custom tag pattern', async () => {
+    await commitFile('libs/ui/old.ts', 'fix(ui): already released');
+    await repo.git.addAnnotatedTag('release-web-1.0.0', 'release-web-1.0.0');
+    await commitFile('libs/ui/new.ts', 'fix(ui): not yet released');
+
+    await expect(find([], 'web', 'release-{projectName}-{version}')).resolves.toMatchObject([
+      { description: 'not yet released' }
     ]);
   });
 
