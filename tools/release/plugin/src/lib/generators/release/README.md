@@ -76,6 +76,10 @@ mechanics, not the rationale.
 These do not affect the usual setup (plain `{projectName}@{version}` tags on one branch,
 conventional commits, no `--from`).
 
+`DependencyChangelogRenderer` works around an Nx bug
+([nrwl/nx#37575](https://github.com/nrwl/nx/issues/37575)); remove it once the fix
+([nrwl/nx#37578](https://github.com/nrwl/nx/pull/37578)) ships in the Nx version we use.
+
 - **Library entries in an app's changelog.** `DependencyChangelogRenderer` lists library commits
   since the app's last release tag. It picks that tag itself (the highest version reachable from
   `HEAD`) rather than using Nx's own resolution, so prerelease tags, `checkAllBranchesWhen`, or a
