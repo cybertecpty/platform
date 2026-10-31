@@ -464,6 +464,102 @@ describe('releaseGenerator', () => {
       );
     });
 
+    describe('the preview passes', () => {
+      const previewData = buildVersionData({ 'pkg-a': '1.1.0', 'pkg-b': '1.0.1' });
+      const previewGraph = { preview: true } as unknown as ReleaseVersionResult['releaseGraph'];
+      const previewChangelogs = {
+        'pkg-a': { contents: '## 1.1.0', postGitTask: null, releaseVersion: {} }
+      } as unknown as ProjectChangelogs;
+
+      beforeEach(() => {
+        mockReleaseVersion.mockResolvedValueOnce(versionResult(previewData, previewGraph));
+        mockReleaseChangelog.mockResolvedValueOnce(changelogResult(previewChangelogs));
+        mockPartitionReleasableProjects.mockReturnValue({
+          released: ['pkg-a'],
+          skipped: ['pkg-b']
+        });
+      });
+
+      it('runs releaseVersion as a write-free dry run with the requested projects and specifier', async () => {
+        await releaseGenerator(
+          tree,
+          options({ firstRelease: true, projects: ['pkg-a', 'pkg-b'], vers: 'minor' })
+        );
+
+        expect(mockReleaseVersion.mock.calls[0][0]).toEqual({
+          dryRun: true,
+          firstRelease: true,
+          gitCommit: false,
+          gitPush: false,
+          gitTag: false,
+          projects: ['pkg-a', 'pkg-b'],
+          specifier: 'minor',
+          stageChanges: true
+        });
+      });
+
+      it("previews the changelog from the preview's version data and release graph", async () => {
+        await releaseGenerator(tree, options({ firstRelease: true, projects: ['pkg-a', 'pkg-b'] }));
+
+        expect(mockReleaseChangelog.mock.calls[0][0]).toEqual(
+          expect.objectContaining({
+            createRelease: false,
+            dryRun: true,
+            firstRelease: true,
+            projects: ['pkg-a', 'pkg-b'],
+            releaseGraph: previewGraph,
+            versionData: previewData
+          })
+        );
+      });
+
+      it('partitions the preview version data against the preview changelogs', async () => {
+        await releaseGenerator(tree, options());
+
+        expect(mockPartitionReleasableProjects).toHaveBeenCalledTimes(1);
+        expect(mockPartitionReleasableProjects).toHaveBeenCalledWith(
+          previewData,
+          previewChangelogs
+        );
+      });
+
+      it('checks tag availability for the released projects only', async () => {
+        await releaseGenerator(tree, options());
+
+        expect(mockAssertReleaseTagsAvailable).toHaveBeenCalledWith(
+          { 'pkg-a': previewData['pkg-a'] },
+          'release/2026-09-11',
+          gitClient
+        );
+      });
+
+      it('runs the real passes from their own results, not the preview', async () => {
+        const realData = buildVersionData({ 'pkg-a': '1.1.0' });
+        const realGraph = { real: true } as unknown as ReleaseVersionResult['releaseGraph'];
+        mockReleaseVersion.mockResolvedValueOnce(versionResult(realData, realGraph));
+
+        await releaseGenerator(tree, options());
+
+        expect(mockReleaseChangelog).toHaveBeenCalledTimes(2);
+        expect(mockReleaseChangelog.mock.calls[1][0]).toEqual(
+          expect.objectContaining({
+            dryRun: false,
+            projects: ['pkg-a'],
+            releaseGraph: realGraph,
+            versionData: realData
+          })
+        );
+      });
+    });
+
+    it('passes the requested projects through unchanged when skipChangelog leaves nothing to inspect', async () => {
+      await releaseGenerator(tree, options({ projects: ['pkg-a'], skipChangelog: true }));
+
+      expect(mockReleaseVersion).toHaveBeenLastCalledWith(
+        expect.objectContaining({ dryRun: false, projects: ['pkg-a'] })
+      );
+    });
+
     it('keeps every versioned project when skipChangelog leaves no entries to inspect', async () => {
       await releaseGenerator(tree, options({ skipChangelog: true }));
 
