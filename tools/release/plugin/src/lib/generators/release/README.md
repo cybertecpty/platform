@@ -89,6 +89,9 @@ conventional commits, no `--from`).
 - **A bump with no visible entry.** A library commit Nx counts as a bump but the renderer omits
   (a hidden type, an unknown type, or a message that is not a conventional commit) leaves the app
   bumped with an empty entry, so the skip rule releases nothing for it.
+- **Library entries carry only the commit subject.** The renderer reads the subject line, so a
+  library commit whose breaking change is declared in a `BREAKING CHANGE:` footer (without `!`)
+  renders without the breaking marker, and its entry has no PR or commit links.
 
 ## Prerequisites
 
