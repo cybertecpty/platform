@@ -39,9 +39,13 @@ mechanics, not the rationale.
    of its workspace dependencies is released in the same run (a dependency released transitively
    counts). A skipped project leaves no trace: no version, changelog, manifest, tag, or PR mention,
    and one log line says why. If every project is skipped the run logs `Nothing needs releasing.`
-   and exits without a branch or PR. Only projects in the release set count as dependencies: a
-   workspace library that is not configured for release is never versioned, so a change to it
-   neither releases nor protects a dependent. Relies on `entryWhenNoChanges: false` in `nx.json`'s
+   and exits without a branch or PR. Only projects in the release set count as released
+   dependencies, but a library change still reaches an app: Nx bumps an app whose imported
+   library changed, yet lists only commits to the app's own files, so the changelog renderer
+   (`DependencyChangelogRenderer`, set in `nx.json`) adds the commits since the app's last
+   release tag that touched any workspace library the app imports, directly or through another
+   library. Those entries make the app release and show which change caused the bump; a
+   library change the app does not import adds nothing. Relies on `entryWhenNoChanges: false` in `nx.json`'s
    `projectChangelogs`; with `--skipChangelog` nothing is skipped.
 6. Bumps the root `package.json` to the highest release type (major/minor/patch) among the
    projects actually released this run, unless `--skipWorkspaceVersion`. Logs a warning and
