@@ -23,6 +23,7 @@ import {
   assertReleaseTagsAvailable
 } from '../../utils/release-preflight.utils';
 import {
+  partitionReleasableProjects,
   resolveAffectedReleaseProjects,
   tagReleasedProjects
 } from '../../utils/release-projects.utils';
@@ -92,16 +93,30 @@ export async function releaseGenerator(
     git
   );
 
-  if (!isDryRun && !opts.skipTag) {
-    // A dry-run version pass writes nothing; it only reveals the tags this run would create.
-    const { projectsVersionData } = await releaseVersion({
+  // A dry-run pass writes nothing; it reveals the tags this run would create and
+  // which projects have nothing to release, so skipped projects leave no trace.
+  const { projectsVersionData: previewVersionData, releaseGraph: previewGraph } =
+    await releaseVersion({
       firstRelease: opts.firstRelease,
       projects: opts.projects,
       specifier: opts.vers,
       ...getReleaseCommandOptions(true)
     });
+  const releasable = await selectReleasableProjects(opts, previewVersionData, previewGraph);
 
-    await assertReleaseTagsAvailable(projectsVersionData, releaseBranch, git);
+  if (releasable.released.length === 0) {
+    logger.info('Nothing needs releasing.');
+    return () => Promise.resolve();
+  }
+
+  const { projects } = releasable;
+
+  if (!isDryRun && !opts.skipTag) {
+    await assertReleaseTagsAvailable(
+      pickVersionData(previewVersionData, releasable.released),
+      releaseBranch,
+      git
+    );
   }
 
   let restoreBranch: string | null = null;
@@ -116,7 +131,7 @@ export async function releaseGenerator(
 
   try {
     // 2. Calculate and stage project package version changes.
-    const { firstRelease, projects, vers: schemaVersion } = opts;
+    const { firstRelease, vers: schemaVersion } = opts;
     const { projectsVersionData, releaseGraph } = await releaseVersion({
       firstRelease,
       projects,
@@ -138,7 +153,7 @@ export async function releaseGenerator(
       projectChangelogs = (
         await releaseChangelog({
           firstRelease: opts.firstRelease,
-          projects: opts.projects,
+          projects,
           // Reuses the graph releaseVersion already built instead of having
           // releaseChangelog recompute it from scratch.
           releaseGraph,
@@ -397,6 +412,11 @@ async function openReleasePullRequest(
   }
 }
 
+/** Narrows version data to the named projects. */
+function pickVersionData(versionData: VersionData, projects: readonly string[]): VersionData {
+  return Object.fromEntries(projects.map(project => [project, versionData[project]]));
+}
+
 /**
  * Resolves the token the PR calls authenticate with, so the PR is authored by
  * {@link RELEASE_PR_AUTHOR} whichever `gh` account is active (the maintainer
@@ -439,6 +459,46 @@ async function restoreStartingBranch(restoreBranch: string | null, git: SimpleGi
 
   logger.info(`Switching back to starting branch ${restoreBranch}...`);
   await git.checkout(restoreBranch);
+}
+
+/**
+ * Decides which versioned projects are worth releasing, logging one line per
+ * skipped project. Changelog entries are only known after Nx has rendered them,
+ * so this previews the changelog in a dry run. With `skipChangelog` there is
+ * nothing to inspect and every versioned project is kept.
+ *
+ * @returns The released project names and the project list to pass to Nx's
+ * real version and changelog calls (`undefined` meaning "all configured").
+ */
+async function selectReleasableProjects(
+  opts: NormalizedReleaseGeneratorOptions,
+  versionData: VersionData,
+  releaseGraph: Awaited<ReturnType<typeof releaseVersion>>['releaseGraph']
+): Promise<{ released: string[]; projects: string[] | undefined }> {
+  const versioned = Object.keys(versionData).filter(project => versionData[project].newVersion);
+
+  if (opts.skipChangelog) {
+    return { released: versioned, projects: opts.projects };
+  }
+
+  const { projectChangelogs } = await releaseChangelog({
+    firstRelease: opts.firstRelease,
+    projects: opts.projects,
+    releaseGraph,
+    verbose: false,
+    versionData,
+    createRelease: false,
+    ...getReleaseCommandOptions(true)
+  });
+  const { released, skipped } = partitionReleasableProjects(versionData, projectChangelogs);
+
+  for (const project of skipped) {
+    logger.info(
+      `Skipping ${project}: no changelog entries and no released workspace dependencies.`
+    );
+  }
+
+  return { released, projects: released };
 }
 
 /**

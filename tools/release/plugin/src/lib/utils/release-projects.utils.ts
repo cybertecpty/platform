@@ -1,5 +1,5 @@
 import { gitMergeBase, gitTagsMatching } from '@cybertecpty/git-utils';
-import type { VersionData } from '@cybertecpty/nx-types';
+import type { ProjectChangelogs, VersionData } from '@cybertecpty/nx-types';
 import { findMatchingProjects, getAffectedGraphNodes, type NxArgs } from '@cybertecpty/nx-utils';
 import type { Tree } from '@nx/devkit';
 import { createProjectGraphAsync, logger, readNxJson, type ProjectGraph } from '@nx/devkit';
@@ -19,6 +19,42 @@ export interface AffectedReleaseProjectsOptions {
    * branch and `HEAD` marks the start of the release window.
    */
   readonly targetBranch: string;
+}
+
+/**
+ * Splits the projects Nx versioned into those worth releasing and those with
+ * nothing to release.
+ *
+ * A versioned project is released when it has changelog entries, or when a
+ * workspace dependency is released in the same run (a private app's shipped
+ * code changes with its libraries even if the app itself has no entries).
+ * Dependencies are followed transitively. Projects Nx did not version at all
+ * are in neither list. Requires `entryWhenNoChanges: false` in `nx.json`'s
+ * project changelog config, so an entry-less changelog renders as empty.
+ */
+export function partitionReleasableProjects(
+  versionData: VersionData,
+  projectChangelogs: ProjectChangelogs | undefined
+): { released: string[]; skipped: string[] } {
+  const versioned = Object.keys(versionData).filter(project => versionData[project].newVersion);
+  const released = new Set(
+    versioned.filter(project => projectChangelogs?.[project]?.contents.trim())
+  );
+  const queue = [...released];
+
+  for (const project of queue) {
+    for (const { source } of versionData[project].dependentProjects ?? []) {
+      if (versionData[source]?.newVersion && !released.has(source)) {
+        released.add(source);
+        queue.push(source);
+      }
+    }
+  }
+
+  return {
+    released: versioned.filter(project => released.has(project)),
+    skipped: versioned.filter(project => !released.has(project))
+  };
 }
 
 /**

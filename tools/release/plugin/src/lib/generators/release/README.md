@@ -23,8 +23,15 @@ mechanics, not the rationale.
 3. Cuts (or reuses) the release branch — `release/<releaseDate>` off `baseBranch` — unless
    `--skipBranch` commits straight to `baseBranch` instead. Skipped entirely in a dry run
    (`--dry-run` / `NX_DRY_RUN`): only the branch name is resolved, the working tree is untouched.
-4. Runs Nx's own `releaseVersion`, then (unless `--skipChangelog`) `releaseChangelog`, reusing
-   the release graph between the two calls instead of recomputing it.
+4. Previews `releaseVersion` and (unless `--skipChangelog`) `releaseChangelog` in a dry run to find
+   projects with nothing to release, then runs both for real on the rest, reusing the release graph
+   between the two calls. A project is **skipped** only when it has no changelog entries of its own
+   _and_ none of its workspace dependencies is released in the same run (a dependency released
+   transitively counts). A skipped project leaves no trace: no version, changelog, manifest, tag, or
+   PR mention, and one log line says why. If every project is skipped the run logs
+   `Nothing needs releasing.` and exits without a branch or PR. A dependency that reaches an app
+   only through e2e or dev tooling still counts as released. Relies on `entryWhenNoChanges: false`
+   in `nx.json`'s `projectChangelogs`; with `--skipChangelog` nothing is skipped.
 5. Bumps the root `package.json` to the highest release type (major/minor/patch) among the
    projects actually released this run, unless `--skipWorkspaceVersion`. Logs a warning and
    skips the bump if nothing was released.

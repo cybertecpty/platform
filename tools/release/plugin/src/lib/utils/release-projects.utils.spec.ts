@@ -12,6 +12,7 @@ import { createTreeWithEmptyWorkspace } from '@nx/devkit/testing';
 import simpleGit, { type SimpleGit } from 'simple-git';
 
 import {
+  partitionReleasableProjects,
   readReleasePatterns,
   resolveAffectedBase,
   resolveAffectedReleaseProjects,
@@ -273,5 +274,84 @@ describe('resolveAffectedReleaseProjects', () => {
     await expect(
       resolveAffectedReleaseProjects(tree, { targetBranch: 'main' }, gitStub)
     ).rejects.toThrow('nx.json configures no releasable projects');
+  });
+});
+
+describe('partitionReleasableProjects', () => {
+  const entry = (newVersion: string | null, dependents: string[] = []) => ({
+    currentVersion: '1.0.0',
+    newVersion,
+    dependentProjects: dependents.map(source => ({
+      source,
+      target: 'unused',
+      type: 'static',
+      dependencyCollection: null,
+      rawVersionSpec: null
+    }))
+  });
+  const changelogs = (...projects: string[]) =>
+    Object.fromEntries(
+      projects.map(project => [
+        project,
+        { releaseVersion: {}, contents: '## 1.0.1 fixes', postGitTask: null }
+      ])
+    ) as unknown as Parameters<typeof partitionReleasableProjects>[1];
+
+  it('skips a versioned project with no changelog entries and no released dependency', () => {
+    expect(partitionReleasableProjects({ app: entry('1.0.1') }, {})).toEqual({
+      released: [],
+      skipped: ['app']
+    });
+  });
+
+  it('releases a project with changelog entries', () => {
+    expect(partitionReleasableProjects({ app: entry('1.0.1') }, changelogs('app'))).toEqual({
+      released: ['app'],
+      skipped: []
+    });
+  });
+
+  it('treats whitespace-only contents as no entries', () => {
+    const empty = { app: { releaseVersion: {}, contents: '  ', postGitTask: null } };
+
+    expect(partitionReleasableProjects({ app: entry('1.0.1') }, empty as never).skipped).toEqual([
+      'app'
+    ]);
+  });
+
+  it('releases a project with no entries when a workspace dependency is released', () => {
+    const versionData = { lib: entry('1.0.1', ['app']), app: entry('1.0.1') };
+
+    expect(partitionReleasableProjects(versionData, changelogs('lib'))).toEqual({
+      released: ['lib', 'app'],
+      skipped: []
+    });
+  });
+
+  it('follows released dependencies transitively', () => {
+    const versionData = {
+      lib: entry('1.0.1', ['mid']),
+      mid: entry('1.0.1', ['app']),
+      app: entry('1.0.1')
+    };
+
+    expect(partitionReleasableProjects(versionData, changelogs('lib')).released).toEqual([
+      'lib',
+      'mid',
+      'app'
+    ]);
+  });
+
+  it('does not release a dependent of a dependency that is itself skipped', () => {
+    const versionData = { lib: entry('1.0.1', ['app']), app: entry('1.0.1') };
+
+    expect(partitionReleasableProjects(versionData, {}).skipped).toEqual(['lib', 'app']);
+  });
+
+  it('leaves projects Nx did not version out of both lists', () => {
+    expect(partitionReleasableProjects({ app: entry(null) }, undefined)).toEqual({
+      released: [],
+      skipped: []
+    });
   });
 });

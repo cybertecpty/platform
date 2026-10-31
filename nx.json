@@ -112,6 +112,7 @@
       "workspaceChangelog": false,
       "projectChangelogs": {
         "createRelease": "github",
+        "entryWhenNoChanges": false,
         "renderOptions": {
           "authors": false
         }

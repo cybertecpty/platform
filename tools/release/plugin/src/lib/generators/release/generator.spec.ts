@@ -20,6 +20,7 @@ import {
   assertReleaseTagsAvailable
 } from '../../utils/release-preflight.utils';
 import {
+  partitionReleasableProjects,
   resolveAffectedReleaseProjects,
   tagReleasedProjects
 } from '../../utils/release-projects.utils';
@@ -66,6 +67,7 @@ jest.mock('../../utils/release-pr.utils', () => ({
 }));
 
 jest.mock('../../utils/release-projects.utils', () => ({
+  partitionReleasableProjects: jest.fn(),
   resolveAffectedReleaseProjects: jest.fn(),
   tagReleasedProjects: jest.fn()
 }));
@@ -120,6 +122,7 @@ const mockResolveAffectedReleaseProjects = jest.mocked(resolveAffectedReleasePro
 const mockResolveReleaseBranchName = jest.mocked(resolveReleaseBranchName);
 const mockResolveWorkspaceReleaseType = jest.mocked(resolveWorkspaceReleaseType);
 const mockTagReleasedProjects = jest.mocked(tagReleasedProjects);
+const mockPartitionReleasableProjects = jest.mocked(partitionReleasableProjects);
 const mockAssertBaseIncludesTarget = jest.mocked(assertBaseIncludesTarget);
 const mockAssertReleaseTagsAvailable = jest.mocked(assertReleaseTagsAvailable);
 const mockFormatFiles = jest.mocked(formatFiles);
@@ -193,7 +196,7 @@ describe('releaseGenerator', () => {
       releaseBranch: 'release/2026-09-11',
       restoreBranch: null
     });
-    mockReleaseVersion.mockResolvedValue(versionResult(buildVersionData({})));
+    mockReleaseVersion.mockResolvedValue(versionResult(buildVersionData({ 'pkg-a': '1.1.0' })));
     mockReleaseChangelog.mockResolvedValue(changelogResult(undefined));
     mockResolveWorkspaceReleaseType.mockReturnValue(null);
     mockPackageVersionGenerator.mockResolvedValue(undefined);
@@ -202,6 +205,10 @@ describe('releaseGenerator', () => {
     );
     mockLastGitCommitHash.mockResolvedValue('abc1234567');
     mockTagReleasedProjects.mockResolvedValue([]);
+    mockPartitionReleasableProjects.mockImplementation(versionData => ({
+      released: Object.keys(versionData).filter(project => versionData[project].newVersion),
+      skipped: []
+    }));
     mockBuildReleasePrBody.mockResolvedValue('pr body');
     mockFindOpenPullRequest.mockResolvedValue(null);
     mockCreatePullRequest.mockResolvedValue('https://github.com/cybertecpty/platform/pull/1');
@@ -423,6 +430,45 @@ describe('releaseGenerator', () => {
       expect(mockReleaseChangelog).toHaveBeenCalledWith(
         expect.objectContaining({ createRelease: false, versionData })
       );
+    });
+  });
+
+  describe('projects with nothing to release', () => {
+    it('releases only the projects the partition keeps and logs each skipped one', async () => {
+      mockReleaseVersion.mockResolvedValue(
+        versionResult(buildVersionData({ 'pkg-a': '1.1.0', 'pkg-b': '1.0.1' }))
+      );
+      mockPartitionReleasableProjects.mockReturnValue({ released: ['pkg-a'], skipped: ['pkg-b'] });
+
+      await releaseGenerator(tree, options());
+
+      expect(logger.info).toHaveBeenCalledWith(expect.stringContaining('Skipping pkg-b'));
+      expect(mockReleaseVersion).toHaveBeenLastCalledWith(
+        expect.objectContaining({ dryRun: false, projects: ['pkg-a'] })
+      );
+      expect(mockReleaseChangelog).toHaveBeenLastCalledWith(
+        expect.objectContaining({ dryRun: false, projects: ['pkg-a'] })
+      );
+    });
+
+    it('keeps every versioned project when skipChangelog leaves no entries to inspect', async () => {
+      await releaseGenerator(tree, options({ skipChangelog: true }));
+
+      expect(mockPartitionReleasableProjects).not.toHaveBeenCalled();
+      expect(mockReleaseChangelog).not.toHaveBeenCalled();
+    });
+
+    it('exits cleanly with no branch, tag, commit or PR when every project is skipped', async () => {
+      mockPartitionReleasableProjects.mockReturnValue({ released: [], skipped: ['pkg-a'] });
+
+      const callback = await releaseGenerator(tree, options());
+      await callback();
+
+      expect(logger.info).toHaveBeenCalledWith('Nothing needs releasing.');
+      expect(mockCheckoutReleaseBranch).not.toHaveBeenCalled();
+      expect(mockReleaseVersion).toHaveBeenCalledTimes(1);
+      expect(gitClient.commit).not.toHaveBeenCalled();
+      expect(mockCreatePullRequest).not.toHaveBeenCalled();
     });
   });
 
@@ -665,7 +711,7 @@ describe('releaseGenerator', () => {
         restoreBranch: 'feature/x'
       });
       mockReleaseVersion
-        .mockResolvedValueOnce(versionResult(buildVersionData({})))
+        .mockResolvedValueOnce(versionResult(buildVersionData({ 'pkg-a': '1.1.0' })))
         .mockRejectedValueOnce(new Error('boom'));
 
       await expect(releaseGenerator(tree, options())).rejects.toThrow('boom');
