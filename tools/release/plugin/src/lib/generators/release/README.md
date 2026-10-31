@@ -34,8 +34,9 @@ mechanics, not the rationale.
    has no changelog entries of its own _and_ none of its workspace dependencies is released in the
    same run (a dependency released transitively counts). A skipped project leaves no trace: no
    version, changelog, manifest, tag, or PR mention, and one log line says why. If every project is
-   skipped the run logs `Nothing needs releasing.` and exits without a branch or PR. A dependency
-   that reaches an app only through e2e or dev tooling still counts as released. Relies on
+   skipped the run logs `Nothing needs releasing.` and exits without a branch or PR. Only projects in the release set count as dependencies:
+   a workspace library that is not configured for release is never versioned, so a change to it
+   neither releases nor protects a dependent. Relies on
    `entryWhenNoChanges: false` in `nx.json`'s `projectChangelogs`; with `--skipChangelog` nothing
    is skipped.
 6. Bumps the root `package.json` to the highest release type (major/minor/patch) among the
