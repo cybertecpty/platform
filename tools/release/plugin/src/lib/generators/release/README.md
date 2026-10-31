@@ -16,19 +16,33 @@ mechanics, not the rationale.
    releasable projects and what's actually changed since the merge-base with `targetBranch` (or
    an explicit `--base`). If nothing matches, logs and returns a no-op — nothing else in the
    list below runs.
-3. Runs a preflight that fails before any side effect (no file, branch, commit, push or PR):
+3. Runs a preflight that fails before any file, commit, push or PR is written:
    - `origin/<targetBranch>` must not have commits `origin/<baseBranch>` lacks. If it does, back-merge
      `targetBranch` into `baseBranch` first; the generator only checks and never merges. With
      `--dry-run` this only warns. The check fetches both branches and the tags first.
-   - Unless `--skipTag` or `--dry-run`, no tag the run would create may already exist on a commit
-     off the release branch. To learn the tags, the preflight runs `releaseVersion` once with
-     `dryRun` (it writes nothing) on the **current** branch, before the release branch is checked
-     out. A same-day re-run on its existing local `release/<date>` branch still passes.
 4. Cuts (or reuses) the release branch — `release/<releaseDate>` off `baseBranch` — unless
    `--skipBranch` commits straight to `baseBranch` instead. Skipped entirely in a dry run
    (`--dry-run` / `NX_DRY_RUN`): only the branch name is resolved, the working tree is untouched.
+   On the release branch, `releaseVersion` runs once with `dryRun` (it writes nothing) so the
+   release is decided from the commits and tags the real run will see:
+   - Unless `--skipTag` or `--dry-run`, no tag the run would create may already exist on a commit
+     off the release branch. A same-day re-run on its existing local `release/<date>` branch still
+     passes.
+   - Projects with nothing to release are skipped (step 5). If none remain, the run switches back
+     to the starting branch, deletes the release branch it just cut (a pre-existing one is kept),
+     and exits. A failed tag check abandons the branch the same way. In a dry run there is no
+     checkout, so the preview runs on the current branch.
 5. Runs Nx's own `releaseVersion` for real, then (unless `--skipChangelog`) `releaseChangelog`,
-   reusing the release graph between the two calls instead of recomputing it.
+   reusing the release graph between the two calls. Both run only on projects with something to
+   release, found by previewing `releaseVersion` and `releaseChangelog` in a dry run beforehand
+   (step 4). A project is **skipped** only when it has no changelog entries of its own _and_ none
+   of its workspace dependencies is released in the same run (a dependency released transitively
+   counts). A skipped project leaves no trace: no version, changelog, manifest, tag, or PR mention,
+   and one log line says why. If every project is skipped the run logs `Nothing needs releasing.`
+   and exits without a branch or PR. Only projects in the release set count as dependencies: a
+   workspace library that is not configured for release is never versioned, so a change to it
+   neither releases nor protects a dependent. Relies on `entryWhenNoChanges: false` in `nx.json`'s
+   `projectChangelogs`; with `--skipChangelog` nothing is skipped.
 6. Bumps the root `package.json` to the highest release type (major/minor/patch) among the
    projects actually released this run, unless `--skipWorkspaceVersion`. Logs a warning and
    skips the bump if nothing was released.

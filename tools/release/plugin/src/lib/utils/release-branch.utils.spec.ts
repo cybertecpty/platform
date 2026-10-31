@@ -93,6 +93,7 @@ describe('checkoutReleaseBranch', () => {
       const { git, spies } = makeGit();
 
       await expect(checkoutReleaseBranch(opts({ skipBranch: true }), git)).resolves.toEqual({
+        created: false,
         releaseBranch: 'develop',
         restoreBranch: 'feature/x'
       });
@@ -104,6 +105,7 @@ describe('checkoutReleaseBranch', () => {
       const { git, spies } = makeGit();
 
       await expect(checkoutReleaseBranch(opts({ skipBranch: true }), git)).resolves.toEqual({
+        created: false,
         releaseBranch: 'develop',
         restoreBranch: null
       });
@@ -129,6 +131,7 @@ describe('checkoutReleaseBranch', () => {
       const { git, spies } = makeGit();
 
       await expect(checkoutReleaseBranch(opts(), git)).resolves.toEqual({
+        created: false,
         releaseBranch: 'release/2026-09-09',
         restoreBranch: 'feature/x'
       });
@@ -142,6 +145,7 @@ describe('checkoutReleaseBranch', () => {
       const { git, spies } = makeGit();
 
       await expect(checkoutReleaseBranch(opts(), git)).resolves.toEqual({
+        created: false,
         releaseBranch: 'release/2026-09-09',
         restoreBranch: null
       });
@@ -153,6 +157,7 @@ describe('checkoutReleaseBranch', () => {
       const { git } = makeGit();
 
       await expect(checkoutReleaseBranch(opts(), git)).resolves.toEqual({
+        created: false,
         releaseBranch: 'release/2026-09-09',
         restoreBranch: null
       });
@@ -177,6 +182,7 @@ describe('checkoutReleaseBranch', () => {
       });
 
       await expect(checkoutReleaseBranch(opts(), git)).resolves.toEqual({
+        created: true,
         releaseBranch: 'release/2026-09-09',
         restoreBranch: 'feature/x'
       });

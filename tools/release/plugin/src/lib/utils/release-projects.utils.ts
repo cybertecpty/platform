@@ -1,8 +1,9 @@
 import { gitMergeBase, gitTagsMatching } from '@cybertecpty/git-utils';
-import type { VersionData } from '@cybertecpty/nx-types';
+import type { ProjectChangelogs, ReleaseGraph, VersionData } from '@cybertecpty/nx-types';
 import { findMatchingProjects, getAffectedGraphNodes, type NxArgs } from '@cybertecpty/nx-utils';
 import type { Tree } from '@nx/devkit';
 import { createProjectGraphAsync, logger, readNxJson, type ProjectGraph } from '@nx/devkit';
+import { releaseChangelog } from 'nx/release';
 import simpleGit, { type SimpleGit } from 'simple-git';
 
 /**
@@ -19,6 +20,80 @@ export interface AffectedReleaseProjectsOptions {
    * branch and `HEAD` marks the start of the release window.
    */
   readonly targetBranch: string;
+}
+
+/**
+ * The generator options {@link selectReleasableProjects} needs.
+ */
+export interface ReleasableProjectsOptions {
+  readonly firstRelease?: boolean;
+  readonly projects?: string[];
+  readonly skipChangelog?: boolean;
+}
+
+/**
+ * The Nx release options every version and changelog call in a run shares: nothing is committed,
+ * tagged or pushed by Nx itself.
+ */
+export type ReleaseCommandOptions = {
+  dryRun: boolean;
+  gitCommit: false;
+  gitPush: false;
+  gitTag: false;
+  stageChanges: true;
+};
+
+/**
+ * Builds the {@link ReleaseCommandOptions} for a real run or a write-free dry run.
+ */
+export function getReleaseCommandOptions(dryRun: boolean): ReleaseCommandOptions {
+  return {
+    dryRun,
+    // Stage Nx release changes so the final manifest commit can include them in one release commit.
+    gitCommit: false,
+    gitPush: false,
+    gitTag: false,
+    stageChanges: true
+  };
+}
+
+/**
+ * Splits the projects Nx versioned into those worth releasing and those with
+ * nothing to release.
+ *
+ * A versioned project is released when it has changelog entries, or when a
+ * workspace dependency is released in the same run (a private app's shipped
+ * code changes with its libraries even if the app itself has no entries).
+ * Dependencies are followed transitively. Projects Nx did not version at all
+ * are in neither list. Requires `entryWhenNoChanges: false` in `nx.json`'s
+ * project changelog config, so an entry-less changelog renders as empty.
+ */
+export function partitionReleasableProjects(
+  versionData: VersionData,
+  projectChangelogs: ProjectChangelogs | undefined
+): { released: string[]; skipped: string[] } {
+  const versioned = Object.keys(versionData).filter(project => versionData[project].newVersion);
+  const released = new Set(
+    versioned.filter(project => projectChangelogs?.[project]?.contents.trim())
+  );
+  const queue = [...released];
+
+  // A released project drags in its dependents: walk each one's dependents, which Nx lists in
+  // `dependentProjects`, so a project with no entries of its own still releases when something it
+  // depends on does. Newly added projects join the queue, which makes the walk transitive.
+  for (const project of queue) {
+    for (const { source } of versionData[project].dependentProjects ?? []) {
+      if (versionData[source]?.newVersion && !released.has(source)) {
+        released.add(source);
+        queue.push(source);
+      }
+    }
+  }
+
+  return {
+    released: versioned.filter(project => released.has(project)),
+    skipped: versioned.filter(project => !released.has(project))
+  };
 }
 
 /**
@@ -135,6 +210,45 @@ export function selectAffectedReleaseProjects(
   const affected = new Set(affectedProjectNames);
 
   return releaseProjects.filter(projectName => affected.has(projectName));
+}
+
+/**
+ * Decides which versioned projects are worth releasing, logging one line per skipped project.
+ * Changelog entries are only known after Nx has rendered them, so this previews the changelog in a
+ * dry run. With `skipChangelog` there is nothing to inspect and every versioned project is kept.
+ *
+ * @returns The released project names and the project list to pass to Nx's real version and
+ * changelog calls (`undefined` meaning "all configured").
+ */
+export async function selectReleasableProjects(
+  opts: ReleasableProjectsOptions,
+  versionData: VersionData,
+  releaseGraph: ReleaseGraph
+): Promise<{ released: string[]; projects: string[] | undefined }> {
+  const versioned = Object.keys(versionData).filter(project => versionData[project].newVersion);
+
+  if (opts.skipChangelog) {
+    return { released: versioned, projects: opts.projects };
+  }
+
+  const { projectChangelogs } = await releaseChangelog({
+    firstRelease: opts.firstRelease,
+    projects: opts.projects,
+    releaseGraph,
+    verbose: false,
+    versionData,
+    createRelease: false,
+    ...getReleaseCommandOptions(true)
+  });
+  const { released, skipped } = partitionReleasableProjects(versionData, projectChangelogs);
+
+  for (const project of skipped) {
+    logger.info(
+      `Skipping ${project}: no changelog entries and no released workspace dependencies.`
+    );
+  }
+
+  return { released, projects: released };
 }
 
 /**

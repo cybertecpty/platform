@@ -15,6 +15,12 @@ export type NxReleaseChangelogResult = Awaited<ReturnType<typeof releaseChangelo
 export type ProjectChangelogs = NonNullable<NxReleaseChangelogResult['projectChangelogs']>;
 
 /**
+ * The release graph Nx's `releaseVersion` builds, which `releaseChangelog` accepts back so it
+ * need not recompute it. Derived from the public `nx/release` entrypoint's return type.
+ */
+export type ReleaseGraph = Awaited<ReturnType<typeof releaseVersion>>['releaseGraph'];
+
+/**
  * Per-project version data produced by Nx's `releaseVersion`. Derived from the
  * public `nx/release` entrypoint's return type rather than imported from Nx's
  * internal `command-line/release/utils/shared.js` module.

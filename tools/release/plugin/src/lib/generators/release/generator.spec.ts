@@ -21,6 +21,7 @@ import {
 } from '../../utils/release-preflight.utils';
 import {
   resolveAffectedReleaseProjects,
+  selectReleasableProjects,
   tagReleasedProjects
 } from '../../utils/release-projects.utils';
 import { resolveWorkspaceReleaseType } from '../../utils/release-versions.utils';
@@ -66,11 +67,15 @@ jest.mock('../../utils/release-pr.utils', () => ({
 }));
 
 jest.mock('../../utils/release-projects.utils', () => ({
+  getReleaseCommandOptions: jest.requireActual('../../utils/release-projects.utils')
+    .getReleaseCommandOptions,
+  selectReleasableProjects: jest.fn(),
   resolveAffectedReleaseProjects: jest.fn(),
   tagReleasedProjects: jest.fn()
 }));
 
 jest.mock('../../utils/release-versions.utils', () => ({
+  pickVersionData: jest.requireActual('../../utils/release-versions.utils').pickVersionData,
   resolveWorkspaceReleaseType: jest.fn()
 }));
 
@@ -84,6 +89,7 @@ jest.mock('simple-git', () => {
     add: jest.fn(),
     checkout: jest.fn(),
     commit: jest.fn(),
+    deleteLocalBranch: jest.fn(),
     fetch: jest.fn(),
     push: jest.fn()
   };
@@ -120,6 +126,7 @@ const mockResolveAffectedReleaseProjects = jest.mocked(resolveAffectedReleasePro
 const mockResolveReleaseBranchName = jest.mocked(resolveReleaseBranchName);
 const mockResolveWorkspaceReleaseType = jest.mocked(resolveWorkspaceReleaseType);
 const mockTagReleasedProjects = jest.mocked(tagReleasedProjects);
+const mockSelectReleasableProjects = jest.mocked(selectReleasableProjects);
 const mockAssertBaseIncludesTarget = jest.mocked(assertBaseIncludesTarget);
 const mockAssertReleaseTagsAvailable = jest.mocked(assertReleaseTagsAvailable);
 const mockFormatFiles = jest.mocked(formatFiles);
@@ -134,6 +141,7 @@ interface GitSpies {
   add: jest.Mock;
   checkout: jest.Mock;
   commit: jest.Mock;
+  deleteLocalBranch: jest.Mock;
   fetch: jest.Mock;
   push: jest.Mock;
 }
@@ -190,10 +198,11 @@ describe('releaseGenerator', () => {
     mockVerboseEnabled.mockReturnValue(false);
     mockResolveReleaseBranchName.mockReturnValue('release/2026-09-11');
     mockCheckoutReleaseBranch.mockResolvedValue({
+      created: false,
       releaseBranch: 'release/2026-09-11',
       restoreBranch: null
     });
-    mockReleaseVersion.mockResolvedValue(versionResult(buildVersionData({})));
+    mockReleaseVersion.mockResolvedValue(versionResult(buildVersionData({ 'pkg-a': '1.1.0' })));
     mockReleaseChangelog.mockResolvedValue(changelogResult(undefined));
     mockResolveWorkspaceReleaseType.mockReturnValue(null);
     mockPackageVersionGenerator.mockResolvedValue(undefined);
@@ -202,6 +211,11 @@ describe('releaseGenerator', () => {
     );
     mockLastGitCommitHash.mockResolvedValue('abc1234567');
     mockTagReleasedProjects.mockResolvedValue([]);
+    mockSelectReleasableProjects.mockImplementation((_opts, versionData) => {
+      const released = Object.keys(versionData).filter(project => versionData[project].newVersion);
+
+      return Promise.resolve({ released, projects: released });
+    });
     mockBuildReleasePrBody.mockResolvedValue('pr body');
     mockFindOpenPullRequest.mockResolvedValue(null);
     mockCreatePullRequest.mockResolvedValue('https://github.com/cybertecpty/platform/pull/1');
@@ -214,6 +228,7 @@ describe('releaseGenerator', () => {
     gitClient.add.mockResolvedValue(undefined);
     gitClient.checkout.mockResolvedValue(undefined);
     gitClient.commit.mockResolvedValue(undefined);
+    gitClient.deleteLocalBranch.mockResolvedValue(undefined);
     gitClient.fetch.mockResolvedValue(undefined);
     gitClient.push.mockResolvedValue(undefined);
   });
@@ -336,7 +351,7 @@ describe('releaseGenerator', () => {
       expect(mockAssertReleaseTagsAvailable).not.toHaveBeenCalled();
     });
 
-    it('checks the tags of a write-free version pass before the branch checkout', async () => {
+    it('checks the tags of a write-free version pass on the release branch, before the real pass', async () => {
       const versionData = buildVersionData({ 'pkg-a': '1.1.0' });
       mockReleaseVersion.mockResolvedValue(versionResult(versionData));
 
@@ -350,17 +365,26 @@ describe('releaseGenerator', () => {
         'release/2026-09-11',
         gitClient
       );
+      expect(mockCheckoutReleaseBranch.mock.invocationCallOrder[0]).toBeLessThan(
+        mockAssertReleaseTagsAvailable.mock.invocationCallOrder[0]
+      );
       expect(mockAssertReleaseTagsAvailable.mock.invocationCallOrder[0]).toBeLessThan(
-        mockCheckoutReleaseBranch.mock.invocationCallOrder[0]
+        mockReleaseVersion.mock.invocationCallOrder[1]
       );
     });
 
-    it('stops before any side effect when a release tag already exists', async () => {
+    it('abandons the release branch it cut when a release tag already exists', async () => {
+      mockCheckoutReleaseBranch.mockResolvedValue({
+        created: true,
+        releaseBranch: 'release/2026-09-11',
+        restoreBranch: 'feature/x'
+      });
       mockAssertReleaseTagsAvailable.mockRejectedValue(new Error('tag pkg-a@1.1.0 exists'));
 
       await expect(releaseGenerator(tree, options())).rejects.toThrow('pkg-a@1.1.0');
 
-      expect(mockCheckoutReleaseBranch).not.toHaveBeenCalled();
+      expect(gitClient.checkout).toHaveBeenCalledWith('feature/x');
+      expect(gitClient.deleteLocalBranch).toHaveBeenCalledWith('release/2026-09-11', true);
       expect(mockFormatFiles).not.toHaveBeenCalled();
     });
 
@@ -399,7 +423,9 @@ describe('releaseGenerator', () => {
     });
 
     it("reuses releaseVersion's releaseGraph in the releaseChangelog call", async () => {
-      mockReleaseVersion.mockResolvedValue(versionResult(buildVersionData({}), FAKE_RELEASE_GRAPH));
+      mockReleaseVersion.mockResolvedValue(
+        versionResult(buildVersionData({ 'pkg-a': '1.1.0' }), FAKE_RELEASE_GRAPH)
+      );
 
       await releaseGenerator(tree, options());
 
@@ -423,6 +449,121 @@ describe('releaseGenerator', () => {
       expect(mockReleaseChangelog).toHaveBeenCalledWith(
         expect.objectContaining({ createRelease: false, versionData })
       );
+    });
+  });
+
+  describe('projects with nothing to release', () => {
+    const previewData = buildVersionData({ 'pkg-a': '1.1.0', 'pkg-b': '1.0.1' });
+    const previewGraph = { preview: true } as unknown as ReleaseVersionResult['releaseGraph'];
+
+    it('selects from the preview pass, using the requested options', async () => {
+      mockReleaseVersion.mockResolvedValueOnce(versionResult(previewData, previewGraph));
+
+      await releaseGenerator(
+        tree,
+        options({ firstRelease: true, projects: ['pkg-a', 'pkg-b'], skipChangelog: true })
+      );
+
+      expect(mockSelectReleasableProjects).toHaveBeenCalledWith(
+        expect.objectContaining({
+          firstRelease: true,
+          projects: ['pkg-a', 'pkg-b'],
+          skipChangelog: true
+        }),
+        previewData,
+        previewGraph
+      );
+    });
+
+    it('runs the real passes only on the selected projects and from their own results', async () => {
+      const realData = buildVersionData({ 'pkg-a': '1.1.0' });
+      const realGraph = { real: true } as unknown as ReleaseVersionResult['releaseGraph'];
+      mockReleaseVersion
+        .mockResolvedValueOnce(versionResult(previewData, previewGraph))
+        .mockResolvedValueOnce(versionResult(realData, realGraph));
+      mockSelectReleasableProjects.mockResolvedValue({ released: ['pkg-a'], projects: ['pkg-a'] });
+
+      await releaseGenerator(tree, options());
+
+      expect(mockReleaseVersion).toHaveBeenLastCalledWith(
+        expect.objectContaining({ dryRun: false, projects: ['pkg-a'] })
+      );
+      expect(mockReleaseChangelog).toHaveBeenCalledTimes(1);
+      expect(mockReleaseChangelog).toHaveBeenCalledWith(
+        expect.objectContaining({
+          dryRun: false,
+          projects: ['pkg-a'],
+          releaseGraph: realGraph,
+          versionData: realData
+        })
+      );
+    });
+
+    it('checks tag availability for the released projects only', async () => {
+      mockReleaseVersion.mockResolvedValueOnce(versionResult(previewData, previewGraph));
+      mockSelectReleasableProjects.mockResolvedValue({ released: ['pkg-a'], projects: ['pkg-a'] });
+
+      await releaseGenerator(tree, options());
+
+      expect(mockAssertReleaseTagsAvailable).toHaveBeenCalledWith(
+        { 'pkg-a': previewData['pkg-a'] },
+        'release/2026-09-11',
+        gitClient
+      );
+    });
+
+    describe('when every project is skipped', () => {
+      beforeEach(() => {
+        mockCheckoutReleaseBranch.mockResolvedValue({
+          created: true,
+          releaseBranch: 'release/2026-09-11',
+          restoreBranch: 'feature/x'
+        });
+        mockSelectReleasableProjects.mockResolvedValue({ released: [], projects: [] });
+      });
+
+      it('exits cleanly with no commit, tag or PR', async () => {
+        const callback = await releaseGenerator(tree, options());
+        await callback();
+
+        expect(logger.info).toHaveBeenCalledWith('Nothing needs releasing.');
+        expect(mockReleaseVersion).toHaveBeenCalledTimes(1);
+        expect(gitClient.commit).not.toHaveBeenCalled();
+        expect(mockTagReleasedProjects).not.toHaveBeenCalled();
+        expect(mockCreatePullRequest).not.toHaveBeenCalled();
+      });
+
+      it('previews on the release branch and then removes the branch it cut', async () => {
+        await releaseGenerator(tree, options());
+
+        expect(mockCheckoutReleaseBranch.mock.invocationCallOrder[0]).toBeLessThan(
+          mockReleaseVersion.mock.invocationCallOrder[0]
+        );
+        expect(gitClient.checkout).toHaveBeenCalledWith('feature/x');
+        expect(gitClient.deleteLocalBranch).toHaveBeenCalledWith('release/2026-09-11', true);
+      });
+
+      it('keeps a release branch that already existed', async () => {
+        mockCheckoutReleaseBranch.mockResolvedValue({
+          created: false,
+          releaseBranch: 'release/2026-09-11',
+          restoreBranch: 'feature/x'
+        });
+
+        await releaseGenerator(tree, options());
+
+        expect(gitClient.checkout).toHaveBeenCalledWith('feature/x');
+        expect(gitClient.deleteLocalBranch).not.toHaveBeenCalled();
+      });
+
+      it('does not touch git in a dry run', async () => {
+        mockDryRunEnabled.mockReturnValue(true);
+
+        await releaseGenerator(tree, options());
+
+        expect(mockCheckoutReleaseBranch).not.toHaveBeenCalled();
+        expect(gitClient.deleteLocalBranch).not.toHaveBeenCalled();
+      });
     });
   });
 
@@ -543,6 +684,7 @@ describe('releaseGenerator', () => {
   describe('the returned commit/push callback', () => {
     it('only logs and restores the branch when there is nothing to release', async () => {
       mockCheckoutReleaseBranch.mockResolvedValue({
+        created: false,
         releaseBranch: 'release/2026-09-11',
         restoreBranch: 'feature/x'
       });
@@ -634,6 +776,7 @@ describe('releaseGenerator', () => {
 
       it('restores the starting branch after a successful release', async () => {
         mockCheckoutReleaseBranch.mockResolvedValue({
+          created: false,
           releaseBranch: 'release/2026-09-11',
           restoreBranch: 'feature/x'
         });
@@ -646,6 +789,7 @@ describe('releaseGenerator', () => {
 
       it('does not attempt to restore when there was nothing to restore', async () => {
         mockCheckoutReleaseBranch.mockResolvedValue({
+          created: false,
           releaseBranch: 'release/2026-09-11',
           restoreBranch: null
         });
@@ -661,11 +805,12 @@ describe('releaseGenerator', () => {
   describe('error handling', () => {
     it('restores the starting branch and rethrows when releaseVersion fails', async () => {
       mockCheckoutReleaseBranch.mockResolvedValue({
+        created: false,
         releaseBranch: 'release/2026-09-11',
         restoreBranch: 'feature/x'
       });
       mockReleaseVersion
-        .mockResolvedValueOnce(versionResult(buildVersionData({})))
+        .mockResolvedValueOnce(versionResult(buildVersionData({ 'pkg-a': '1.1.0' })))
         .mockRejectedValueOnce(new Error('boom'));
 
       await expect(releaseGenerator(tree, options())).rejects.toThrow('boom');
@@ -674,6 +819,7 @@ describe('releaseGenerator', () => {
 
     it('restores the starting branch even when the commit/push callback itself fails', async () => {
       mockCheckoutReleaseBranch.mockResolvedValue({
+        created: false,
         releaseBranch: 'release/2026-09-11',
         restoreBranch: 'feature/x'
       });

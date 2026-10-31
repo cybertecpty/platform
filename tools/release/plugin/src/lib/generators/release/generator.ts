@@ -23,21 +23,15 @@ import {
   assertReleaseTagsAvailable
 } from '../../utils/release-preflight.utils';
 import {
+  getReleaseCommandOptions,
   resolveAffectedReleaseProjects,
+  selectReleasableProjects,
   tagReleasedProjects
 } from '../../utils/release-projects.utils';
-import { resolveWorkspaceReleaseType } from '../../utils/release-versions.utils';
+import { pickVersionData, resolveWorkspaceReleaseType } from '../../utils/release-versions.utils';
 import { packageVersionGenerator } from '../package-version/generator';
 import releaseManifestGenerator from '../release-manifest/generator';
 import type { NormalizedReleaseGeneratorOptions, ReleaseGeneratorOptions } from './schema';
-
-export type ReleaseCommandOptions = {
-  dryRun: boolean;
-  gitCommit: false;
-  gitPush: false;
-  gitTag: false;
-  stageChanges: true;
-};
 
 /**
  * Shared Git client instance for the entire release generator run.
@@ -92,31 +86,62 @@ export async function releaseGenerator(
     git
   );
 
-  if (!isDryRun && !opts.skipTag) {
-    // A dry-run version pass writes nothing; it only reveals the tags this run would create.
-    const { projectsVersionData } = await releaseVersion({
-      firstRelease: opts.firstRelease,
-      projects: opts.projects,
-      specifier: opts.vers,
-      ...getReleaseCommandOptions(true)
-    });
-
-    await assertReleaseTagsAvailable(projectsVersionData, releaseBranch, git);
-  }
-
   let restoreBranch: string | null = null;
+  let createdBranch: string | null = null;
 
   if (isDryRun) {
     logger.warn(`Dry run: release would be cut on ${releaseBranch}.`);
   } else {
-    ({ restoreBranch } = await checkoutReleaseBranch(branchOpts, git));
+    const checkout = await checkoutReleaseBranch(branchOpts, git);
+
+    ({ restoreBranch } = checkout);
+    createdBranch = checkout.created ? checkout.releaseBranch : null;
   }
 
   const releaseCommandOptions = getReleaseCommandOptions(isDryRun);
 
   try {
+    // A dry-run pass writes nothing. It runs on the release branch, so it sees the
+    // commits and tags the real pass will, and reveals the tags this run would create
+    // and which projects have nothing to release, so skipped projects leave no trace.
+    // Nothing is written yet, so the release branch is abandoned if this stage ends the run.
+    let projects: string[] | undefined;
+
+    try {
+      const { projectsVersionData: previewVersionData, releaseGraph: previewGraph } =
+        await releaseVersion({
+          firstRelease: opts.firstRelease,
+          projects: opts.projects,
+          specifier: opts.vers,
+          ...getReleaseCommandOptions(true)
+        });
+      const releasable = await selectReleasableProjects(opts, previewVersionData, previewGraph);
+
+      if (releasable.released.length === 0) {
+        logger.info('Nothing needs releasing.');
+        await abandonReleaseBranch(restoreBranch, createdBranch, git);
+        restoreBranch = null;
+
+        return () => Promise.resolve();
+      }
+
+      ({ projects } = releasable);
+
+      if (!isDryRun && !opts.skipTag) {
+        await assertReleaseTagsAvailable(
+          pickVersionData(previewVersionData, releasable.released),
+          releaseBranch,
+          git
+        );
+      }
+    } catch (error) {
+      await abandonReleaseBranch(restoreBranch, createdBranch, git);
+      restoreBranch = null;
+      throw error;
+    }
+
     // 2. Calculate and stage project package version changes.
-    const { firstRelease, projects, vers: schemaVersion } = opts;
+    const { firstRelease, vers: schemaVersion } = opts;
     const { projectsVersionData, releaseGraph } = await releaseVersion({
       firstRelease,
       projects,
@@ -138,7 +163,7 @@ export async function releaseGenerator(
       projectChangelogs = (
         await releaseChangelog({
           firstRelease: opts.firstRelease,
-          projects: opts.projects,
+          projects,
           // Reuses the graph releaseVersion already built instead of having
           // releaseChangelog recompute it from scratch.
           releaseGraph,
@@ -202,6 +227,23 @@ export async function releaseGenerator(
   } catch (error) {
     await restoreStartingBranch(restoreBranch, git);
     throw error;
+  }
+}
+
+/**
+ * Leaves a release that produced nothing to commit: switches back to the starting branch and
+ * deletes the release branch this run cut, so an abandoned run leaves no branch behind. A
+ * pre-existing release branch, or one that cannot be left (detached start), is kept.
+ */
+async function abandonReleaseBranch(
+  restoreBranch: string | null,
+  createdBranch: string | null,
+  git: SimpleGit
+): Promise<void> {
+  await restoreStartingBranch(restoreBranch, git);
+
+  if (restoreBranch && createdBranch) {
+    await git.deleteLocalBranch(createdBranch, true);
   }
 }
 
@@ -277,20 +319,6 @@ async function generateReleaseManifests(
   }
 
   return manifestPaths;
-}
-
-/**
- *
- */
-function getReleaseCommandOptions(dryRun: boolean): ReleaseCommandOptions {
-  return {
-    dryRun,
-    // Stage Nx release changes so the final manifest commit can include them in one release commit.
-    gitCommit: false,
-    gitPush: false,
-    gitTag: false,
-    stageChanges: true
-  };
 }
 
 /**

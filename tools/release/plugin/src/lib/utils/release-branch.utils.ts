@@ -6,6 +6,8 @@ import { simpleGit, type SimpleGit } from 'simple-git';
  * The outcome of {@link checkoutReleaseBranch}.
  */
 export type CheckoutReleaseBranchResult = {
+  /** Whether this call cut {@link releaseBranch}, as opposed to finding it already there. */
+  readonly created: boolean;
   /** The branch now checked out, which release artifacts should be committed to. */
   readonly releaseBranch: string;
   /**
@@ -70,6 +72,7 @@ export async function checkoutReleaseBranch(
     }
 
     return {
+      created: false,
       releaseBranch: baseBranch,
       restoreBranch: getRestoreBranch(currentBranch, baseBranch)
     };
@@ -77,9 +80,11 @@ export async function checkoutReleaseBranch(
 
   const releaseBranch = resolveReleaseBranchName(opts);
 
+  const exists = await gitBranchExists(releaseBranch, git);
+
   // An existing release branch must become HEAD before we generate any release
   // artifacts.
-  if (await gitBranchExists(releaseBranch, git)) {
+  if (exists) {
     if (currentBranch !== releaseBranch) {
       await git.checkout(releaseBranch);
     }
@@ -91,6 +96,7 @@ export async function checkoutReleaseBranch(
   }
 
   return {
+    created: !exists,
     releaseBranch,
     restoreBranch: getRestoreBranch(currentBranch, releaseBranch)
   };
