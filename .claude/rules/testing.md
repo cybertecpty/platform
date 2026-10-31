@@ -53,6 +53,13 @@ defaults. Loads when working on specs, test artifacts, `type:testing` libs, or J
   `.only`, an `expect()` with no matcher, or a duplicated `it()` title fails `nx lint` (ADR
   0008). The same block relaxes `@nx/enforce-module-boundaries` and a few TS rules for test code.
 - Prefer direct assertions over snapshots.
+- **Don't test a function by mocking the collaborator that holds its behavior.** A spec that
+  hands canned output to a mocked `simple-git` or `raw` proves which calls the function makes,
+  not that git answers the way the function assumes. Run it against the real thing: for git, a
+  throwaway repository from `@cybertecpty/git-testing` (`createGitRepoFixture`,
+  `cloneGitRepoFixture`). Keep one `.spec.ts` per source file, not a mocked spec plus an
+  `.integration.spec.ts`, and no file-wide `simple-git` mock in a spec that uses the fixture.
+  A case real git cannot produce (unparsable output) may stay as one fake-client case.
 - Run one spec file with a Jest path pattern after `--`:
   `pnpm exec nx test {project} -- {file-pattern}`. Nx forwards unknown flags to Jest, which has no
   `--testFile`, so that flag fails the run.
