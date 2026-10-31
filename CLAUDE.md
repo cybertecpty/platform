@@ -34,6 +34,10 @@ you should, no silent scope changes, be concise, …) is in `docs/agents/princip
 plugin's injected `conventions.md` / `core-principles.md` for this repo. Read them
 before any commit, push, PR, or scaffolding task.
 
+`/implement {n}` commits to whatever branch is checked out. Before it, do the check, claim and
+worktree steps in `.claude/skills/commit-push-pr` ("Before you start"), and implement inside the
+new worktree, never on `develop` in the main clone.
+
 ### Issue tracker
 
 Issues live in GitHub Issues on `cybertecpty/platform`. See `docs/agents/issue-tracker.md`.

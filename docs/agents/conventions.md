@@ -152,9 +152,10 @@ and agent sessions have no bypass on either branch.
 `deploy-affected.yml` merges `main` into `develop` and pushes it directly as the App — a
 real two-parent merge (`--no-ff`), never a squash. On conflict it aborts and fails; then
 back-merge by hand on a `chore/back-merge-main-{date}` branch through a normal PR, merged
-as a **merge commit**. The release generator enforces this: a real run fails before any side
-effect if `origin/main` has commits `origin/develop` lacks, or if a release tag it would create
-already exists off the release branch (`--dry-run` only warns about the stale base).
+as a **merge commit**. The release generator enforces this: a real run fails before it writes
+any file, commit, push or PR if `origin/main` has commits `origin/develop` lacks, or if a release
+tag it would create already exists off the release branch. It deletes any release branch it cut
+before failing, and `--dry-run` only warns about the stale base.
 
 **Release PRs (live).** Release PRs into `main` merge as **merge commits, not squash** —
 squashing orphans the `{project}@{version}` tag the release generator creates on the release
