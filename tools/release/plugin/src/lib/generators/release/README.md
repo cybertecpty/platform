@@ -71,6 +71,21 @@ mechanics, not the rationale.
    - Restores the branch that was checked out before the run, whether or not any of the above
      succeeds.
 
+## Known limitations
+
+These do not affect the usual setup (plain `{projectName}@{version}` tags on one branch,
+conventional commits, no `--from`).
+
+- **Library entries in an app's changelog.** `DependencyChangelogRenderer` lists library commits
+  since the app's last release tag. It picks that tag itself (the highest version reachable from
+  `HEAD`) rather than using Nx's own resolution, so prerelease tags, `checkAllBranchesWhen`, or a
+  `--from` override can make its range differ from Nx's. Release tags are matched through the global
+  `release.releaseTag.pattern`; a pattern set on a single release group is ignored. Version plans
+  are not considered.
+- **A bump with no visible entry.** A library commit Nx counts as a bump but the renderer omits
+  (a hidden type, an unknown type, or a message that is not a conventional commit) leaves the app
+  bumped with an empty entry, so the skip rule releases nothing for it.
+
 ## Prerequisites
 
 - A clean working tree (checking out the release branch refuses otherwise).
