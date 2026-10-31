@@ -16,29 +16,35 @@ mechanics, not the rationale.
    releasable projects and what's actually changed since the merge-base with `targetBranch` (or
    an explicit `--base`). If nothing matches, logs and returns a no-op — nothing else in the
    list below runs.
-   Then runs a preflight that fails before any side effect: `origin/<targetBranch>` must not
-   have commits `origin/<baseBranch>` lacks (back-merge first; with `--dry-run` this only
-   warns), and, unless `--skipTag`, no tag the run would create may already exist off the
-   release branch. A same-day re-run on its existing `release/<date>` branch still passes.
-3. Cuts (or reuses) the release branch — `release/<releaseDate>` off `baseBranch` — unless
+3. Runs a preflight that fails before any side effect (no file, branch, commit, push or PR):
+   - `origin/<targetBranch>` must not have commits `origin/<baseBranch>` lacks. If it does, back-merge
+     `targetBranch` into `baseBranch` first; the generator only checks and never merges. With
+     `--dry-run` this only warns. The check fetches both branches and the tags first.
+   - Unless `--skipTag` or `--dry-run`, no tag the run would create may already exist on a commit
+     off the release branch. To learn the tags, the preflight runs `releaseVersion` once with
+     `dryRun` (it writes nothing) on the **current** branch, before the release branch is checked
+     out. A same-day re-run on its existing local `release/<date>` branch still passes. That dry-run pass also runs with `--skipTag` or `--dry-run`, to find projects with nothing to release (step 5).
+4. Cuts (or reuses) the release branch — `release/<releaseDate>` off `baseBranch` — unless
    `--skipBranch` commits straight to `baseBranch` instead. Skipped entirely in a dry run
    (`--dry-run` / `NX_DRY_RUN`): only the branch name is resolved, the working tree is untouched.
-4. Previews `releaseVersion` and (unless `--skipChangelog`) `releaseChangelog` in a dry run to find
-   projects with nothing to release, then runs both for real on the rest, reusing the release graph
-   between the two calls. A project is **skipped** only when it has no changelog entries of its own
-   _and_ none of its workspace dependencies is released in the same run (a dependency released
-   transitively counts). A skipped project leaves no trace: no version, changelog, manifest, tag, or
-   PR mention, and one log line says why. If every project is skipped the run logs
-   `Nothing needs releasing.` and exits without a branch or PR. A dependency that reaches an app
-   only through e2e or dev tooling still counts as released. Relies on `entryWhenNoChanges: false`
-   in `nx.json`'s `projectChangelogs`; with `--skipChangelog` nothing is skipped.
-5. Bumps the root `package.json` to the highest release type (major/minor/patch) among the
+5. Runs Nx's own `releaseVersion` for real, then (unless `--skipChangelog`) `releaseChangelog`,
+   reusing the release graph between the two calls. Both run only on projects with something to
+   release, found by previewing `releaseVersion` and `releaseChangelog` in a dry run beforehand
+   (the same dry-run `releaseVersion` the preflight uses). A project is **skipped** only when it
+   has no changelog entries of its own _and_ none of its workspace dependencies is released in the
+   same run (a dependency released transitively counts). A skipped project leaves no trace: no
+   version, changelog, manifest, tag, or PR mention, and one log line says why. If every project is
+   skipped the run logs `Nothing needs releasing.` and exits without a branch or PR. A dependency
+   that reaches an app only through e2e or dev tooling still counts as released. Relies on
+   `entryWhenNoChanges: false` in `nx.json`'s `projectChangelogs`; with `--skipChangelog` nothing
+   is skipped.
+6. Bumps the root `package.json` to the highest release type (major/minor/patch) among the
    projects actually released this run, unless `--skipWorkspaceVersion`. Logs a warning and
    skips the bump if nothing was released.
-6. Writes a `release-manifest.json` (via the `release-manifest` generator) for each project that
+7. Writes a `release-manifest.json` (via the `release-manifest` generator) for each project that
    received a new version, unless `--skipManifest`.
-7. Formats the tree unless `--skipFormat`.
-8. Returns a callback — invoked by Nx after the tree is flushed to disk — that, only if there's
+8. Formats the tree unless `--skipFormat`.
+9. Returns a callback — invoked by Nx after the tree is flushed to disk — that, only if there's
    something to release:
    - commits the changelog, manifest, and workspace-version changes as **one** release commit;
    - tags each released project `<project>@<version>` unless `--skipTag`;
