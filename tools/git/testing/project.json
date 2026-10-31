@@ -1,0 +1,10 @@
+{
+  "name": "git-testing",
+  "$schema": "../../../node_modules/nx/schemas/project-schema.json",
+  "sourceRoot": "tools/git/testing/src",
+  "projectType": "library",
+  "tags": ["scope:tools", "type:testing"],
+  "targets": {
+    "typecheck": {}
+  }
+}

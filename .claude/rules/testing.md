@@ -29,8 +29,11 @@ defaults. Loads when working on specs, test artifacts, `type:testing` libs, or J
   stay inline, with no suffix. These suffixes are reserved for test code; don't use them for
   production files. There is deliberately no `.builder` suffix: a test-data builder is a
   `.fixture`, because "builder" collides with production builders and Angular CLI builders.
-  Shared artifacts go in a `type:testing` lib (ADR 0004), and an artifact used by one spec
-  stays beside it.
+  **Always put test artifacts in a `type:testing` lib (ADR 0004), never beside the spec**,
+  even when one spec uses them. If the project has no testing lib yet, generate one
+  (`nx g @cybertecpty/js-plugin:ts-lib testing ...`); a testing lib must not import the
+  project whose specs use it, or the project graph gets a cycle. Spies (`jest.spyOn`) and
+  dummies stay inline.
 
 - **Name the function that creates a test artifact after its kind**, so a call site shows it
   isn't the real thing. Ask whether it pretends to be the thing or is data of that type:

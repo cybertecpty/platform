@@ -19,6 +19,10 @@ import simpleGit from 'simple-git';
 import { checkoutReleaseBranch, resolveReleaseBranchName } from '../../utils/release-branch.utils';
 import { buildReleasePrBody } from '../../utils/release-pr.utils';
 import {
+  assertBaseIncludesTarget,
+  assertReleaseTagsAvailable
+} from '../../utils/release-preflight.utils';
+import {
   resolveAffectedReleaseProjects,
   tagReleasedProjects
 } from '../../utils/release-projects.utils';
@@ -81,6 +85,24 @@ export async function releaseGenerator(
   //    working tree is left untouched.
   const branchOpts = { baseBranch, releaseDate, skipBranch: opts.skipBranch };
   const releaseBranch = resolveReleaseBranchName(branchOpts);
+
+  // Preflight: fail before any side effect when the inputs are wrong.
+  await assertBaseIncludesTarget(
+    { baseBranch, dryRun: isDryRun, targetBranch: opts.targetBranch },
+    git
+  );
+
+  if (!isDryRun && !opts.skipTag) {
+    // A dry-run version pass writes nothing; it only reveals the tags this run would create.
+    const { projectsVersionData } = await releaseVersion({
+      firstRelease: opts.firstRelease,
+      projects: opts.projects,
+      specifier: opts.vers,
+      ...getReleaseCommandOptions(true)
+    });
+
+    await assertReleaseTagsAvailable(projectsVersionData, releaseBranch, git);
+  }
 
   let restoreBranch: string | null = null;
 
