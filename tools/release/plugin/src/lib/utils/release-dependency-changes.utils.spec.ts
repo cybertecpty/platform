@@ -23,7 +23,8 @@ const graph = createDependencyGraphFixture(
     createProjectNodeFixture({ name: 'web', root: 'apps/web', type: 'app' }),
     createProjectNodeFixture({ name: 'ui', root: 'libs/ui' }),
     createProjectNodeFixture({ name: 'core', root: 'libs/core' }),
-    createProjectNodeFixture({ name: 'unrelated', root: 'libs/unrelated' })
+    createProjectNodeFixture({ name: 'unrelated', root: 'libs/unrelated' }),
+    createProjectNodeFixture({ name: 'ui-docs', root: 'libs/ui/docs' })
   ],
   [
     ['web', 'ui'],
@@ -127,6 +128,12 @@ describe('findDependencyChanges', () => {
 
   it('leaves out a library path that only shares a name prefix', async () => {
     await commitFile('libs/ui-extra/x.ts', 'fix: something');
+
+    await expect(find()).resolves.toEqual([]);
+  });
+
+  it('leaves out a project nested inside a dependency that is not itself a dependency', async () => {
+    await commitFile('libs/ui/docs/guide.ts', 'fix(ui-docs): reword the guide');
 
     await expect(find()).resolves.toEqual([]);
   });

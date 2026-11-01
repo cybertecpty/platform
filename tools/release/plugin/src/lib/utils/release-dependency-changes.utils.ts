@@ -1,5 +1,9 @@
 import { gitCommitsBetween, gitLatestTagMatching } from '@cybertecpty/git-utils';
-import { collectProjectDependencies } from '@cybertecpty/nx-utils';
+import {
+  collectProjectDependencies,
+  createProjectRootMappings,
+  findProjectForPath
+} from '@cybertecpty/nx-utils';
 import type { ProjectGraph } from '@nx/devkit';
 import type { ChangelogChange } from 'nx/release/changelog-renderer';
 import simpleGit, { type SimpleGit } from 'simple-git';
@@ -41,13 +45,13 @@ export async function findDependencyChanges(
   git: SimpleGit = simpleGit()
 ): Promise<ChangelogChange[]> {
   const { commitTypes, knownHashes, project, projectGraph } = options;
-  const roots = collectProjectDependencies(projectGraph, project).map(
-    name => projectGraph.nodes[name].data.root
-  );
+  const dependencies = new Set(collectProjectDependencies(projectGraph, project));
 
-  if (roots.length === 0) {
+  if (dependencies.size === 0) {
     return [];
   }
+
+  const rootMappings = createProjectRootMappings(projectGraph.nodes);
 
   const lastRelease = await gitLatestTagMatching(
     releaseTagGlob(options.releaseTagPattern, project),
@@ -61,7 +65,11 @@ export async function findDependencyChanges(
 
     if (
       knownHashes.includes(shortHash) ||
-      !commit.files.some(file => roots.some(root => isUnder(file, root)))
+      !commit.files.some(file => {
+        const owner = findProjectForPath(file, rootMappings);
+
+        return owner !== null && dependencies.has(owner);
+      })
     ) {
       continue;
     }
@@ -82,10 +90,6 @@ export async function findDependencyChanges(
  */
 export function releaseTagGlob(pattern: string, project: string): string {
   return pattern.replaceAll('{projectName}', project).replaceAll(/\{[^}]+\}/g, '*');
-}
-
-function isUnder(file: string, root: string): boolean {
-  return file.startsWith(`${root}/`);
 }
 
 /**
