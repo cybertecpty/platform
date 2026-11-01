@@ -4,7 +4,6 @@ import { mkdirSync, writeFileSync } from 'node:fs';
 import { dirname, join } from 'node:path';
 
 import {
-  collectDependencyRoots,
   findDependencyChanges,
   releaseTagGlob,
   type ConventionalCommitTypes
@@ -32,31 +31,6 @@ const graph = createDependencyGraphFixture(
     ['web', 'npm:react']
   ]
 );
-
-describe('collectDependencyRoots', () => {
-  it('follows workspace dependencies transitively and skips external packages', () => {
-    expect(collectDependencyRoots(graph, 'web')).toEqual(['libs/ui', 'libs/core']);
-  });
-
-  it('returns nothing for a project that depends on nothing', () => {
-    expect(collectDependencyRoots(graph, 'unrelated')).toEqual([]);
-  });
-
-  it('survives a dependency cycle', () => {
-    const cyclic = createDependencyGraphFixture(
-      [
-        createProjectNodeFixture({ name: 'a', root: 'apps/a', type: 'app' }),
-        createProjectNodeFixture({ name: 'b', root: 'libs/b' })
-      ],
-      [
-        ['a', 'b'],
-        ['b', 'a']
-      ]
-    );
-
-    expect(collectDependencyRoots(cyclic, 'a')).toEqual(['libs/b']);
-  });
-});
 
 describe('releaseTagGlob', () => {
   it('fills in the project and matches any version', () => {

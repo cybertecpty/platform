@@ -1,4 +1,5 @@
 import { gitCommitsBetween, gitLatestTagMatching } from '@cybertecpty/git-utils';
+import { collectProjectDependencies } from '@cybertecpty/nx-utils';
 import type { ProjectGraph } from '@nx/devkit';
 import type { ChangelogChange } from 'nx/release/changelog-renderer';
 import simpleGit, { type SimpleGit } from 'simple-git';
@@ -29,28 +30,6 @@ const CONVENTIONAL_SUBJECT =
   /^(?<type>\w+)(?:\((?<scope>[^)]*)\))?(?<breaking>!)?: (?<description>.+)$/;
 
 /**
- * Lists the roots of the workspace projects `project` depends on, directly or transitively.
- * External (npm) dependencies are not projects in the graph and are left out.
- */
-export function collectDependencyRoots(graph: ProjectGraph, project: string): string[] {
-  const seen = new Set<string>([project]);
-  const queue = [project];
-
-  for (const current of queue) {
-    for (const { target } of graph.dependencies[current] ?? []) {
-      if (graph.nodes[target] && !seen.has(target)) {
-        seen.add(target);
-        queue.push(target);
-      }
-    }
-  }
-
-  seen.delete(project);
-
-  return [...seen].map(name => graph.nodes[name].data.root);
-}
-
-/**
  * Finds the commits since the project's last release that touched a workspace dependency but not
  * the project itself, as changelog entries for the project.
  *
@@ -62,7 +41,9 @@ export async function findDependencyChanges(
   git: SimpleGit = simpleGit()
 ): Promise<ChangelogChange[]> {
   const { commitTypes, knownHashes, project, projectGraph } = options;
-  const roots = collectDependencyRoots(projectGraph, project);
+  const roots = collectProjectDependencies(projectGraph, project).map(
+    name => projectGraph.nodes[name].data.root
+  );
 
   if (roots.length === 0) {
     return [];
