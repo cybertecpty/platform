@@ -74,7 +74,7 @@ export async function findDependencyChanges(
       continue;
     }
 
-    const change = toChange(commit.message, shortHash, project, commitTypes);
+    const change = toChangelogChange(commit.message, shortHash, project, commitTypes);
 
     if (change) {
       changes.push(change);
@@ -96,7 +96,7 @@ export function releaseTagGlob(pattern: string, project: string): string {
  * Turns a conventional-commit subject into a changelog entry for `project`, or `null` when the
  * subject is not conventional or its type is hidden from changelogs.
  */
-function toChange(
+function toChangelogChange(
   subject: string,
   shortHash: string,
   project: string,
