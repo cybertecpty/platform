@@ -112,6 +112,7 @@
       "workspaceChangelog": false,
       "projectChangelogs": {
         "createRelease": "github",
+        "renderer": "{workspaceRoot}/tools/release/plugin/src/lib/changelog/dependency-changelog-renderer.ts",
         "entryWhenNoChanges": false,
         "renderOptions": {
           "authors": false

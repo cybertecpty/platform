@@ -69,6 +69,18 @@ describe('gitCommitsBetween', () => {
   });
 });
 
+describe('gitCommitsBetween without a lower bound', () => {
+  it('lists every commit reachable from `to`', async () => {
+    const first = await commitFile('a.ts', 'feat: a');
+    const second = await commitFile('b.ts', 'feat: b');
+
+    await expect(gitCommitsBetween(null, 'HEAD', repo.git)).resolves.toEqual([
+      { hash: second, message: 'feat: b', files: ['b.ts'] },
+      { hash: first, message: 'feat: a', files: ['a.ts'] }
+    ]);
+  });
+});
+
 describe('gitMergeBase', () => {
   it('returns the commit two diverged branches share', async () => {
     const base = await repo.commit('base');

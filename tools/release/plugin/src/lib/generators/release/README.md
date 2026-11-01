@@ -39,9 +39,13 @@ mechanics, not the rationale.
    of its workspace dependencies is released in the same run (a dependency released transitively
    counts). A skipped project leaves no trace: no version, changelog, manifest, tag, or PR mention,
    and one log line says why. If every project is skipped the run logs `Nothing needs releasing.`
-   and exits without a branch or PR. Only projects in the release set count as dependencies: a
-   workspace library that is not configured for release is never versioned, so a change to it
-   neither releases nor protects a dependent. Relies on `entryWhenNoChanges: false` in `nx.json`'s
+   and exits without a branch or PR. Only projects in the release set count as released
+   dependencies, but a library change still reaches an app: Nx bumps an app whose imported
+   library changed, yet lists only commits to the app's own files, so the changelog renderer
+   (`DependencyChangelogRenderer`, set in `nx.json`) adds the commits since the app's last
+   release tag that touched any workspace library the app imports, directly or through another
+   library. Those entries make the app release and show which change caused the bump; a
+   library change the app does not import adds nothing. Relies on `entryWhenNoChanges: false` in `nx.json`'s
    `projectChangelogs`; with `--skipChangelog` nothing is skipped.
 6. Bumps the root `package.json` to the highest release type (major/minor/patch) among the
    projects actually released this run, unless `--skipWorkspaceVersion`. Logs a warning and
@@ -66,6 +70,28 @@ mechanics, not the rationale.
      account is not the bot.
    - Restores the branch that was checked out before the run, whether or not any of the above
      succeeds.
+
+## Known limitations
+
+These do not affect the usual setup (plain `{projectName}@{version}` tags on one branch,
+conventional commits, no `--from`).
+
+`DependencyChangelogRenderer` works around an Nx bug
+([nrwl/nx#37575](https://github.com/nrwl/nx/issues/37575)); remove it once the fix
+([nrwl/nx#37578](https://github.com/nrwl/nx/pull/37578)) ships in the Nx version we use.
+
+- **Library entries in an app's changelog.** `DependencyChangelogRenderer` lists library commits
+  since the app's last release tag. It picks that tag itself (the highest version reachable from
+  `HEAD`) rather than using Nx's own resolution, so prerelease tags, `checkAllBranchesWhen`, or a
+  `--from` override can make its range differ from Nx's. Release tags are matched through the global
+  `release.releaseTag.pattern`; a pattern set on a single release group is ignored. Version plans
+  are not considered.
+- **A bump with no visible entry.** A library commit Nx counts as a bump but the renderer omits
+  (a hidden type, an unknown type, or a message that is not a conventional commit) leaves the app
+  bumped with an empty entry, so the skip rule releases nothing for it.
+- **Library entries carry only the commit subject.** The renderer reads the subject line, so a
+  library commit whose breaking change is declared in a `BREAKING CHANGE:` footer (without `!`)
+  renders without the breaking marker, and its entry has no PR or commit links.
 
 ## Prerequisites
 

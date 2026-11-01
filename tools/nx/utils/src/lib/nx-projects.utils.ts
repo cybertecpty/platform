@@ -6,7 +6,7 @@ import type {
   NxProjectScope,
   NxProjectType
 } from '@cybertecpty/nx-types';
-import { joinPathFragments, logger, readJson, type Tree } from '@nx/devkit';
+import { joinPathFragments, logger, readJson, type ProjectGraph, type Tree } from '@nx/devkit';
 import type { PackageJson } from 'type-fest';
 import { domainPathToName, splitDomainPath } from './nx-domain.utils';
 import { assertValidPathSegment } from './nx-path-segment.utils';
@@ -70,6 +70,29 @@ export const NX_PROJECT_TYPES: readonly NxProjectType[] = Object.keys(
  * .NET projects created with `dotnet new`, not scaffolded by the TypeScript generators.
  */
 export const BACKEND_LIB_TYPES: readonly BackendLibType[] = ['api', 'infra', 'services'];
+
+/**
+ * Lists the workspace projects `project` depends on, directly or transitively, in the order the
+ * walk finds them. External (npm) dependencies are not projects in the graph and are left out, and
+ * a dependency cycle does not repeat a project or include `project` itself.
+ */
+export function collectProjectDependencies(graph: ProjectGraph, project: string): string[] {
+  const seen = new Set<string>([project]);
+  const queue = [project];
+
+  for (const current of queue) {
+    for (const { target } of graph.dependencies[current] ?? []) {
+      if (graph.nodes[target] && !seen.has(target)) {
+        seen.add(target);
+        queue.push(target);
+      }
+    }
+  }
+
+  seen.delete(project);
+
+  return [...seen];
+}
 
 /**
  * Determines the top-level directory a project's source lives under: `apps`

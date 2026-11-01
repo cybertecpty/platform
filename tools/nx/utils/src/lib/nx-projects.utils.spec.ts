@@ -1,7 +1,9 @@
+import { createDependencyGraphFixture, createProjectNodeFixture } from '@cybertecpty/nx-testing';
 import { logger, type Tree } from '@nx/devkit';
 import { createTreeWithEmptyWorkspace } from '@nx/devkit/testing';
 import {
   BACKEND_LIB_TYPES,
+  collectProjectDependencies,
   determineTopLevelProjectDir,
   normalizeProjectOptions,
   NX_PROJECT_SCOPES,
@@ -381,5 +383,48 @@ describe('normalizeProjectOptions', () => {
     expect(() => normalizeProjectOptions({ scope: 'shared', type: 'utils' })).toThrow(
       'At least one of `domain`, `group`, or `name` must be provided to derive a project name.'
     );
+  });
+});
+
+describe('collectProjectDependencies', () => {
+  const graph = createDependencyGraphFixture(
+    [
+      createProjectNodeFixture({ name: 'web', type: 'app' }),
+      createProjectNodeFixture({ name: 'ui' }),
+      createProjectNodeFixture({ name: 'core' }),
+      createProjectNodeFixture({ name: 'unrelated' })
+    ],
+    [
+      ['web', 'ui'],
+      ['ui', 'core'],
+      ['web', 'npm:react']
+    ]
+  );
+
+  it('follows workspace dependencies transitively and skips external packages', () => {
+    expect(collectProjectDependencies(graph, 'web')).toEqual(['ui', 'core']);
+  });
+
+  it('returns nothing for a project that depends on nothing', () => {
+    expect(collectProjectDependencies(graph, 'unrelated')).toEqual([]);
+  });
+
+  it('returns nothing for a project that is not in the graph', () => {
+    expect(collectProjectDependencies(graph, 'missing')).toEqual([]);
+  });
+
+  it('survives a dependency cycle without listing the project itself', () => {
+    const cyclic = createDependencyGraphFixture(
+      [
+        createProjectNodeFixture({ name: 'a', type: 'app' }),
+        createProjectNodeFixture({ name: 'b' })
+      ],
+      [
+        ['a', 'b'],
+        ['b', 'a']
+      ]
+    );
+
+    expect(collectProjectDependencies(cyclic, 'a')).toEqual(['b']);
   });
 });
