@@ -70,7 +70,6 @@ Hiring managers, technical leads, CTOs, and recruiters evaluating Daniel for a s
 ## 5. Real facts (résumé — as shipped)
 
 - **Daniel McGrath** — Senior Full-Stack Engineer and **Angular consultant & contractor**, 15+ years.
-- **Panama (remote, UTC-5)** · **US citizen** · English & Spanish.
 - **B.S. Information Studies, Florida State University (FSU).**
 - **contact@cybertec.io** · **github.com/cybertecpty** · **linkedin.com/in/djmcgrath101**.
 - Contracting entities: **CyberTec LLC (US)** — C2C, W-9 · **Cyber Technologies Development & Consulting, S.A. (Panama)**.
@@ -117,7 +116,7 @@ Nav (mono, uppercase): **How I help → `#services` · Stack → `#skills` · Ho
 - **Headline:** "I build production software, _made to last_."
 - **Subhead:** "I'm Daniel McGrath — a senior full-stack engineer and Angular consultant with 15+ years shipping production applications, modernizing legacy frontends, and managing Nx monorepos. Available for long-term, full-time remote contract engagements — from platforms serving hundreds of thousands of users to systems I've owned end to end."
 - **CTAs:** primary copper "Get in touch →" → `#contact`; secondary brass "See my work" → `#experience`.
-- **Credibility strip** (mono, Steel, slash-separated): 15+ Years / Remote · Panama (UTC-5) / US Citizen / English & Spanish.
+- **Credibility strip** (mono, Steel, slash-separated): 15+ Years / Remote / US Citizen / English & Spanish.
 
 ### 7.2 How I help (`#services`, Ink) — eyebrow "01 — How I can help"
 
@@ -151,7 +150,7 @@ Three cells (hairline-gap grid), each a copper mono kicker + Fraunces title + bo
 
 ### 7.6 About (`#about`, Ink + subtle grid) — eyebrow "05 — About me"
 
-- **Left:** portrait (square, 1px brass border, ~3px radius, responsive and lazy-loaded); mono fact list — Location: Panama (Remote, UTC-5) · Citizenship: United States · Languages: English & Spanish · Education: B.S. Information Studies, Florida State University.
+- **Left:** portrait (square, 1px brass border, ~3px radius, responsive and lazy-loaded); mono fact list — Location: United States (Remote) · Citizenship: United States · Languages: English & Spanish · Education: B.S. Information Studies, Florida State University.
 - **Right headline:** "I'm _Daniel McGrath_ — the engineer you hire and the one who does the work." (italic copper on the name)
 - **Body:** "Fifteen-plus years across growing teams and solo ownership taught me the same lesson both ways: the cost of software shows up later, in the seams. So I work deliberately from the first line — and I'd rather tell you the harder true thing than the easier comfortable one." / "When you hire me, you get one senior engineer accountable end to end — no account managers, no handoffs to someone more junior. I operate remotely on US-friendly hours and communicate like the people on the other end have a deadline, because usually they do." / "I work as an independent contractor on long-term, full-time engagements, and I can contract through a US LLC or a Panamanian company — whichever fits your procurement process."
 
