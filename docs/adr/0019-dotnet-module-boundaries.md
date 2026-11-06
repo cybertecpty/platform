@@ -182,7 +182,7 @@ What remains unverified:
   ("Debug Failure") when `@nx/js:tsc` built the plugin. The loader works from source, where the
   `.mts` file is. In a built copy of `nx-utils` the path falls back to the `.mjs` that `tsc`
   emits beside it, but that copy cannot run outside the workspace, because it requires the
-  workspace alias `@cybertecpty/shared-utils`. That is fine, because Nx runs plugins and
+  workspace alias `@cybertecpty/shared-utils` (now `@cybertecpty/utils`, ADR 0009 2026-11-05 amendment). That is fine, because Nx runs plugins and
   executors from source. The `require` is cast to its type, so the compiler
   does not check that call. After the Vitest migration (ADR 0018), check whether the matrix can
   be exported from the `nx-utils` barrel and the loader replaced by a plain import.

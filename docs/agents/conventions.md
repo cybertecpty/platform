@@ -280,7 +280,7 @@ dotnet restore Platform.slnx
 - From here, work as in any clone: run everything from inside the worktree and ship with the
   `commit-push-pr` skill:
   ```bash
-  pnpm exec nx run-many -t build test -p cybertec-io shared-utils
+  pnpm exec nx run-many -t build test -p cybertec-io utils
   pnpm exec nx serve cybertec-io
   pnpm exec nx e2e cybertec-io-e2e
   ```

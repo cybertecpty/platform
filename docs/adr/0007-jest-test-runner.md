@@ -138,7 +138,7 @@ that threshold.
   `*.{test-d,types}.ts`, and the barrel `index.ts`), so an untested module counts as a
   gap instead of being invisible. Safe workspace-wide because every project uses a
   `src/` layout.
-- **`type:types` libs stay exempt** — `shared-types` / `nx-types` have no `test` target
+- **`type:types` libs stay exempt** — `shared-types` (now `types`, ADR 0009 2026-11-05 amendment) / `nx-types` have no `test` target
   (no `jest.config.cts`), so `nx run-many -t test` skips them; there is nothing to
   threshold. `passWithNoTests` covers the "config exists, no specs yet" case.
 - **No third-party coverage service.** Codecov / Coveralls were considered for the trend

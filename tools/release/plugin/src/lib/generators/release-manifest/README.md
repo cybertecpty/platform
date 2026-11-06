@@ -34,7 +34,7 @@ pnpm nx g @cybertecpty/release-plugin:release-manifest <project> <version> --sou
 ```json
 {
   "author": "Jane Doe (jane@example.com)",
-  "project": "shared-types",
+  "project": "types",
   "releaseDate": "2026-04-22T15:30:00.000Z",
   "sourceCommit": "abc123def4",
   "version": "1.2.3"
@@ -45,7 +45,7 @@ pnpm nx g @cybertecpty/release-plugin:release-manifest <project> <version> --sou
 name resolves.
 
 The file's shape is the `ReleaseManifest` interface exported from
-[`@cybertecpty/shared-types`](../../../../../../../libs/shared/types/src/lib/release.types.ts) — apps and
+[`@cybertecpty/types`](../../../../../../../libs/shared/types/src/lib/release.types.ts) — apps and
 libraries that read the manifest at runtime should import it from there.
 
 ## Options
@@ -64,10 +64,10 @@ libraries that read the manifest at runtime should import it from there.
 
 ```bash
 # libs/shared/types/release-manifest.json, current git author and timestamp
-pnpm nx g @cybertecpty/release-plugin:release-manifest shared-types 1.4.0 --sourceCommit abc123def4
+pnpm nx g @cybertecpty/release-plugin:release-manifest types 1.4.0 --sourceCommit abc123def4
 
 # an explicit author and release date
-pnpm nx g @cybertecpty/release-plugin:release-manifest shared-types 2.0.0 \
+pnpm nx g @cybertecpty/release-plugin:release-manifest types 2.0.0 \
   --sourceCommit abc123def4 --author "Release Bot (bot@cybertecpty.com)" \
   --releaseDate 2026-04-22T15:30:00.000Z
 

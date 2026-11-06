@@ -48,10 +48,8 @@ describe('projectNameFromOpts', () => {
     ).toBe('game-collector-admin-ui');
   });
 
-  it('keeps the `shared` domain in the name when no group is provided', () => {
-    expect(projectNameFromOpts({ domain: 'shared', scope: 'shared', type: 'utils' })).toBe(
-      'shared-utils'
-    );
+  it('drops the `shared` domain from the name when no group is provided', () => {
+    expect(projectNameFromOpts({ domain: 'shared', scope: 'shared', type: 'utils' })).toBe('utils');
   });
 
   it('drops the `shared` domain from the name once a group is provided', () => {

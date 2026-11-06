@@ -155,7 +155,7 @@ nx show projects --json
 Example output:
 
 ```json
-["my-app", "my-app-e2e", "shared-ui", "shared-utils", "api"]
+["my-app", "my-app-e2e", "shared-ui", "utils", "api"]
 ```
 
 Common operations:

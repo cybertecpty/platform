@@ -1,5 +1,5 @@
 import { isProjectOfType, readProjectPackageJson } from '@cybertecpty/nx-utils';
-import { orderByKeys } from '@cybertecpty/shared-utils';
+import { orderByKeys } from '@cybertecpty/utils';
 import {
   joinPathFragments,
   readJson,

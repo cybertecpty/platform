@@ -1,5 +1,5 @@
 import type { NxProjectOptions, NxProjectType } from '@cybertecpty/nx-types';
-import { wildcardToRegExp } from '@cybertecpty/shared-utils';
+import { wildcardToRegExp } from '@cybertecpty/utils';
 import type { ProjectConfiguration } from '@nx/devkit';
 import { domainPathToName, normalizeDomainPath } from './nx-domain.utils';
 
