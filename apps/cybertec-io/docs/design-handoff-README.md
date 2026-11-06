@@ -76,7 +76,7 @@ This is a single scrolling page. Each "view" below is a section.
 - **Headline:** Fraunces 400, `clamp(40px,6.6vw,82px)`, line-height 1.04, letter-spacing -0.02em, max-width 16ch. "I build production software, _made to last_." — the words "made to last" in _italic copper, weight 500_.
 - **Subhead:** IBM Plex Sans, `clamp(18px,2.2vw,22px)`, line-height 1.5, color `#C9C3B6`, max-width 48ch. "I'm Daniel McGrath — a senior full-stack engineer with 15+ years shipping and modernizing Angular applications, from enterprise platforms serving hundreds of thousands of users to systems I owned end to end as the sole developer."
 - **CTAs:** primary copper button "Hire me →" (Ink text, mono 13px uppercase, padding `15px 26px`, radius 2px, weight 500; hover translateY(-2px) + copper glow shadow). Secondary text link "See my work" (brass, mono, brass underline).
-- **Credibility strip:** below, brass-slash-separated mono items (11px, letter-spacing 0.16em, uppercase, Steel `#857C6B`): "15+ Years" / "Remote · Panama (US Citizen)" / "English & Spanish".
+- **Credibility strip:** below, brass-slash-separated mono items (11px, letter-spacing 0.16em, uppercase, Steel `#857C6B`): "15+ Years" / "Remote · United States (US Citizen)" / "English & Spanish".
 
 ### How I help — Services (`#services`, Ink)
 
@@ -124,7 +124,7 @@ This is a single scrolling page. Each "view" below is a section.
 ### About (`#about`, Ink + subtle blueprint grid)
 
 - Two-column: `minmax(0,1fr) minmax(0,1.5fr)`, gap 64px, align-items start.
-- **Left:** portrait `assets/daniel.jpg` (max-width 320px, `aspect-ratio:1`, `object-fit:cover`, 1px brass border, radius 3px), then a mono fact list (brass label + value): Location — Panama City (Remote); Citizenship — United States; Languages — English & Spanish; Education — B.S. Information Science, FSU.
+- **Left:** portrait `assets/daniel.jpg` (max-width 320px, `aspect-ratio:1`, `object-fit:cover`, 1px brass border, radius 3px), then a mono fact list (brass label + value): Location — United States (Remote); Citizenship — United States; Languages — English & Spanish; Education — B.S. Information Science, FSU.
 - **Right:** eyebrow "05 — About me"; headline Fraunces 400 `clamp(26px,3.6vw,38px)`: "I'm _Daniel McGrath_ — the engineer you hire and the one who does the work." (italic copper on the name); two body paragraphs (in reference) emphasizing direct accountability, no handoffs, remote US-friendly hours, clear communication.
 
 ### Contact / Footer (`#contact`, Blueprint `#273D4B`)
