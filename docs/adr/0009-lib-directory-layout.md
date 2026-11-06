@@ -368,6 +368,7 @@ don't have this problem — the domain name itself is the information a reader n
   `libs/shared/types` keep their names (`shared-utils`, `shared-types`) exactly as
   before — the domain-singleton case has nothing to disambiguate, so `shared` still
   carries information there.
+  _Superseded by the 2026-11-05 amendment below._
 - **Directory placement does not change.** `projectDirFromOpts` still places a grouped
   `shared`-domain project under `libs/shared/<group>/<type>`, and its `domain:shared` tag
   is unaffected — both are derived from the path, not the name, per the 2026-09-15
@@ -479,3 +480,80 @@ reality" with nothing enforcing it. This amendment removes the second place.
 - Supersedes the "Domain registry" section above and the `workspaceDomains` bullet under
   "Negative / risks". Tools projects are unaffected: they carry `scope:tools` and no
   `domain:` tag.
+
+## Amendment (2026-11-05): the group-less `shared` libs drop `shared` from the name too
+
+- Status: accepted
+- Deciders: djmcgrath
+- Implemented by (planned): `projectNameFromOpts` in `tools/nx/utils/src/lib/nx-projects.utils.ts`,
+  plus a one-off rename of the two affected projects (see "Migration")
+
+The 2026-09-19 amendment dropped `shared` from the name of grouped `shared` projects and
+deliberately kept it for the group-less two, `shared-utils` and `shared-types`. Five projects live
+under `libs/shared`; two still start with `shared-`:
+
+| Path                             | Project name         | Package name                |
+| -------------------------------- | -------------------- | --------------------------- |
+| `libs/shared/utils`              | `shared-utils`       | `@cybertecpty/shared-utils` |
+| `libs/shared/types`              | `shared-types`       | `@cybertecpty/shared-types` |
+| `libs/shared/fs/utils`           | `fs-utils`           | `@cybertecpty/fs-utils`     |
+| `libs/shared/jest/testing`       | `jest-testing`       | none                        |
+| `libs/shared/playwright/testing` | `playwright-testing` | none                        |
+
+The result is inconsistent: a reader sees `fs-utils` and `jest-testing` beside `shared-utils` and
+`shared-types`, and the 2026-09-19 rationale (that `shared` says "not product-specific", which
+`scope:` and `domain:` already carry) applies equally to the group-less pair. This amendment
+ends that exception. The maintainer confirmed on 2026-11-05 that the group-less names were meant to
+drop `shared` too, that the package names follow, and that bare `utils` and `types` project names are
+acceptable; this amendment is the record of that decision.
+
+### Decision
+
+- **`projectNameFromOpts` drops the `domain` segment whenever `domain` is the literal string
+  `shared`, with or without a `group`.** `libs/shared/utils` becomes `utils` and
+  `libs/shared/types` becomes `types`. The `Boolean(group)` condition goes.
+- **The package names follow the project names** (`@cybertecpty/utils`, `@cybertecpty/types`).
+  Every published or aliased package in this workspace is `@cybertecpty/{project-name}`
+  (`fs-utils` is `@cybertecpty/fs-utils`), so renaming the project but not the package would
+  break that invariant for these two.
+- **Everything else from 2026-09-19 stands:** directory placement and tags are unchanged, and
+  the exception stays literal to `shared` (no `shared` subdomains, no other domain).
+
+### Options considered
+
+1. **Status quo.** Keep `shared-utils` and `shared-types`. No churn, but the naming stays
+   inconsistent and the 2026-09-19 reasoning is only half applied.
+2. **Rename the projects, keep the package names.** Smaller diff (no import changes), but the
+   project and package names diverge for these two, and the `@cybertecpty/{project-name}`
+   invariant is lost.
+3. **Drop `shared` everywhere (chosen).** One rule, no special case in
+   `projectNameFromOpts`, names match the package names. Costs an import rewrite.
+
+### Rationale
+
+- One rule instead of a rule with a carve-out: `shared` never appears in a project name.
+- A package name should say what it is. `@cybertecpty/utils` and `@cybertecpty/types` read as
+  generic, but that is the same trade the 2026-09-19 amendment already accepted for `fs-utils`.
+
+### Consequences
+
+- **Positive:** consistent names across `libs/shared`; a simpler `projectNameFromOpts`.
+- **Negative / risk:** bare `utils` and `types` project names are the most collision-prone names in
+  the workspace. Any future ungrouped project of those types in another domain would derive
+  `{domain}-utils`, so it does not collide, but a `tools/` project or hand-named project called
+  `utils` or `types` would. Nx's duplicate-project-name check is still the backstop (it fails
+  generation, nothing is overwritten). The related `tools/` versus grouped `shared` collision is
+  tracked in issue #127 and is made slightly worse by this change.
+- **Negative / risk:** a bare `@cybertecpty/types` import says less than
+  `@cybertecpty/shared-types`, and `nx run-many -p utils` reads as ambiguous in docs.
+- **Negative / risk:** a one-time rename touches `project.json`, `package.json`,
+  `tsconfig.base.json` aliases and every import of the old package names (ten files today).
+  Use `nx g @nx/workspace:move` (`docs/agents/conventions.md` §11) rather than `git mv`.
+
+### Migration
+
+Not part of this amendment. After it is accepted, in a separate change: drop the `Boolean(group)`
+condition and update its spec and the docstring on `projectDirFromOpts`; rename the two projects
+and packages; fix the aliases and imports; update the READMEs under `libs/shared/utils` and
+`libs/shared/types`, `docs/agents/conventions.md`, `.claude/skills/nx-workspace/SKILL.md` and add a
+pointer to this amendment in ADR 0007 and ADR 0019 (their history is not rewritten).
