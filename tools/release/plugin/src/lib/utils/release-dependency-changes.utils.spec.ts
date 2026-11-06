@@ -5,7 +5,7 @@ import { dirname, join } from 'node:path';
 
 import {
   findDependencyChanges,
-  releaseTagGlob,
+  toReleaseTagGlob,
   type ConventionalCommitTypes
 } from './release-dependency-changes.utils';
 
@@ -33,13 +33,13 @@ const graph = createDependencyGraphFixture(
   ]
 );
 
-describe('releaseTagGlob', () => {
+describe('toReleaseTagGlob', () => {
   it('fills in the project and matches any version', () => {
-    expect(releaseTagGlob('{projectName}@{version}', 'web')).toBe('web@*');
+    expect(toReleaseTagGlob('{projectName}@{version}', 'web')).toBe('web@*');
   });
 
   it('matches any release group and keeps the rest of a custom pattern', () => {
-    expect(releaseTagGlob('{releaseGroupName}/{projectName}-v{version}', 'web')).toBe('*/web-v*');
+    expect(toReleaseTagGlob('{releaseGroupName}/{projectName}-v{version}', 'web')).toBe('*/web-v*');
   });
 });
 

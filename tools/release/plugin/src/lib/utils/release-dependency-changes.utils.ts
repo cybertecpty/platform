@@ -54,7 +54,7 @@ export async function findDependencyChanges(
   const rootMappings = createProjectRootMappings(projectGraph.nodes);
 
   const lastRelease = await gitLatestTagMatching(
-    releaseTagGlob(options.releaseTagPattern, project),
+    toReleaseTagGlob(options.releaseTagPattern, project),
     git
   );
   const commits = await gitCommitsBetween(lastRelease, 'HEAD', git);
@@ -88,13 +88,21 @@ export async function findDependencyChanges(
  * Turns a release tag pattern into a glob matching the project's release tags: the project name
  * is filled in and every other placeholder (the version, the release group) matches anything.
  */
-export function releaseTagGlob(pattern: string, project: string): string {
+export function toReleaseTagGlob(pattern: string, project: string): string {
   return pattern.replaceAll('{projectName}', project).replaceAll(/\{[^}]+\}/g, '*');
 }
 
 /**
  * Turns a conventional-commit subject into a changelog entry for `project`, or `null` when the
  * subject is not conventional or its type is hidden from changelogs.
+ *
+ * @param subject - The commit subject line, e.g. `feat(web): add search`.
+ * @param shortHash - The abbreviated commit hash, recorded on the entry so it can be linked.
+ * @param project - The project the entry is attributed to (the dependent being released, not the
+ *   dependency the commit touched).
+ * @param commitTypes - The conventional-commit types configured for changelogs; a type missing
+ *   from it, or configured as hidden, yields no entry.
+ * @returns The changelog entry, or `null` when the commit should not appear in the changelog.
  */
 function toChangelogChange(
   subject: string,
