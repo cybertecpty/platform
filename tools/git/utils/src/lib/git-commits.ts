@@ -32,12 +32,13 @@ export interface GitRevParseOpts {
  * work they merge is already represented by their constituent commits in the
  * range.
  *
- * @param from The exclusive lower bound of the range (e.g. a base branch).
+ * @param from The exclusive lower bound of the range (e.g. a base branch), or `null` for every
+ *   commit reachable from `to`.
  * @param to The inclusive upper bound of the range (e.g. a release branch).
  * @returns The commits in the range, newest first.
  */
 export async function gitCommitsBetween(
-  from: string,
+  from: string | null,
   to: string,
   git: SimpleGit = simpleGit()
 ): Promise<readonly GitLogEntry[]> {
@@ -45,13 +46,16 @@ export async function gitCommitsBetween(
   // simple-git's default symmetric-difference `from...to`. --name-status makes
   // simple-git parse machine-readable paths: unlike --stat, renames resolve to
   // the clean post-rename path rather than a `dir/{old => new}` brace string.
-  const log = await git.log({
-    from,
-    to,
-    symmetric: false,
-    '--no-merges': null,
-    '--name-status': null
-  });
+  const log =
+    from === null
+      ? await git.log([to, '--no-merges', '--name-status'])
+      : await git.log({
+          from,
+          to,
+          symmetric: false,
+          '--no-merges': null,
+          '--name-status': null
+        });
 
   return log.all.map(({ diff, hash, message }) => ({
     files: diff?.files.map(file => file.file) ?? [],

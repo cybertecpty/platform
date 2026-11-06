@@ -1,6 +1,33 @@
 import simpleGit, { type SimpleGit } from 'simple-git';
 
 /**
+ * Gets the highest-versioned tag matching a glob among the tags reachable from `HEAD`.
+ *
+ * @param pattern A glob over tag names (e.g. `app@*`).
+ * @returns The tag name, or `null` when no reachable tag matches.
+ */
+export async function gitLatestTagMatching(
+  pattern: string,
+  git: SimpleGit = simpleGit()
+): Promise<string | null> {
+  const tags = await git.raw([
+    'tag',
+    '--merged',
+    'HEAD',
+    '--list',
+    pattern,
+    '--sort=-version:refname'
+  ]);
+
+  return (
+    tags
+      .split('\n')
+      .find(tag => tag.trim())
+      ?.trim() ?? null
+  );
+}
+
+/**
  * Gets the commit a tag points at, peeling an annotated tag to its commit.
  *
  * @param tagName The exact tag name.

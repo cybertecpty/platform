@@ -1,6 +1,6 @@
 import { createGitRepoFixture, type GitRepoFixture } from '@cybertecpty/git-testing';
 
-import { gitTagCommit, gitTagsMatching } from './git-tags';
+import { gitLatestTagMatching, gitTagCommit, gitTagsMatching } from './git-tags';
 
 let repo: GitRepoFixture;
 let first: string;
@@ -70,5 +70,29 @@ describe('gitTagsMatching', () => {
     } finally {
       process.chdir(originalCwd);
     }
+  });
+});
+
+describe('gitLatestTagMatching', () => {
+  it('returns the highest version among the matching tags, not the newest tag', async () => {
+    await repo.git.raw(['tag', 'app@1.10.0', first]);
+    await repo.git.raw(['tag', 'app@1.9.0', second]);
+    await repo.git.raw(['tag', 'other@2.0.0', second]);
+
+    await expect(gitLatestTagMatching('app@*', repo.git)).resolves.toBe('app@1.10.0');
+  });
+
+  it('ignores a matching tag that HEAD cannot reach', async () => {
+    await repo.git.raw(['tag', 'app@1.0.0', first]);
+    await repo.git.checkoutBranch('feature', second);
+    await repo.commit('feature work');
+    await repo.git.raw(['tag', 'app@2.0.0']);
+    await repo.git.checkout('main');
+
+    await expect(gitLatestTagMatching('app@*', repo.git)).resolves.toBe('app@1.0.0');
+  });
+
+  it('returns null when no tag matches', async () => {
+    await expect(gitLatestTagMatching('app@*', repo.git)).resolves.toBeNull();
   });
 });
