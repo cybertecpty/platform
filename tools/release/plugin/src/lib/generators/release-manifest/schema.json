@@ -11,8 +11,8 @@
       "description": "Writes `<web-root>/release-manifest.json` using the local git user name and the current timestamp."
     },
     {
-      "command": "nx g @cybertecpty/release-plugin:release-manifest shared-types 2.0.0 --sourceCommit=abc123def4 --releaseDate=2026-04-22T15:30:00.000Z",
-      "description": "Writes `<shared-types-root>/release-manifest.json` with an explicit release date."
+      "command": "nx g @cybertecpty/release-plugin:release-manifest types 2.0.0 --sourceCommit=abc123def4 --releaseDate=2026-04-22T15:30:00.000Z",
+      "description": "Writes `<types-root>/release-manifest.json` with an explicit release date."
     }
   ],
   "properties": {

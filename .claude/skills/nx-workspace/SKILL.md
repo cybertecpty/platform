@@ -21,7 +21,7 @@ nx show projects
 
 # Filter by pattern (glob)
 nx show projects --projects "apps/*"
-nx show projects --projects "shared-*"
+nx show projects --projects "nx-*"
 
 # Filter by tag
 nx show projects --projects "tag:publishable"
@@ -155,7 +155,7 @@ nx show projects --json
 Example output:
 
 ```json
-["my-app", "my-app-e2e", "shared-ui", "shared-utils", "api"]
+["my-app", "my-app-e2e", "ui", "utils", "api"]
 ```
 
 Common operations:
@@ -165,7 +165,7 @@ Common operations:
 nx show projects --json | jq 'length'
 
 # Filter by pattern
-nx show projects --json | jq '.[] | select(startswith("shared-"))'
+nx show projects --json | jq '.[] | select(startswith("nx-"))'
 
 # Get affected projects as array
 nx show projects --affected --json | jq '.'
@@ -237,15 +237,15 @@ Example output:
         "type": "app",
         "data": { "root": "apps/my-app", "tags": ["type:app"] }
       },
-      "shared-ui": {
-        "name": "shared-ui",
+      "ui": {
+        "name": "ui",
         "type": "lib",
-        "data": { "root": "libs/shared-ui", "tags": ["type:ui"] }
+        "data": { "root": "libs/ui", "tags": ["type:ui"] }
       }
     },
     "dependencies": {
-      "my-app": [{ "source": "my-app", "target": "shared-ui", "type": "static" }],
-      "shared-ui": []
+      "my-app": [{ "source": "my-app", "target": "ui", "type": "static" }],
+      "ui": []
     }
   }
 }
@@ -261,7 +261,7 @@ nx graph --print | jq '.graph.nodes | keys'
 nx graph --print | jq '.graph.dependencies["my-app"]'
 
 # Find projects that depend on a library
-nx graph --print | jq '.graph.dependencies | to_entries[] | select(.value[].target == "shared-ui") | .key'
+nx graph --print | jq '.graph.dependencies | to_entries[] | select(.value[].target == "ui") | .key'
 ```
 
 ## Troubleshooting

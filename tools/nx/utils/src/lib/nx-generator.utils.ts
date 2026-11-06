@@ -1,4 +1,4 @@
-import { orderByKeys } from '@cybertecpty/shared-utils';
+import { orderByKeys } from '@cybertecpty/utils';
 import type { Tree } from '@nx/devkit';
 import { readProjectConfiguration, updateJson, updateProjectConfiguration } from '@nx/devkit';
 

@@ -1,5 +1,5 @@
 import { gitLocalUserEmail, gitLocalUserName } from '@cybertecpty/git-utils';
-import type { ReleaseManifest } from '@cybertecpty/shared-types';
+import type { ReleaseManifest } from '@cybertecpty/types';
 import {
   formatFiles,
   joinPathFragments,

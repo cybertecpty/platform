@@ -52,7 +52,7 @@ export const FORMAT_TARGET_NAME = 'format';
 /**
  * The code the check runs, so the cached result is discarded when the rules or the logic change.
  * The matrix and `checkDepConstraints` live in `nx-utils`, which uses the tag helpers in
- * `shared-utils`, and the executor is in this plugin.
+ * `utils`, and the executor is in this plugin.
  */
 const CHECK_CODE_INPUTS = [
   '{workspaceRoot}/tools/dotnet/plugin/src/**/*.ts',
