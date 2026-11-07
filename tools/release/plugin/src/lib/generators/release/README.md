@@ -21,17 +21,22 @@ mechanics, not the rationale.
      `targetBranch` into `baseBranch` first; the generator only checks and never merges. With
      `--dry-run` this only warns. The check fetches both branches and the tags first.
 4. Cuts (or reuses) the release branch — `release/<releaseDate>` off `baseBranch` — unless
-   `--skipBranch` commits straight to `baseBranch` instead. Skipped entirely in a dry run
-   (`--dry-run` / `NX_DRY_RUN`): only the branch name is resolved, the working tree is untouched.
+   `--skipBranch` commits straight to `baseBranch` instead. A release branch that exists only on
+   `origin` (a same-day re-run from a clone that never cut it) is checked out from there rather
+   than cut anew. In a dry run (`--dry-run` / `NX_DRY_RUN`) no branch is created: the run detaches
+   at the commit the release branch would start from (its local or `origin` tip, else
+   `origin/<baseBranch>`), previews there, and switches back, so the preview does not depend on
+   the branch the run started on. A dirty working tree cannot be switched, so a dry run on one
+   previews on the current checkout and skips the tag check, with a warning.
    On the release branch, `releaseVersion` runs once with `dryRun` (it writes nothing) so the
    release is decided from the commits and tags the real run will see:
-   - Unless `--skipTag` or `--dry-run`, no tag the run would create may already exist on a commit
-     off the release branch. A same-day re-run on its existing local `release/<date>` branch still
-     passes.
+   - Unless `--skipTag`, no tag the run would create may already exist on a commit off the
+     release branch; the error names the tag. A same-day re-run still passes, whether the release
+     branch is local or only on `origin`. With `--dry-run` each such tag is a warning and the run
+     continues.
    - Projects with nothing to release are skipped (step 5). If none remain, the run switches back
      to the starting branch, deletes the release branch it just cut (a pre-existing one is kept),
-     and exits. A failed tag check abandons the branch the same way. In a dry run there is no
-     checkout, so the preview runs on the current branch.
+     and exits. A failed tag check abandons the branch the same way.
 5. Runs Nx's own `releaseVersion` for real, then (unless `--skipChangelog`) `releaseChangelog`,
    reusing the release graph between the two calls. Both run only on projects with something to
    release, found by previewing `releaseVersion` and `releaseChangelog` in a dry run beforehand

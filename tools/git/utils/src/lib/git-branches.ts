@@ -24,6 +24,22 @@ export async function gitCurrentBranch(git: SimpleGit = simpleGit()): Promise<st
 }
 
 /**
+ * Determines if a remote-tracking branch (`<remote>/<branchName>`) exists in this clone. It reads
+ * the refs fetched so far and never contacts the remote, so fetch first for a current answer.
+ *
+ * @param branchName The branch name on the remote, without the remote prefix.
+ * @param remote The remote name. Defaults to `origin`.
+ * @returns A promise that resolves to true if the remote-tracking branch exists, false otherwise.
+ */
+export async function gitRemoteBranchExists(
+  branchName: string,
+  remote = 'origin',
+  git: SimpleGit = simpleGit()
+): Promise<boolean> {
+  return (await git.branch(['-r'])).all.includes(`${remote}/${branchName}`);
+}
+
+/**
  * Determines if the working tree and index have no uncommitted changes.
  *
  * @returns A promise that resolves to true if the working tree is clean, false otherwise.

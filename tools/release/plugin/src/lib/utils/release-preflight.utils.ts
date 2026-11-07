@@ -1,4 +1,9 @@
-import { gitBranchExists, gitTagCommit, isAncestorCommit } from '@cybertecpty/git-utils';
+import {
+  gitBranchExists,
+  gitRemoteBranchExists,
+  gitTagCommit,
+  isAncestorCommit
+} from '@cybertecpty/git-utils';
 import type { VersionData } from '@cybertecpty/nx-types';
 import { logger } from '@nx/devkit';
 import { simpleGit, type SimpleGit } from 'simple-git';
@@ -71,14 +76,21 @@ export async function assertBaseIncludesTarget(
  * @param releaseBranch The branch the release is committed to.
  * @param git The git client to use.
  * @param tagPattern The release tag pattern. Defaults to the one in `nx.json`.
+ * @param dryRun When set, each colliding tag is logged as a warning instead of failing the run.
  */
 export async function assertReleaseTagsAvailable(
   versionData: VersionData,
   releaseBranch: string,
   git: SimpleGit = simpleGit(),
-  tagPattern: string = readReleaseTagPattern()
+  tagPattern: string = readReleaseTagPattern(),
+  dryRun = false
 ): Promise<void> {
-  const branchExists = await gitBranchExists(releaseBranch, git);
+  // A clone that never cut the branch locally still has it as `origin/<branch>`.
+  const branchRef = (await gitBranchExists(releaseBranch, git))
+    ? releaseBranch
+    : (await gitRemoteBranchExists(releaseBranch, 'origin', git))
+      ? `origin/${releaseBranch}`
+      : null;
 
   for (const [project, projectVersionData] of Object.entries(versionData)) {
     const newVersion = projectVersionData?.newVersion;
@@ -94,14 +106,19 @@ export async function assertReleaseTagsAvailable(
       continue;
     }
 
-    if (branchExists && (await isAncestorCommit(tagCommit, releaseBranch, git))) {
+    if (branchRef && (await isAncestorCommit(tagCommit, branchRef, git))) {
       continue;
     }
 
-    throw new Error(
+    const message =
       `Release tag ${tagName} already exists on commit ${tagCommit.slice(0, 10)}, which is not on ` +
-        `${releaseBranch}. Releasing again would duplicate it; check that the previous release was ` +
-        `back-merged into the base branch.`
-    );
+      `${releaseBranch}. Releasing again would duplicate it; check that the previous release was ` +
+      `back-merged into the base branch.`;
+
+    if (!dryRun) {
+      throw new Error(message);
+    }
+
+    logger.warn(message);
   }
 }

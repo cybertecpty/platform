@@ -1,4 +1,9 @@
-import { gitBranchExists, gitCurrentBranch, isCleanGitBranch } from '@cybertecpty/git-utils';
+import {
+  gitBranchExists,
+  gitCurrentBranch,
+  gitRemoteBranchExists,
+  isCleanGitBranch
+} from '@cybertecpty/git-utils';
 import { logger } from '@nx/devkit';
 import { simpleGit, type SimpleGit } from 'simple-git';
 
@@ -80,6 +85,8 @@ export async function checkoutReleaseBranch(
 
   const releaseBranch = resolveReleaseBranchName(opts);
 
+  await fetchReleaseBranch(releaseBranch, git);
+
   const exists = await gitBranchExists(releaseBranch, git);
 
   // An existing release branch must become HEAD before we generate any release
@@ -88,6 +95,16 @@ export async function checkoutReleaseBranch(
     if (currentBranch !== releaseBranch) {
       await git.checkout(releaseBranch);
     }
+  } else if (await gitRemoteBranchExists(releaseBranch, 'origin', git)) {
+    // A same-day re-run from a clone that never cut the branch: continue from
+    // origin's copy instead of cutting a new branch that lacks the earlier release.
+    await git.checkoutBranch(releaseBranch, `origin/${releaseBranch}`);
+
+    return {
+      created: false,
+      releaseBranch,
+      restoreBranch: getRestoreBranch(currentBranch, releaseBranch)
+    };
   } else {
     // A new release branch is always cut from the latest base branch state.
     await git.checkout(baseBranch);
@@ -103,6 +120,48 @@ export async function checkoutReleaseBranch(
 }
 
 /**
+ * Puts a clean working tree on a detached checkout of the commit the release branch would
+ * start from, so a dry run previews the release the real run would cut whatever branch it was
+ * started on. That is the existing release branch (local, else on origin), or a new one cut
+ * from `origin/<baseBranch>`; with `skipBranch`, `baseBranch` itself. No branch is created.
+ *
+ * @returns A function that switches back to where the run started, or `null` when the working
+ *   tree is not clean and nothing was changed.
+ */
+export async function checkoutReleasePreview(
+  opts: ReleaseBranchOptions,
+  git: SimpleGit = simpleGit()
+): Promise<(() => Promise<void>) | null> {
+  if (!(await isCleanGitBranch(git))) {
+    return null;
+  }
+
+  const releaseBranch = resolveReleaseBranchName(opts);
+  // `branchLocal().current` names a detached HEAD after what it points at, so ask rev-parse.
+  const startRef = (await git.revparse(['--abbrev-ref', 'HEAD'])).trim();
+  const start = startRef === 'HEAD' ? (await git.revparse(['HEAD'])).trim() : startRef;
+  let tip = opts.baseBranch;
+
+  if (!opts.skipBranch) {
+    await fetchReleaseBranch(releaseBranch, git);
+
+    if (await gitBranchExists(releaseBranch, git)) {
+      tip = releaseBranch;
+    } else if (await gitRemoteBranchExists(releaseBranch, 'origin', git)) {
+      tip = `origin/${releaseBranch}`;
+    } else {
+      tip = `origin/${opts.baseBranch}`;
+    }
+  }
+
+  await git.checkout(['--detach', tip]);
+
+  return async () => {
+    await git.checkout(start);
+  };
+}
+
+/**
  * The branch this release's artifacts belong on: `release/<date>` (the date part
  * of `releaseDate`), or `baseBranch` itself when `skipBranch` is set.
  *
@@ -112,6 +171,18 @@ export async function checkoutReleaseBranch(
  */
 export function resolveReleaseBranchName(opts: ReleaseBranchOptions): string {
   return opts.skipBranch ? opts.baseBranch : `release/${opts.releaseDate.split('T')[0]}`;
+}
+
+/**
+ * Refreshes `origin/<releaseBranch>` when origin has it, so the run sees a release branch
+ * pushed from another clone. Does nothing when origin has no such branch.
+ */
+async function fetchReleaseBranch(releaseBranch: string, git: SimpleGit): Promise<void> {
+  if (!(await git.listRemote(['--heads', 'origin', releaseBranch])).trim()) {
+    return;
+  }
+
+  await git.fetch(['origin', `+refs/heads/${releaseBranch}:refs/remotes/origin/${releaseBranch}`]);
 }
 
 /**

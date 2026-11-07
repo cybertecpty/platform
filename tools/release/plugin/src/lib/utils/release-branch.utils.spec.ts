@@ -1,4 +1,9 @@
-import { gitBranchExists, gitCurrentBranch, isCleanGitBranch } from '@cybertecpty/git-utils';
+import {
+  gitBranchExists,
+  gitCurrentBranch,
+  gitRemoteBranchExists,
+  isCleanGitBranch
+} from '@cybertecpty/git-utils';
 import { logger } from '@nx/devkit';
 import { simpleGit, type SimpleGit } from 'simple-git';
 
@@ -11,6 +16,7 @@ import {
 jest.mock('@cybertecpty/git-utils', () => ({
   gitBranchExists: jest.fn(),
   gitCurrentBranch: jest.fn(),
+  gitRemoteBranchExists: jest.fn(),
   isCleanGitBranch: jest.fn()
 }));
 
@@ -22,13 +28,17 @@ jest.mock('simple-git', () => ({
 
 const mockBranchExists = jest.mocked(gitBranchExists);
 const mockCurrentBranch = jest.mocked(gitCurrentBranch);
+const mockRemoteBranchExists = jest.mocked(gitRemoteBranchExists);
 const mockIsClean = jest.mocked(isCleanGitBranch);
 const mockSimpleGit = jest.mocked(simpleGit);
 
 type GitSpies = {
   checkout: jest.Mock;
   pull: jest.Mock;
+  checkoutBranch: jest.Mock;
   checkoutLocalBranch: jest.Mock;
+  fetch: jest.Mock;
+  listRemote: jest.Mock;
 };
 
 /** A git double exposing only the mutating calls `checkoutReleaseBranch` makes directly. */
@@ -36,7 +46,10 @@ const makeGit = (): { git: SimpleGit; spies: GitSpies } => {
   const spies: GitSpies = {
     checkout: jest.fn(() => Promise.resolve()),
     pull: jest.fn(() => Promise.resolve()),
-    checkoutLocalBranch: jest.fn(() => Promise.resolve())
+    checkoutBranch: jest.fn(() => Promise.resolve()),
+    checkoutLocalBranch: jest.fn(() => Promise.resolve()),
+    fetch: jest.fn(() => Promise.resolve()),
+    listRemote: jest.fn(() => Promise.resolve(''))
   };
 
   return { git: spies as unknown as SimpleGit, spies };
@@ -67,6 +80,7 @@ describe('checkoutReleaseBranch', () => {
   beforeEach(() => {
     mockBranchExists.mockReset().mockResolvedValue(false);
     mockCurrentBranch.mockReset().mockResolvedValue('feature/x');
+    mockRemoteBranchExists.mockReset().mockResolvedValue(false);
     mockIsClean.mockReset().mockResolvedValue(true);
     mockSimpleGit.mockReset();
     jest.spyOn(logger, 'warn').mockImplementation(() => undefined);

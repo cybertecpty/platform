@@ -9,6 +9,8 @@ import type { SimpleGit } from 'simple-git';
 
 import { assertBaseIncludesTarget, assertReleaseTagsAvailable } from './release-preflight.utils';
 
+jest.setTimeout(30_000);
+
 const RELEASE_BRANCH = 'release/2026-09-11';
 
 const versionData = (project: string, newVersion: string): VersionData => ({
@@ -126,6 +128,61 @@ describe('release preflight', () => {
       await clone.git.checkout('main');
 
       await expect(checkTags(versionData('app', '1.1.0'))).resolves.toBeUndefined();
+    });
+
+    // A fresh clone has `origin/release/<date>` but no local branch of that name.
+    describe('when the release branch exists only on origin', () => {
+      beforeEach(async () => {
+        await origin.git.checkoutBranch(RELEASE_BRANCH, 'develop');
+        await origin.commit('chore(release): generate release artifacts');
+        await origin.git.addAnnotatedTag('app@1.1.0', 'app@1.1.0');
+        await origin.git.checkout('main');
+        await clone.git.fetch(['origin', '--tags']);
+      });
+
+      it('passes a same-day re-run, where the tag sits on that branch', async () => {
+        await expect(checkTags(versionData('app', '1.1.0'))).resolves.toBeUndefined();
+      });
+
+      it('still fails when a tag sits on a commit outside that branch', async () => {
+        await origin.commit('release on main');
+        await origin.git.addAnnotatedTag('app@1.2.0', 'app@1.2.0');
+        await clone.git.fetch(['origin', '--tags']);
+
+        await expect(checkTags(versionData('app', '1.2.0'))).rejects.toThrow('app@1.2.0');
+      });
+    });
+
+    describe('in a dry run', () => {
+      const checkTagsDry = (data: VersionData) =>
+        assertReleaseTagsAvailable(data, RELEASE_BRANCH, clone.git, undefined, true);
+
+      it('warns, naming the tag, instead of failing', async () => {
+        await clone.commit('earlier release');
+        await clone.git.addAnnotatedTag('app@1.1.0', 'app@1.1.0');
+
+        await expect(checkTagsDry(versionData('app', '1.1.0'))).resolves.toBeUndefined();
+        expect(logger.warn).toHaveBeenCalledWith(expect.stringContaining('app@1.1.0'));
+      });
+
+      it('stays quiet when the tag is free', async () => {
+        await checkTagsDry(versionData('app', '1.1.0'));
+
+        expect(logger.warn).not.toHaveBeenCalled();
+      });
+
+      it('warns about every colliding tag, not just the first', async () => {
+        await clone.commit('earlier release');
+        await clone.git.addAnnotatedTag('app@1.1.0', 'app@1.1.0');
+        await clone.git.addAnnotatedTag('lib@2.0.0', 'lib@2.0.0');
+
+        await checkTagsDry({
+          ...versionData('app', '1.1.0'),
+          ...versionData('lib', '2.0.0')
+        });
+
+        expect(logger.warn).toHaveBeenCalledTimes(2);
+      });
     });
 
     it('ignores a project that was not given a new version', async () => {
