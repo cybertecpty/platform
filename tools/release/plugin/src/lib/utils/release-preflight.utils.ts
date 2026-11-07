@@ -3,6 +3,8 @@ import type { VersionData } from '@cybertecpty/nx-types';
 import { logger } from '@nx/devkit';
 import { simpleGit, type SimpleGit } from 'simple-git';
 
+import { formatReleaseTag, readReleaseTagPattern } from './release-tags.utils';
+
 /**
  * Inputs for {@link assertBaseIncludesTarget}.
  */
@@ -65,13 +67,16 @@ export async function assertBaseIncludesTarget(
  * is not part of the release branch. A same-day re-run is fine: its tags point
  * into the existing `release/<date>` branch.
  *
- * @param versionData The versions the run resolved, one `<project>@<version>` tag each.
+ * @param versionData The versions the run resolved, one tag each, named by the release tag pattern.
  * @param releaseBranch The branch the release is committed to.
+ * @param git The git client to use.
+ * @param tagPattern The release tag pattern. Defaults to the one in `nx.json`.
  */
 export async function assertReleaseTagsAvailable(
   versionData: VersionData,
   releaseBranch: string,
-  git: SimpleGit = simpleGit()
+  git: SimpleGit = simpleGit(),
+  tagPattern: string = readReleaseTagPattern()
 ): Promise<void> {
   const branchExists = await gitBranchExists(releaseBranch, git);
 
@@ -82,7 +87,7 @@ export async function assertReleaseTagsAvailable(
       continue;
     }
 
-    const tagName = `${project}@${newVersion}`;
+    const tagName = formatReleaseTag(tagPattern, project, newVersion);
     const tagCommit = await gitTagCommit(tagName, git);
 
     if (tagCommit === null) {

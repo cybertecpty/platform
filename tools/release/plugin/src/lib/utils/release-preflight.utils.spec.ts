@@ -136,6 +136,22 @@ describe('release preflight', () => {
       ).resolves.toBeUndefined();
     });
 
+    it('checks the tag name the release tag pattern gives', async () => {
+      await clone.commit('earlier release');
+      await clone.git.addAnnotatedTag('v1.1.0/app', 'v1.1.0/app');
+      await clone.git.addAnnotatedTag('app@1.2.0', 'app@1.2.0');
+      const checkWith = (version: string) =>
+        assertReleaseTagsAvailable(
+          versionData('app', version),
+          RELEASE_BRANCH,
+          clone.git,
+          'v{version}/{projectName}'
+        );
+
+      await expect(checkWith('1.1.0')).rejects.toThrow('v1.1.0/app');
+      await expect(checkWith('1.2.0')).resolves.toBeUndefined();
+    });
+
     it('sees a tag that exists only on origin once the base check has fetched it', async () => {
       await origin.commit('release on main');
       await origin.git.addAnnotatedTag('app@1.1.0', 'app@1.1.0');
