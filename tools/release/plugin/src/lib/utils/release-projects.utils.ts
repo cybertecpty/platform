@@ -6,6 +6,8 @@ import { createProjectGraphAsync, logger, readNxJson, type ProjectGraph } from '
 import { releaseChangelog } from 'nx/release';
 import simpleGit, { type SimpleGit } from 'simple-git';
 
+import { formatReleaseTag, readReleaseTagPattern } from './release-tags.utils';
+
 /**
  * Narrows a release to only the projects that changed in this release window.
  */
@@ -252,18 +254,18 @@ export async function selectReleasableProjects(
 }
 
 /**
- * Creates an annotated `<project>@<version>` tag on the release commit for each
- * project that received a new version. The tag format matches Nx's default
- * `releaseTagPattern` for independently-released projects, so Nx uses these
- * tags to resolve the previous release boundary when calculating
- * conventional-commit version bumps and changelog commit ranges.
+ * Creates an annotated tag on the release commit for each project that received a new version.
+ * The tag name follows `release.releaseTag.pattern` from `nx.json`, so Nx uses these tags to
+ * resolve the previous release boundary when calculating conventional-commit version bumps and
+ * changelog commit ranges.
  *
  * @returns The names of the tags created in this run.
  */
 export async function tagReleasedProjects(
   versionData: VersionData,
   skipTag: boolean | undefined,
-  git: SimpleGit = simpleGit()
+  git: SimpleGit = simpleGit(),
+  tagPattern: string = readReleaseTagPattern()
 ): Promise<string[]> {
   if (skipTag) {
     return [];
@@ -279,7 +281,7 @@ export async function tagReleasedProjects(
       continue;
     }
 
-    const tagName = `${project}@${newVersion}`;
+    const tagName = formatReleaseTag(tagPattern, project, newVersion);
 
     // Same-day release re-runs must not fail on a tag created by an earlier run.
     if ((await gitTagsMatching(tagName, git)).includes(tagName)) {
