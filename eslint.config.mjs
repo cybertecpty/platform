@@ -68,7 +68,7 @@ export default [
       '**/jest.preset.js',
       // The shared Vitest config is workspace tooling outside every project tsconfig, for
       // the same reason as the Jest files above.
-      'vitest.shared.ts'
+      'vitest.shared.mts'
     ]
   },
   {
@@ -78,7 +78,7 @@ export default [
         'error',
         {
           enforceBuildableLibDependency: true,
-          allow: ['^.*/eslint(\\.base)?\\.config\\.[cm]?[jt]s$', '^.*/vitest\\.shared$'],
+          allow: ['^.*/eslint(\\.base)?\\.config\\.[cm]?[jt]s$', '^.*/vitest\\.shared\\.mts$'],
           depConstraints: DEP_CONSTRAINTS
         }
       ]
