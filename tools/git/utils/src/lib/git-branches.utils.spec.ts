@@ -1,4 +1,5 @@
 import simpleGit, { type SimpleGit } from 'simple-git';
+import { vi } from 'vitest';
 
 import {
   gitBranchExists,
@@ -7,9 +8,9 @@ import {
   isCurrentGitBranch
 } from './git-branches.utils';
 
-jest.mock('simple-git', () => ({ __esModule: true, default: jest.fn() }));
+vi.mock('simple-git', () => ({ __esModule: true, default: vi.fn() }));
 
-const mockSimpleGit = jest.mocked(simpleGit);
+const mockSimpleGit = vi.mocked(simpleGit);
 
 const fakeGit = (overrides: Record<string, unknown>): SimpleGit =>
   overrides as unknown as SimpleGit;
