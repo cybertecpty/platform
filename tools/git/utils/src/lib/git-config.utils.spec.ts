@@ -1,14 +1,15 @@
 import simpleGit, { type SimpleGit } from 'simple-git';
+import { vi } from 'vitest';
 
 import { gitLocalUserEmail, gitLocalUserName } from './git-config.utils';
 
-jest.mock('simple-git', () => ({ __esModule: true, default: jest.fn() }));
+vi.mock('simple-git', () => ({ __esModule: true, default: vi.fn() }));
 
-const mockSimpleGit = jest.mocked(simpleGit);
+const mockSimpleGit = vi.mocked(simpleGit);
 
 const fakeGit = (value: string | null): SimpleGit =>
   ({
-    getConfig: jest.fn(() => Promise.resolve({ value }))
+    getConfig: vi.fn(() => Promise.resolve({ value }))
   }) as unknown as SimpleGit;
 
 describe('gitLocalUserName', () => {

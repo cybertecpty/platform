@@ -6,6 +6,8 @@ paths:
   - '{libs,tools}/**/testing/**'
   - '**/jest.config.*'
   - 'jest.preset.js'
+  - '**/vitest.config.*'
+  - 'vitest.shared.ts'
 ---
 
 # Writing tests

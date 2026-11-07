@@ -11,10 +11,14 @@ import unicorn from 'eslint-plugin-unicorn';
 import tseslint from 'typescript-eslint';
 import { DEP_CONSTRAINTS } from './tools/nx/utils/src/lib/nx-dep-constraints.const.mts';
 
-// Projects that test with Vitest instead of Jest: Astro content sites only (ADR 0007,
-// 2026-09-23 amendment). Flat config globs can't read project tags, so they are listed
-// by path.
-const vitestSpecFiles = ['apps/cybertec-io/**/*.{spec,test}.ts'];
+// Projects that test with Vitest instead of Jest: Astro content sites (ADR 0007,
+// 2026-09-23 amendment) and the projects migrated so far (ADR 0018). Flat config globs
+// can't read project tags, so they are listed by path. Each migration PR adds its project;
+// the list goes away when Jest does.
+const vitestSpecFiles = [
+  'apps/cybertec-io/**/*.{spec,test}.ts',
+  'tools/git/utils/**/*.{spec,test}.ts'
+];
 
 // type:e2e projects (ADR 0010): Playwright, not Jest or Vitest — same "list by path"
 // reason as vitestSpecFiles above. e2e projects are nested at `apps/<app>/e2e` (ADR 0010,
@@ -61,7 +65,10 @@ export default [
       // root `jest.config.ts` is also outside every tsconfig, which trips the
       // typed-linting project service.
       '**/jest.config.*',
-      '**/jest.preset.js'
+      '**/jest.preset.js',
+      // The shared Vitest config is workspace tooling outside every project tsconfig, for
+      // the same reason as the Jest files above.
+      'vitest.shared.ts'
     ]
   },
   {
@@ -71,7 +78,7 @@ export default [
         'error',
         {
           enforceBuildableLibDependency: true,
-          allow: ['^.*/eslint(\\.base)?\\.config\\.[cm]?[jt]s$'],
+          allow: ['^.*/eslint(\\.base)?\\.config\\.[cm]?[jt]s$', '^.*/vitest\\.shared$'],
           depConstraints: DEP_CONSTRAINTS
         }
       ]

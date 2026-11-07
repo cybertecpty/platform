@@ -11,4 +11,4 @@ Workspace tooling for git and commit workflows (`scope:tools`, not application c
 
 ## Tests
 
-`nx test git-utils` — Jest via `ts-jest`.
+`nx test git-utils` — Vitest.

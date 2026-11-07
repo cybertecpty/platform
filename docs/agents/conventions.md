@@ -491,8 +491,12 @@ name (§2).
 ## 9. Testing & verification
 
 - Jest is the test runner for every TypeScript project — Angular apps and plain libs
-  (ADR 0007). Generators are defaulted to `unitTestRunner: jest` in `nx.json`; there is
-  no `@nx/vitest` plugin. Run tests through `nx test {project}`, never `jest` directly.
+  (ADR 0007). Generators are defaulted to `unitTestRunner: jest` in `nx.json`. Run tests
+  through `nx test {project}`, never `jest` directly.
+  - **Migration to Vitest is under way (ADR 0018).** `@nx/vitest` and the root
+    `vitest.shared.ts` are in place, and `git-utils` is the pilot project on Vitest. Every other
+    project stays on Jest until its own migration ticket. This section is rewritten when the
+    migration ends.
   - **Exception: Astro content sites use Vitest** via a per-project `vitest.config.ts`
     (ADR 0007 2026-09-23 amendment, ADR 0012).
   - **.NET uses xUnit with coverlet** (ADR 0007 2026-10-20 amendment, ADR 0017). Test
