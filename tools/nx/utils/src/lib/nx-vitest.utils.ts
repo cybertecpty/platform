@@ -1,6 +1,7 @@
 import type { Tree } from '@nx/devkit';
 import {
   joinPathFragments,
+  logger,
   offsetFromRoot,
   readProjectConfiguration,
   updateJson
@@ -124,6 +125,14 @@ function addToVitestSpecFiles(tree: Tree, root: string): void {
   const glob = `'${root}/**/*.{spec,test}.ts'`;
 
   if (!source || source.includes(glob)) {
+    return;
+  }
+
+  if (!VITEST_SPEC_FILES_ARRAY.test(source)) {
+    logger.warn(
+      `Could not find \`vitestSpecFiles\` in ${ROOT_ESLINT_CONFIG}; add ${glob} to it by hand so the specs get the Vitest lint rules.`
+    );
+
     return;
   }
 

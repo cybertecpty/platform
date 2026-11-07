@@ -1,4 +1,5 @@
 import type { Tree } from '@nx/devkit';
+import * as devkit from '@nx/devkit';
 import { addProjectConfiguration, readJson, writeJson } from '@nx/devkit';
 import { createTreeWithEmptyWorkspace } from '@nx/devkit/testing';
 import { configureVitestProject, withoutUpstreamVitestSideEffects } from './nx-vitest.utils';
@@ -94,6 +95,17 @@ describe('configureVitestProject', () => {
     expect(tree.read('eslint.config.mjs', 'utf-8')).toContain(
       `  'tools/git/utils/**/*.{spec,test}.ts',\n  '${ROOT}/**/*.{spec,test}.ts'\n];`
     );
+  });
+
+  it('warns, and leaves the file alone, when `vitestSpecFiles` is not in the root config', () => {
+    const warn = jest.spyOn(devkit.logger, 'warn').mockImplementation(() => undefined);
+    tree.write('eslint.config.mjs', 'export default [];\n');
+
+    configureVitestProject(tree, 'billing-models', { environment: 'node' });
+
+    expect(warn).toHaveBeenCalledWith(expect.stringContaining('vitestSpecFiles'));
+    expect(tree.read('eslint.config.mjs', 'utf-8')).toBe('export default [];\n');
+    warn.mockRestore();
   });
 
   it('does not list the project spec glob twice', () => {
