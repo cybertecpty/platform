@@ -1,6 +1,6 @@
 import { defineConfig, mergeConfig } from 'vitest/config';
 
-import { createSharedVitestConfig } from '../../../vitest.shared';
+import { createSharedVitestConfig } from '../../../vitest.shared.mts';
 
 export default mergeConfig(
   createSharedVitestConfig(import.meta.dirname),

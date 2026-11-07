@@ -497,7 +497,7 @@ name (§2).
   (ADR 0007). Generators are defaulted to `unitTestRunner: jest` in `nx.json`. Run tests
   through `nx test {project}`, never `jest` directly.
   - **Migration to Vitest is under way (ADR 0018).** `@nx/vitest` and the root
-    `vitest.shared.ts` are in place, and `git-utils` is the pilot project on Vitest. Every other
+    `vitest.shared.mts` are in place, and `git-utils` is the pilot project on Vitest. Every other
     project stays on Jest until its own migration ticket. This section is rewritten when the
     migration ends.
   - **Exception: Astro content sites use Vitest** via a per-project `vitest.config.ts`

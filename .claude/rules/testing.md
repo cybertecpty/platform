@@ -7,7 +7,7 @@ paths:
   - '**/jest.config.*'
   - 'jest.preset.js'
   - '**/vitest.config.*'
-  - 'vitest.shared.ts'
+  - 'vitest.shared.mts'
 ---
 
 # Writing tests
@@ -83,11 +83,15 @@ defaults. Loads when working on specs, test artifacts, `type:testing` libs, or J
 - **Migrating a project from Jest to Vitest (ADR 0018).** Delete this checklist when Jest goes.
   `tools/git/utils` is the worked example.
   - Add `vitest.config.mts` that merges `createSharedVitestConfig(import.meta.dirname)` from the
-    root `vitest.shared.ts` with the project's `name` and `environment` only. Never override the
-    coverage numbers. Delete `jest.config.cts`.
+    root `vitest.shared.mts` with the project's `name` and `environment` only. Never override the
+    coverage numbers. Delete `jest.config.cts`. Import it with its full `.mts` extension: the
+    shared file is `.mts` so Node reads it as ESM, and the explicit extension keeps Vite's
+    config loader quiet (it warns on both an extensionless import and ESM in a CommonJS file).
   - In `tsconfig.spec.json` set `types` to `["vitest/globals", "node"]`, `module` to `esnext`
     (specs use top-level `await` and `import.meta`), and swap the Jest config files in `include`
-    and the lib tsconfig's `exclude` for `vitest.config.mts`.
+    and the lib tsconfig's `exclude` for `vitest.config.mts`. Also set
+    `allowImportingTsExtensions` and `noEmit` to `true` there, so `tsc` accepts the `.mts`
+    import.
   - Add the project's spec glob to `vitestSpecFiles` in the root `eslint.config.mjs`, and
     `vitest.config.*` to the `@nx/dependency-checks` `ignoredFiles` in the project's
     `eslint.config.mjs`.
