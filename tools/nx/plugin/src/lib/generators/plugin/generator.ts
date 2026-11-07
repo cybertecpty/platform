@@ -68,7 +68,7 @@ export async function pluginGenerator(
   sortTsConfigBasePaths(tree);
 
   if (unitTestRunner === 'vitest') {
-    configureVitestProject(tree, name, { environment: 'node' });
+    configureVitestProject(tree, name, 'node');
   }
 
   addTypecheckTarget(tree, name, unitTestRunner);

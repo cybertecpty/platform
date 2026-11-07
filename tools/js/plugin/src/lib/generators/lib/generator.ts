@@ -99,7 +99,7 @@ export async function libGenerator(
   sortTsConfigBasePaths(tree);
 
   if (unitTestRunner === 'vitest') {
-    configureVitestProject(tree, name, { environment: testEnvironment });
+    configureVitestProject(tree, name, testEnvironment);
   }
 
   addTypecheckTarget(tree, name, unitTestRunner);

@@ -12,12 +12,6 @@ const UPSTREAM_VITEST_PACKAGES = ['@nx/vite', 'vite'];
 const ROOT_VITEST_CONFIG = 'vitest.config.ts';
 const ROOT_PACKAGE_JSON = 'package.json';
 
-/** Options for `configureVitestProject`. */
-export interface ConfigureVitestProjectOptions {
-  /** The Vitest `test.environment` the project's specs run in. */
-  environment: 'jsdom' | 'node';
-}
-
 type DependencyMaps = Record<
   'dependencies' | 'devDependencies',
   Record<string, string> | undefined
@@ -30,6 +24,9 @@ interface TsConfigFile {
   exclude?: string[];
   [key: string]: unknown;
 }
+
+/** The Vitest `test.environment` a project's specs run in. */
+type VitestEnvironment = 'jsdom' | 'node';
 
 const ROOT_ESLINT_CONFIG = 'eslint.config.mjs';
 const VITEST_SPEC_FILES_ARRAY = /(const vitestSpecFiles = \[\n)([\s\S]*?)(\n\];)/;
@@ -64,7 +61,7 @@ export function assertNotJestRunner(unitTestRunner: string | undefined): void {
 export function configureVitestProject(
   tree: Tree,
   projectName: string,
-  { environment }: ConfigureVitestProjectOptions
+  environment: VitestEnvironment
 ): void {
   const { root } = readProjectConfiguration(tree, projectName);
 
@@ -222,7 +219,7 @@ function writeVitestConfig(
   tree: Tree,
   root: string,
   projectName: string,
-  environment: ConfigureVitestProjectOptions['environment']
+  environment: VitestEnvironment
 ): void {
   const baseConfig = `${offsetFromRoot(root)}vitest.base.mts`;
 
