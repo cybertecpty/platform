@@ -80,6 +80,21 @@ defaults. Loads when working on specs, test artifacts, `type:testing` libs, or J
   `type:testing`, so a tests project declares nothing itself (ADR 0017); the cached `check-coverage-output` target fails CI, naming the project, if the resolved output is ever missing. Astro sites run
   Vitest and mirror these settings in their own `vitest.config.ts` (ADR 0007 2026-09-23
   amendment).
+- **Migrating a project from Jest to Vitest (ADR 0018).** Delete this checklist when Jest goes.
+  `tools/git/utils` is the worked example.
+  - Add `vitest.config.mts` that merges `createSharedVitestConfig(import.meta.dirname)` from the
+    root `vitest.shared.ts` with the project's `name` and `environment` only. Never override the
+    coverage numbers. Delete `jest.config.cts`.
+  - In `tsconfig.spec.json` set `types` to `["vitest/globals", "node"]`, `module` to `esnext`
+    (specs use top-level `await` and `import.meta`), and swap the Jest config files in `include`
+    and the lib tsconfig's `exclude` for `vitest.config.mts`.
+  - Add the project's spec glob to `vitestSpecFiles` in the root `eslint.config.mjs`, and
+    `vitest.config.*` to the `@nx/dependency-checks` `ignoredFiles` in the project's
+    `eslint.config.mjs`.
+  - Replace `jest.*` with `vi.*` and import `vi` from `vitest`.
+  - A spec that `require`s a `.ts` file loads it through Node, which v8 coverage cannot see, so
+    the project's number drops. Load it with `await import()` so Vite transforms it.
+  - Compare the Jest and v8 numbers with `CI=true` before opening the PR, and put both in it.
 - **Spec files are type-checked by the `typecheck` target, not `test`.** `ts-jest` is
   transpile-only and `build` excludes `*.spec.ts`, so a spec-only type error (a bad
   cast, a `never`-typed arg) slips through both. `.claude/rules/project-config.md` covers

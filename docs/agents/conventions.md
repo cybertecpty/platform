@@ -344,6 +344,9 @@ git branch -D {branch}
   in the worktree for anything you want. The worktree registration is usually dropped anyway, so
   `git branch -D` works and you don't need to rerun with `--force` (which throws away
   uncommitted work).
+- `git worktree remove` can also fail with `Filename too long` after the `node_modules` are gone,
+  because of a deep leftover path. Git drops the registration and leaves the folder, so
+  `git branch -D` still works.
 - If the `Remove-Item` is refused or a folder is still left behind, run `git worktree prune`, then
   stop and ask the maintainer to delete it. An agent does not delete it itself: the auto-mode
   classifier refuses `rm -rf` and `Remove-Item -Recurse -Force`, and a repo-wide allow rule for
@@ -531,6 +534,10 @@ name (§2).
   a cache miss.** After changing something Nx runs as a task's command (an MSBuild hook, a target,
   an executor), run the affected targets with `--skip-nx-cache` before pushing. CI starts cold: the
   #221 build hook passed `verify` locally and failed in CI as a recursive Nx task.
+- **Nx caches a failed run of a flaky task and replays it.** After a one-off failure (a timeout
+  under load) a rerun of `pnpm verify` reports `Nx detected a flaky task` and fails in seconds
+  with 100% cache hits, even though the task passes alone. A `--skip-nx-cache` pass does not clear
+  it. Run `pnpm exec nx reset`, then `pnpm verify` again.
 - Diagnose CI failures from the real run log, not by guessing.
 - If your agent has no automatic format hook, run
   `nx format:write --files={paths}` after editing.
