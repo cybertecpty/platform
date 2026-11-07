@@ -499,7 +499,7 @@ name (§2).
   scaffold Vitest and reject `jest`. Run tests through `nx test {project}`, never `jest` or
   `vitest` directly.
   - **Migration to Vitest is under way (ADR 0018).** `@nx/vitest` and the root
-    `vitest.shared.mts` are in place, and `git-utils` is the pilot project on Vitest. Every other
+    `vitest.base.mts` are in place, and `git-utils` is the pilot project on Vitest. Every other
     existing project stays on Jest until its own migration ticket; new projects start on Vitest. This section is rewritten when the
     migration ends.
   - **Exception: Astro content sites use Vitest** via a per-project `vitest.config.ts`

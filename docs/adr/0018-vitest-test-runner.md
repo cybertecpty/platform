@@ -9,7 +9,7 @@
   `type:types` exemption and `nx test {project}` as the entry point are **carried forward
   unchanged**, restated here against Vitest.
 - Implemented by: (pending) the migration ticket for this ADR; `unitTestRunner: vitest` in
-  the `nx.json` generator defaults, a root `vitest.shared.mts` replacing `jest.preset.js`,
+  the `nx.json` generator defaults, a root `vitest.base.mts` replacing `jest.preset.js`,
   per-project `vitest.config.ts`, the ESLint plugin-layer inversion (ADR 0008), and
   `docs/agents/conventions.md` §9
 
@@ -95,10 +95,10 @@ superseded; its coverage policy is carried forward verbatim against Vitest.
   `@nx/angular:library` and `@nx/plugin:plugin`. The `@nx/nest:library` entry is deleted
   along with `@nx/nest` itself (ADR 0017). Generating a project with Jest requires reopening
   this ADR.
-- **`@nx/vitest` is registered in `nx.json`, and a root shared config is expected.** This
+- **`@nx/vitest` is registered in `nx.json`, and a root base config is expected.** This
   reverses ADR 0007's two bans (no `@nx/vite` / `@nx/vitest` plugin, no root Vitest config)
   — they existed to keep an accidental toolchain out, and the toolchain is now deliberate.
-  The shared config is **`vitest.shared.mts`** at the workspace root, extended by each
+  The base config is **`vitest.base.mts`** at the workspace root, extended by each
   project's `vitest.config.ts`; it is the direct replacement for `jest.preset.js` and holds
   every parameter below.
 - **Angular projects test through `@angular/build:unit-test` with `runner: vitest`.** Karma
@@ -143,7 +143,7 @@ superseded; its coverage policy is carried forward verbatim against Vitest.
 Mechanical, and ordered so the workspace is green at each step:
 
 1. Add `vitest`, `@vitest/coverage-v8`, `@nx/vitest` and `@vitest/eslint-plugin`; write
-   `vitest.shared.mts` carrying every parameter above.
+   `vitest.base.mts` carrying every parameter above.
 2. Convert projects one at a time — `vitest.config.ts` in, `jest.config.cts` out — leaving
    the rest on Jest. Both runners coexist during the migration by design.
 3. Replace `jest.*` with `vi.*` in the 26 affected files. `jest.fn` / `spyOn` /
@@ -224,7 +224,7 @@ because there is none.
 - ADR 0012 (`astro-content-sites`) — the stack whose Vitest exception this ADR dissolves.
 - ADR 0008 (`eslint-plugin-layer`) — the Jest / Vitest ESLint blocks that invert.
 - ADR 0005 (`application-frameworks`) — Angular, the remaining TypeScript stack.
-- `jest.preset.js` → `vitest.shared.mts`; `.github/scripts/coverage-report.cjs` (unchanged);
+- `jest.preset.js` → `vitest.base.mts`; `.github/scripts/coverage-report.cjs` (unchanged);
   `docs/agents/conventions.md` §9; `.claude/rules/testing.md`.
 - Angular docs: the `@angular/build:unit-test` builder and its `runner` option; the Angular
   22 release notes and the Karma-to-Vitest migration schematic.

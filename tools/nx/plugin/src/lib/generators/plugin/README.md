@@ -34,5 +34,5 @@ Every other option (`importPath`, `linter`, `unitTestRunner`, `compiler`, `e2eTe
 `publishable`, …) is forwarded to `@nx/plugin:plugin` unchanged; `--help` lists them.
 
 `unitTestRunner` defaults to `vitest` and rejects `jest` (ADR 0018). The generated project gets a
-`vitest.config.mts` that extends the root `vitest.shared.mts`, no `jest.config.*`, and its spec glob in
+`vitest.config.mts` that extends the root `vitest.base.mts`, no `jest.config.*`, and its spec glob in
 `vitestSpecFiles` in the root `eslint.config.mjs` (`configureVitestProject` in `@cybertecpty/nx-utils`).

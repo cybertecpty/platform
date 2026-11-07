@@ -87,12 +87,12 @@ describe('pluginGenerator', () => {
       expect(nxPluginGeneratorMock).not.toHaveBeenCalled();
     });
 
-    it('writes a Vitest config extending the shared config and no Jest config', async () => {
+    it('writes a Vitest config extending the base config and no Jest config', async () => {
       await run(tree, { group: 'demo' });
 
       const config = tree.read('tools/demo/plugin/vitest.config.mts', 'utf-8');
 
-      expect(config).toContain('createSharedVitestConfig');
+      expect(config).toContain('createBaseVitestConfig');
       expect(config).toContain("environment: 'node'");
       expect(tree.exists('tools/demo/plugin/jest.config.cts')).toBe(false);
     });

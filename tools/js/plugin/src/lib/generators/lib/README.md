@@ -25,7 +25,7 @@ directory, and tag conventions (ADR 0009).
   a production library importing a buildable testing-helpers lib would otherwise pull it in as a
   real buildable dependency.
 - Replaces the Vitest scaffold `@nx/js:library` writes with the ADR 0018 layout: a
-  `vitest.config.mts` that extends the root `vitest.shared.mts`, no `jest.config.*`, a Vitest
+  `vitest.config.mts` that extends the root `vitest.base.mts`, no `jest.config.*`, a Vitest
   `tsconfig.spec.json`, and the project's spec glob in `vitestSpecFiles` (`configureVitestProject`
   in `@cybertecpty/nx-utils`). `--unitTestRunner=jest` is rejected with a pointer to ADR 0018.
 - Adds `vitest/globals` to a `type:testing` library's `tsconfig.lib.json` `compilerOptions.types` —

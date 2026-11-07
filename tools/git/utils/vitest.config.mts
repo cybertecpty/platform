@@ -1,9 +1,9 @@
 import { defineConfig, mergeConfig } from 'vitest/config';
 
-import { createSharedVitestConfig } from '../../../vitest.shared.mts';
+import { createBaseVitestConfig } from '../../../vitest.base.mts';
 
 export default mergeConfig(
-  createSharedVitestConfig(import.meta.dirname),
+  createBaseVitestConfig(import.meta.dirname),
   defineConfig({
     test: {
       name: 'git-utils',

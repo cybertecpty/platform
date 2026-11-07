@@ -10,7 +10,7 @@ const workspaceRoot = import.meta.dirname;
  *
  * Merge it with the project's own config using `mergeConfig` from `vitest/config`.
  */
-export function createSharedVitestConfig(projectDir: string): ViteUserConfig {
+export function createBaseVitestConfig(projectDir: string): ViteUserConfig {
   return {
     // Resolve the `@cybertecpty/*` aliases from `tsconfig.base.json` (ADR 0005).
     resolve: { tsconfigPaths: true },

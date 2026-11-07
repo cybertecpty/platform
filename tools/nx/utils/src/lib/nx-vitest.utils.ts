@@ -49,7 +49,7 @@ export function assertNotJestRunner(unitTestRunner: string | undefined): void {
  * Turns the project the upstream `@nx/*` generator just created into a Vitest project the way
  * ADR 0018 lays it out, replacing whatever test-runner scaffold that generator wrote:
  *
- * - `vitest.config.mts` merges the root `vitest.shared.mts` with the project's `name` and
+ * - `vitest.config.mts` merges the root `vitest.base.mts` with the project's `name` and
  *   `environment` only, so the coverage numbers stay in one place.
  * - Any `jest.config.*` is deleted.
  * - `tsconfig.spec.json` gets Vitest's globals, ESM modules and the `.mts` config import;
@@ -79,7 +79,7 @@ export function configureVitestProject(
 /**
  * Runs an upstream `@nx/*` generator that scaffolds Vitest and then undoes the workspace-level
  * side effects ADR 0018 rules out: a root `vitest.config.ts` (the workspace has no root Vitest
- * config; each project merges `vitest.shared.mts`), `@nx/vite` and `vite` in `package.json`, and
+ * config; each project merges `vitest.base.mts`), `@nx/vite` and `vite` in `package.json`, and
  * the comments the generator strips from the root `eslint.config.mjs` when it rewrites it.
  * `extraPackages` names more dependencies to drop the same way (`jsdom` for a project that
  * runs in `node`). Anything the workspace already had before the call is left as it was.
@@ -224,16 +224,16 @@ function writeVitestConfig(
   projectName: string,
   environment: ConfigureVitestProjectOptions['environment']
 ): void {
-  const sharedConfig = `${offsetFromRoot(root)}vitest.shared.mts`;
+  const baseConfig = `${offsetFromRoot(root)}vitest.base.mts`;
 
   tree.write(
     joinPathFragments(root, 'vitest.config.mts'),
     `import { defineConfig, mergeConfig } from 'vitest/config';
 
-import { createSharedVitestConfig } from '${sharedConfig}';
+import { createBaseVitestConfig } from '${baseConfig}';
 
 export default mergeConfig(
-  createSharedVitestConfig(import.meta.dirname),
+  createBaseVitestConfig(import.meta.dirname),
   defineConfig({
     test: {
       name: '${projectName}',

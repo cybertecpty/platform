@@ -193,7 +193,7 @@ describe('libGenerator', () => {
       expect(nxJsLibraryGeneratorMock).not.toHaveBeenCalled();
     });
 
-    it('writes a Vitest config extending the shared config and no Jest config', async () => {
+    it('writes a Vitest config extending the base config and no Jest config', async () => {
       await run(tree, {
         domain: 'billing',
         scope: 'backend',
@@ -203,7 +203,7 @@ describe('libGenerator', () => {
 
       const config = tree.read('libs/billing/models/vitest.config.mts', 'utf-8');
 
-      expect(config).toContain('createSharedVitestConfig');
+      expect(config).toContain('createBaseVitestConfig');
       expect(config).toContain("name: 'billing-models'");
       expect(config).toContain("environment: 'jsdom'");
       expect(tree.exists('libs/billing/models/jest.config.cts')).toBe(false);

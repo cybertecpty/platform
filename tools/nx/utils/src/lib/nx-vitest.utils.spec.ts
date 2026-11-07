@@ -20,13 +20,13 @@ describe('configureVitestProject', () => {
     tree.write('eslint.config.mjs', ESLINT_CONFIG);
   });
 
-  it('writes a `vitest.config.mts` extending the shared config with only name and environment', () => {
+  it('writes a `vitest.config.mts` extending the base config with only name and environment', () => {
     configureVitestProject(tree, 'billing-models', { environment: 'jsdom' });
 
     const config = tree.read(`${ROOT}/vitest.config.mts`, 'utf-8') ?? '';
 
-    expect(config).toContain("from '../../../vitest.shared.mts'");
-    expect(config).toContain('createSharedVitestConfig(import.meta.dirname)');
+    expect(config).toContain("from '../../../vitest.base.mts'");
+    expect(config).toContain('createBaseVitestConfig(import.meta.dirname)');
     expect(config).toContain("name: 'billing-models'");
     expect(config).toContain("environment: 'jsdom'");
     expect(config).not.toContain('coverage');
@@ -37,7 +37,7 @@ describe('configureVitestProject', () => {
 
     configureVitestProject(tree, 'billing-models', { environment: 'node' });
 
-    expect(tree.read(`${ROOT}/vitest.config.mts`, 'utf-8')).toContain('createSharedVitestConfig');
+    expect(tree.read(`${ROOT}/vitest.config.mts`, 'utf-8')).toContain('createBaseVitestConfig');
   });
 
   it('deletes any Jest config', () => {
