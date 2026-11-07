@@ -56,7 +56,7 @@ mechanics, not the rationale.
 9. Returns a callback — invoked by Nx after the tree is flushed to disk — that, only if there's
    something to release:
    - commits the changelog, manifest, and workspace-version changes as **one** release commit;
-   - tags each released project `<project>@<version>` unless `--skipTag`;
+   - tags each released project, named by `release.releaseTag.pattern` (default `<project>@<version>`), unless `--skipTag`;
    - pushes the branch (`--force-with-lease --follow-tags`);
    - opens or updates the GitHub pull request from the release branch into `targetBranch`,
      unless `--skipPullRequest`, `--skipBranch`, or the release branch already equals
@@ -126,7 +126,7 @@ without touching git or the tree.
 | `skipManifest`         | boolean  | `false`   | Skip writing `release-manifest.json` for released projects.                                        |
 | `skipPullRequest`      | boolean  | `false`   | Skip opening/updating the GitHub promotion pull request.                                           |
 | `skipPublish`          | boolean  | `true`    | Reserved — no publish step exists yet; this flag is currently a no-op.                             |
-| `skipTag`              | boolean  | `false`   | Skip creating the `<project>@<version>` git tag per released project.                              |
+| `skipTag`              | boolean  | `false`   | Skip creating the release git tag (per `release.releaseTag.pattern`) per released project.         |
 | `skipWorkspaceVersion` | boolean  | `false`   | Skip bumping the root `package.json` version.                                                      |
 | `skipFormat`           | boolean  | `false`   | Skip formatting generated files.                                                                   |
 | `targetBranch`         | string   | `main`    | Branch the promotion pull request merges into.                                                     |
