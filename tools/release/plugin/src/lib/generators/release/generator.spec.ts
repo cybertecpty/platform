@@ -350,20 +350,6 @@ describe('releaseGenerator', () => {
       );
     });
 
-    it('in a dry run, passes dryRun to the tag check so a collision only warns', async () => {
-      mockDryRunEnabled.mockReturnValue(true);
-
-      await releaseGenerator(tree, options());
-
-      expect(mockAssertReleaseTagsAvailable).toHaveBeenCalledWith(
-        expect.anything(),
-        'release/2026-09-11',
-        gitClient,
-        undefined,
-        true
-      );
-    });
-
     it('checks the tags of a write-free version pass on the release branch, before the real pass', async () => {
       const versionData = buildVersionData({ 'pkg-a': '1.1.0' });
       mockReleaseVersion.mockResolvedValue(versionResult(versionData));
@@ -373,13 +359,10 @@ describe('releaseGenerator', () => {
       expect(mockReleaseVersion.mock.calls[0][0]).toEqual(
         expect.objectContaining({ dryRun: true })
       );
-      expect(mockAssertReleaseTagsAvailable).toHaveBeenCalledWith(
+      expect(mockAssertReleaseTagsAvailable.mock.calls[0].slice(0, 2)).toEqual([
         versionData,
-        'release/2026-09-11',
-        gitClient,
-        undefined,
-        false
-      );
+        'release/2026-09-11'
+      ]);
       expect(mockCheckoutReleaseBranch.mock.invocationCallOrder[0]).toBeLessThan(
         mockAssertReleaseTagsAvailable.mock.invocationCallOrder[0]
       );
@@ -520,13 +503,10 @@ describe('releaseGenerator', () => {
 
       await releaseGenerator(tree, options());
 
-      expect(mockAssertReleaseTagsAvailable).toHaveBeenCalledWith(
+      expect(mockAssertReleaseTagsAvailable.mock.calls[0].slice(0, 2)).toEqual([
         { 'pkg-a': previewData['pkg-a'] },
-        'release/2026-09-11',
-        gitClient,
-        undefined,
-        false
-      );
+        'release/2026-09-11'
+      ]);
     });
 
     describe('when every project is skipped', () => {

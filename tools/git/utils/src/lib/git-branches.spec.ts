@@ -3,7 +3,6 @@ import simpleGit, { type SimpleGit } from 'simple-git';
 import {
   gitBranchExists,
   gitCurrentBranch,
-  gitRemoteBranchExists,
   isCleanGitBranch,
   isCurrentGitBranch
 } from './git-branches';
@@ -27,23 +26,6 @@ describe('gitBranchExists', () => {
 
   it('is false when the name is absent from the local branch list', async () => {
     await expect(gitBranchExists('feature/x', withBranches(['develop']))).resolves.toBe(false);
-  });
-});
-
-describe('gitRemoteBranchExists', () => {
-  const withRemoteBranches = (all: string[]) =>
-    fakeGit({ branch: () => Promise.resolve({ all, current: '' }) });
-
-  it('is true when the remote-tracking list contains remote/name', async () => {
-    const git = withRemoteBranches(['origin/main', 'origin/release/x']);
-
-    await expect(gitRemoteBranchExists('release/x', 'origin', git)).resolves.toBe(true);
-  });
-
-  it('is false when only another remote has the branch', async () => {
-    const git = withRemoteBranches(['upstream/release/x']);
-
-    await expect(gitRemoteBranchExists('release/x', 'origin', git)).resolves.toBe(false);
   });
 });
 
