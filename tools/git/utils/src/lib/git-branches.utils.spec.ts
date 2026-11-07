@@ -5,7 +5,7 @@ import {
   gitCurrentBranch,
   isCleanGitBranch,
   isCurrentGitBranch
-} from './git-branches';
+} from './git-branches.utils';
 
 jest.mock('simple-git', () => ({ __esModule: true, default: jest.fn() }));
 

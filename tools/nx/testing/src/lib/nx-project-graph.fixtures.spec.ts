@@ -3,7 +3,7 @@ import {
   createDependencyGraphFixture,
   createProjectGraphFixture,
   createProjectNodeFixture
-} from './nx-project-graph.fixture';
+} from './nx-project-graph.fixtures';
 
 describe('createProjectGraphFixture', () => {
   const build: TargetConfiguration = { outputs: ['{workspaceRoot}/dist/{projectRoot}'] };

@@ -7,7 +7,7 @@ import {
   gitMergeBase,
   isAncestorCommit,
   lastGitCommitHash
-} from './git-commits';
+} from './git-commits.utils';
 
 let repo: GitRepoFixture;
 

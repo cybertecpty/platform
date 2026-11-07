@@ -1,6 +1,6 @@
 import { createGitRepoFixture, type GitRepoFixture } from '@cybertecpty/git-testing';
 
-import { gitLatestTagMatching, gitTagCommit, gitTagsMatching } from './git-tags';
+import { gitLatestTagMatching, gitTagCommit, gitTagsMatching } from './git-tags.utils';
 
 let repo: GitRepoFixture;
 let first: string;
