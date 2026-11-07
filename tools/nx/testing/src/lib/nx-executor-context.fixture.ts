@@ -2,7 +2,7 @@ import type { ExecutorContext } from '@nx/devkit';
 import {
   createProjectGraphFixture,
   type CreateProjectGraphFixtureOptions
-} from './nx-project-graph.fixture';
+} from './nx-project-graph.fixtures';
 
 /** The project the executor runs for, mirrored into the graph and the configurations. */
 export type CreateExecutorContextFixtureOptions = CreateProjectGraphFixtureOptions;

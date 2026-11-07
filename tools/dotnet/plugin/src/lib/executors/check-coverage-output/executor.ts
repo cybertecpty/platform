@@ -1,5 +1,5 @@
 import { logger, type PromiseExecutor } from '@nx/devkit';
-import { COVERAGE_OUTPUT } from '../../plugin/plugin';
+import { COVERAGE_OUTPUT } from '../../plugin/plugin.utils';
 import type { CheckCoverageOutputExecutorOptions } from './schema';
 
 /**

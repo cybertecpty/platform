@@ -16,7 +16,7 @@ import {
   FORMAT_CHECK_TARGET_NAME,
   FORMAT_TARGET_NAME,
   TESTING_TAG
-} from './plugin';
+} from './plugin.utils';
 
 const [, createNodesFunction] = createNodes;
 

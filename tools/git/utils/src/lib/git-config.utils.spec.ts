@@ -1,6 +1,6 @@
 import simpleGit, { type SimpleGit } from 'simple-git';
 
-import { gitLocalUserEmail, gitLocalUserName } from './git-config';
+import { gitLocalUserEmail, gitLocalUserName } from './git-config.utils';
 
 jest.mock('simple-git', () => ({ __esModule: true, default: jest.fn() }));
 
