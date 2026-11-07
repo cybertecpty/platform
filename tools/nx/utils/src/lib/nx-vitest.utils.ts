@@ -7,7 +7,7 @@ import {
   updateJson
 } from '@nx/devkit';
 
-/** Dependencies the upstream Vitest scaffold adds that ADR 0018 does not want. */
+/** Dependencies the upstream Vitest scaffold adds that nothing in the workspace uses. */
 const UPSTREAM_VITEST_PACKAGES = ['@nx/vite', 'vite'];
 const ROOT_VITEST_CONFIG = 'vitest.config.ts';
 const ROOT_PACKAGE_JSON = 'package.json';
@@ -75,9 +75,15 @@ export function configureVitestProject(
 
 /**
  * Runs an upstream `@nx/*` generator that scaffolds Vitest and then undoes the workspace-level
- * side effects ADR 0018 rules out: a root `vitest.config.ts` (the workspace has no root Vitest
- * config; each project merges `vitest.base.mts`), `@nx/vite` and `vite` in `package.json`, and
- * the comments the generator strips from the root `eslint.config.mjs` when it rewrites it.
+ * side effects it leaves behind. None of these is a rule in ADR 0018; each is a cost:
+ *
+ * - a root `vitest.config.ts` fails typed linting (the root file is outside every tsconfig) and
+ *   adds a second entry point that runs every project outside Nx;
+ * - `@nx/vite` and `vite` in `package.json` have no consumer once `configureVitestProject`
+ *   replaces the upstream config, whose only `@nx/vite` imports are deprecated plugins;
+ * - the generator strips the explanatory comments from the root `eslint.config.mjs` when it
+ *   rewrites the file.
+ *
  * `extraPackages` names more dependencies to drop the same way (`jsdom` for a project that
  * runs in `node`). Anything the workspace already had before the call is left as it was.
  */
