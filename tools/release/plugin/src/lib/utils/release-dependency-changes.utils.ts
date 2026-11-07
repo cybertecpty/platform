@@ -8,6 +8,8 @@ import type { ProjectGraph } from '@nx/devkit';
 import type { ChangelogChange } from 'nx/release/changelog-renderer';
 import simpleGit, { type SimpleGit } from 'simple-git';
 
+import { toReleaseTagGlob } from './release-tags.utils';
+
 /**
  * The conventional-commit types config Nx passes to a changelog renderer.
  */
@@ -82,14 +84,6 @@ export async function findDependencyChanges(
   }
 
   return changes;
-}
-
-/**
- * Turns a release tag pattern into a glob matching the project's release tags: the project name
- * is filled in and every other placeholder (the version, the release group) matches anything.
- */
-export function toReleaseTagGlob(pattern: string, project: string): string {
-  return pattern.replaceAll('{projectName}', project).replaceAll(/\{[^}]+\}/g, '*');
 }
 
 /**

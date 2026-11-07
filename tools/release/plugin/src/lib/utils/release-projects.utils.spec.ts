@@ -1,4 +1,4 @@
-import { gitMergeBase } from '@cybertecpty/git-utils';
+import { gitMergeBase, gitTagsMatching } from '@cybertecpty/git-utils';
 import { createDependencyGraphFixture, createProjectNodeFixture } from '@cybertecpty/nx-testing';
 import { findMatchingProjects, getAffectedGraphNodes } from '@cybertecpty/nx-utils';
 import {
@@ -21,11 +21,13 @@ import {
   resolveAffectedReleaseProjects,
   resolveReleaseProjects,
   selectAffectedReleaseProjects,
-  selectReleasableProjects
+  selectReleasableProjects,
+  tagReleasedProjects
 } from './release-projects.utils';
 
 jest.mock('@cybertecpty/git-utils', () => ({
-  gitMergeBase: jest.fn()
+  gitMergeBase: jest.fn(),
+  gitTagsMatching: jest.fn()
 }));
 
 jest.mock('@cybertecpty/nx-utils', () => ({
@@ -49,6 +51,7 @@ jest.mock('simple-git', () => ({
 }));
 
 const mockGitMergeBase = jest.mocked(gitMergeBase);
+const mockGitTagsMatching = jest.mocked(gitTagsMatching);
 const mockFindMatchingProjects = jest.mocked(findMatchingProjects);
 const mockGetAffectedGraphNodes = jest.mocked(getAffectedGraphNodes);
 const mockCreateProjectGraphAsync = jest.mocked(createProjectGraphAsync);
@@ -452,5 +455,43 @@ describe('selectReleasableProjects', () => {
       selectReleasableProjects({ projects: ['pkg-a'], skipChangelog: true }, versionData, graph)
     ).resolves.toEqual({ projects: ['pkg-a'], released: ['pkg-a', 'pkg-b'] });
     expect(mockReleaseChangelog).not.toHaveBeenCalled();
+  });
+});
+
+describe('tagReleasedProjects', () => {
+  const CUSTOM_PATTERN = 'v{version}/{projectName}';
+  const versionData = {
+    app: { currentVersion: '1.0.0', newVersion: '1.1.0', dependentProjects: [] },
+    idle: { currentVersion: '2.0.0', newVersion: null, dependentProjects: [] }
+  };
+  let addAnnotatedTag: jest.Mock;
+  let git: SimpleGit;
+
+  beforeEach(() => {
+    addAnnotatedTag = jest.fn().mockResolvedValue(undefined);
+    git = { addAnnotatedTag } as unknown as SimpleGit;
+    mockGitTagsMatching.mockResolvedValue([]);
+    jest.spyOn(logger, 'info').mockImplementation(() => undefined);
+    jest.spyOn(logger, 'warn').mockImplementation(() => undefined);
+  });
+
+  it('names the tag with a non-default pattern and tags only versioned projects', async () => {
+    await expect(tagReleasedProjects(versionData, false, git, CUSTOM_PATTERN)).resolves.toEqual([
+      'v1.1.0/app'
+    ]);
+    expect(addAnnotatedTag).toHaveBeenCalledTimes(1);
+    expect(addAnnotatedTag).toHaveBeenCalledWith('v1.1.0/app', 'v1.1.0/app');
+  });
+
+  it('skips a tag that already exists under the pattern', async () => {
+    mockGitTagsMatching.mockResolvedValue(['v1.1.0/app']);
+
+    await expect(tagReleasedProjects(versionData, false, git, CUSTOM_PATTERN)).resolves.toEqual([]);
+    expect(addAnnotatedTag).not.toHaveBeenCalled();
+  });
+
+  it('creates nothing when tagging is skipped', async () => {
+    await expect(tagReleasedProjects(versionData, true, git, CUSTOM_PATTERN)).resolves.toEqual([]);
+    expect(addAnnotatedTag).not.toHaveBeenCalled();
   });
 });

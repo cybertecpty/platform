@@ -1,18 +1,10 @@
-import {
-  createProjectGraphAsync,
-  readJsonFile,
-  workspaceRoot,
-  type NxJsonConfiguration
-} from '@nx/devkit';
-import { join } from 'node:path';
+import { createProjectGraphAsync } from '@nx/devkit';
 import DefaultChangelogRenderer from 'nx/release/changelog-renderer';
 import {
   findDependencyChanges,
   type ConventionalCommitTypes
 } from '../utils/release-dependency-changes.utils';
-
-/** Nx's own default tag pattern for independently released projects. */
-const DEFAULT_TAG_PATTERN = '{projectName}@{version}';
+import { readReleaseTagPattern } from '../utils/release-tags.utils';
 
 /**
  * Nx's changelog renderer, extended so a project bumped because a workspace library it imports
@@ -29,9 +21,7 @@ export default class DependencyChangelogRenderer extends DefaultChangelogRendere
           knownHashes: this.changes.flatMap(change => change.shortHash ?? []),
           project: this.project,
           projectGraph: await createProjectGraphAsync(),
-          releaseTagPattern:
-            readJsonFile<NxJsonConfiguration>(join(workspaceRoot, 'nx.json')).release?.releaseTag
-              ?.pattern ?? DEFAULT_TAG_PATTERN
+          releaseTagPattern: readReleaseTagPattern()
         }))
       );
     }
