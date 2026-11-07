@@ -1,5 +1,6 @@
 import { createExecutorContextFixture } from '@cybertecpty/nx-testing';
 import { logger, type ExecutorContext } from '@nx/devkit';
+import { vi } from 'vitest';
 import <%= executorFnName %> from './executor';
 import type { <%= className %>ExecutorOptions } from './schema';
 
@@ -10,12 +11,12 @@ describe('<%= executorFnName %>', () => {
   const options: <%= className %>ExecutorOptions = {};
 
   beforeEach(() => {
-    jest.spyOn(logger, 'info').mockImplementation(() => undefined);
-    jest.spyOn(logger, 'error').mockImplementation(() => undefined);
+    vi.spyOn(logger, 'info').mockImplementation(() => undefined);
+    vi.spyOn(logger, 'error').mockImplementation(() => undefined);
   });
 
   afterEach(() => {
-    jest.restoreAllMocks();
+    vi.restoreAllMocks();
   });
 
   it('succeeds when run as a project target', async () => {

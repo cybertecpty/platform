@@ -17,8 +17,8 @@ export interface NxExecGeneratorOptions {
   /** Executor description, recorded in `executors.json`, `schema.json` and the README. */
   description?: string;
 
-  /** Test runner for the generated executor's spec. Defaults to `jest` (ADR 0007). */
-  unitTestRunner?: 'jest' | 'none';
+  /** Test runner for the generated executor's spec. Defaults to `vitest` (ADR 0018). */
+  unitTestRunner?: 'vitest' | 'none';
 
   /** Do not add an eslint configuration for the plugin's json files. */
   skipLintChecks?: boolean;

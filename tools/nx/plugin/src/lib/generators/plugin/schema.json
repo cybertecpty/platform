@@ -45,10 +45,10 @@
       "x-priority": "important"
     },
     "unitTestRunner": {
-      "description": "Test runner to use for unit tests. The workspace standardizes on Jest (ADR 0007).",
+      "description": "Test runner to use for unit tests. The workspace standardizes on Vitest (ADR 0018); `jest` is no longer accepted.",
       "type": "string",
-      "enum": ["none", "jest"],
-      "default": "jest",
+      "enum": ["none", "vitest"],
+      "default": "vitest",
       "x-priority": "important"
     },
     "tags": {

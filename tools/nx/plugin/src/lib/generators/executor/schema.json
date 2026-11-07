@@ -46,9 +46,9 @@
     },
     "unitTestRunner": {
       "type": "string",
-      "enum": ["jest", "none"],
-      "default": "jest",
-      "description": "Test runner for the generated executor's spec. The workspace standardizes on Jest (ADR 0007)."
+      "enum": ["vitest", "none"],
+      "default": "vitest",
+      "description": "Test runner for the generated executor's spec. The workspace standardizes on Vitest (ADR 0018); `jest` is no longer accepted."
     },
     "skipLintChecks": {
       "type": "boolean",

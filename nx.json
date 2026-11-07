@@ -56,16 +56,16 @@
   "generators": {
     "@nx/angular:library": {
       "style": "scss",
-      "unitTestRunner": "jest"
+      "unitTestRunner": "vitest"
     },
     "@nx/js:library": {
       "bundler": "none",
       "linter": "eslint",
-      "unitTestRunner": "jest"
+      "unitTestRunner": "vitest"
     },
     "@nx/plugin:plugin": {
       "linter": "eslint",
-      "unitTestRunner": "jest"
+      "unitTestRunner": "vitest"
     }
   },
   "nxCloudId": "6a95fdc6e0d4baed8e2bbe46",

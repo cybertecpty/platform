@@ -180,6 +180,47 @@ describe('libGenerator', () => {
     });
   });
 
+  describe('unit-test runner', () => {
+    it('rejects `unitTestRunner: jest`, pointing to ADR 0018, before delegating', async () => {
+      const result = run(tree, {
+        domain: 'billing',
+        scope: 'backend',
+        type: 'models',
+        unitTestRunner: 'jest' as 'vitest'
+      });
+
+      await expect(result).rejects.toThrow('ADR 0018');
+      expect(nxJsLibraryGeneratorMock).not.toHaveBeenCalled();
+    });
+
+    it('writes a Vitest config extending the shared config and no Jest config', async () => {
+      await run(tree, {
+        domain: 'billing',
+        scope: 'backend',
+        type: 'models',
+        testEnvironment: 'jsdom'
+      });
+
+      const config = tree.read('libs/billing/models/vitest.config.mts', 'utf-8');
+
+      expect(config).toContain('createSharedVitestConfig');
+      expect(config).toContain("name: 'billing-models'");
+      expect(config).toContain("environment: 'jsdom'");
+      expect(tree.exists('libs/billing/models/jest.config.cts')).toBe(false);
+    });
+
+    it('writes no Vitest config when there is no unit-test runner', async () => {
+      await run(tree, {
+        domain: 'billing',
+        scope: 'backend',
+        type: 'models',
+        unitTestRunner: 'none'
+      });
+
+      expect(tree.exists('libs/billing/models/vitest.config.mts')).toBe(false);
+    });
+  });
+
   describe('option passthrough and defaults', () => {
     it('applies the workspace defaults when options are omitted', async () => {
       await run(tree, { domain: 'billing', scope: 'backend', type: 'models' });
@@ -187,7 +228,7 @@ describe('libGenerator', () => {
       expect(forwardedOptions()).toMatchObject({
         bundler: 'none',
         linter: 'eslint',
-        unitTestRunner: 'jest',
+        unitTestRunner: 'vitest',
         publishable: false,
         enableTypedLinting: false,
         skipTsConfig: false,
@@ -284,12 +325,12 @@ describe('libGenerator', () => {
       expect(targets?.typecheck).toBeUndefined();
     });
 
-    it("adds `jest` to `tsconfig.lib.json`'s `compilerOptions.types` for a `type:testing` library", async () => {
+    it("adds `vitest/globals` to `tsconfig.lib.json`'s `compilerOptions.types` for a `type:testing` library", async () => {
       await run(tree, { domain: 'billing', scope: 'backend', type: 'testing' });
 
       const tsConfig = readJson(tree, 'libs/billing/testing/tsconfig.lib.json');
 
-      expect(tsConfig.compilerOptions.types).toEqual(['jest', 'node']);
+      expect(tsConfig.compilerOptions.types).toEqual(['node', 'vitest/globals']);
     });
 
     it('does not touch `tsconfig.lib.json` types for a non-testing library', async () => {
@@ -308,12 +349,12 @@ describe('libGenerator', () => {
       expect(tsConfig.compilerOptions.types).toEqual([]);
     });
 
-    it('keeps `jest` but drops `node` for a `scope:shared` `type:testing` library', async () => {
+    it('keeps `vitest/globals` but drops `node` for a `scope:shared` `type:testing` library', async () => {
       await run(tree, { domain: 'billing', scope: 'shared', type: 'testing' });
 
       const tsConfig = readJson(tree, 'libs/billing/testing/tsconfig.lib.json');
 
-      expect(tsConfig.compilerOptions.types).toEqual(['jest']);
+      expect(tsConfig.compilerOptions.types).toEqual(['vitest/globals']);
     });
 
     it('rejects `unitTestRunner: none` for a `scope:shared` library, which would get no `typecheck`', async () => {

@@ -1,4 +1,8 @@
-import { assertValidPathSegment, readProjectPackageJson } from '@cybertecpty/nx-utils';
+import {
+  assertNotJestRunner,
+  assertValidPathSegment,
+  readProjectPackageJson
+} from '@cybertecpty/nx-utils';
 import type { Tree } from '@nx/devkit';
 import { formatFiles, generateFiles, joinPathFragments, names } from '@nx/devkit';
 import { generatorGenerator as nxGeneratorGenerator } from '@nx/plugin/generators';
@@ -32,7 +36,8 @@ const GENERATORS_DIR = 'src/lib/generators';
 export async function nxGenGenerator(tree: Tree, options: NxGenGeneratorOptions): Promise<void> {
   const { name, project, description, skipLintChecks, skipFormat } = options;
   const directory = options.directory ?? name;
-  const unitTestRunner = options.unitTestRunner ?? 'jest';
+  assertNotJestRunner(options.unitTestRunner);
+  const unitTestRunner = options.unitTestRunner ?? 'vitest';
 
   assertValidArtifactName(name);
   assertValidPathSegment(directory, 'directory');
@@ -99,7 +104,7 @@ function writeStarterFiles(
     name: string;
     packageName: string;
     summary: string;
-    unitTestRunner: 'jest' | 'none';
+    unitTestRunner: 'vitest' | 'none';
   }
 ): void {
   tree.delete(joinPathFragments(generatorDir, 'files'));

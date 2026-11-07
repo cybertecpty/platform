@@ -32,8 +32,8 @@ export type JsLibType = 'models' | 'testing' | 'types' | 'utils';
  * accepted raw); `js` is dropped (the workspace is TypeScript-only, ADR 0005);
  * `buildable`/`compiler`/`setParserOptionsProject`/`config` are dropped (deprecated
  * or legacy on the native schema already). `linter`/`unitTestRunner` are re-narrowed
- * to this workspace's supported values — `unitTestRunner` loses `vitest` (Jest-only,
- * ADR 0007), `linter` loses the deprecated `Linter` enum members.
+ * to this workspace's supported values — `unitTestRunner` loses `jest` (Vitest-only,
+ * ADR 0018), `linter` loses the deprecated `Linter` enum members.
  */
 export type LibGeneratorOptions = Except<NxProjectOptions, 'buildable' | 'scope' | 'type'> &
   Except<
@@ -58,8 +58,11 @@ export type LibGeneratorOptions = Except<NxProjectOptions, 'buildable' | 'scope'
     type: JsLibType | BackendLibType;
     /** Tool for running lint checks. */
     linter?: 'eslint' | 'none';
-    /** Test runner for unit tests. Jest-only per ADR 0007. `none` is rejected for `scope:shared`. */
-    unitTestRunner?: 'jest' | 'none';
+    /**
+     * Test runner for unit tests. Vitest-only per ADR 0018; `jest` is rejected at runtime.
+     * `none` is rejected for `scope:shared`.
+     */
+    unitTestRunner?: 'vitest' | 'none';
   };
 
 /**

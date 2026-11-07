@@ -20,12 +20,16 @@ directory, and tag conventions (ADR 0009).
   `--directory`.
 - Forwards every other option to `@nx/js:library` unchanged, with workspace defaults applied
   where the native generator's own default doesn't match this workspace's conventions
-  (`unitTestRunner: jest`, `linter: eslint`, `testEnvironment: node`, `strict: true`).
+  (`unitTestRunner: vitest`, `linter: eslint`, `testEnvironment: node`, `strict: true`).
 - Forces a `type:testing` library to `bundler: none` even if a buildable bundler is requested —
   a production library importing a buildable testing-helpers lib would otherwise pull it in as a
   real buildable dependency.
-- Adds `jest` to a `type:testing` library's `tsconfig.lib.json` `compilerOptions.types` — its own
-  source (mocks, builders, fixtures) commonly uses Jest globals outside `*.spec.ts`.
+- Replaces the Vitest scaffold `@nx/js:library` writes with the ADR 0018 layout: a
+  `vitest.config.mts` that extends the root `vitest.shared.mts`, no `jest.config.*`, a Vitest
+  `tsconfig.spec.json`, and the project's spec glob in `vitestSpecFiles` (`configureVitestProject`
+  in `@cybertecpty/nx-utils`). `--unitTestRunner=jest` is rejected with a pointer to ADR 0018.
+- Adds `vitest/globals` to a `type:testing` library's `tsconfig.lib.json` `compilerOptions.types` —
+  its own source (mocks, builders, fixtures) commonly uses Vitest globals outside `*.spec.ts`.
 - Removes `node` from a `scope:shared` library's `tsconfig.lib.json` `compilerOptions.types`,
   so a Node global in its source fails `typecheck` (ADR 0004, issue #164). `scope:shared` also
   rejects `--unitTestRunner=none`, which would leave the library with no `typecheck` target.
@@ -50,7 +54,7 @@ pnpm nx g @cybertecpty/js-plugin:ts-lib <type> --domain=<domain> [options]
 | `name`               | string  | no                      | derived  | Literal project-name override. Does not change where the project lives.                                            |
 | `bundler`            | string  | no                      | `none`   | `swc` \| `tsc` \| `rollup` \| `vite` \| `esbuild` \| `none`. Forced to `none` for `testing`.                       |
 | `linter`             | string  | no                      | `eslint` | `eslint` \| `none`.                                                                                                |
-| `unitTestRunner`     | string  | no                      | `jest`   | `jest` \| `none` (ADR 0007 — Jest only).                                                                           |
+| `unitTestRunner`     | string  | no                      | `vitest` | `vitest` \| `none` (ADR 0018 — Vitest only).                                                                       |
 | `tags`               | string  | no                      | —        | Freeform tags appended after the derived `scope:`/`type:`/`domain:` tags.                                          |
 | `publishable`        | boolean | no                      | `false`  |                                                                                                                    |
 | `importPath`         | string  | no                      | —        | Required for a publishable library.                                                                                |

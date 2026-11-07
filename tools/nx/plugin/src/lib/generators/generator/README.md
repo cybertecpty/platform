@@ -38,6 +38,6 @@ e.g. `nx g @cybertecpty/nx-plugin:nx-gen release-manifest --project=release-plug
 - `directory`: the folder under `src/lib/generators/`, when it should differ from `name`. This
   plugin's own `nx-gen` lives in `generators/generator/`.
 - `description`: recorded in `generators.json` and the README.
-- `unitTestRunner`: `jest` (default) or `none`, which writes no spec.
+- `unitTestRunner`: `vitest` (default) or `none`, which writes no spec. `jest` is rejected (ADR 0018).
 - `skipLintChecks`: don't add the eslint configuration for the plugin's json files.
 - `skipFormat`: skip formatting.

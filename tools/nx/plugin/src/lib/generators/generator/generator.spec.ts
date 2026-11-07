@@ -142,7 +142,7 @@ describe('nxGenGenerator', () => {
       expect(forwardedOptions()).toMatchObject({
         path: 'tools/demo/plugin/src/lib/generators/release-manifest/generator.ts',
         name: 'release-manifest',
-        unitTestRunner: 'jest',
+        unitTestRunner: 'vitest',
         skipFormat: true
       });
     });
@@ -254,6 +254,22 @@ describe('nxGenGenerator', () => {
       const spec = tree.read(`${genDir}/generator.spec.ts`, 'utf-8') ?? '';
       expect(spec).toContain('ReleaseManifestGeneratorOptions');
       expect(spec).not.toContain('GeneratorSchema');
+    });
+
+    it('writes a spec on `vi`, not `jest`', async () => {
+      await run(tree, { name: 'release-manifest' });
+
+      const spec = tree.read(`${genDir}/generator.spec.ts`, 'utf-8') ?? '';
+      expect(spec).toContain("import { vi } from 'vitest';");
+      expect(spec).toContain('vi.spyOn(logger');
+      expect(spec).not.toContain('jest');
+    });
+
+    it('rejects `unitTestRunner: jest`, pointing to ADR 0018, before delegating', async () => {
+      await expect(
+        run(tree, { name: 'release-manifest', unitTestRunner: 'jest' as 'vitest' })
+      ).rejects.toThrow('ADR 0018');
+      expect(nxGeneratorGeneratorMock).not.toHaveBeenCalled();
     });
 
     it('writes no spec when the unit-test runner is `none`', async () => {

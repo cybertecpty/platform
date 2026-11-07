@@ -13,4 +13,5 @@ export * from './lib/nx-project-tags.utils';
 export * from './lib/nx-projects.utils';
 export * from './lib/nx-targets.utils';
 export * from './lib/nx-tree.utils';
+export * from './lib/nx-vitest.utils';
 export * from './lib/nx-workspace.utils';

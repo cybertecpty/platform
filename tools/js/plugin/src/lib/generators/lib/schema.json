@@ -67,10 +67,10 @@
       "x-priority": "important"
     },
     "unitTestRunner": {
-      "description": "Test runner to use for unit tests. The workspace standardizes on Jest (ADR 0007). `none` is rejected for `scope:shared`, which needs the `typecheck` target that only a test runner brings (issue #164).",
+      "description": "Test runner to use for unit tests. The workspace standardizes on Vitest (ADR 0018); `jest` is no longer accepted. `none` is rejected for `scope:shared`, which needs the `typecheck` target that only a test runner brings (issue #164).",
       "type": "string",
-      "enum": ["none", "jest"],
-      "default": "jest",
+      "enum": ["none", "vitest"],
+      "default": "vitest",
       "x-priority": "important"
     },
     "tags": {
@@ -122,7 +122,7 @@
     "testEnvironment": {
       "type": "string",
       "enum": ["jsdom", "node"],
-      "description": "The test environment to use if `unitTestRunner` is `jest`.",
+      "description": "The test environment to use if `unitTestRunner` is `vitest`.",
       "default": "node"
     },
     "strict": {

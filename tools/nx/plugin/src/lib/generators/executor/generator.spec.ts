@@ -133,7 +133,7 @@ describe('nxExecGenerator', () => {
         path: `${execDir}/executor.ts`,
         name: 'swa-deploy',
         description: 'Deploy it.',
-        unitTestRunner: 'jest',
+        unitTestRunner: 'vitest',
         includeHasher: false,
         skipLintChecks: false,
         skipFormat: true
@@ -235,6 +235,23 @@ describe('nxExecGenerator', () => {
       expect(spec).toContain(`from '@cybertecpty/nx-testing'`);
       expect(spec).toContain('SwaDeployExecutorOptions');
       expect(spec).not.toContain('ExecutorSchema');
+    });
+
+    it('writes a spec on `vi`, not `jest`', async () => {
+      await run(tree, { name: 'swa-deploy' });
+
+      const spec = read(`${execDir}/executor.spec.ts`);
+      expect(spec).toContain("import { vi } from 'vitest';");
+      expect(spec).toContain('vi.spyOn(logger');
+      expect(spec).toContain('vi.restoreAllMocks()');
+      expect(spec).not.toContain('jest');
+    });
+
+    it('rejects `unitTestRunner: jest`, pointing to ADR 0018, before delegating', async () => {
+      await expect(
+        run(tree, { name: 'swa-deploy', unitTestRunner: 'jest' as 'vitest' })
+      ).rejects.toThrow('ADR 0018');
+      expect(nxExecutorGeneratorMock).not.toHaveBeenCalled();
     });
 
     it('writes no spec when the unit-test runner is `none`', async () => {

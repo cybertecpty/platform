@@ -1,13 +1,16 @@
 import {
   addTsConfigTypes,
   addTypecheckTarget,
+  assertNotJestRunner,
   BACKEND_LIB_TYPES,
+  configureVitestProject,
   formatProjectTags,
   projectDirFromOpts,
   projectNameFromOpts,
   projectTagsFromOptions,
   removeTsConfigTypes,
-  sortTsConfigBasePaths
+  sortTsConfigBasePaths,
+  withoutUpstreamVitestSideEffects
 } from '@cybertecpty/nx-utils';
 import type { GeneratorCallback, Tree } from '@nx/devkit';
 import {
@@ -45,7 +48,9 @@ export async function libGenerator(
   const name = projectNameFromOpts(projectOptions);
   const directory = projectDirFromOpts(projectOptions);
   const tags = formatProjectTags(projectTagsFromOptions(projectOptions));
-  const unitTestRunner = options.unitTestRunner ?? 'jest';
+  assertNotJestRunner(options.unitTestRunner);
+  const unitTestRunner = options.unitTestRunner ?? 'vitest';
+  const testEnvironment = options.testEnvironment ?? 'node';
 
   // A `scope:shared` lib's `typecheck` target is what keeps Node globals out of its source
   // (ADR 0004, #164), and `addTypecheckTarget` adds none without a unit-test runner.
@@ -68,39 +73,45 @@ export async function libGenerator(
     bundler = 'none';
   }
 
-  const projectTask = await nxJsLibraryGenerator(tree, {
-    name,
-    directory,
-    tags,
-    bundler,
-    linter: options.linter ?? 'eslint',
-    unitTestRunner,
-    publishable: options.publishable ?? false,
-    importPath: options.importPath,
-    useProjectJson: options.useProjectJson,
-    enableTypedLinting: options.enableTypedLinting ?? false,
-    skipTsConfig: options.skipTsConfig ?? false,
-    skipPackageJson: options.skipPackageJson ?? false,
-    skipTypeCheck: options.skipTypeCheck ?? false,
-    includeBabelRc: options.includeBabelRc,
-    testEnvironment: options.testEnvironment ?? 'node',
-    strict: options.strict ?? true,
-    minimal: options.minimal ?? false,
-    skipFormat: true
-  });
+  const projectTask = await withoutUpstreamVitestSideEffects(tree, () =>
+    nxJsLibraryGenerator(tree, {
+      name,
+      directory,
+      tags,
+      bundler,
+      linter: options.linter ?? 'eslint',
+      unitTestRunner,
+      publishable: options.publishable ?? false,
+      importPath: options.importPath,
+      useProjectJson: options.useProjectJson,
+      enableTypedLinting: options.enableTypedLinting ?? false,
+      skipTsConfig: options.skipTsConfig ?? false,
+      skipPackageJson: options.skipPackageJson ?? false,
+      skipTypeCheck: options.skipTypeCheck ?? false,
+      includeBabelRc: options.includeBabelRc,
+      testEnvironment,
+      strict: options.strict ?? true,
+      minimal: options.minimal ?? false,
+      skipFormat: true
+    })
+  );
 
   sortTsConfigBasePaths(tree);
+
+  if (unitTestRunner === 'vitest') {
+    configureVitestProject(tree, name, { environment: testEnvironment });
+  }
+
   addTypecheckTarget(tree, name, unitTestRunner);
 
   const { root } = readProjectConfiguration(tree, name);
   const tsConfigLibPath = joinPathFragments(root, 'tsconfig.lib.json');
 
   // A `type:testing` library's own source (mocks, builders, fixtures) commonly uses
-  // Jest globals (`jest.fn()`, `jest.Mock`) outside `*.spec.ts`, so `tsconfig.lib.json`
-  // needs `jest` in `compilerOptions.types` too — `@nx/js:library` only adds it to
-  // `tsconfig.spec.json`.
-  if (options.type === 'testing') {
-    addTsConfigTypes(tree, tsConfigLibPath, ['jest']);
+  // Vitest globals outside `*.spec.ts`, so `tsconfig.lib.json` needs `vitest/globals` in
+  // `compilerOptions.types` too — `@nx/js:library` only adds it to `tsconfig.spec.json`.
+  if (options.type === 'testing' && unitTestRunner === 'vitest') {
+    addTsConfigTypes(tree, tsConfigLibPath, ['vitest/globals']);
   }
 
   // `@nx/js:library` loads `node` types; a `scope:shared` lib must stay browser-safe (ADR

@@ -1,4 +1,8 @@
-import { assertValidPathSegment, readProjectPackageJson } from '@cybertecpty/nx-utils';
+import {
+  assertNotJestRunner,
+  assertValidPathSegment,
+  readProjectPackageJson
+} from '@cybertecpty/nx-utils';
 import type { Tree } from '@nx/devkit';
 import { formatFiles, generateFiles, joinPathFragments, names } from '@nx/devkit';
 import { executorGenerator as nxExecutorGenerator } from '@nx/plugin/generators';
@@ -32,7 +36,8 @@ const EXECUTORS_DIR = 'src/lib/executors';
 export async function nxExecGenerator(tree: Tree, options: NxExecGeneratorOptions): Promise<void> {
   const { name, project, skipLintChecks, skipFormat } = options;
   const directory = options.directory ?? name;
-  const unitTestRunner = options.unitTestRunner ?? 'jest';
+  assertNotJestRunner(options.unitTestRunner);
+  const unitTestRunner = options.unitTestRunner ?? 'vitest';
   // `@nx/plugin:executor`'s own default, so every surface agrees with `executors.json`.
   const description = options.description ?? `${name} executor`;
 
@@ -104,7 +109,7 @@ function writeStarterFiles(
     name: string;
     packageName: string;
     summary: string;
-    unitTestRunner: 'jest' | 'none';
+    unitTestRunner: 'vitest' | 'none';
   }
 ): void {
   generateFiles(tree, joinPathFragments(__dirname, 'files'), executorDir, {
