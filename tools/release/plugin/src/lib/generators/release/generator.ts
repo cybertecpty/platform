@@ -16,11 +16,7 @@ import { formatFiles, logger, type Tree } from '@nx/devkit';
 import { releaseChangelog, releaseVersion } from 'nx/release';
 import type { SimpleGit } from 'simple-git';
 import simpleGit from 'simple-git';
-import {
-  checkoutReleaseBranch,
-  checkoutReleasePreview,
-  resolveReleaseBranchName
-} from '../../utils/release-branch.utils';
+import { checkoutReleaseBranch, resolveReleaseBranchName } from '../../utils/release-branch.utils';
 import { buildReleasePrBody } from '../../utils/release-pr.utils';
 import {
   assertBaseIncludesTarget,
@@ -92,21 +88,9 @@ export async function releaseGenerator(
 
   let restoreBranch: string | null = null;
   let createdBranch: string | null = null;
-  let restorePreview: (() => Promise<void>) | null = null;
 
   if (isDryRun) {
     logger.warn(`Dry run: release would be cut on ${releaseBranch}.`);
-
-    // The preview must see the commits and tags the real run will, whatever branch the dry
-    // run started on, so look at the release branch's tip without creating the branch.
-    restorePreview = await checkoutReleasePreview(branchOpts, git);
-
-    if (!restorePreview) {
-      logger.warn(
-        'Dry run: the working tree is not clean, so the preview runs on the current checkout ' +
-          'and the release tag check is skipped.'
-      );
-    }
   } else {
     const checkout = await checkoutReleaseBranch(branchOpts, git);
 
@@ -143,7 +127,7 @@ export async function releaseGenerator(
 
       ({ projects } = releasable);
 
-      if (!opts.skipTag && (!isDryRun || restorePreview)) {
+      if (!opts.skipTag) {
         await assertReleaseTagsAvailable(
           pickVersionData(previewVersionData, releasable.released),
           releaseBranch,
@@ -156,8 +140,6 @@ export async function releaseGenerator(
       await abandonReleaseBranch(restoreBranch, createdBranch, git);
       restoreBranch = null;
       throw error;
-    } finally {
-      await restorePreview?.();
     }
 
     // 2. Calculate and stage project package version changes.

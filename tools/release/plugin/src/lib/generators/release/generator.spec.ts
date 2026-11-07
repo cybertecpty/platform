@@ -13,11 +13,7 @@ import { createTreeWithEmptyWorkspace } from '@nx/devkit/testing';
 import { releaseChangelog, releaseVersion } from 'nx/release';
 import simpleGit from 'simple-git';
 
-import {
-  checkoutReleaseBranch,
-  checkoutReleasePreview,
-  resolveReleaseBranchName
-} from '../../utils/release-branch.utils';
+import { checkoutReleaseBranch, resolveReleaseBranchName } from '../../utils/release-branch.utils';
 import { buildReleasePrBody } from '../../utils/release-pr.utils';
 import {
   assertBaseIncludesTarget,
@@ -58,7 +54,6 @@ jest.mock('nx/release', () => ({
 
 jest.mock('../../utils/release-branch.utils', () => ({
   checkoutReleaseBranch: jest.fn(),
-  checkoutReleasePreview: jest.fn(),
   resolveReleaseBranchName: jest.fn()
 }));
 
@@ -126,7 +121,6 @@ const mockReleaseVersion = jest.mocked(releaseVersion);
 const mockVerboseEnabled = jest.mocked(verboseEnabled);
 const mockBuildReleasePrBody = jest.mocked(buildReleasePrBody);
 const mockCheckoutReleaseBranch = jest.mocked(checkoutReleaseBranch);
-const mockCheckoutReleasePreview = jest.mocked(checkoutReleasePreview);
 const mockReleaseChangelog = jest.mocked(releaseChangelog);
 const mockResolveAffectedReleaseProjects = jest.mocked(resolveAffectedReleaseProjects);
 const mockResolveReleaseBranchName = jest.mocked(resolveReleaseBranchName);
@@ -230,7 +224,6 @@ describe('releaseGenerator', () => {
     mockResolveAffectedReleaseProjects.mockResolvedValue([]);
     mockAssertBaseIncludesTarget.mockResolvedValue(undefined);
     mockAssertReleaseTagsAvailable.mockResolvedValue(undefined);
-    mockCheckoutReleasePreview.mockResolvedValue(() => Promise.resolve());
 
     gitClient.add.mockResolvedValue(undefined);
     gitClient.checkout.mockResolvedValue(undefined);
@@ -357,47 +350,18 @@ describe('releaseGenerator', () => {
       );
     });
 
-    it('in a dry run, previews on the release branch tip and warns about tag collisions', async () => {
-      const restore = jest.fn(() => Promise.resolve());
-      const versionData = buildVersionData({ 'pkg-a': '1.1.0' });
+    it('in a dry run, passes dryRun to the tag check so a collision only warns', async () => {
       mockDryRunEnabled.mockReturnValue(true);
-      mockCheckoutReleasePreview.mockResolvedValue(restore);
-      mockReleaseVersion.mockResolvedValue(versionResult(versionData));
 
       await releaseGenerator(tree, options());
 
       expect(mockAssertReleaseTagsAvailable).toHaveBeenCalledWith(
-        versionData,
+        expect.anything(),
         'release/2026-09-11',
         gitClient,
         undefined,
         true
       );
-      expect(mockCheckoutReleasePreview.mock.invocationCallOrder[0]).toBeLessThan(
-        mockReleaseVersion.mock.invocationCallOrder[0]
-      );
-      expect(restore).toHaveBeenCalledTimes(1);
-    });
-
-    it('in a dry run, returns to the starting checkout even when the preview fails', async () => {
-      const restore = jest.fn(() => Promise.resolve());
-      mockDryRunEnabled.mockReturnValue(true);
-      mockCheckoutReleasePreview.mockResolvedValue(restore);
-      mockReleaseVersion.mockRejectedValueOnce(new Error('boom'));
-
-      await expect(releaseGenerator(tree, options())).rejects.toThrow('boom');
-
-      expect(restore).toHaveBeenCalledTimes(1);
-    });
-
-    it('in a dry run on a dirty tree, warns and skips the tag check', async () => {
-      mockDryRunEnabled.mockReturnValue(true);
-      mockCheckoutReleasePreview.mockResolvedValue(null);
-
-      await releaseGenerator(tree, options());
-
-      expect(mockAssertReleaseTagsAvailable).not.toHaveBeenCalled();
-      expect(logger.warn).toHaveBeenCalledWith(expect.stringContaining('not clean'));
     });
 
     it('checks the tags of a write-free version pass on the release branch, before the real pass', async () => {

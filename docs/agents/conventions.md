@@ -155,10 +155,9 @@ back-merge by hand on a `chore/back-merge-main-{date}` branch through a normal P
 as a **merge commit**. The release generator enforces this: a real run fails before it writes
 any file, commit, push or PR if `origin/main` has commits `origin/develop` lacks, or if a release
 tag it would create already exists off the release branch. It deletes any release branch it cut
-before failing. The tag check reads the tags the run would create on the release branch (or, when
-it does not exist yet, the commit it would be cut from), whatever branch you start on. A same-day
-re-run passes even when the release branch exists only on `origin`. `--dry-run` only warns, about
-the stale base and about an existing tag, and carries on.
+before failing. A same-day re-run passes even when the release branch exists only on `origin`.
+`--dry-run` only warns, about the stale base and about an existing tag, and carries on; it
+checks on the current branch, so start it from the branch you would release from.
 
 **Release PRs (live).** Release PRs into `main` merge as **merge commits, not squash** —
 squashing orphans the `{project}@{version}` tag the release generator creates on the release

@@ -120,48 +120,6 @@ export async function checkoutReleaseBranch(
 }
 
 /**
- * Puts a clean working tree on a detached checkout of the commit the release branch would
- * start from, so a dry run previews the release the real run would cut whatever branch it was
- * started on. That is the existing release branch (local, else on origin), or a new one cut
- * from `origin/<baseBranch>`; with `skipBranch`, `baseBranch` itself. No branch is created.
- *
- * @returns A function that switches back to where the run started, or `null` when the working
- *   tree is not clean and nothing was changed.
- */
-export async function checkoutReleasePreview(
-  opts: ReleaseBranchOptions,
-  git: SimpleGit = simpleGit()
-): Promise<(() => Promise<void>) | null> {
-  if (!(await isCleanGitBranch(git))) {
-    return null;
-  }
-
-  const releaseBranch = resolveReleaseBranchName(opts);
-  // `branchLocal().current` names a detached HEAD after what it points at, so ask rev-parse.
-  const startRef = (await git.revparse(['--abbrev-ref', 'HEAD'])).trim();
-  const start = startRef === 'HEAD' ? (await git.revparse(['HEAD'])).trim() : startRef;
-  let tip = opts.baseBranch;
-
-  if (!opts.skipBranch) {
-    await fetchReleaseBranch(releaseBranch, git);
-
-    if (await gitBranchExists(releaseBranch, git)) {
-      tip = releaseBranch;
-    } else if (await gitRemoteBranchExists(releaseBranch, 'origin', git)) {
-      tip = `origin/${releaseBranch}`;
-    } else {
-      tip = `origin/${opts.baseBranch}`;
-    }
-  }
-
-  await git.checkout(['--detach', tip]);
-
-  return async () => {
-    await git.checkout(start);
-  };
-}
-
-/**
  * The branch this release's artifacts belong on: `release/<date>` (the date part
  * of `releaseDate`), or `baseBranch` itself when `skipBranch` is set.
  *
