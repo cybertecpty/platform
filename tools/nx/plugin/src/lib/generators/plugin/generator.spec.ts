@@ -79,13 +79,38 @@ describe('pluginGenerator', () => {
     });
   });
 
+  describe('unit-test runner', () => {
+    it('rejects `unitTestRunner: jest`, pointing to ADR 0018, before delegating', async () => {
+      await expect(
+        run(tree, { group: 'demo', unitTestRunner: 'jest' as 'vitest' })
+      ).rejects.toThrow('ADR 0018');
+      expect(nxPluginGeneratorMock).not.toHaveBeenCalled();
+    });
+
+    it('writes a Vitest config extending the base config and no Jest config', async () => {
+      await run(tree, { group: 'demo' });
+
+      const config = tree.read('tools/demo/plugin/vitest.config.mts', 'utf-8');
+
+      expect(config).toContain('createBaseVitestConfig');
+      expect(config).toContain("environment: 'node'");
+      expect(tree.exists('tools/demo/plugin/jest.config.cts')).toBe(false);
+    });
+
+    it('writes no Vitest config when there is no unit-test runner', async () => {
+      await run(tree, { group: 'demo', unitTestRunner: 'none' });
+
+      expect(tree.exists('tools/demo/plugin/vitest.config.mts')).toBe(false);
+    });
+  });
+
   describe('option passthrough and defaults', () => {
     it('applies the workspace defaults when options are omitted', async () => {
       await run(tree, { group: 'demo' });
 
       expect(forwardedOptions()).toMatchObject({
         linter: 'eslint',
-        unitTestRunner: 'jest',
+        unitTestRunner: 'vitest',
         compiler: 'tsc',
         e2eTestRunner: 'none',
         publishable: false,

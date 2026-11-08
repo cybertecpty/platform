@@ -44,7 +44,7 @@ export function addTsConfigTypes(tree: Tree, tsConfigPath: string, types: string
  * `nx.json`, which runs `tsc --noEmit` on the project's `tsconfig.lib.json` and then its
  * `tsconfig.spec.json`. That checks the source against the lib config's own `types` (so a
  * lib without `node` types can't use Node globals), and gives `.spec.ts` files a real type
- * check that `ts-jest` and `build` (lib sources only) both skip. See issues #48 and #164.
+ * check that `ts-jest`, Vitest and `build` (lib sources only) both skip. See issues #48 and #164.
  *
  * No-ops when there's no unit-test runner: the underlying `@nx/*:library` /
  * `@nx/*:plugin` generator writes no `tsconfig.spec.json` then, so the inherited
@@ -53,7 +53,7 @@ export function addTsConfigTypes(tree: Tree, tsConfigPath: string, types: string
 export function addTypecheckTarget(
   tree: Tree,
   projectName: string,
-  unitTestRunner: 'jest' | 'none'
+  unitTestRunner: 'vitest' | 'none'
 ): void {
   if (unitTestRunner === 'none') {
     return;

@@ -1,5 +1,6 @@
 import { logger, type Tree } from '@nx/devkit';
 import { createTreeWithEmptyWorkspace } from '@nx/devkit/testing';
+import { vi } from 'vitest';
 import { <%= generatorFnName %> } from './generator';
 import type { <%= className %>GeneratorOptions } from './schema';
 
@@ -9,7 +10,7 @@ describe('<%= generatorFnName %>', () => {
 
   beforeEach(() => {
     tree = createTreeWithEmptyWorkspace();
-    jest.spyOn(logger, 'info').mockImplementation(() => undefined);
+    vi.spyOn(logger, 'info').mockImplementation(() => undefined);
   });
 
   it('runs without throwing', async () => {

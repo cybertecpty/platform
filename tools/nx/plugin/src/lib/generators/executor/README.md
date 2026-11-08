@@ -39,6 +39,6 @@ e.g. `nx g @cybertecpty/nx-plugin:nx-exec swa-deploy --project=azure-plugin` add
 - `project` (required): the `type:plugin` project to add the executor to.
 - `directory`: the folder under `src/lib/executors/`, when it should differ from `name`.
 - `description`: recorded in `executors.json`, the executor's `schema.json` and its README.
-- `unitTestRunner`: `jest` (default) or `none`, which writes no spec.
+- `unitTestRunner`: `vitest` (default) or `none`, which writes no spec. `jest` is rejected (ADR 0018).
 - `skipLintChecks`: don't add the eslint configuration for the plugin's json files.
 - `skipFormat`: skip formatting.

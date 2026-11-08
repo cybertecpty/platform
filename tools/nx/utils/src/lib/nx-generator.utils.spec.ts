@@ -113,7 +113,7 @@ describe('addTypecheckTarget', () => {
   });
 
   it('adds a `typecheck` target stub when there is a unit-test runner', () => {
-    addTypecheckTarget(tree, 'demo', 'jest');
+    addTypecheckTarget(tree, 'demo', 'vitest');
 
     const { targets } = readProjectConfiguration(tree, 'demo');
     expect(targets?.['typecheck']).toEqual({});

@@ -10,8 +10,8 @@ import type { Except } from 'type-fest';
  * `src/lib/generators/<directory>/generator.ts`, so a caller can't point the
  * generator at an arbitrary location. `name` stays (the collection key) but is
  * additionally constrained to a single kebab path segment. `unitTestRunner` is
- * re-narrowed to its `schema.json` enum — it loses `vitest`, since the
- * workspace is Jest-only (ADR 0007). Everything else (`description`,
+ * re-narrowed to its `schema.json` enum — it loses `jest`, since the
+ * workspace is Vitest-only (ADR 0018). Everything else (`description`,
  * `skipLintChecks`, `skipFormat`) is forwarded to `@nx/plugin:generator`
  * unchanged.
  */
@@ -34,8 +34,8 @@ export type NxGenGeneratorOptions = Except<
    * kebab-case path segment.
    */
   directory?: string;
-  /** Test runner for the generated generator's spec. Jest-only per ADR 0007. */
-  unitTestRunner?: 'jest' | 'none';
+  /** Test runner for the generated generator's spec. Vitest-only per ADR 0018. */
+  unitTestRunner?: 'vitest' | 'none';
 };
 
 /** Options accepted by `@nx/plugin`'s `generatorGenerator`, in its installed version. */

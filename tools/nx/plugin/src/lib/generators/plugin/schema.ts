@@ -25,8 +25,7 @@ export type NormalizedNxPluginGeneratorOptions = NxPluginGeneratorOptions &
  * and `setParserOptionsProject` is a deprecated alias for `enableTypedLinting`.
  * All four are dropped from the passthrough schema. `unitTestRunner` and
  * `linter` are re-narrowed to their `schema.json` enums — `unitTestRunner`
- * loses `vitest` (the workspace is Jest-only, ADR 0007; generating with Vitest
- * requires reopening that ADR), `linter` loses the deprecated `Linter` enum
+ * loses `jest` (the workspace is Vitest-only, ADR 0018), `linter` loses the deprecated `Linter` enum
  * members. Everything else is forwarded to `@nx/plugin:plugin` unchanged.
  */
 export type NxPluginGeneratorOptions = SetRequired<
@@ -44,8 +43,8 @@ export type NxPluginGeneratorOptions = SetRequired<
   > & {
     /** Tool for running lint checks. */
     linter?: 'eslint' | 'none';
-    /** Test runner for unit tests. Jest-only per ADR 0007. */
-    unitTestRunner?: 'jest' | 'none';
+    /** Test runner for unit tests. Vitest-only per ADR 0018. */
+    unitTestRunner?: 'vitest' | 'none';
   };
 
 /** Options accepted by `@nx/plugin`'s `pluginGenerator`, in its installed version. */
