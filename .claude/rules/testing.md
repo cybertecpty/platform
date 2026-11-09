@@ -65,10 +65,13 @@ defaults. Loads when working on specs, test artifacts, `type:testing` libs, or J
 - Run one spec file with a Jest path pattern after `--`:
   `pnpm exec nx test {project} -- {file-pattern}`. Nx forwards unknown flags to Jest, which has no
   `--testFile`, so that flag fails the run.
-- **Vitest mocks differ from Jest's in two ways.** `vi.mock` has no `{ virtual: true }`, so mock
+- **Vitest mocks differ from Jest's in three ways.** `vi.mock` has no `{ virtual: true }`, so mock
   only packages that are installed (an ESM-only one such as `lighthouse` mocks plainly). A
   `mockImplementation` that the code under test calls with `new` must be a `function () {}`: an
-  arrow function throws "is not a constructor".
+  arrow function throws "is not a constructor". `vi.mock` and `vi.doMock` do not intercept a
+  CommonJS `require` in the source (`loadDepConstraints`): spy on `Module._load` for that one
+  path and defer to the real loader otherwise. Assert only the requested path, since its
+  `parent` and `isMain` arguments differ between Windows and Linux.
 - For Nx generators / workspace utilities, use `createTreeWithEmptyWorkspace()` and
   assert against the in-memory `Tree`, generated files, and project config.
 - **Coverage mechanics.** `jest.preset.js` sets `coverageThreshold.global` to 80 and
