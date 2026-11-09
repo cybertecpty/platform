@@ -1,4 +1,4 @@
-/** The part of a Jest mock this helper reads: its recorded call arguments. */
+/** The part of a Vitest mock this helper reads: its recorded call arguments. */
 interface MockWithCalls<TArgs extends unknown[]> {
   mock: { calls: TArgs[] };
 }

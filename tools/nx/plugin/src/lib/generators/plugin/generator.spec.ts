@@ -1,5 +1,5 @@
-import { lastCallArg } from '@cybertecpty/jest-testing';
 import { createFakeLibraryGenerator, createWorkspaceTreeFixture } from '@cybertecpty/nx-testing';
+import { lastCallArg } from '@cybertecpty/vitest-testing';
 import type { Tree } from '@nx/devkit';
 import * as devkit from '@nx/devkit';
 import { addProjectConfiguration, readJson } from '@nx/devkit';

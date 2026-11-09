@@ -1,8 +1,8 @@
-import { lastCallArg } from './jest-mock-calls.utils';
+import { lastCallArg } from './vitest-mock-calls.utils';
 
 describe('lastCallArg', () => {
   it("returns the given argument of the mock's most recent call", () => {
-    const mock = jest.fn<void, [string, { tags: string }]>();
+    const mock = vi.fn<(name: string, options: { tags: string }) => void>();
 
     mock('first', { tags: 'scope:shared' });
     mock('second', { tags: 'scope:tools' });
@@ -12,7 +12,7 @@ describe('lastCallArg', () => {
   });
 
   it('throws an error naming the mock when it was never called', () => {
-    const mock = jest.fn<void, [string]>();
+    const mock = vi.fn<(name: string) => void>();
 
     expect(() => lastCallArg(mock, 0, '`@nx/js:library`')).toThrow(
       '`@nx/js:library` was never called'

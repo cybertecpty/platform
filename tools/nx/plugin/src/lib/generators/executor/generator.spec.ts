@@ -1,4 +1,4 @@
-import { lastCallArg } from '@cybertecpty/jest-testing';
+import { lastCallArg } from '@cybertecpty/vitest-testing';
 import type { Tree } from '@nx/devkit';
 import * as devkit from '@nx/devkit';
 import {
