@@ -16,5 +16,5 @@ update the release pull request.
 
 ## Tests
 
-`nx test github-utils` — Jest via `ts-jest`. `runGh` and the `gh` calls are
+`nx test github-utils` — Vitest. `runGh` and the `gh` calls are
 exercised against a mocked `child_process` / `runGh`; no real `gh` invocation.

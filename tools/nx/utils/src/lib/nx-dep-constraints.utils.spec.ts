@@ -2,7 +2,9 @@ import { createProjectNodeFixture } from '@cybertecpty/nx-testing';
 import type { DependencyConstraint } from '@cybertecpty/nx-types';
 import type { ProjectGraphProjectNode } from '@nx/devkit';
 import { existsSync } from 'node:fs';
+import Module from 'node:module';
 import { basename } from 'node:path';
+import type { MockInstance } from 'vitest';
 import {
   checkBannedTagsViolations,
   checkDepConstraints,
@@ -570,26 +572,37 @@ describe('DEP_CONSTRAINTS_PATH', () => {
 });
 
 describe('loadDepConstraints', () => {
+  // `loadDepConstraints` uses CommonJS `require`, which `vi.mock` does not intercept, so the
+  // module loader is stubbed for the matrix path and defers to the real one for everything else.
+  type ModuleLoader = (request: string, parent: unknown, isMain: boolean) => unknown;
+  const internals = Module as unknown as { _load: ModuleLoader };
+
+  const stubMatrixModule = (exports: unknown): MockInstance<ModuleLoader> => {
+    const load = internals._load;
+
+    return vi
+      .spyOn(internals, '_load')
+      .mockImplementation((request, parent, isMain) =>
+        request === DEP_CONSTRAINTS_PATH ? exports : load.call(Module, request, parent, isMain)
+      );
+  };
+
   afterEach(() => {
-    jest.dontMock(DEP_CONSTRAINTS_PATH);
-    jest.resetModules();
+    vi.restoreAllMocks();
   });
 
   it('returns the matrix that the matrix module exports', () => {
-    // Jest cannot load the real `.mts` module, so it is replaced for the call.
-    jest.doMock(DEP_CONSTRAINTS_PATH, () => ({
-      DEP_CONSTRAINTS: [API_CONSTRAINT_FIXTURE, TESTING_CONSTRAINT_FIXTURE]
-    }));
+    // The real `.mts` module cannot be required here, so it is replaced for the call.
+    stubMatrixModule({ DEP_CONSTRAINTS: [API_CONSTRAINT_FIXTURE, TESTING_CONSTRAINT_FIXTURE] });
 
     expect(loadDepConstraints()).toEqual([API_CONSTRAINT_FIXTURE, TESTING_CONSTRAINT_FIXTURE]);
   });
 
   it('loads the module from DEP_CONSTRAINTS_PATH', () => {
-    const factory = jest.fn(() => ({ DEP_CONSTRAINTS: [] }));
-    jest.doMock(DEP_CONSTRAINTS_PATH, factory);
+    const load = stubMatrixModule({ DEP_CONSTRAINTS: [] });
 
     loadDepConstraints();
 
-    expect(factory).toHaveBeenCalledTimes(1);
+    expect(load).toHaveBeenCalledWith(DEP_CONSTRAINTS_PATH, expect.anything(), false);
   });
 });

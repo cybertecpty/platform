@@ -1,9 +1,9 @@
 import { runGh } from './github-cli.utils';
 import { getGithubAccountToken, getGithubAuthenticatedUser } from './github-user.utils';
 
-jest.mock('./github-cli.utils', () => ({ runGh: jest.fn() }));
+vi.mock('./github-cli.utils', () => ({ runGh: vi.fn() }));
 
-const mockRunGh = jest.mocked(runGh);
+const mockRunGh = vi.mocked(runGh);
 
 afterEach(() => {
   mockRunGh.mockReset();

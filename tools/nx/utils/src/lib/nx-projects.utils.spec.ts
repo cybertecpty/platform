@@ -1,6 +1,7 @@
 import { createDependencyGraphFixture, createProjectNodeFixture } from '@cybertecpty/nx-testing';
 import { logger, type Tree } from '@nx/devkit';
 import { createTreeWithEmptyWorkspace } from '@nx/devkit/testing';
+import type { MockInstance } from 'vitest';
 import {
   BACKEND_LIB_TYPES,
   collectProjectDependencies,
@@ -289,10 +290,10 @@ describe('NX_PROJECT_SCOPES', () => {
 });
 
 describe('normalizeProjectOptions', () => {
-  let warnSpy: jest.SpyInstance;
+  let warnSpy: MockInstance;
 
   beforeEach(() => {
-    warnSpy = jest.spyOn(logger, 'warn').mockImplementation(() => undefined);
+    warnSpy = vi.spyOn(logger, 'warn').mockImplementation(() => undefined);
   });
 
   afterEach(() => {

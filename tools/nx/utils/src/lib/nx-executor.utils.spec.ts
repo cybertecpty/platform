@@ -4,9 +4,9 @@ import type { ChildProcess } from 'node:child_process';
 import { EventEmitter } from 'node:events';
 import { runCommand } from './nx-executor.utils';
 
-jest.mock('cross-spawn', () => ({ spawn: jest.fn() }));
+vi.mock('cross-spawn', () => ({ spawn: vi.fn() }));
 
-const spawnMock = jest.mocked(spawn);
+const spawnMock = vi.mocked(spawn);
 
 // Model only the process events runCommand depends on.
 const mockChildProcess = (): EventEmitter => {
@@ -25,12 +25,12 @@ describe('runCommand', () => {
 
   beforeEach(() => {
     spawnMock.mockReset();
-    jest.spyOn(logger, 'info').mockImplementation(() => undefined);
-    jest.spyOn(logger, 'error').mockImplementation(() => undefined);
+    vi.spyOn(logger, 'info').mockImplementation(() => undefined);
+    vi.spyOn(logger, 'error').mockImplementation(() => undefined);
   });
 
   afterEach(() => {
-    jest.restoreAllMocks();
+    vi.restoreAllMocks();
   });
 
   it('spawns the command without a shell and inherits stdio by default', async () => {
