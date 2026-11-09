@@ -1,5 +1,6 @@
 import { chromium, expect as playwrightExpect, test as playwrightTest } from '@playwright/test';
 import lighthouse from 'lighthouse';
+import { vi } from 'vitest';
 
 import {
   DEFAULT_LIGHTHOUSE_THRESHOLDS,
@@ -9,19 +10,16 @@ import {
   type LighthouseMetrics
 } from './playwright-lighthouse.utils';
 
-jest.mock('@playwright/test', () => ({
-  chromium: { launch: jest.fn() },
-  expect: jest.fn(),
-  test: jest.fn()
+vi.mock('@playwright/test', () => ({
+  chromium: { launch: vi.fn() },
+  expect: vi.fn(),
+  test: vi.fn()
 }));
-// Lighthouse is ESM-only; ts-jest turns the dynamic imports into `require`, so virtual mocks
-// stand in for both entry points.
-jest.mock('lighthouse', () => ({ __esModule: true, default: jest.fn() }), { virtual: true });
-jest.mock(
-  'lighthouse/core/config/desktop-config.js',
-  () => ({ __esModule: true, default: { extends: 'lighthouse:default', settings: {} } }),
-  { virtual: true }
-);
+// Lighthouse is a heavy ESM-only package; mock both entry points so no browser audit loads.
+vi.mock('lighthouse', () => ({ default: vi.fn() }));
+vi.mock('lighthouse/core/config/desktop-config.js', () => ({
+  default: { extends: 'lighthouse:default', settings: {} }
+}));
 
 type TestBody = (fixtures: { baseURL?: string }) => Promise<void>;
 
@@ -32,12 +30,12 @@ const PASSING_METRICS: LighthouseMetrics = {
   cls: 0
 };
 
-const mockTest = jest.mocked(playwrightTest);
-const mockExpect = jest.mocked(playwrightExpect);
-const mockLaunch = jest.mocked(chromium.launch);
-const mockLighthouse = jest.mocked(lighthouse);
-const mockToEqual = jest.fn();
-const mockClose = jest.fn();
+const mockTest = vi.mocked(playwrightTest);
+const mockExpect = vi.mocked(playwrightExpect);
+const mockLaunch = vi.mocked(chromium.launch);
+const mockLighthouse = vi.mocked(lighthouse);
+const mockToEqual = vi.fn();
+const mockClose = vi.fn();
 
 /** A Lighthouse result whose report holds `metrics`. */
 const createLighthouseResultFixture = ({ scores, lcpMs, cls }: LighthouseMetrics): unknown => ({
@@ -57,7 +55,7 @@ const runRegisteredTest = (index: number, fixtures = { baseURL: BASE_URL }): Pro
   (mockTest.mock.calls[index]?.[1] as unknown as TestBody)(fixtures);
 
 beforeEach(() => {
-  jest.clearAllMocks();
+  vi.clearAllMocks();
   mockExpect.mockReturnValue({ toEqual: mockToEqual } as never);
   mockLaunch.mockResolvedValue({ close: mockClose } as never);
   mockLighthouse.mockResolvedValue(createLighthouseResultFixture(PASSING_METRICS) as never);

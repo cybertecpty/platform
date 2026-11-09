@@ -17,7 +17,10 @@ import { DEP_CONSTRAINTS } from './tools/nx/utils/src/lib/nx-dep-constraints.con
 // the list goes away when Jest does.
 const vitestSpecFiles = [
   'apps/cybertec-io/**/*.{spec,test}.ts',
-  'tools/git/utils/**/*.{spec,test}.ts'
+  'tools/git/utils/**/*.{spec,test}.ts',
+  'libs/shared/utils/**/*.{spec,test}.ts',
+  'libs/shared/fs/utils/**/*.{spec,test}.ts',
+  'libs/shared/playwright/testing/**/*.{spec,test}.ts'
 ];
 
 // type:e2e projects (ADR 0010): Playwright, not Jest or Vitest — same "list by path"
@@ -28,8 +31,8 @@ const playwrightSpecFiles = ['apps/*/e2e/**/*.spec.ts'];
 
 // The shared Playwright lib's gate code (`defineLighthouseTests`, `defineAxeTests`) calls
 // Playwright's `test()` / `expect`, so it gets the Playwright rules too. Matched by folder,
-// not suffix. The lib's own unit specs run under Jest, so they are left out here and keep
-// the Jest block.
+// not suffix. The lib's own unit specs run under Vitest, so they are left out here and keep
+// the Vitest block.
 const playwrightLibFiles = ['libs/shared/playwright/**/*.ts'];
 const playwrightLibIgnores = ['libs/shared/playwright/**/*.spec.ts'];
 
