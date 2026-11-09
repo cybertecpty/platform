@@ -20,7 +20,10 @@ const vitestSpecFiles = [
   'tools/git/utils/**/*.{spec,test}.ts',
   'libs/shared/utils/**/*.{spec,test}.ts',
   'libs/shared/fs/utils/**/*.{spec,test}.ts',
-  'libs/shared/playwright/testing/**/*.{spec,test}.ts'
+  'libs/shared/playwright/testing/**/*.{spec,test}.ts',
+  'tools/github/utils/**/*.{spec,test}.ts',
+  'tools/nx/utils/**/*.{spec,test}.ts',
+  'tools/nx/testing/**/*.{spec,test}.ts'
 ];
 
 // type:e2e projects (ADR 0010): Playwright, not Jest or Vitest — same "list by path"

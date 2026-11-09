@@ -4,9 +4,9 @@ import { readFile } from 'node:fs/promises';
 import { runGh } from './github-cli.utils';
 import { createPullRequest, findOpenPullRequest, updatePullRequest } from './pull-request.utils';
 
-jest.mock('./github-cli.utils', () => ({ runGh: jest.fn() }));
+vi.mock('./github-cli.utils', () => ({ runGh: vi.fn() }));
 
-const mockRunGh = jest.mocked(runGh);
+const mockRunGh = vi.mocked(runGh);
 
 /** Locates the temp file path following a `--body-file` flag in a `gh` arg list. */
 const bodyFileArg = (args: readonly string[]): string => {

@@ -2,11 +2,11 @@ import { execFile } from 'node:child_process';
 
 import { runGh } from './github-cli.utils';
 
-jest.mock('node:child_process', () => ({ execFile: jest.fn() }));
+vi.mock('node:child_process', () => ({ execFile: vi.fn() }));
 
 type ExecFileCallback = (error: Error | null, stdout: string, stderr: string) => void;
 
-const mockExecFile = jest.mocked(execFile);
+const mockExecFile = vi.mocked(execFile);
 
 /**
  * Stubs the mocked `execFile` with a callback-style implementation, hiding the

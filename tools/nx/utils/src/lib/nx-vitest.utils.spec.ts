@@ -98,7 +98,7 @@ describe('configureVitestProject', () => {
   });
 
   it('warns, and leaves the file alone, when `vitestSpecFiles` is not in the root config', () => {
-    const warn = jest.spyOn(devkit.logger, 'warn').mockImplementation(() => undefined);
+    const warn = vi.spyOn(devkit.logger, 'warn').mockImplementation(() => undefined);
     tree.write('eslint.config.mjs', 'export default [];\n');
 
     configureVitestProject(tree, 'billing-models', 'node');
