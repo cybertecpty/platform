@@ -9,7 +9,7 @@ import {
 } from '@nx/devkit';
 import { createTreeWithEmptyWorkspace } from '@nx/devkit/testing';
 import { generatorGenerator as nxGeneratorGenerator } from '@nx/plugin/generators';
-import type { MockedFunction, MockInstance } from 'vitest';
+import { MockInstance, vi, type MockedFunction } from 'vitest';
 import { nxGenGenerator } from './generator';
 import type { NxGenGeneratorOptions } from './schema';
 

@@ -10,7 +10,7 @@ import {
 } from '@nx/devkit';
 import { createTreeWithEmptyWorkspace } from '@nx/devkit/testing';
 import { executorGenerator as nxExecutorGenerator } from '@nx/plugin/generators';
-import type { MockInstance } from 'vitest';
+import { vi, type MockInstance } from 'vitest';
 import { nxExecGenerator } from './generator';
 import type { NxExecGeneratorOptions } from './schema';
 

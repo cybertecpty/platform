@@ -4,6 +4,7 @@ import type { ProjectChangelogs } from '@cybertecpty/nx-types';
 import { createProjectRootMappings, findProjectForPath } from '@cybertecpty/nx-utils';
 import { createProjectGraphAsync } from '@nx/devkit';
 import simpleGit, { type SimpleGit } from 'simple-git';
+import { vi } from 'vitest';
 
 import {
   buildReleasePrBody,

@@ -6,6 +6,7 @@ import {
 import type { VersionData } from '@cybertecpty/nx-types';
 import { logger } from '@nx/devkit';
 import type { SimpleGit } from 'simple-git';
+import { vi } from 'vitest';
 
 import { assertBaseIncludesTarget, assertReleaseTagsAvailable } from './release-preflight.utils';
 

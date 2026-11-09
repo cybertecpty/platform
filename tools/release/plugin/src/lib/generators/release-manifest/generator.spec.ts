@@ -2,7 +2,7 @@ import { gitLocalUserEmail, gitLocalUserName } from '@cybertecpty/git-utils';
 import * as devkit from '@nx/devkit';
 import { addProjectConfiguration, readJson, type Tree } from '@nx/devkit';
 import { createTreeWithEmptyWorkspace } from '@nx/devkit/testing';
-import type { MockedFunction, MockInstance } from 'vitest';
+import { MockInstance, vi, type MockedFunction } from 'vitest';
 import { releaseManifestGenerator } from './generator';
 import type { ReleaseManifestGeneratorOptions } from './schema';
 

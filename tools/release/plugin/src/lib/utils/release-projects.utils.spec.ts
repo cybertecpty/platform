@@ -12,7 +12,7 @@ import {
 import { createTreeWithEmptyWorkspace } from '@nx/devkit/testing';
 import { releaseChangelog } from 'nx/release';
 import simpleGit, { type SimpleGit } from 'simple-git';
-import type { Mock } from 'vitest';
+import { vi, type Mock } from 'vitest';
 
 import {
   getReleaseCommandOptions,

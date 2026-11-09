@@ -1,7 +1,7 @@
 import { gitBranchExists, gitCurrentBranch, isCleanGitBranch } from '@cybertecpty/git-utils';
 import { logger } from '@nx/devkit';
 import { simpleGit, type SimpleGit } from 'simple-git';
-import type { Mock } from 'vitest';
+import { vi, type Mock } from 'vitest';
 
 import {
   checkoutReleaseBranch,

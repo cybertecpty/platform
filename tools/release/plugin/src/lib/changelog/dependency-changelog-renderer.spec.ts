@@ -1,5 +1,6 @@
 import { createProjectGraphAsync, readJsonFile, type ProjectGraph } from '@nx/devkit';
 import type { ChangelogChange } from 'nx/release/changelog-renderer';
+import { vi } from 'vitest';
 
 import { findDependencyChanges } from '../utils/release-dependency-changes.utils';
 import DependencyChangelogRenderer from './dependency-changelog-renderer';

@@ -4,7 +4,7 @@ import type { Tree } from '@nx/devkit';
 import * as devkit from '@nx/devkit';
 import { addProjectConfiguration, readJson } from '@nx/devkit';
 import { pluginGenerator as nxPluginGenerator } from '@nx/plugin/generators';
-import type { MockedFunction, MockInstance } from 'vitest';
+import { MockInstance, vi, type MockedFunction } from 'vitest';
 import { pluginGenerator } from './generator';
 import type { NxPluginGeneratorOptions } from './schema';
 

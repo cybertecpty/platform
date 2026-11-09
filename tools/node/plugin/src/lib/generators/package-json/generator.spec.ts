@@ -1,7 +1,7 @@
 import { logger, readJson, writeJson, type Tree } from '@nx/devkit';
 import { createTreeWithEmptyWorkspace } from '@nx/devkit/testing';
 import type { PackageJson } from 'type-fest';
-import type { MockInstance } from 'vitest';
+import { vi, type MockInstance } from 'vitest';
 import { packageJsonGenerator } from './generator';
 import type { PackageJsonGeneratorOptions } from './schema';
 

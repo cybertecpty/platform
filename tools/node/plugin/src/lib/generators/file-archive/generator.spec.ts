@@ -5,7 +5,7 @@ import { mkdtemp, rm, writeFile } from 'node:fs/promises';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import * as tar from 'tar';
-import type { MockInstance } from 'vitest';
+import { vi, type MockInstance } from 'vitest';
 import { fileArchiveGenerator } from './generator';
 import type { FileArchiveGeneratorOptions } from './schema';
 

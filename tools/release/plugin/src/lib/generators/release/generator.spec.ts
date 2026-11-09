@@ -12,7 +12,7 @@ import { formatFiles, logger, type Tree } from '@nx/devkit';
 import { createTreeWithEmptyWorkspace } from '@nx/devkit/testing';
 import { releaseChangelog, releaseVersion } from 'nx/release';
 import simpleGit from 'simple-git';
-import type { Mock } from 'vitest';
+import { vi, type Mock } from 'vitest';
 
 import { checkoutReleaseBranch, resolveReleaseBranchName } from '../../utils/release-branch.utils';
 import { buildReleasePrBody } from '../../utils/release-pr.utils';
@@ -146,7 +146,7 @@ const mockReleaseManifestGenerator = vi.mocked(releaseManifestGenerator);
 /** Subject line the generator uses for its own release commit. */
 const RELEASE_COMMIT_MESSAGE = 'chore(release): generate release artifacts';
 
-/** Everything `gitClient.<method>` needs to be assertable as a jest mock. */
+/** Everything `gitClient.<method>` needs to be assertable as a mock. */
 interface GitSpies {
   add: Mock;
   checkout: Mock;

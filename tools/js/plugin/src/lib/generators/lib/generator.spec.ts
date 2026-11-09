@@ -4,7 +4,7 @@ import type { Tree } from '@nx/devkit';
 import * as devkit from '@nx/devkit';
 import { addProjectConfiguration, readJson } from '@nx/devkit';
 import { libraryGenerator as nxJsLibraryGenerator } from '@nx/js';
-import type { MockedFunction, MockInstance } from 'vitest';
+import { MockInstance, vi, type MockedFunction } from 'vitest';
 import { libGenerator } from './generator';
 import type { LibGeneratorOptions } from './schema';
 
