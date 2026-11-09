@@ -12,6 +12,7 @@ import {
 import { createTreeWithEmptyWorkspace } from '@nx/devkit/testing';
 import { releaseChangelog } from 'nx/release';
 import simpleGit, { type SimpleGit } from 'simple-git';
+import { vi, type Mock } from 'vitest';
 
 import {
   getReleaseCommandOptions,
@@ -25,38 +26,38 @@ import {
   tagReleasedProjects
 } from './release-projects.utils';
 
-jest.mock('@cybertecpty/git-utils', () => ({
-  gitMergeBase: jest.fn(),
-  gitTagsMatching: jest.fn()
+vi.mock('@cybertecpty/git-utils', () => ({
+  gitMergeBase: vi.fn(),
+  gitTagsMatching: vi.fn()
 }));
 
-jest.mock('@cybertecpty/nx-utils', () => ({
-  findMatchingProjects: jest.fn(),
-  getAffectedGraphNodes: jest.fn()
+vi.mock('@cybertecpty/nx-utils', () => ({
+  findMatchingProjects: vi.fn(),
+  getAffectedGraphNodes: vi.fn()
 }));
 
-jest.mock('@nx/devkit', () => ({
-  ...jest.requireActual('@nx/devkit'),
-  createProjectGraphAsync: jest.fn()
+vi.mock('@nx/devkit', async () => ({
+  ...(await vi.importActual('@nx/devkit')),
+  createProjectGraphAsync: vi.fn()
 }));
 
-jest.mock('nx/release', () => ({
-  releaseChangelog: jest.fn()
+vi.mock('nx/release', () => ({
+  releaseChangelog: vi.fn()
 }));
 
-jest.mock('simple-git', () => ({
+vi.mock('simple-git', () => ({
   __esModule: true,
-  default: jest.fn(),
-  simpleGit: jest.fn()
+  default: vi.fn(),
+  simpleGit: vi.fn()
 }));
 
-const mockGitMergeBase = jest.mocked(gitMergeBase);
-const mockGitTagsMatching = jest.mocked(gitTagsMatching);
-const mockFindMatchingProjects = jest.mocked(findMatchingProjects);
-const mockGetAffectedGraphNodes = jest.mocked(getAffectedGraphNodes);
-const mockCreateProjectGraphAsync = jest.mocked(createProjectGraphAsync);
-const mockSimpleGit = jest.mocked(simpleGit);
-const mockReleaseChangelog = jest.mocked(releaseChangelog);
+const mockGitMergeBase = vi.mocked(gitMergeBase);
+const mockGitTagsMatching = vi.mocked(gitTagsMatching);
+const mockFindMatchingProjects = vi.mocked(findMatchingProjects);
+const mockGetAffectedGraphNodes = vi.mocked(getAffectedGraphNodes);
+const mockCreateProjectGraphAsync = vi.mocked(createProjectGraphAsync);
+const mockSimpleGit = vi.mocked(simpleGit);
+const mockReleaseChangelog = vi.mocked(releaseChangelog);
 
 /** A throwaway git client; every function under test has its git calls mocked. */
 const gitStub = {} as SimpleGit;
@@ -73,7 +74,7 @@ const withRelease = (release: NxJsonConfiguration['release']): void => {
 };
 
 beforeEach(() => {
-  jest.clearAllMocks();
+  vi.clearAllMocks();
   tree = createTreeWithEmptyWorkspace();
 });
 
@@ -403,7 +404,7 @@ describe('selectReleasableProjects', () => {
     }) as unknown as Awaited<ReturnType<typeof releaseChangelog>>;
 
   beforeEach(() => {
-    jest.spyOn(logger, 'info').mockImplementation(() => undefined);
+    vi.spyOn(logger, 'info').mockImplementation(() => undefined);
   });
 
   it('previews the changelog as a write-free dry run from the given version data and graph', async () => {
@@ -464,15 +465,15 @@ describe('tagReleasedProjects', () => {
     app: { currentVersion: '1.0.0', newVersion: '1.1.0', dependentProjects: [] },
     idle: { currentVersion: '2.0.0', newVersion: null, dependentProjects: [] }
   };
-  let addAnnotatedTag: jest.Mock;
+  let addAnnotatedTag: Mock;
   let git: SimpleGit;
 
   beforeEach(() => {
-    addAnnotatedTag = jest.fn().mockResolvedValue(undefined);
+    addAnnotatedTag = vi.fn().mockResolvedValue(undefined);
     git = { addAnnotatedTag } as unknown as SimpleGit;
     mockGitTagsMatching.mockResolvedValue([]);
-    jest.spyOn(logger, 'info').mockImplementation(() => undefined);
-    jest.spyOn(logger, 'warn').mockImplementation(() => undefined);
+    vi.spyOn(logger, 'info').mockImplementation(() => undefined);
+    vi.spyOn(logger, 'warn').mockImplementation(() => undefined);
   });
 
   it('names the tag with a non-default pattern and tags only versioned projects', async () => {

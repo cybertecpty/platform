@@ -12,6 +12,7 @@ import { formatFiles, logger, type Tree } from '@nx/devkit';
 import { createTreeWithEmptyWorkspace } from '@nx/devkit/testing';
 import { releaseChangelog, releaseVersion } from 'nx/release';
 import simpleGit from 'simple-git';
+import { vi, type Mock } from 'vitest';
 
 import { checkoutReleaseBranch, resolveReleaseBranchName } from '../../utils/release-branch.utils';
 import { buildReleasePrBody } from '../../utils/release-pr.utils';
@@ -30,120 +31,129 @@ import releaseManifestGenerator from '../release-manifest/generator';
 import { releaseGenerator } from './generator';
 import type { ReleaseGeneratorOptions } from './schema';
 
-jest.mock('@cybertecpty/git-utils', () => ({
-  lastGitCommitHash: jest.fn()
+vi.mock('@cybertecpty/git-utils', () => ({
+  lastGitCommitHash: vi.fn()
 }));
 
-jest.mock('@cybertecpty/github-utils', () => ({
-  createPullRequest: jest.fn(),
-  findOpenPullRequest: jest.fn(),
-  getGithubAccountToken: jest.fn(),
-  getGithubAuthenticatedUser: jest.fn(),
-  updatePullRequest: jest.fn()
+vi.mock('@cybertecpty/github-utils', () => ({
+  createPullRequest: vi.fn(),
+  findOpenPullRequest: vi.fn(),
+  getGithubAccountToken: vi.fn(),
+  getGithubAuthenticatedUser: vi.fn(),
+  updatePullRequest: vi.fn()
 }));
 
-jest.mock('@cybertecpty/nx-utils', () => ({
-  dryRunEnabled: jest.fn(),
-  verboseEnabled: jest.fn()
+vi.mock('@cybertecpty/nx-utils', () => ({
+  dryRunEnabled: vi.fn(),
+  verboseEnabled: vi.fn()
 }));
 
-jest.mock('nx/release', () => ({
-  releaseChangelog: jest.fn(),
-  releaseVersion: jest.fn()
+vi.mock('nx/release', () => ({
+  releaseChangelog: vi.fn(),
+  releaseVersion: vi.fn()
 }));
 
-jest.mock('../../utils/release-branch.utils', () => ({
-  checkoutReleaseBranch: jest.fn(),
-  resolveReleaseBranchName: jest.fn()
+vi.mock('../../utils/release-branch.utils', () => ({
+  checkoutReleaseBranch: vi.fn(),
+  resolveReleaseBranchName: vi.fn()
 }));
 
-jest.mock('../../utils/release-preflight.utils', () => ({
-  assertBaseIncludesTarget: jest.fn(),
-  assertReleaseTagsAvailable: jest.fn()
+vi.mock('../../utils/release-preflight.utils', () => ({
+  assertBaseIncludesTarget: vi.fn(),
+  assertReleaseTagsAvailable: vi.fn()
 }));
 
-jest.mock('../../utils/release-pr.utils', () => ({
-  buildReleasePrBody: jest.fn()
+vi.mock('../../utils/release-pr.utils', () => ({
+  buildReleasePrBody: vi.fn()
 }));
 
-jest.mock('../../utils/release-projects.utils', () => ({
-  getReleaseCommandOptions: jest.requireActual('../../utils/release-projects.utils')
-    .getReleaseCommandOptions,
-  selectReleasableProjects: jest.fn(),
-  resolveAffectedReleaseProjects: jest.fn(),
-  tagReleasedProjects: jest.fn()
+vi.mock('../../utils/release-projects.utils', async () => {
+  const actual = await vi.importActual<Record<string, unknown>>(
+    '../../utils/release-projects.utils'
+  );
+  return {
+    getReleaseCommandOptions: actual.getReleaseCommandOptions,
+    selectReleasableProjects: vi.fn(),
+    resolveAffectedReleaseProjects: vi.fn(),
+    tagReleasedProjects: vi.fn()
+  };
+});
+
+vi.mock('../../utils/release-versions.utils', async () => {
+  const actual = await vi.importActual<Record<string, unknown>>(
+    '../../utils/release-versions.utils'
+  );
+  return {
+    pickVersionData: actual.pickVersionData,
+    resolveWorkspaceReleaseType: vi.fn()
+  };
+});
+
+vi.mock('@nx/devkit', async () => ({
+  ...(await vi.importActual('@nx/devkit')),
+  formatFiles: vi.fn()
 }));
 
-jest.mock('../../utils/release-versions.utils', () => ({
-  pickVersionData: jest.requireActual('../../utils/release-versions.utils').pickVersionData,
-  resolveWorkspaceReleaseType: jest.fn()
-}));
-
-jest.mock('@nx/devkit', () => ({
-  ...jest.requireActual('@nx/devkit'),
-  formatFiles: jest.fn()
-}));
-
-jest.mock('simple-git', () => {
+vi.mock('simple-git', () => {
   const client = {
-    add: jest.fn(),
-    checkout: jest.fn(),
-    commit: jest.fn(),
-    deleteLocalBranch: jest.fn(),
-    fetch: jest.fn(),
-    push: jest.fn()
+    add: vi.fn(),
+    checkout: vi.fn(),
+    commit: vi.fn(),
+    deleteLocalBranch: vi.fn(),
+    fetch: vi.fn(),
+    push: vi.fn()
   };
 
   return {
     __esModule: true,
-    default: jest.fn(() => client),
-    simpleGit: jest.fn(() => client)
+    default: vi.fn(() => client),
+    simpleGit: vi.fn(() => client)
   };
 });
 
-jest.mock('../package-version/generator', () => ({
-  packageVersionGenerator: jest.fn()
+vi.mock('../package-version/generator', () => ({
+  packageVersionGenerator: vi.fn()
 }));
 
-jest.mock('../release-manifest/generator', () => ({
+vi.mock('../release-manifest/generator', () => ({
   __esModule: true,
-  default: jest.fn()
+  default: vi.fn()
 }));
 
-const mockLastGitCommitHash = jest.mocked(lastGitCommitHash);
-const mockCreatePullRequest = jest.mocked(createPullRequest);
-const mockFindOpenPullRequest = jest.mocked(findOpenPullRequest);
-const mockGetGithubAccountToken = jest.mocked(getGithubAccountToken);
-const mockGetGithubAuthenticatedUser = jest.mocked(getGithubAuthenticatedUser);
-const mockUpdatePullRequest = jest.mocked(updatePullRequest);
-const mockDryRunEnabled = jest.mocked(dryRunEnabled);
-const mockReleaseVersion = jest.mocked(releaseVersion);
-const mockVerboseEnabled = jest.mocked(verboseEnabled);
-const mockBuildReleasePrBody = jest.mocked(buildReleasePrBody);
-const mockCheckoutReleaseBranch = jest.mocked(checkoutReleaseBranch);
-const mockReleaseChangelog = jest.mocked(releaseChangelog);
-const mockResolveAffectedReleaseProjects = jest.mocked(resolveAffectedReleaseProjects);
-const mockResolveReleaseBranchName = jest.mocked(resolveReleaseBranchName);
-const mockResolveWorkspaceReleaseType = jest.mocked(resolveWorkspaceReleaseType);
-const mockTagReleasedProjects = jest.mocked(tagReleasedProjects);
-const mockSelectReleasableProjects = jest.mocked(selectReleasableProjects);
-const mockAssertBaseIncludesTarget = jest.mocked(assertBaseIncludesTarget);
-const mockAssertReleaseTagsAvailable = jest.mocked(assertReleaseTagsAvailable);
-const mockFormatFiles = jest.mocked(formatFiles);
-const mockPackageVersionGenerator = jest.mocked(packageVersionGenerator);
-const mockReleaseManifestGenerator = jest.mocked(releaseManifestGenerator);
+const mockLastGitCommitHash = vi.mocked(lastGitCommitHash);
+const mockCreatePullRequest = vi.mocked(createPullRequest);
+const mockFindOpenPullRequest = vi.mocked(findOpenPullRequest);
+const mockGetGithubAccountToken = vi.mocked(getGithubAccountToken);
+const mockGetGithubAuthenticatedUser = vi.mocked(getGithubAuthenticatedUser);
+const mockUpdatePullRequest = vi.mocked(updatePullRequest);
+const mockDryRunEnabled = vi.mocked(dryRunEnabled);
+const mockReleaseVersion = vi.mocked(releaseVersion);
+const mockVerboseEnabled = vi.mocked(verboseEnabled);
+const mockBuildReleasePrBody = vi.mocked(buildReleasePrBody);
+const mockCheckoutReleaseBranch = vi.mocked(checkoutReleaseBranch);
+const mockReleaseChangelog = vi.mocked(releaseChangelog);
+const mockResolveAffectedReleaseProjects = vi.mocked(resolveAffectedReleaseProjects);
+const mockResolveReleaseBranchName = vi.mocked(resolveReleaseBranchName);
+const mockResolveWorkspaceReleaseType = vi.mocked(resolveWorkspaceReleaseType);
+const mockTagReleasedProjects = vi.mocked(tagReleasedProjects);
+const mockSelectReleasableProjects = vi.mocked(selectReleasableProjects);
+const mockAssertBaseIncludesTarget = vi.mocked(assertBaseIncludesTarget);
+const mockAssertReleaseTagsAvailable = vi.mocked(assertReleaseTagsAvailable);
+const mockFormatFiles = vi.mocked(formatFiles);
+const mockPackageVersionGenerator = vi.mocked(packageVersionGenerator);
+const mockReleaseManifestGenerator = vi.mocked(releaseManifestGenerator);
 
 /** Subject line the generator uses for its own release commit. */
 const RELEASE_COMMIT_MESSAGE = 'chore(release): generate release artifacts';
 
-/** Everything `gitClient.<method>` needs to be assertable as a jest mock. */
+/** Everything `gitClient.<method>` needs to be assertable as a mock. */
 interface GitSpies {
-  add: jest.Mock;
-  checkout: jest.Mock;
-  commit: jest.Mock;
-  deleteLocalBranch: jest.Mock;
-  fetch: jest.Mock;
-  push: jest.Mock;
+  add: Mock;
+  checkout: Mock;
+  commit: Mock;
+  deleteLocalBranch: Mock;
+  fetch: Mock;
+  push: Mock;
 }
 
 type ReleaseChangelogResult = Awaited<ReturnType<typeof releaseChangelog>>;
@@ -185,14 +195,14 @@ describe('releaseGenerator', () => {
   let gitClient: GitSpies;
 
   beforeEach(() => {
-    jest.clearAllMocks();
+    vi.clearAllMocks();
     mockGetGithubAccountToken.mockResolvedValue('bot-token');
     mockGetGithubAuthenticatedUser.mockResolvedValue('cybertec-bot');
     tree = createTreeWithEmptyWorkspace();
-    gitClient = jest.mocked(simpleGit)() as unknown as GitSpies;
+    gitClient = vi.mocked(simpleGit)() as unknown as GitSpies;
 
-    jest.spyOn(logger, 'info').mockImplementation(() => undefined);
-    jest.spyOn(logger, 'warn').mockImplementation(() => undefined);
+    vi.spyOn(logger, 'info').mockImplementation(() => undefined);
+    vi.spyOn(logger, 'warn').mockImplementation(() => undefined);
 
     mockDryRunEnabled.mockReturnValue(false);
     mockVerboseEnabled.mockReturnValue(false);
@@ -234,7 +244,7 @@ describe('releaseGenerator', () => {
   });
 
   afterEach(() => {
-    jest.restoreAllMocks();
+    vi.restoreAllMocks();
   });
 
   describe('option defaults', () => {

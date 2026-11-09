@@ -4,14 +4,15 @@ import type { Tree } from '@nx/devkit';
 import * as devkit from '@nx/devkit';
 import { addProjectConfiguration, readJson } from '@nx/devkit';
 import { pluginGenerator as nxPluginGenerator } from '@nx/plugin/generators';
+import { MockInstance, vi, type MockedFunction } from 'vitest';
 import { pluginGenerator } from './generator';
 import type { NxPluginGeneratorOptions } from './schema';
 
-jest.mock('@nx/plugin/generators', () => ({
-  pluginGenerator: jest.fn()
+vi.mock('@nx/plugin/generators', () => ({
+  pluginGenerator: vi.fn()
 }));
 
-const nxPluginGeneratorMock = nxPluginGenerator as jest.MockedFunction<typeof nxPluginGenerator>;
+const nxPluginGeneratorMock = nxPluginGenerator as MockedFunction<typeof nxPluginGenerator>;
 
 /** Stand-in for `@nx/plugin:plugin`. */
 const fakeNxPluginGenerator = createFakeLibraryGenerator();
@@ -27,14 +28,14 @@ function run(tree: Tree, options: Partial<NxPluginGeneratorOptions> & { group: s
 
 describe('pluginGenerator', () => {
   let tree: Tree;
-  let formatFiles: jest.SpyInstance;
+  let formatFiles: MockInstance;
 
   beforeEach(() => {
-    jest.clearAllMocks();
+    vi.clearAllMocks();
     tree = createWorkspaceTreeFixture({
       tsConfigPaths: { '@cybertecpty/zzz-existing': ['./tools/zzz/existing/src/index.ts'] }
     });
-    formatFiles = jest.spyOn(devkit, 'formatFiles').mockResolvedValue();
+    formatFiles = vi.spyOn(devkit, 'formatFiles').mockResolvedValue();
     nxPluginGeneratorMock.mockImplementation(
       fakeNxPluginGenerator as unknown as typeof nxPluginGenerator
     );
@@ -190,7 +191,7 @@ describe('pluginGenerator', () => {
     });
 
     it('returns the delegated task wrapped in a serial runner', async () => {
-      const task = jest.fn();
+      const task = vi.fn();
       nxPluginGeneratorMock.mockImplementationOnce(((
         tree: Tree,
         options: { name: string; directory: string }

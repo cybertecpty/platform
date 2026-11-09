@@ -6,6 +6,7 @@ import {
 import type { VersionData } from '@cybertecpty/nx-types';
 import { logger } from '@nx/devkit';
 import type { SimpleGit } from 'simple-git';
+import { vi } from 'vitest';
 
 import { assertBaseIncludesTarget, assertReleaseTagsAvailable } from './release-preflight.utils';
 
@@ -26,13 +27,13 @@ describe('release preflight', () => {
     await origin.commit('root');
     await origin.git.branch(['develop']);
     clone = await cloneGitRepoFixture(origin);
-    jest.spyOn(logger, 'warn').mockImplementation(() => undefined);
+    vi.spyOn(logger, 'warn').mockImplementation(() => undefined);
   });
 
   afterEach(() => {
     clone.cleanup();
     origin.cleanup();
-    jest.restoreAllMocks();
+    vi.restoreAllMocks();
   });
 
   const checkBase = (dryRun = false) =>
@@ -82,8 +83,8 @@ describe('release preflight', () => {
     // Real git always prints a count here, so only a fake client can reach this guard.
     it('fails rather than passing when git output is not a count', async () => {
       const git = {
-        fetch: jest.fn().mockResolvedValue(undefined),
-        raw: jest.fn().mockResolvedValue('fatal: nonsense')
+        fetch: vi.fn().mockResolvedValue(undefined),
+        raw: vi.fn().mockResolvedValue('fatal: nonsense')
       } as unknown as SimpleGit;
 
       await expect(

@@ -5,6 +5,7 @@ import { mkdtemp, rm, writeFile } from 'node:fs/promises';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import * as tar from 'tar';
+import { vi, type MockInstance } from 'vitest';
 import { fileArchiveGenerator } from './generator';
 import type { FileArchiveGeneratorOptions } from './schema';
 
@@ -43,17 +44,17 @@ function run(
 
 describe('fileArchiveGenerator', () => {
   let tree: Tree;
-  let warn: jest.SpyInstance;
+  let warn: MockInstance;
 
   beforeEach(() => {
     tree = createTreeWithEmptyWorkspace();
-    warn = jest.spyOn(logger, 'warn').mockImplementation(() => undefined);
+    warn = vi.spyOn(logger, 'warn').mockImplementation(() => undefined);
     tree.write('dist/web/index.html', '<html></html>');
     tree.write('dist/web/assets/logo.svg', '<svg></svg>');
   });
 
   afterEach(() => {
-    jest.restoreAllMocks();
+    vi.restoreAllMocks();
   });
 
   describe('output location', () => {

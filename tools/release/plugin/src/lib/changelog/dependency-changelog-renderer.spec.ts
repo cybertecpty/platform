@@ -1,20 +1,21 @@
 import { createProjectGraphAsync, readJsonFile, type ProjectGraph } from '@nx/devkit';
 import type { ChangelogChange } from 'nx/release/changelog-renderer';
+import { vi } from 'vitest';
 
 import { findDependencyChanges } from '../utils/release-dependency-changes.utils';
 import DependencyChangelogRenderer from './dependency-changelog-renderer';
 
-jest.mock('@nx/devkit', () => ({
-  ...jest.requireActual('@nx/devkit'),
-  createProjectGraphAsync: jest.fn(),
-  readJsonFile: jest.fn()
+vi.mock('@nx/devkit', async () => ({
+  ...(await vi.importActual('@nx/devkit')),
+  createProjectGraphAsync: vi.fn(),
+  readJsonFile: vi.fn()
 }));
 
-jest.mock('../utils/release-dependency-changes.utils', () => ({
-  findDependencyChanges: jest.fn()
+vi.mock('../utils/release-dependency-changes.utils', () => ({
+  findDependencyChanges: vi.fn()
 }));
 
-const mockFindDependencyChanges = jest.mocked(findDependencyChanges);
+const mockFindDependencyChanges = vi.mocked(findDependencyChanges);
 const projectGraph = { dependencies: {}, nodes: {} } as ProjectGraph;
 
 const commitTypes = {
@@ -42,10 +43,10 @@ const render = (project: string | null, changes: ChangelogChange[]): Promise<str
   } as unknown as ConstructorParameters<typeof DependencyChangelogRenderer>[0]).render();
 
 beforeEach(() => {
-  jest.mocked(createProjectGraphAsync).mockResolvedValue(projectGraph);
-  jest
-    .mocked(readJsonFile)
-    .mockReturnValue({ release: { releaseTag: { pattern: '{projectName}@{version}' } } });
+  vi.mocked(createProjectGraphAsync).mockResolvedValue(projectGraph);
+  vi.mocked(readJsonFile).mockReturnValue({
+    release: { releaseTag: { pattern: '{projectName}@{version}' } }
+  });
 });
 
 describe('DependencyChangelogRenderer', () => {

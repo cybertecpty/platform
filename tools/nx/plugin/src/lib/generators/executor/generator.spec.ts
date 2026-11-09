@@ -10,14 +10,15 @@ import {
 } from '@nx/devkit';
 import { createTreeWithEmptyWorkspace } from '@nx/devkit/testing';
 import { executorGenerator as nxExecutorGenerator } from '@nx/plugin/generators';
+import { vi, type MockInstance } from 'vitest';
 import { nxExecGenerator } from './generator';
 import type { NxExecGeneratorOptions } from './schema';
 
-jest.mock('@nx/plugin/generators', () => ({
-  executorGenerator: jest.fn()
+vi.mock('@nx/plugin/generators', () => ({
+  executorGenerator: vi.fn()
 }));
 
-const nxExecutorGeneratorMock = jest.mocked(nxExecutorGenerator);
+const nxExecutorGeneratorMock = vi.mocked(nxExecutorGenerator);
 
 const PLUGIN_ROOT = 'tools/demo/plugin';
 
@@ -111,15 +112,15 @@ function setProjectTags(tree: Tree, tags: string[]): void {
 
 describe('nxExecGenerator', () => {
   let tree: Tree;
-  let formatFiles: jest.SpyInstance;
+  let formatFiles: MockInstance;
   const execDir = `${PLUGIN_ROOT}/src/lib/executors/swa-deploy`;
   const read = (path: string): string => tree.read(path, 'utf-8') ?? '';
 
   beforeEach(() => {
-    jest.clearAllMocks();
+    vi.clearAllMocks();
     tree = createTreeWithEmptyWorkspace();
     seedPlugin(tree);
-    formatFiles = jest.spyOn(devkit, 'formatFiles').mockResolvedValue();
+    formatFiles = vi.spyOn(devkit, 'formatFiles').mockResolvedValue();
     nxExecutorGeneratorMock.mockImplementation(
       fakeExecutorGenerator as unknown as typeof nxExecutorGenerator
     );
