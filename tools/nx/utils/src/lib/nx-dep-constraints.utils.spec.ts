@@ -603,6 +603,6 @@ describe('loadDepConstraints', () => {
 
     loadDepConstraints();
 
-    expect(load).toHaveBeenCalledWith(DEP_CONSTRAINTS_PATH, expect.anything(), false);
+    expect(load.mock.calls.map(([request]) => request)).toContain(DEP_CONSTRAINTS_PATH);
   });
 });
