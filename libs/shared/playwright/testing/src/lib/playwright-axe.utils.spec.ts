@@ -1,20 +1,21 @@
 import AxeBuilder from '@axe-core/playwright';
 import { expect as playwrightExpect, test as playwrightTest, type Page } from '@playwright/test';
+import { vi } from 'vitest';
 
 import { defineAxeTests } from './playwright-axe.utils';
 
-jest.mock('@playwright/test', () => ({ expect: jest.fn(), test: jest.fn() }));
-jest.mock('@axe-core/playwright', () => ({ __esModule: true, default: jest.fn() }));
+vi.mock('@playwright/test', () => ({ expect: vi.fn(), test: vi.fn() }));
+vi.mock('@axe-core/playwright', () => ({ __esModule: true, default: vi.fn() }));
 
 type TestBody = (fixtures: { page: Page }) => Promise<void>;
 
-const mockTest = jest.mocked(playwrightTest);
-const mockExpect = jest.mocked(playwrightExpect);
-const mockAxeBuilder = jest.mocked(AxeBuilder);
-const mockToEqual = jest.fn();
-const mockWithTags = jest.fn();
-const mockAnalyze = jest.fn();
-const mockPage = { goto: jest.fn(), setViewportSize: jest.fn() };
+const mockTest = vi.mocked(playwrightTest);
+const mockExpect = vi.mocked(playwrightExpect);
+const mockAxeBuilder = vi.mocked(AxeBuilder);
+const mockToEqual = vi.fn();
+const mockWithTags = vi.fn();
+const mockAnalyze = vi.fn();
+const mockPage = { goto: vi.fn(), setViewportSize: vi.fn() };
 
 const registeredTitles = (): string[] => mockTest.mock.calls.map(([title]) => title);
 
@@ -23,11 +24,13 @@ const runRegisteredTest = (index: number): Promise<void> =>
   (mockTest.mock.calls[index]?.[1] as unknown as TestBody)({ page: mockPage as unknown as Page });
 
 beforeEach(() => {
-  jest.clearAllMocks();
+  vi.clearAllMocks();
   mockExpect.mockReturnValue({ toEqual: mockToEqual } as never);
   mockWithTags.mockReturnValue({ analyze: mockAnalyze });
   mockAnalyze.mockResolvedValue({ violations: [] });
-  mockAxeBuilder.mockImplementation(() => ({ withTags: mockWithTags }) as never);
+  mockAxeBuilder.mockImplementation(function () {
+    return { withTags: mockWithTags } as never;
+  });
 });
 
 describe('defineAxeTests', () => {
@@ -75,7 +78,7 @@ describe('defineAxeTests', () => {
   });
 
   it('runs the path setup after loading the page and before the scan', async () => {
-    const setup = jest.fn().mockResolvedValue(undefined);
+    const setup = vi.fn().mockResolvedValue(undefined);
     defineAxeTests({ paths: [{ path: '/', setup }] });
 
     await runRegisteredTest(0);

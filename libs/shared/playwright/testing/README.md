@@ -55,4 +55,4 @@ Use `derivePort(key, { base, span })` directly only for something that isn't a p
 
 ## Running unit tests
 
-Run `nx test playwright-testing` to execute the unit tests via [Jest](https://jestjs.io).
+Run `nx test playwright-testing` to execute the unit tests via [Vitest](https://vitest.dev).
