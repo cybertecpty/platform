@@ -6,12 +6,12 @@ import { logger, type ExecutorContext, type TargetConfiguration } from '@nx/devk
 import { join } from 'node:path';
 import swaDeployExecutor, { TOKEN_VARIABLE } from './executor';
 
-jest.mock('@cybertecpty/nx-utils', () => ({
-  ...jest.requireActual<typeof NxUtils>('@cybertecpty/nx-utils'),
-  runCommand: jest.fn()
+vi.mock('@cybertecpty/nx-utils', async () => ({
+  ...(await vi.importActual<typeof NxUtils>('@cybertecpty/nx-utils')),
+  runCommand: vi.fn()
 }));
 
-const runCommandMock = jest.mocked(runCommand);
+const runCommandMock = vi.mocked(runCommand);
 
 const DEFAULT_BUILD: TargetConfiguration = { outputs: ['{workspaceRoot}/dist/{projectRoot}'] };
 
@@ -25,8 +25,7 @@ const createContextFixture = (
     overrides
   );
 
-const lastError = (): string =>
-  lastCallArg(jest.mocked(logger.error), 0, '`logger.error`') as string;
+const lastError = (): string => lastCallArg(vi.mocked(logger.error), 0, '`logger.error`') as string;
 
 describe('swaDeployExecutor', () => {
   const originalToken = process.env[TOKEN_VARIABLE];
@@ -35,11 +34,11 @@ describe('swaDeployExecutor', () => {
     runCommandMock.mockReset();
     runCommandMock.mockResolvedValue({ success: true });
     process.env[TOKEN_VARIABLE] = 'token';
-    jest.spyOn(logger, 'error').mockImplementation(() => undefined);
+    vi.spyOn(logger, 'error').mockImplementation(() => undefined);
   });
 
   afterEach(() => {
-    jest.restoreAllMocks();
+    vi.restoreAllMocks();
   });
 
   afterAll(() => {

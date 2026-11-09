@@ -9,14 +9,15 @@ import {
 } from '@nx/devkit';
 import { createTreeWithEmptyWorkspace } from '@nx/devkit/testing';
 import { generatorGenerator as nxGeneratorGenerator } from '@nx/plugin/generators';
+import type { MockedFunction, MockInstance } from 'vitest';
 import { nxGenGenerator } from './generator';
 import type { NxGenGeneratorOptions } from './schema';
 
-jest.mock('@nx/plugin/generators', () => ({
-  generatorGenerator: jest.fn()
+vi.mock('@nx/plugin/generators', () => ({
+  generatorGenerator: vi.fn()
 }));
 
-const nxGeneratorGeneratorMock = nxGeneratorGenerator as jest.MockedFunction<
+const nxGeneratorGeneratorMock = nxGeneratorGenerator as MockedFunction<
   typeof nxGeneratorGenerator
 >;
 
@@ -123,13 +124,13 @@ function setProjectTags(tree: Tree, tags: string[]): void {
 
 describe('nxGenGenerator', () => {
   let tree: Tree;
-  let formatFiles: jest.SpyInstance;
+  let formatFiles: MockInstance;
 
   beforeEach(() => {
-    jest.clearAllMocks();
+    vi.clearAllMocks();
     tree = createTreeWithEmptyWorkspace();
     seedPlugin(tree);
-    formatFiles = jest.spyOn(devkit, 'formatFiles').mockResolvedValue();
+    formatFiles = vi.spyOn(devkit, 'formatFiles').mockResolvedValue();
     nxGeneratorGeneratorMock.mockImplementation(
       fakeGeneratorGenerator as unknown as typeof nxGeneratorGenerator
     );

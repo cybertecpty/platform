@@ -78,5 +78,5 @@ options.
 
 ## Tests
 
-`nx test nx-plugin` — Jest via `ts-jest`. `nx typecheck nx-plugin` type-checks the spec
+`nx test nx-plugin` — Vitest. `nx typecheck nx-plugin` type-checks the spec
 files (which `build` excludes).

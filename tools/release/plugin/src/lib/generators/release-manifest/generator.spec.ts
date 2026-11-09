@@ -2,16 +2,17 @@ import { gitLocalUserEmail, gitLocalUserName } from '@cybertecpty/git-utils';
 import * as devkit from '@nx/devkit';
 import { addProjectConfiguration, readJson, type Tree } from '@nx/devkit';
 import { createTreeWithEmptyWorkspace } from '@nx/devkit/testing';
+import type { MockedFunction, MockInstance } from 'vitest';
 import { releaseManifestGenerator } from './generator';
 import type { ReleaseManifestGeneratorOptions } from './schema';
 
-jest.mock('@cybertecpty/git-utils', () => ({
-  gitLocalUserEmail: jest.fn(),
-  gitLocalUserName: jest.fn()
+vi.mock('@cybertecpty/git-utils', () => ({
+  gitLocalUserEmail: vi.fn(),
+  gitLocalUserName: vi.fn()
 }));
 
-const gitLocalUserNameMock = gitLocalUserName as jest.MockedFunction<typeof gitLocalUserName>;
-const gitLocalUserEmailMock = gitLocalUserEmail as jest.MockedFunction<typeof gitLocalUserEmail>;
+const gitLocalUserNameMock = gitLocalUserName as MockedFunction<typeof gitLocalUserName>;
+const gitLocalUserEmailMock = gitLocalUserEmail as MockedFunction<typeof gitLocalUserEmail>;
 
 const LIB_ROOT = 'libs/shared/thing';
 const APP_ROOT = 'apps/web';
@@ -45,18 +46,18 @@ function seedLib(tree: Tree): void {
 
 describe('releaseManifestGenerator', () => {
   let tree: Tree;
-  let formatFiles: jest.SpyInstance;
+  let formatFiles: MockInstance;
 
   beforeEach(() => {
-    jest.clearAllMocks();
+    vi.clearAllMocks();
     tree = createTreeWithEmptyWorkspace();
-    formatFiles = jest.spyOn(devkit, 'formatFiles').mockResolvedValue();
+    formatFiles = vi.spyOn(devkit, 'formatFiles').mockResolvedValue();
     gitLocalUserNameMock.mockResolvedValue('Jane Doe');
     gitLocalUserEmailMock.mockResolvedValue('jane@example.com');
   });
 
   afterEach(() => {
-    jest.restoreAllMocks();
+    vi.restoreAllMocks();
   });
 
   describe('manifest location', () => {
@@ -97,7 +98,7 @@ describe('releaseManifestGenerator', () => {
     });
 
     it('never touches the project configuration', async () => {
-      const updateProjectConfiguration = jest.spyOn(devkit, 'updateProjectConfiguration');
+      const updateProjectConfiguration = vi.spyOn(devkit, 'updateProjectConfiguration');
       seedLib(tree);
 
       await run(tree, { project: 'shared-thing' });

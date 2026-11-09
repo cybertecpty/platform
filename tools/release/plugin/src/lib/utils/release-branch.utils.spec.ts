@@ -1,6 +1,7 @@
 import { gitBranchExists, gitCurrentBranch, isCleanGitBranch } from '@cybertecpty/git-utils';
 import { logger } from '@nx/devkit';
 import { simpleGit, type SimpleGit } from 'simple-git';
+import type { Mock } from 'vitest';
 
 import {
   checkoutReleaseBranch,
@@ -8,35 +9,35 @@ import {
   type ReleaseBranchOptions
 } from './release-branch.utils';
 
-jest.mock('@cybertecpty/git-utils', () => ({
-  gitBranchExists: jest.fn(),
-  gitCurrentBranch: jest.fn(),
-  isCleanGitBranch: jest.fn()
+vi.mock('@cybertecpty/git-utils', () => ({
+  gitBranchExists: vi.fn(),
+  gitCurrentBranch: vi.fn(),
+  isCleanGitBranch: vi.fn()
 }));
 
-jest.mock('simple-git', () => ({
+vi.mock('simple-git', () => ({
   __esModule: true,
-  simpleGit: jest.fn(),
-  default: jest.fn()
+  simpleGit: vi.fn(),
+  default: vi.fn()
 }));
 
-const mockBranchExists = jest.mocked(gitBranchExists);
-const mockCurrentBranch = jest.mocked(gitCurrentBranch);
-const mockIsClean = jest.mocked(isCleanGitBranch);
-const mockSimpleGit = jest.mocked(simpleGit);
+const mockBranchExists = vi.mocked(gitBranchExists);
+const mockCurrentBranch = vi.mocked(gitCurrentBranch);
+const mockIsClean = vi.mocked(isCleanGitBranch);
+const mockSimpleGit = vi.mocked(simpleGit);
 
 type GitSpies = {
-  checkout: jest.Mock;
-  pull: jest.Mock;
-  checkoutLocalBranch: jest.Mock;
+  checkout: Mock;
+  pull: Mock;
+  checkoutLocalBranch: Mock;
 };
 
 /** A git double exposing only the mutating calls `checkoutReleaseBranch` makes directly. */
 const makeGit = (): { git: SimpleGit; spies: GitSpies } => {
   const spies: GitSpies = {
-    checkout: jest.fn(() => Promise.resolve()),
-    pull: jest.fn(() => Promise.resolve()),
-    checkoutLocalBranch: jest.fn(() => Promise.resolve())
+    checkout: vi.fn(() => Promise.resolve()),
+    pull: vi.fn(() => Promise.resolve()),
+    checkoutLocalBranch: vi.fn(() => Promise.resolve())
   };
 
   return { git: spies as unknown as SimpleGit, spies };
@@ -69,11 +70,11 @@ describe('checkoutReleaseBranch', () => {
     mockCurrentBranch.mockReset().mockResolvedValue('feature/x');
     mockIsClean.mockReset().mockResolvedValue(true);
     mockSimpleGit.mockReset();
-    jest.spyOn(logger, 'warn').mockImplementation(() => undefined);
+    vi.spyOn(logger, 'warn').mockImplementation(() => undefined);
   });
 
   afterEach(() => {
-    jest.restoreAllMocks();
+    vi.restoreAllMocks();
   });
 
   it('rejects without touching the tree when the working directory is dirty', async () => {

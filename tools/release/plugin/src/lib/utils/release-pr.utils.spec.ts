@@ -17,31 +17,31 @@ import {
   WORKSPACE_OTHER_GROUP
 } from './release-pr.utils';
 
-jest.mock('@cybertecpty/git-utils', () => ({
-  gitCommitsBetween: jest.fn()
+vi.mock('@cybertecpty/git-utils', () => ({
+  gitCommitsBetween: vi.fn()
 }));
 
-jest.mock('@cybertecpty/nx-utils', () => ({
-  createProjectRootMappings: jest.fn(),
-  findProjectForPath: jest.fn()
+vi.mock('@cybertecpty/nx-utils', () => ({
+  createProjectRootMappings: vi.fn(),
+  findProjectForPath: vi.fn()
 }));
 
-jest.mock('@nx/devkit', () => ({
-  ...jest.requireActual('@nx/devkit'),
-  createProjectGraphAsync: jest.fn()
+vi.mock('@nx/devkit', async () => ({
+  ...(await vi.importActual('@nx/devkit')),
+  createProjectGraphAsync: vi.fn()
 }));
 
-jest.mock('simple-git', () => ({
+vi.mock('simple-git', () => ({
   __esModule: true,
-  default: jest.fn(),
-  simpleGit: jest.fn()
+  default: vi.fn(),
+  simpleGit: vi.fn()
 }));
 
-const mockGitCommitsBetween = jest.mocked(gitCommitsBetween);
-const mockCreateProjectRootMappings = jest.mocked(createProjectRootMappings);
-const mockFindProjectForPath = jest.mocked(findProjectForPath);
-const mockCreateProjectGraphAsync = jest.mocked(createProjectGraphAsync);
-const mockSimpleGit = jest.mocked(simpleGit);
+const mockGitCommitsBetween = vi.mocked(gitCommitsBetween);
+const mockCreateProjectRootMappings = vi.mocked(createProjectRootMappings);
+const mockFindProjectForPath = vi.mocked(findProjectForPath);
+const mockCreateProjectGraphAsync = vi.mocked(createProjectGraphAsync);
+const mockSimpleGit = vi.mocked(simpleGit);
 
 const RELEASE_COMMIT_MSG = 'chore(release): generate release artifacts';
 
@@ -66,7 +66,7 @@ const route =
     table[file] ?? null;
 
 beforeEach(() => {
-  jest.clearAllMocks();
+  vi.clearAllMocks();
 });
 
 // ---------------------------------------------------------------------------

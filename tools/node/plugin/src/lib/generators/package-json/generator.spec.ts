@@ -1,6 +1,7 @@
 import { logger, readJson, writeJson, type Tree } from '@nx/devkit';
 import { createTreeWithEmptyWorkspace } from '@nx/devkit/testing';
 import type { PackageJson } from 'type-fest';
+import type { MockInstance } from 'vitest';
 import { packageJsonGenerator } from './generator';
 import type { PackageJsonGeneratorOptions } from './schema';
 
@@ -13,15 +14,15 @@ function run(
 
 describe('packageJsonGenerator', () => {
   let tree: Tree;
-  let warn: jest.SpyInstance;
+  let warn: MockInstance;
 
   beforeEach(() => {
     tree = createTreeWithEmptyWorkspace();
-    warn = jest.spyOn(logger, 'warn').mockImplementation(() => undefined);
+    warn = vi.spyOn(logger, 'warn').mockImplementation(() => undefined);
   });
 
   afterEach(() => {
-    jest.restoreAllMocks();
+    vi.restoreAllMocks();
   });
 
   describe('defaults', () => {
