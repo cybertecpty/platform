@@ -169,3 +169,14 @@ relies on for CI lint time is now `nx affected` alone: there is no remote cache,
 lints its affected projects from cold. The decision to type-lint every project stands. If lint
 time on CI becomes a problem, a project can opt out with a local `disableTypeChecked` override,
 as above.
+
+## Amendment (2026-11-10): Vitest replaces Jest in the config references (#208)
+
+- Status: accepted
+- Deciders: djmcg
+- Implemented by: issue #208; ADR 0018
+
+Two references above are out of date. The config files that sit outside every TS program are
+`eslint.config.mjs`, the `vitest.config.mts` files, `vitest.base.mts` and generator scripts, not
+Jest configs. The `@nx/js:library` generator default is `unitTestRunner: vitest`, not `jest`. The
+decision itself is unchanged.

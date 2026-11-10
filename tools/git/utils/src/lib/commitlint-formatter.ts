@@ -8,7 +8,7 @@
 // already lists the valid names in the Problems section.
 //
 // Loaded two ways: commitlint runs it under bare `node` (the `commit-msg` hook and
-// CI), and jest/ts-jest compiles it for the spec beside it. `node` strips the
+// CI), and Vitest compiles it for the spec beside it. `node` strips the
 // types natively (default since 22.18 — see package.json `engines.node`), then
 // runs what's left as plain JS — so the module system it picks matters. Node
 // resolves that from the *nearest* package.json's `"type"` field, which every

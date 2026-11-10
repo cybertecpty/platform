@@ -43,7 +43,7 @@ module of helpers:
 - `index.ts` (the barrel), `main.ts`, `generator.ts`, `executor.ts`, `schema.ts`
 - `commitlint-formatter.ts`, which bare `node` loads by name (`commitlint.md`)
 - `dependency-changelog-renderer.ts`, which `nx.json` loads by path (`release.changelog`)
-- config files such as `jest.config.cts`, `eslint.config.mjs`, `vitest.config.mts`,
+- config files such as `eslint.config.mjs`, `vitest.config.mts`,
   `playwright.config.ts`
 - template files under a `files/` folder, and `*.spec.ts` / `*.test-d.ts` files
 - test artifacts, which follow `testing.md`

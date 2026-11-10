@@ -13,7 +13,7 @@ tooling.
 
 The custom formatter lives in the `git-utils` project
 (`tools/git/utils/src/lib/commitlint-formatter.ts`). It is a `.ts` file loaded by
-**bare `node`** — no ts-jest, no bundler — so: `import type` only (a value import of a
+**bare `node`** — no Vitest transform, no bundler — so: `import type` only (a value import of a
 type throws at load), erasable syntax only (no enums / namespaces / parameter
 properties), and `NODE_OPTIONS=--disable-warning=MODULE_TYPELESS_PACKAGE_JSON` in
 `.husky/commit-msg` and `commitlint.yml` silences node's reparse notice. `engines.node`

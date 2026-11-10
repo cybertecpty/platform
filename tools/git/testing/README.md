@@ -13,4 +13,4 @@ spec and fixture files (ADR 0008).
 
 ## Running unit tests
 
-Run `nx test git-testing` to execute the unit tests via [Jest](https://jestjs.io).
+Run `nx test git-testing` to execute the unit tests via [Vitest](https://vitest.dev).

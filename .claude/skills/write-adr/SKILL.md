@@ -16,7 +16,7 @@ Moved here from `docs/agents/conventions.md` §7, which keeps the durable-knowle
 Write a new ADR, or amend an existing one, when a decision meets **all three** of these:
 
 1. **It's a real choice.** There were credible alternatives and one was picked
-   (Jest over Vitest, the flat `apps/` layout).
+   (Vitest over Jest, the flat `apps/` layout).
 2. **It's costly to reverse, or many projects depend on it.** Changing it later
    means touching many projects or people's habits.
 3. **The reason won't be obvious from the code.** Someone reading the code later

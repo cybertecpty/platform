@@ -89,7 +89,7 @@ Chosen option: **1 — Astro, scoped to static or mostly static content sites.**
   workspace `paths` from `tsconfig.base.json`, so shared libs resolve.
 - **Linting:** add `eslint-plugin-astro` to the root flat config, scoped to `**/*.astro`,
   with typed linting (ADR 0006) where the Astro parser supports it.
-- **Testing:** Vitest. See the ADR 0007 amendment of the same date.
+- **Testing:** Vitest. See ADR 0018 and the 2026-11-10 amendment below.
 - **Deployment is out of scope of this decision.** The archived repo's deploy workflows and
   infra files were not carried over. Hosting is decided in the 2026-10-06 amendment below.
 
@@ -195,3 +195,20 @@ Chosen option: **1 — Astro, scoped to static or mostly static content sites.**
   candidate there, but that needs its own ADR.
 - Swapping this for a cookie-setting tool, or one that needs a consent banner, needs a
   further amendment.
+
+## Amendment (2026-11-10): Astro sites are ordinary Vitest projects (#208)
+
+- Status: accepted
+- Deciders: djmcg
+- Implemented by: issue #208; ADR 0018
+
+ADR 0018 moved every TypeScript project to Vitest, so the Astro site no longer tests with a
+runner of its own. "Testing: Vitest. See the ADR 0007 amendment of the same date" in the locked
+parameters now points at ADR 0018 instead.
+
+- **No exception remains.** The site's `vitest.config.ts` follows the workspace conventions, and
+  its spec files take the same ESLint block as every other project (ADR 0008, 2026-11-10
+  amendment). The path-glob list that scoped Vitest to `apps/cybertec-io` is gone.
+- **What stays Astro-specific** is what ADR 0018 kept from ADR 0007's 2026-09-23 amendment: the
+  coverage exemption for a site with no `src/**/*.ts` module, the build-output assertions with
+  `test` depending on `build`, and `.astro` files staying out of coverage.

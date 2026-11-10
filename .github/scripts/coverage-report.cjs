@@ -1,8 +1,8 @@
 /**
  * Workspace coverage reporting for CI — runs entirely inside GitHub Actions, no
- * third-party service (ADR 0007 amendment / issue #52).
+ * third-party service (ADR 0018, carrying forward ADR 0007 / issue #52).
  *
- * After the CI test run (coverage collected in CI via `jest.preset.js`), each
+ * After the CI test run (coverage collected in CI via `vitest.base.mts`), each
  * tested project drops `coverage/<projectRoot>/coverage-{summary,final}.json`. A .NET
  * test project drops lcov (`coverage.info`, from coverlet — ADR 0017) instead; it is
  * read into the same per-project totals and per-line hit counts.

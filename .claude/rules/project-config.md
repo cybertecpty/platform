@@ -18,7 +18,7 @@ Moved here from `docs/agents/conventions.md` §8, §9 and §11. Loads when editi
   generator gap.
 - **No `baseUrl` in `tsconfig.base.json`.** `moduleResolution: "bundler"` resolves
   `paths` relative to the config file, so `baseUrl` is redundant — and TS 6.0 makes it a
-  hard error (`TS5101`) under full-diagnostic consumers like `ts-jest`. If a generator
+  hard error (`TS5101`) under full-diagnostic consumers like `tsc` itself. If a generator
   re-adds it, remove it.
 - **Every lib/tool project needs a `typecheck` stub.** Every lib/tool project carries a
   `"typecheck": {}` stub in its `project.json` that inherits
@@ -30,19 +30,19 @@ Moved here from `docs/agents/conventions.md` §8, §9 and §11. Loads when editi
   issue #48.
   - **The lib source is checked twice: once with `tsconfig.lib.json`, then again through
     `tsconfig.spec.json`.** Specs import the source, so the spec pass type-checks it with the
-    spec config's `types`, which must include `node` for `jest.config.cts` (`module.exports`).
+    spec config's `types`, which must include `node` and `vitest/globals`.
     The lib pass is the one that enforces the lib config's narrower `types`.
   - **A `scope:shared` lib's `tsconfig.lib.json` must not load `node` types** (ADR 0004: shared
     code stays browser-safe), so a Node global like `process` or `Buffer` in its source fails
-    `typecheck`. Set `types` explicitly (`[]`, or `["jest"]` for a testing lib) — with no
+    `typecheck`. Set `types` explicitly (`[]`, or `["vitest/globals"]` for a testing lib) — with no
     `types`, every `@types` package loads, `node` included. The workspace `ts-lib` generator
     removes `node` for `--scope=shared`; a lib made any other way gets `node` from the Nx
     generator, so remove it by hand. `.github/scripts/shared-lib-types.test.cjs` (run by
     `pnpm verify` and CI) fails if any project tagged `scope:shared` loads it or has no
     `typecheck` target. See issue #164.
   - **The lib pass checks everything in `tsconfig.lib.json`'s `include`, test artifacts too.** A
-    `*.mock.ts` or `*.fixture.ts` in a lib's `src` that uses `jest.fn()` fails with TS2304 unless
-    the lib config's `types` has `jest` (a `type:testing` lib gets it from the generator) or its
+    `*.mock.ts` or `*.fixture.ts` in a lib's `src` that uses `vi.fn()` fails with TS2304 unless
+    the lib config's `types` has `vitest/globals` (a `type:testing` lib gets it from the generator) or its
     `exclude` lists the artifact.
   - **The `scope:shared` guard has two blind spots.** It reads only `compilerOptions.types`, so
     Node types that arrive through a `/// <reference types="node" />` or a dependency's typings

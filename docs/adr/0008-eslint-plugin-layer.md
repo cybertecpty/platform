@@ -464,3 +464,35 @@ fixes carry no rule id, so they are never applied. On-save fixing in the editor 
 - A commit with a semantic-rule violation fails with the lint error and changes nothing.
 - The allowlist is a second place to touch when adding an autofixable rule. A rule left off it
   is safe, since it only means the author fixes that finding by hand.
+
+## Amendment (2026-11-10): Vitest replaces Jest in the test-code block (#208)
+
+- Status: accepted
+- Deciders: djmcg
+- Implemented by: issue #208; ADR 0018
+
+ADR 0018 made Vitest the only TypeScript test runner, so the plugin layer drops
+`eslint-plugin-jest`. Everything above that names the Jest block, its `flat/recommended` preset,
+the Jest globals or `jest.spyOn` now reads as the Vitest block, `@vitest/eslint-plugin`'s
+`recommended` preset and `vi.spyOn`.
+
+### Decision
+
+- **One test-code block.** `@vitest/eslint-plugin`'s `recommended` config applies to
+  `**/*.{spec,test}.ts` and every test-artifact suffix from the 2026-10-17 amendment. It brings
+  the same smell rules (focused and disabled tests, `valid-expect`, duplicate titles) and keeps
+  the same relaxations: `@nx/enforce-module-boundaries` and the three TS rules stay off for test
+  code.
+- **The path-glob list is gone.** While both runners were in the tree, `vitestSpecFiles` listed the
+  migrated projects by path, because flat config cannot read project tags. With no second runner
+  there is nothing to scope.
+- **Only e2e is carved out.** `apps/*/e2e` specs keep the Playwright block, and the Vitest block
+  ignores them.
+- **`eslint-plugin-jest` is removed** from the devDependencies, not scoped.
+
+### Consequences
+
+- The Jest rules and globals are no longer installed, so a left-in `jest.*` call in a spec is an
+  undefined global and fails `typecheck` and `nx lint`.
+- The ADR 0007 pairing named under More information above no longer holds: the plugin lints for
+  Vitest.

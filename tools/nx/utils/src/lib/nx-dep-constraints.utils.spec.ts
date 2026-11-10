@@ -278,7 +278,7 @@ describe('checkDepConstraints', () => {
   });
 
   describe('with a constraint that allows a wildcard domain', () => {
-    // The shape of the matrix row that lets an app depend on any domain. Jest cannot load the real
+    // The shape of the matrix row that lets an app depend on any domain. Vitest cannot load the real
     // matrix (an `.mts` file), so this is a row of the same shape; `check-boundaries` on the real
     // graph exercises the real row.
     const appRow: DependencyConstraint = {

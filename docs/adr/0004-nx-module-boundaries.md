@@ -478,3 +478,17 @@ against the real matrix.
 So `loadDepConstraints()` and `DEP_CONSTRAINTS_PATH` are removed. `nx-utils` exports
 `DEP_CONSTRAINTS` and the executor imports it by name. The ESLint config still imports the file by
 relative path, because bare Node loads it without the workspace's path aliases.
+
+## Amendment (2026-11-10): the testing lib is `vitest-testing` (#208)
+
+- Status: accepted
+- Deciders: djmcg
+- Implemented by: issue #208; ADR 0018
+
+The 2026-10-17 amendment names `jest-testing` at `libs/shared/jest/testing`. ADR 0018 renamed it
+to `vitest-testing` at `libs/shared/vitest/testing`, and `lastCallArg` now reads a `vi.fn()` mock's
+`mock.calls`. The tags and the `scope:shared` reasoning are unchanged, and "plain JavaScript and
+Jest's own APIs" now reads "plain JavaScript and Vitest's own APIs".
+
+The 2026-11-10 barrel amendment's remark that `dotnet-plugin` still ran Jest is history: no project
+runs Jest any more.
