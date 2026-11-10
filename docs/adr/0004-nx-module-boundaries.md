@@ -492,3 +492,36 @@ Jest's own APIs" now reads "plain JavaScript and Vitest's own APIs".
 
 The 2026-11-10 barrel amendment's remark that `dotnet-plugin` still ran Jest is history: no project
 runs Jest any more.
+
+## Amendment (2026-11-10): `type:ui` may not import `@angular/common/http`
+
+- Status: accepted
+- Deciders: djmcg
+- Implemented by: issue #315
+
+`type:ui` is "presentational components, no injected data services", and its row already keeps it
+off `type:data-access`. Nothing stopped a UI lib importing Angular's HTTP layer directly, which
+would put transport code in the view layer.
+
+### Decision
+
+- **The `type:ui` row carries `bannedExternalImports: ['@angular/common/http']`**, the mechanism ADR
+  0003 uses for the zod ban. The ban is on the entry point, not on `HttpClient`: the rule matches a
+  module specifier and cannot filter by imported name, and a name-based ban would miss
+  `provideHttpClient`, `HttpClientModule`, interceptors and `httpResource`, which share the entry
+  point. Transport belongs in `type:data-access`.
+- **The match is exact.** `@angular/common/http/testing` is not banned, and specs have the boundary
+  rule switched off anyway.
+- **`import type` is banned too.** Checked against `@nx/eslint-plugin` 23.1.1: the banned-import check
+  does not look at the import kind (only the lazy-load check skips `import type`), so
+  `import type { HttpErrorResponse }` in a UI lib fails. A UI lib types its inputs against
+  `type:types`.
+
+### Consequences
+
+- **Direct imports only.** `checkNestedExternalImports` is off, so a `type:ui` lib can still reach
+  HTTP through a `type:utils` lib that imports it. Turning it on is a workspace-wide change and is not
+  made here.
+- **Unverified on a real graph.** No `type:ui` lib exists and Angular is not a dependency yet, so the
+  rule is covered by a spec on the row (`nx-dep-constraints.const.spec.ts`), not by a lint failure.
+  The first `type:ui` lib should include a deliberate pass/fail check.

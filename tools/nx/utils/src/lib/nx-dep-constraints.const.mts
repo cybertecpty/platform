@@ -227,9 +227,12 @@ export const DEP_CONSTRAINTS: ReadonlyArray<DependencyConstraint> = [
   {
     // Presentational Angular components: inputs/outputs only, no injected
     // data services. Types its inputs against type:types, not type:models —
-    // the view layer stays decoupled from the wire shape.
+    // the view layer stays decoupled from the wire shape. `@angular/common/http` is banned
+    // outright (`HttpClient`, `provideHttpClient`, interceptors, `httpResource`): the ban matches
+    // a module, not an imported name, and transport belongs in type:data-access.
     sourceTag: 'type:ui',
-    onlyDependOnLibsWithTags: ['type:testing', 'type:types', 'type:ui', 'type:utils']
+    onlyDependOnLibsWithTags: ['type:testing', 'type:types', 'type:ui', 'type:utils'],
+    bannedExternalImports: ['@angular/common/http']
   },
   {
     // Stateless, isomorphic helper functions. Depends on type:types and other
