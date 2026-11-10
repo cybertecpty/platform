@@ -118,7 +118,8 @@ superseded; its coverage policy is carried forward verbatim against Vitest.
     `*.d.ts` and the barrel `src/index.ts` — the same set as `collectCoverageFrom`.
   - `coverage.reporter: ['text-summary', 'json', 'json-summary', 'lcov']`.
   - `coverage.reportsDirectory` resolving to `coverage/{projectRoot}`.
-- **The coverage reporting layer is unchanged.** `.github/scripts/coverage-report.cjs` reads
+- **The coverage reporting layer is unchanged** (and was later replaced by Codecov, ADR 0007's
+  2026-11-10 amendment). `.github/scripts/coverage-report.cjs` read
   `coverage-summary.json` / `coverage-final.json` under `coverage/**`; Vitest's v8 provider
   writes those same files, as ADR 0007's 2026-09-23 amendment already records for the Astro
   app. The PR comment, patch coverage, the affected-vs-workspace labelling (2026-10-16

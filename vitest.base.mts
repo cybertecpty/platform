@@ -38,9 +38,15 @@ export function createBaseVitestConfig(projectDir: string): ViteUserConfig {
           'src/**/*.d.ts',
           'src/index.ts'
         ],
-        // `json` feeds the workspace-level rollup in CI; `json-summary` and `lcov` feed the PR
-        // coverage comment; `text-summary` prints the per-project total to the CI log.
-        reporter: ['text-summary', 'json', 'json-summary', 'lcov'],
+        // `lcov` goes to Codecov, with `projectRoot` so its paths are repo-relative (Codecov cannot
+        // tell apart the same `src/` path in two projects); `text-summary` prints the per-project
+        // total to the CI log.
+        reporter: [
+          'text-summary',
+          'json',
+          'json-summary',
+          ['lcov', { projectRoot: workspaceRoot }]
+        ],
         reportsDirectory: resolve(workspaceRoot, 'coverage', relative(workspaceRoot, projectDir)),
         // Under `nx run-many` each project runs its own Vitest process, so these thresholds
         // are enforced per project (that project's files only), not against the workspace
