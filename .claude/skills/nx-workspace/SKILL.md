@@ -33,7 +33,7 @@ nx show projects --withTarget build
 # Combine filters
 nx show projects --type lib --withTarget test
 nx show projects --affected --exclude="*-e2e"
-nx show projects -p "tag:scope:client,packages/*"
+nx show projects -p "tag:platform:frontend,packages/*"
 
 # Negate patterns
 nx show projects -p '!tag:private'
@@ -185,7 +185,7 @@ Example output:
   "name": "my-app",
   "sourceRoot": "apps/my-app/src",
   "projectType": "application",
-  "tags": ["type:app", "scope:client"],
+  "tags": ["type:app", "platform:frontend"],
   "targets": {
     "build": {
       "executor": "@nx/vite:build",

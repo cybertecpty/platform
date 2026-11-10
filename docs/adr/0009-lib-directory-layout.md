@@ -12,7 +12,7 @@
 
 ## Context and problem statement
 
-ADR 0004 defined the three-axis tag system (`scope:`, `type:`, `domain:`) and the
+ADR 0004 defined the three-axis tag system (`platform:`, `type:`, `domain:`) and the
 dependency-constraint matrix, but deliberately left physical layout and project naming
 out of scope — at the time, "no product domains exist yet." This workspace is about to
 host genuinely unrelated products (for example, a game-collecting app and an ecommerce
@@ -32,7 +32,7 @@ expected to need one.
 - One deterministic layout: given a project's tags (or a folder path), there is exactly
   one place it lives and one name it has.
 - A domain's whole vertical slice (frontend, backend, and shared parts) should stay
-  colocated — not fragmented across a top-level `scope:` split.
+  colocated — not fragmented across a top-level `platform:` split.
 - Singleton libs (a domain's one `api`, one `infra`, one `models` lib) shouldn't need an
   invented, meaningless group segment.
 - Product domains that need internal sub-areas (e.g. `billing/checkout` vs
@@ -45,7 +45,7 @@ expected to need one.
 ## Considered options
 
 1. `libs/<domain>/<type>/<group>` — type as the second segment, group last.
-2. `libs/<domain>/<scope>/<type>-<group>` — scope as an explicit folder tier.
+2. `libs/<domain>/<platform>/<type>-<group>` — platform as an explicit folder tier.
 3. `libs/<domain>[/<subdomain>...]/[<group>/]<type>` — domain path (with optional
    subdomains) first, optional group, type last. **(chosen)**
 4. No convention — decide per lib.
@@ -57,7 +57,7 @@ point of a domain-first layout; a domain's related libs (`feature`, `data-access
 `api`, `services` for one area) end up scattered across type folders. Option 2 forces
 every domain's tree to fork into `frontend/` / `backend/` / `iso/` subtrees, which
 fragments a domain's vertical slice the same way and adds a folder tier that's largely
-redundant for the eleven `type:` values `scope:` already pins. Option 4 is the status
+redundant for the eleven `type:` values `platform:` already pins. Option 4 is the status
 quo ADR 0004 already flagged as a risk (mis-tagging, inconsistent nesting). Option 5 was
 tempting — one less concept — but `type:feature`, `type:ui`, `type:data-access`,
 `type:api`, and `type:services` are typically **many-per-domain**, not one; banning
@@ -132,7 +132,7 @@ never resolved from the same input:
   name while relocating it into this convention) without otherwise touching placement.
 - **The wrapper generator exposes no `--directory` passthrough.** Unlike `--name`,
   directory placement isn't cosmetic — it's what the domain registry parses to derive
-  `scope:`/`type:`/`domain:` tags in the first place (see "Domain registry"). A raw
+  `platform:`/`type:`/`domain:` tags in the first place (see "Domain registry"). A raw
   directory override would let a lib's physical location diverge from what its
   `--domain`/`--subdomain`/`--group`/`--type` inputs say, breaking the ADR's core
   guarantee that location determines tags — exactly the mis-tagging risk this ADR and
@@ -152,15 +152,15 @@ never resolved from the same input:
 ### Scope on the polymorphic types
 
 `type:utils`, `type:testing`, and `type:types` are the three `type:` values where
-`scope:` isn't implied by the type (see the ADR 0004 amendment below) — a `utils` lib
-can be `scope:frontend`, `scope:backend`, or `scope:shared`, and nothing else about the
-type says which. Considered encoding a scope hint into `<group>` (a `frontend-` /
+`platform:` isn't implied by the type (see the ADR 0004 amendment below) — a `utils` lib
+can be `platform:frontend`, `platform:backend`, or `platform:shared`, and nothing else about the
+type says which. Considered encoding a platform hint into `<group>` (a `frontend-` /
 `backend-` prefix) so it would be visible from the path. Rejected:
-`@nx/enforce-module-boundaries` already enforces the real constraint off the `scope:`
+`@nx/enforce-module-boundaries` already enforces the real constraint off the `platform:`
 tag, independent of what a lib is named — a mis-scoped import fails `nx lint` regardless
 of naming. A naming convention would only have bought path-level readability, at the
 cost of a second name/tag invariant to keep in sync (a generator special case, plus a CI
-conformance check to catch a hand-edited `project.json`). Not worth it: `scope:` for
+conformance check to catch a hand-edited `project.json`). Not worth it: `platform:` for
 these three types lives in the tag alone, exactly like the other eleven types. Check it
 with `nx show project <project-name>` or the Nx graph when it isn't obvious from context.
 
@@ -204,7 +204,7 @@ top-level domain.
 ```
 
 The wrapper generator (and any other tooling that needs to go from a path to
-`scope:`/`type:`/`domain:` tags) parses right-to-left: the last segment is always
+`platform:`/`type:`/`domain:` tags) parses right-to-left: the last segment is always
 `type` (closed set), and the longest registered domain/subdomain prefix is matched
 against this map — whatever's left between the domain path and the type is `<group>`.
 Without the registry, a path like `libs/game-collector/collection-browser/feature` is
@@ -217,15 +217,15 @@ removed — not a separate convention: `tools/git/utils` → `git-utils`,
 `tools/nx/plugin` → `nx-plugin`. The same `<group>` guidance applies (omittable for a
 genuine type-singleton, expected once a second lib of that type exists) — in practice
 every current tools project already supplies one, since without a domain segment a bare
-`tools/<type>` folder has nothing to anchor it. Tools projects carry `scope:tools`, not
+`tools/<type>` folder has nothing to anchor it. Tools projects carry `platform:tools`, not
 a `domain:` tag, so they need no `workspaceDomains` entry.
 
 ### Amendment to ADR 0004
 
 - Drops the "isomorphic" claim from `type:utils`'s description. Framework-bound
-  (`scope:frontend` / `scope:backend`) util libs are legitimate — an Angular-only
+  (`platform:frontend` / `platform:backend`) util libs are legitimate — an Angular-only
   `takeUntilDestroyed` wrapper or a Nest-only `ExecutionContext` helper is still
-  `type:utils`, just not `scope:shared`. `type:utils` spans all three scopes, the same
+  `type:utils`, just not `platform:shared`. `type:utils` spans all three platforms, the same
   as `type:testing`.
 - Adds compound subdomain tags (`domain:<domain>-<subdomain>`) and family-scoped glob
   constraint rows as a supported shape of the `domain:` axis, alongside the existing
@@ -237,7 +237,7 @@ a `domain:` tag, so they need no `workspaceDomains` entry.
 
 - One deterministic layout and naming rule; a lib's location fully determines its
   `domain:`/`type:` tags (and, for the eleven non-polymorphic `type:` values, its
-  `scope:` too).
+  `platform:` too).
 - Singleton domain libs need no invented group (`billing-checkout-api`, not
   `billing-checkout-core-api`).
 - A domain's whole vertical slice stays colocated under one folder.
@@ -254,7 +254,7 @@ a `domain:` tag, so they need no `workspaceDomains` entry.
   `billing-checkout` and `billing-invoices` can import each other freely. A team that
   wants sibling isolation must add an explicit row per subdomain (verbose) or graduate
   the subdomain to a full top-level domain.
-- `scope:` has no representation in the path for the three scope-polymorphic types
+- `platform:` has no representation in the path for the three platform-polymorphic types
   (`type:utils`, `type:testing`, `type:types`) — a frontend-only
   `libs/shared/rxjs/utils`-style lib is distinguishable only by its tag, not its
   location. **Accepted deliberately** (see "Scope on the polymorphic types" above) —
@@ -294,7 +294,7 @@ ADR-0009-owned wrapper, and no requirement that library scaffolding be funneled 
 
 - **Derivation and validation are pure functions in `nx-utils`.** Given
   `--domain`/`--subdomain`/`--group`/`--type`, compute the project path, derived name,
-  and `scope:`/`type:`/`domain:` tags; given a path, parse it against `workspaceDomains`
+  and `platform:`/`type:`/`domain:` tags; given a path, parse it against `workspaceDomains`
   (right-to-left: `type` last, longest registered domain/subdomain prefix, remainder is
   `group`) into the same. No Nx `Tree` access, no calls to other generators — plain
   functions, testable the same way as `release-pr.utils` and `git-utils` already are in
@@ -354,7 +354,7 @@ ADR-0009-owned wrapper, and no requirement that library scaffolding be funneled 
 `shared-fs-utils` (the first grouped `shared`-domain library scaffolded since this ADR
 landed) read as noisier than it needed to: `shared` stacked in front of an
 already-specific group (`fs`) added a word without adding information — nothing in this
-workspace is ambiguous about whether `fs-utils` is shared, since `scope:`/`domain:` tags
+workspace is ambiguous about whether `fs-utils` is shared, since `platform:`/`domain:` tags
 carry that, not the name. Domains with real product identity (`billing`, `game-collector`)
 don't have this problem — the domain name itself is the information a reader needs
 (`game-collector-collection-browser-feature`).
@@ -385,7 +385,7 @@ don't have this problem — the domain name itself is the information a reader n
 - The whole point of a `<group>` is to be specific enough to stand on its own next to
   a `<type>` (`fs-utils`, `design-system-ui`) — for every other domain, prefixing it
   with the domain name adds real information (which product area). For `shared`
-  specifically, "shared" is closer to `scope:`/`type:`'s job than `domain:`'s: it says
+  specifically, "shared" is closer to `platform:`/`type:`'s job than `domain:`'s: it says
   "not product-specific," not "which thing." A reader scanning project names benefits
   more from `fs-utils` reading like a self-contained utility than from a domain label
   that's true of every sibling in `libs/shared/`.
@@ -439,7 +439,7 @@ reality" with nothing enforcing it. This amendment removes the second place.
   `prefix` (`domain:`). `eslint.config.mjs` spreads generated `depConstraints` rows from
   it: one family-scoped row per top-level product domain (the glob shape from
   "Subdomains: tag semantics"), each allowed to depend on its own family and
-  `domain:shared`. `domain:shared`'s own row, the `type:` rows, and the `scope:` rows stay
+  `domain:shared`. `domain:shared`'s own row, the `type:` rows, and the `platform:` rows stay
   hand-written — they are fixed by ADR 0004, not discovered.
 - **Path parsing resolves group vs. subdomain from the tag, not a registry.** The
   ambiguity the registry existed for (is `collection-browser` in
@@ -478,7 +478,7 @@ reality" with nothing enforcing it. This amendment removes the second place.
   time, so `collectTags` must be fast and tolerate an empty workspace; if the graph
   cannot be read it should fail loudly rather than emit zero domain rows.
 - Supersedes the "Domain registry" section above and the `workspaceDomains` bullet under
-  "Negative / risks". Tools projects are unaffected: they carry `scope:tools` and no
+  "Negative / risks". Tools projects are unaffected: they carry `platform:tools` and no
   `domain:` tag.
 
 ## Amendment (2026-11-05): the group-less `shared` libs drop `shared` from the name too
@@ -502,7 +502,7 @@ under `libs/shared`; two still start with `shared-`:
 
 The result is inconsistent: a reader sees `fs-utils` and `jest-testing` beside `shared-utils` and
 `shared-types`, and the 2026-09-19 rationale (that `shared` says "not product-specific", which
-`scope:` and `domain:` already carry) applies equally to the group-less pair. This amendment
+`platform:` and `domain:` already carry) applies equally to the group-less pair. This amendment
 ends that exception. The maintainer confirmed on 2026-11-05 that the group-less names were meant to
 drop `shared` too, that the package names follow, and that bare `utils` and `types` project names are
 acceptable; this amendment is the record of that decision.

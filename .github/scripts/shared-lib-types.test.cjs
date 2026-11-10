@@ -80,7 +80,7 @@ describe('findViolations', () => {
   });
 
   it('ignores projects not tagged platform:shared, and node_modules', () => {
-    addProject('tools/a', { tags: ['scope:node'], types: ['node'] });
+    addProject('tools/a', { tags: ['platform:node'], types: ['node'] });
     addProject('node_modules/pkg', { tags: ['platform:shared'], types: ['node'] });
 
     assert.deepEqual(findViolations(root), []);

@@ -12,7 +12,7 @@
 
 After ADRs 0003, 0004, and 0006 the workspace `eslint.config.mjs` is: `@nx/eslint`'s
 `recommended` set, the `lodash` / `zod` bundle-hygiene import bans (0003), the
-`@nx/enforce-module-boundaries` scope/type/domain matrix (0004), and
+`@nx/enforce-module-boundaries` platform/type/domain matrix (0004), and
 `typescript-eslint`'s `recommendedTypeChecked` type-aware rules (0006). That base is
 deliberately **framework- and tooling-agnostic** — it knows TypeScript and the Nx
 project graph, nothing else.
@@ -90,7 +90,7 @@ plus a preset choice for each plugin and a scoping choice for NgRx.
   plugin config in the workspace. Revisit once there is real SignalStore code to judge
   the rules against.
 - **Scoped `{apps,libs}/**/*.ts`.** ESLint flat-config `files` matches paths only, and
-  ADR 0003 deliberately makes browser-reachability a `scope:frontend` **tag** with no
+  ADR 0003 deliberately makes browser-reachability a `platform:frontend` **tag** with no
   parallel path convention — so the config cannot say "frontend" directly. The options:
   - `**/*.ts` — simplest; the rules are inert on non-NgRx files anyway, but a future
     rule that matched a backend construct would fire spuriously.
@@ -117,7 +117,7 @@ plus a preset choice for each plugin and a scoping choice for NgRx.
   those files.
 - **The block also relaxes four base rules that fight test code:**
   - `@nx/enforce-module-boundaries: 'off'` — spec and mock files legitimately pull in
-    test-helper libs and fixtures across scope/type boundaries, and `type:testing` libs
+    test-helper libs and fixtures across platform/type boundaries, and `type:testing` libs
     are already `type:*`-broad under ADR 0004.
   - `@typescript-eslint/no-empty-function`, `no-explicit-any`, `no-non-null-assertion`
     off — mock stubs, `any`-typed fixture access, and `!` on known-present test data.

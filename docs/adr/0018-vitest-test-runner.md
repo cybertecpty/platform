@@ -74,7 +74,7 @@ move — it only removes the blocker. The reason to move is Angular.
 2. **Stay on Jest, keep the Astro exception** — ADR 0007 as it stands. Rejected: it accepts
    two runners permanently and overrides two framework defaults to do it. Its one real
    advantage is that it costs nothing today.
-3. **Split by stack: Vitest for Angular and Astro, Jest for `scope:tools` and shared libs.**
+3. **Split by stack: Vitest for Angular and Astro, Jest for `platform:tools` and shared libs.**
    Rejected for the reason ADR 0007 rejected its own option 3: it is the maintenance surface
    of both runners, plus contributors switching mock API between files in one PR — and here
    it would be the _permanent_ shape rather than a carve-out.
