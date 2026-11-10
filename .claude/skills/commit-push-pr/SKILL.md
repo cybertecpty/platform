@@ -221,7 +221,7 @@ cat > {scratchpad}/pr-body-{branch-slug}.md << 'EOF'
 ## Test plan
 {checklist}
 
-Refs #{issue}
+Closes #{issue}
 
 🤖 Generated with [Claude Code](https://claude.com/claude-code)
 EOF
@@ -233,7 +233,8 @@ gh pr create --repo cybertecpty/platform --base develop --head {branch} --title 
 
 Capture the PR number from the `/pull/{n}` URL, then check the body is yours:
 `gh pr view {n} --json body --jq .body`. If it is not, fix it with `gh pr edit {n} --body-file …`
-before arming auto-merge. A `Closes #{issue}` the body lacks does not fire on merge.
+before arming auto-merge. A `Closes #{issue}` the body lacks does not fire on merge. Write
+`Refs #{issue}` instead only when the PR is part of an issue's work and must not close it.
 
 `.github/CODEOWNERS` already makes GitHub auto-request the maintainer's review, so
 `--reviewer djmcgrath101` is belt-and-suspenders — keep it so the request still
