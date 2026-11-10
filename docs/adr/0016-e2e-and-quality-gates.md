@@ -222,3 +222,13 @@ itself (#212). Without that step `e2e` and `lighthouse` fail with "Executable do
 
 `nxCloudId` stays in `nx.json`, so re-enabling Nx Cloud is a revert of the #188 changes to
 `lint-and-test-affected.yml` and `deploy-affected.yml`, plus the docs notes listed above.
+
+## Amendment (2026-11-10): the shared Playwright lib's unit specs run under Vitest (#208)
+
+- Status: accepted
+- Deciders: djmcg
+- Implemented by: issue #208; ADR 0018
+
+"Its own unit specs run under Jest and keep the Jest rules" in the 2026-10-17 amendment now reads
+Vitest: the specs keep the Vitest block of the ESLint config (ADR 0008, 2026-11-10 amendment),
+while the lib's gate code keeps the Playwright rules.

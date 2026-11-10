@@ -19,6 +19,6 @@ Filesystem-related utilities shared across `scope:backend` (Node-only) projects.
 
 ## Tests
 
-`nx test fs-utils` — Jest, exercising the real `archiver` dependency (no mocking)
+`nx test fs-utils` — Vitest, exercising the real `archiver` dependency (no mocking)
 and verifying output by round-tripping through `adm-zip` / `tar` (dev-only, test-only
 dependencies).

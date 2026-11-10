@@ -8,10 +8,10 @@
   CI-only collection, the reporting layer and its three amendments), `passWithNoTests`, the
   `type:types` exemption and `nx test {project}` as the entry point are **carried forward
   unchanged**, restated here against Vitest.
-- Implemented by: (pending) the migration ticket for this ADR; `unitTestRunner: vitest` in
-  the `nx.json` generator defaults, a root `vitest.base.mts` replacing `jest.preset.js`,
-  per-project `vitest.config.ts`, the ESLint plugin-layer inversion (ADR 0008), and
-  `docs/agents/conventions.md` §9
+- Implemented by: #203 (generators and the `nx.json` defaults), #204, #205, #206 and #207 (the
+  project migrations and the `vitest-testing` rename), and #208 (Jest removal, the ESLint
+  plugin-layer inversion, `docs/agents/conventions.md` §9 and `.claude/rules/testing.md`);
+  `vitest.base.mts` replaces `jest.preset.js`
 
 ## Context and problem statement
 

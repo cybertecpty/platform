@@ -17,7 +17,7 @@ one part of the repo lives next to it and loads on demand:
 | When a decision needs an ADR, how to write one       | `.claude/skills/write-adr`           | a decision picks between real alternatives   |
 | Vetting a new dependency                             | `.claude/skills/add-dependency`      | before `pnpm add`                            |
 | Generator templates & the five generator surfaces    | `.claude/rules/generators.md`        | working in `tools/*/plugin/**`               |
-| Spec style, test-artifact naming, coverage           | `.claude/rules/testing.md`           | editing specs, test artifacts, Jest config   |
+| Spec style, test-artifact naming, coverage           | `.claude/rules/testing.md`           | editing specs, test artifacts, Vitest config |
 | Source file suffixes (`.util`, `.utils`, `.types`)   | `.claude/rules/file-naming.md`       | adding or renaming a lib or tool source file |
 | `tsconfig` layout, `baseUrl`, `typecheck` stub       | `.claude/rules/project-config.md`    | editing `project.json` / `tsconfig*.json`    |
 | Typed linting & the ESLint plugin layer              | `.claude/rules/linting.md`           | editing an `eslint.config.mjs`               |
@@ -493,24 +493,19 @@ name (§2).
 
 ## 9. Testing & verification
 
-- Vitest is the target test runner for every TypeScript project (ADR 0018), which replaces
-  Jest (ADR 0007) as projects migrate. Generators are defaulted to `unitTestRunner: vitest` in
-  `nx.json`, and the workspace's own generators (`ts-lib`, `nx-plugin`, `nx-gen`, `nx-exec`)
-  scaffold Vitest and reject `jest`. Run tests through `nx test {project}`, never `jest` or
-  `vitest` directly.
-  - **Migration to Vitest is under way (ADR 0018).** `@nx/vitest` and the root
-    `vitest.base.mts` are in place, and `git-utils` is the pilot project on Vitest. Every other
-    existing project stays on Jest until its own migration ticket; new projects start on Vitest. This section is rewritten when the
-    migration ends.
-  - **Exception: Astro content sites use Vitest** via a per-project `vitest.config.ts`
-    (ADR 0007 2026-09-23 amendment, ADR 0012).
-  - **.NET uses xUnit with coverlet** (ADR 0007 2026-10-20 amendment, ADR 0017). Test
-    projects are separate `.csproj` files in a `tests/` folder inside the project they
-    test, tagged `type:testing`. The 80% gate comes from `coverlet.msbuild` (`coverlet.collector` has no threshold
-    option), and a test project can only measure code it references, so keep logic in a lib and
-    the app host thin (ADR 0017, 2026-10-27 amendment).
-- **Coverage: an 80% floor, CI-enforced** (ADR 0007 amendment) — the same number and the same
-  CI-only gate for Jest, Vitest and coverlet. New runtime projects must clear 80% — check with
+- Vitest is the test runner for every TypeScript project (ADR 0018, which replaced ADR 0007's
+  Jest). Generators are defaulted to `unitTestRunner: vitest` in `nx.json`, and the workspace's
+  own generators (`ts-lib`, `nx-plugin`, `nx-gen`, `nx-exec`) scaffold Vitest and reject `jest`.
+  The entry point is `nx test {project}`, never `vitest` directly. Every project's
+  `vitest.config.mts` merges `createBaseVitestConfig(import.meta.dirname)` from the root
+  `vitest.base.mts` and sets only its `name` and `environment`.
+- **.NET uses xUnit with coverlet** (ADR 0007 2026-10-20 amendment, ADR 0017). Test
+  projects are separate `.csproj` files in a `tests/` folder inside the project they
+  test, tagged `type:testing`. The 80% gate comes from `coverlet.msbuild` (`coverlet.collector` has no threshold
+  option), and a test project can only measure code it references, so keep logic in a lib and
+  the app host thin (ADR 0017, 2026-10-27 amendment).
+- **Coverage: an 80% floor, CI-enforced** (ADR 0018, carrying ADR 0007's policy forward) — the
+  same number and the same CI-only gate for Vitest and coverlet. New runtime projects must clear 80% — check with
   `nx test {project} --coverage` before opening the PR.
   - **Exception: an Astro site with no `src/**/*.ts`** is exempt; its `test` target
     asserts on the built output instead (ADR 0007 2026-09-23 amendment).
@@ -528,6 +523,13 @@ name (§2).
   `dotnet format --verify-no-changes` on it, which `nx affected` narrows to changed projects.
 - Run through Nx: `nx test {project}`, `nx lint {project}`, `nx run-many ...`,
   `nx affected ...`. Prefix with pnpm: `pnpm exec nx …`.
+- **Lint through `nx lint {project}` (or `nx run-many -t lint`), never a bare `eslint {file}`.**
+  Without a project graph, a bare `eslint` run prints "No cached ProjectGraph is available. The
+  rule will be skipped" for `@nx/enforce-module-boundaries` and still exits 0, so a boundary
+  violation passes silently. Only the Nx target evaluates the module-boundary matrix.
+- **Run one spec file** with a filter after `--`: `pnpm exec nx test {project} -- {file-filter}`.
+  Nx forwards it to Vitest, which runs the files whose path contains the filter. A filter that
+  matches nothing exits 0 (`passWithNoTests`), so check the output names the spec you meant.
 - After TS/config/schema/barrel/generator changes, run targeted tests first, then a
   build check (`nx run-many -t build -p {affected}` or the narrowest equivalent) when
   declaration emit or compilation could be affected.
@@ -562,7 +564,7 @@ path → tier table is in the `review-pr` skill.
 ## 11. Nx workspace rules
 
 - Run Nx through pnpm (`pnpm exec nx`), not a global CLI.
-- Prefer Nx targets over underlying tools (`nx test` over `jest` directly).
+- Prefer Nx targets over underlying tools (`nx test` over `vitest` directly).
 - Use the Nx MCP server / `nx-workspace` / `nx-generate` skills when available.
 - Don't guess generator flags — check `schema.json`, `--help`, or Nx docs.
 - To move a project, use `nx g @nx/workspace:move --project={name}

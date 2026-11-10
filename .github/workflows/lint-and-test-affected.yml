@@ -107,8 +107,8 @@ jobs:
         if: github.event_name != 'pull_request'
         run: pnpm exec nx run-many -t lint test build typecheck check-boundaries check-coverage-output format-check e2e lighthouse
 
-      # Coverage reporting (ADR 0007 amendment / issue #52). The `test` targets
-      # collect coverage in CI (jest.preset.js) and declare
+      # Coverage reporting (ADR 0018, carrying forward ADR 0007 / issue #52). The `test` targets
+      # collect coverage in CI (vitest.base.mts) and declare
       # `coverage/{projectRoot}` as an output, which Nx writes (or restores from
       # its local cache) on this runner. This step merges the reports into one
       # number (the whole workspace on a push, the affected projects on a PR),

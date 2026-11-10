@@ -252,3 +252,14 @@ this ADR's backend half no longer holds.
   are now **Angular and .NET**, plus Astro for static content sites.
 - No NestJS application code was ever written, so nothing migrated. Removing `@nx/nest` /
   `@nestjs/schematics` and the generator defaults that mention them is separate work.
+
+## Amendment (2026-11-10): the test runner is Vitest (#208)
+
+- Status: accepted
+- Deciders: djmcg
+- Implemented by: issue #208; ADR 0018
+
+The More information line that says Jest is the test runner for both frameworks no longer holds.
+ADR 0018 superseded ADR 0007's runner choice, and Vitest runs every TypeScript project. Angular
+22's own unit-test builder defaults to Vitest, which is the reason the choice moved. Nothing else
+in this ADR changes.

@@ -4,38 +4,15 @@ import nx from '@nx/eslint-plugin';
 import vitest from '@vitest/eslint-plugin';
 import eslintConfigPrettier from 'eslint-config-prettier';
 import astro from 'eslint-plugin-astro';
-import jest from 'eslint-plugin-jest';
 import perfectionist from 'eslint-plugin-perfectionist';
 import playwright from 'eslint-plugin-playwright';
 import unicorn from 'eslint-plugin-unicorn';
 import tseslint from 'typescript-eslint';
 import { DEP_CONSTRAINTS } from './tools/nx/utils/src/lib/nx-dep-constraints.const.mts';
 
-// Projects that test with Vitest instead of Jest: Astro content sites (ADR 0007,
-// 2026-09-23 amendment) and the projects migrated so far (ADR 0018). Flat config globs
-// can't read project tags, so they are listed by path. Each migration PR adds its project;
-// the list goes away when Jest does.
-const vitestSpecFiles = [
-  'apps/cybertec-io/**/*.{spec,test}.ts',
-  'tools/git/utils/**/*.{spec,test}.ts',
-  'libs/shared/utils/**/*.{spec,test}.ts',
-  'libs/shared/fs/utils/**/*.{spec,test}.ts',
-  'libs/shared/playwright/testing/**/*.{spec,test}.ts',
-  'tools/github/utils/**/*.{spec,test}.ts',
-  'tools/nx/utils/**/*.{spec,test}.ts',
-  'tools/nx/testing/**/*.{spec,test}.ts',
-  'tools/azure/plugin/**/*.{spec,test}.ts',
-  'tools/js/plugin/**/*.{spec,test}.ts',
-  'tools/node/plugin/**/*.{spec,test}.ts',
-  'tools/nx/plugin/**/*.{spec,test}.ts',
-  'tools/release/plugin/**/*.{spec,test}.ts',
-  'tools/dotnet/plugin/**/*.{spec,test}.ts'
-];
-
-// type:e2e projects (ADR 0010): Playwright, not Jest or Vitest — same "list by path"
-// reason as vitestSpecFiles above. e2e projects are nested at `apps/<app>/e2e` (ADR 0010,
-// 2026-10-09 amendment), so this overlaps vitestSpecFiles; both test-runner blocks
-// below ignore these files.
+// type:e2e projects (ADR 0010): Playwright, not Vitest. Flat config globs can't read
+// project tags, so they are listed by path. e2e projects are nested at `apps/<app>/e2e`
+// (ADR 0010, 2026-10-09 amendment), and the Vitest block below ignores these files.
 const playwrightSpecFiles = ['apps/*/e2e/**/*.spec.ts'];
 
 // The shared Playwright lib's gate code (`defineLighthouseTests`, `defineAxeTests`) calls
@@ -73,13 +50,8 @@ export default [
       '**/.angular',
       '**/.astro',
       '**/.remember',
-      // Jest config files (root + per-project) are tooling, not lint targets; the
-      // root `jest.config.ts` is also outside every tsconfig, which trips the
-      // typed-linting project service.
-      '**/jest.config.*',
-      '**/jest.preset.js',
-      // The base Vitest config is workspace tooling outside every project tsconfig, for
-      // the same reason as the Jest files above.
+      // The base Vitest config is workspace tooling outside every project tsconfig, which
+      // trips the typed-linting project service.
       'vitest.base.mts'
     ]
   },
@@ -155,7 +127,7 @@ export default [
   },
   {
     // Type-aware rules cannot run on files outside a TS program — JS/CJS/MJS config
-    // files (this file, jest configs, generator scripts). Turn them back off there so a
+    // files (this file, vitest configs, generator scripts). Turn them back off there so a
     // plain .js file does not fail with a "parserServices" error.
     files: ['**/*.{js,cjs,mjs,jsx}'],
     ...tseslint.configs.disableTypeChecked
@@ -177,7 +149,7 @@ export default [
   },
   {
     // `import type` guards code that bare Node loads with type stripping. Specs run under
-    // Jest / Vitest, whose transforms drop type-only imports, so the rule only adds friction
+    // Vitest, whose transforms drop type-only imports, so the rule only adds friction
     // there. Test artifacts (`*.fixture.ts` and the like) stay covered: other code can import them.
     files: ['**/*.{spec,test}.{ts,tsx,cts,mts}'],
     rules: {
@@ -250,28 +222,12 @@ export default [
   // non-NgRx files. Revisit (per-project spread) when the Angular ADR lands.
   ...ngrx.configs.signals.map(config => ({ ...config, files: ['{apps,libs}/**/*.ts'] })),
   {
-    // Jest lint rules for spec files and test artifacts (doubles and fixtures —
-    // `<name>.<kind>.ts`, ADR 0008 2026-10-17 amendment). `flat/recommended` brings the
-    // plugin, the jest globals, and the recommended rule set (no-focused-tests,
-    // no-disabled-tests, valid-expect, ...); the overrides below relax
-    // TS rules that are noise in test code.
+    // Vitest lint rules for spec files and test artifacts (doubles and fixtures —
+    // `<name>.<kind>.ts`, ADR 0008 2026-10-17 amendment). `recommended` brings the
+    // plugin and the recommended rule set (no-focused-tests, no-disabled-tests,
+    // valid-expect, ...); the overrides below relax TS rules that are noise in test code.
     basePath: workspaceRoot,
     files: ['**/*.{spec,test}.ts', '**/*.{mock,mocks,stub,stubs,fake,fakes,fixture,fixtures}.ts'],
-    ignores: [...vitestSpecFiles, ...playwrightSpecFiles],
-    ...jest.configs['flat/recommended'],
-    rules: {
-      ...jest.configs['flat/recommended'].rules,
-      '@nx/enforce-module-boundaries': 'off',
-      '@typescript-eslint/no-empty-function': 'off',
-      '@typescript-eslint/no-explicit-any': 'off',
-      '@typescript-eslint/no-non-null-assertion': 'off'
-    }
-  },
-  {
-    // Vitest lint rules for the Vitest projects' spec files (see `vitestSpecFiles`), in
-    // place of the Jest block above. Same TS relaxations as the Jest block.
-    basePath: workspaceRoot,
-    files: vitestSpecFiles,
     ignores: playwrightSpecFiles,
     ...vitest.configs.recommended,
     rules: {
@@ -284,7 +240,7 @@ export default [
   },
   {
     // Playwright lint rules for e2e spec files (see `playwrightSpecFiles`), in place of
-    // the Jest block above — no TS relaxation block needed, e2e specs don't lean on
+    // the Vitest block above — no TS relaxation block needed, e2e specs don't lean on
     // mock `any`s the way unit specs do.
     basePath: workspaceRoot,
     files: playwrightSpecFiles,

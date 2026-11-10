@@ -34,14 +34,14 @@ describe('findViolations', () => {
   });
 
   it('passes a scope:shared lib whose lib tsconfig has no node types', () => {
-    addProject('libs/shared/a', { tags: ['scope:shared'], types: ['jest'] });
+    addProject('libs/shared/a', { tags: ['scope:shared'], types: ['vitest/globals'] });
     addProject('libs/shared/b', { tags: ['scope:shared'], types: [] });
 
     assert.deepEqual(findViolations(root), []);
   });
 
   it('flags a scope:shared lib whose lib tsconfig lists node', () => {
-    addProject('libs/shared/a', { tags: ['scope:shared'], types: ['jest', 'node'] });
+    addProject('libs/shared/a', { tags: ['scope:shared'], types: ['vitest/globals', 'node'] });
 
     assert.deepEqual(findViolations(root), [
       { project: 'libs/shared/a', problem: 'tsconfig.lib.json loads "node" types' }
