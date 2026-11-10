@@ -27,24 +27,24 @@ import type { JsLibType, LibGeneratorOptions } from './schema';
  * Workspace `ts-lib` generator — a thin wrapper over `@nx/js:library`.
  *
  * Derives the project's name, directory (`libs/<domain>[/<subdomain>...]/[<group>/]<type>`,
- * or `tools/[<group>/]<type>` for `scope:tools`, ADR 0009), and tags from the shared `nx-utils` helpers rather than taking a raw
+ * or `tools/[<group>/]<type>` for `platform:tools`, ADR 0009), and tags from the shared `nx-utils` helpers rather than taking a raw
  * `directory`, then forwards every other option to `@nx/js:library` unchanged.
  *
  * Backend library types (`api`, `services`, `infra`) are rejected: the backend is .NET
  * (ADR 0017), and those libraries are created with `dotnet new`, not this generator.
  *
- * `--scope` is required, and omitting it is a thrown error rather than an inferred
+ * `--platform` is required, and omitting it is a thrown error rather than an inferred
  * default — unlike `domain`/`group`, there's no single sensible fallback across four
- * possible scopes.
+ * possible platforms.
  */
 export async function libGenerator(
   tree: Tree,
   options: LibGeneratorOptions
 ): Promise<GeneratorCallback> {
   assertNotBackendType(options.type);
-  const scope = resolveScope(options);
-  assertDomainMatchesScope(options.domain, scope);
-  const projectOptions = { ...options, scope };
+  const platform = resolvePlatform(options);
+  assertDomainMatchesPlatform(options.domain, platform);
+  const projectOptions = { ...options, platform };
   const name = projectNameFromOpts(projectOptions);
   const directory = projectDirFromOpts(projectOptions);
   const tags = formatProjectTags(projectTagsFromOptions(projectOptions));
@@ -52,11 +52,11 @@ export async function libGenerator(
   const unitTestRunner = options.unitTestRunner ?? 'vitest';
   const testEnvironment = options.testEnvironment ?? 'node';
 
-  // A `scope:shared` lib's `typecheck` target is what keeps Node globals out of its source
+  // A `platform:shared` lib's `typecheck` target is what keeps Node globals out of its source
   // (ADR 0004, #164), and `addTypecheckTarget` adds none without a unit-test runner.
-  if (scope === 'shared' && unitTestRunner === 'none') {
+  if (platform === 'shared' && unitTestRunner === 'none') {
     throw new Error(
-      '`unitTestRunner: none` is not allowed for `scope:shared` — the library needs a `typecheck` target to stay browser-safe.'
+      '`unitTestRunner: none` is not allowed for `platform:shared` — the library needs a `typecheck` target to stay browser-safe.'
     );
   }
 
@@ -114,9 +114,9 @@ export async function libGenerator(
     addTsConfigTypes(tree, tsConfigLibPath, ['vitest/globals']);
   }
 
-  // `@nx/js:library` loads `node` types; a `scope:shared` lib must stay browser-safe (ADR
+  // `@nx/js:library` loads `node` types; a `platform:shared` lib must stay browser-safe (ADR
   // 0004), so its source is type-checked without them and a Node global fails `typecheck`.
-  if (scope === 'shared') {
+  if (platform === 'shared') {
     removeTsConfigTypes(tree, tsConfigLibPath, ['node']);
   }
 
@@ -128,22 +128,22 @@ export async function libGenerator(
 }
 
 /**
- * A `scope:tools` project lives under `tools/` and is domain-exempt (ADR 0009), so an
- * explicit `domain` is rejected rather than silently dropped. Every other scope places
+ * A `platform:tools` project lives under `tools/` and is domain-exempt (ADR 0009), so an
+ * explicit `domain` is rejected rather than silently dropped. Every other platform places
  * the project under `libs/<domain>/...`, which is never domain-exempt.
  */
-function assertDomainMatchesScope(
+function assertDomainMatchesPlatform(
   domain: LibGeneratorOptions['domain'],
-  scope: NonNullable<LibGeneratorOptions['scope']>
+  platform: NonNullable<LibGeneratorOptions['platform']>
 ): void {
-  if (scope === 'tools' && domain) {
+  if (platform === 'tools' && domain) {
     throw new Error(
-      '`domain` cannot be set for `scope:tools` — tools projects are domain-exempt. Omit `--domain`.'
+      '`domain` cannot be set for `platform:tools` — tools projects are domain-exempt. Omit `--domain`.'
     );
   }
 
-  if (scope !== 'tools' && !domain) {
-    throw new Error('`domain` must be provided for every `scope` except `tools`.');
+  if (platform !== 'tools' && !domain) {
+    throw new Error('`domain` must be provided for every `platform` except `tools`.');
   }
 }
 
@@ -158,13 +158,15 @@ function assertNotBackendType(type: LibGeneratorOptions['type']): asserts type i
   }
 }
 
-/** Resolves the project's `scope:` tag from `options`; every type requires `--scope` explicitly. */
-function resolveScope(options: LibGeneratorOptions): NonNullable<LibGeneratorOptions['scope']> {
-  if (!options.scope) {
-    throw new Error('`scope` must be provided.');
+/** Resolves the project's `platform:` tag from `options`; every type requires `--platform` explicitly. */
+function resolvePlatform(
+  options: LibGeneratorOptions
+): NonNullable<LibGeneratorOptions['platform']> {
+  if (!options.platform) {
+    throw new Error('`platform` must be provided.');
   }
 
-  return options.scope;
+  return options.platform;
 }
 
 export default libGenerator;

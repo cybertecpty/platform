@@ -21,10 +21,10 @@ export function domainPathToName(path: string): string {
  * @returns The normalized domain path or undefined if not applicable.
  */
 export function normalizeDomainPath(options: NxProjectOptions): string | undefined {
-  const { domain: optionsDomain, scope, type } = options;
+  const { domain: optionsDomain, platform, type } = options;
 
   // If the project is a tool, it should not have a domain.
-  if (scope === 'tools') {
+  if (platform === 'tools') {
     return undefined;
   }
 

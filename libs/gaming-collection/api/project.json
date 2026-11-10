@@ -1,4 +1,4 @@
 {
   "name": "gaming-collection-api",
-  "tags": ["scope:backend", "type:api", "domain:gaming-collection"]
+  "tags": ["platform:backend", "type:api", "domain:gaming-collection"]
 }

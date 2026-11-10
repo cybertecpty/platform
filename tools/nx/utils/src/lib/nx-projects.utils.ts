@@ -3,7 +3,7 @@ import type {
   NormalizedNxProjectOptions,
   NxProjectBundler,
   NxProjectOptions,
-  NxProjectScope,
+  NxProjectPlatform,
   NxProjectType
 } from '@cybertecpty/nx-types';
 import { joinPathFragments, logger, readJson, type ProjectGraph, type Tree } from '@nx/devkit';
@@ -13,13 +13,13 @@ import { assertValidPathSegment } from './nx-path-segment.utils';
 import { formatProjectTags, projectTagsFromOptions } from './nx-project-tags.utils';
 
 /**
- * Maps every `NxProjectScope` member to `true`. Its only purpose is to be the
- * source `NX_PROJECT_SCOPES` is derived from — TypeScript requires this object
- * literal to have exactly the members of `NxProjectScope`, so adding, removing,
- * or renaming a scope without updating this map is a compile error instead of
+ * Maps every `NxProjectPlatform` member to `true`. Its only purpose is to be the
+ * source `NX_PROJECT_PLATFORMS` is derived from — TypeScript requires this object
+ * literal to have exactly the members of `NxProjectPlatform`, so adding, removing,
+ * or renaming a platform without updating this map is a compile error instead of
  * a silent runtime gap.
  */
-const NX_PROJECT_SCOPE_MAP: Record<NxProjectScope, true> = {
+const NX_PROJECT_PLATFORM_MAP: Record<NxProjectPlatform, true> = {
   backend: true,
   frontend: true,
   shared: true,
@@ -27,12 +27,12 @@ const NX_PROJECT_SCOPE_MAP: Record<NxProjectScope, true> = {
 };
 
 /**
- * Array of recognized Nx project scopes, derived from `NX_PROJECT_SCOPE_MAP` so
- * it can never drift from the `NxProjectScope` union it mirrors.
+ * Array of recognized Nx project platforms, derived from `NX_PROJECT_PLATFORM_MAP` so
+ * it can never drift from the `NxProjectPlatform` union it mirrors.
  */
-export const NX_PROJECT_SCOPES: readonly NxProjectScope[] = Object.keys(
-  NX_PROJECT_SCOPE_MAP
-) as NxProjectScope[];
+export const NX_PROJECT_PLATFORMS: readonly NxProjectPlatform[] = Object.keys(
+  NX_PROJECT_PLATFORM_MAP
+) as NxProjectPlatform[];
 
 /**
  * Maps every `NxProjectType` member to `true`. Its only purpose is to be the
@@ -96,7 +96,7 @@ export function collectProjectDependencies(graph: ProjectGraph, project: string)
 
 /**
  * Determines the top-level directory a project's source lives under: `apps`
- * for `type: 'app'` (ADR 0010), `tools` for `scope: 'tools'` projects, and
+ * for `type: 'app'` (ADR 0010), `tools` for `platform: 'tools'` projects, and
  * `libs` for everything else (ADR 0009).
  */
 export function determineTopLevelProjectDir(options: NxProjectOptions): string {
@@ -104,7 +104,7 @@ export function determineTopLevelProjectDir(options: NxProjectOptions): string {
     return 'apps';
   }
 
-  if (options.scope === 'tools') {
+  if (options.platform === 'tools') {
     return 'tools';
   }
 

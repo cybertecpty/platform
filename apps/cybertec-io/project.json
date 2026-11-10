@@ -6,7 +6,7 @@
   "metadata": {
     "baseUrl": "https://cybertec.io"
   },
-  "tags": ["scope:frontend", "type:app", "domain:shared"],
+  "tags": ["platform:frontend", "type:app", "domain:shared"],
   "targets": {
     "build": {
       "executor": "nx:run-commands",

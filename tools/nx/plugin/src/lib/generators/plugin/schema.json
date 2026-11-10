@@ -53,7 +53,7 @@
     },
     "tags": {
       "type": "string",
-      "description": "Additional freeform tags appended to the generated `scope:tools` / `type:plugin` tags, comma-separated.",
+      "description": "Additional freeform tags appended to the generated `platform:tools` / `type:plugin` tags, comma-separated.",
       "alias": "t"
     },
     "compiler": {

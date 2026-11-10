@@ -7,7 +7,7 @@ import {
   collectProjectDependencies,
   determineTopLevelProjectDir,
   normalizeProjectOptions,
-  NX_PROJECT_SCOPES,
+  NX_PROJECT_PLATFORMS,
   NX_PROJECT_TYPES,
   projectDirFromOpts,
   projectNameFromOpts,
@@ -17,25 +17,27 @@ import {
 
 describe('projectNameFromOpts', () => {
   it('throws when none of domain, group, or name are provided', () => {
-    expect(() => projectNameFromOpts({ scope: 'shared', type: 'utils' })).toThrow(
+    expect(() => projectNameFromOpts({ platform: 'shared', type: 'utils' })).toThrow(
       'At least one of `domain`, `group`, or `name` must be provided to derive a project name.'
     );
   });
 
   it('derives `<domain>-<type>` when only domain is provided', () => {
-    expect(projectNameFromOpts({ domain: 'game-collector', scope: 'backend', type: 'api' })).toBe(
-      'game-collector-api'
-    );
+    expect(
+      projectNameFromOpts({ domain: 'game-collector', platform: 'backend', type: 'api' })
+    ).toBe('game-collector-api');
   });
 
   it('folds subdomains into the domain segment', () => {
     expect(
-      projectNameFromOpts({ domain: 'billing/checkout', scope: 'backend', type: 'data-access' })
+      projectNameFromOpts({ domain: 'billing/checkout', platform: 'backend', type: 'data-access' })
     ).toBe('billing-checkout-data-access');
   });
 
   it('derives `<group>-<type>` when only group is provided (tools convention)', () => {
-    expect(projectNameFromOpts({ group: 'git', scope: 'tools', type: 'utils' })).toBe('git-utils');
+    expect(projectNameFromOpts({ group: 'git', platform: 'tools', type: 'utils' })).toBe(
+      'git-utils'
+    );
   });
 
   it('derives `<domain>-<group>-<type>` when both domain and group are provided', () => {
@@ -43,19 +45,26 @@ describe('projectNameFromOpts', () => {
       projectNameFromOpts({
         domain: 'game-collector',
         group: 'admin',
-        scope: 'frontend',
+        platform: 'frontend',
         type: 'ui'
       })
     ).toBe('game-collector-admin-ui');
   });
 
   it('drops the `shared` domain from the name when no group is provided', () => {
-    expect(projectNameFromOpts({ domain: 'shared', scope: 'shared', type: 'utils' })).toBe('utils');
+    expect(projectNameFromOpts({ domain: 'shared', platform: 'shared', type: 'utils' })).toBe(
+      'utils'
+    );
   });
 
   it('drops the `shared` domain from the name once a group is provided', () => {
     expect(
-      projectNameFromOpts({ domain: 'shared', group: 'design-system', scope: 'shared', type: 'ui' })
+      projectNameFromOpts({
+        domain: 'shared',
+        group: 'design-system',
+        platform: 'shared',
+        type: 'ui'
+      })
     ).toBe('design-system-ui');
   });
 
@@ -65,20 +74,20 @@ describe('projectNameFromOpts', () => {
         domain: 'billing',
         group: 'checkout',
         name: 'legacy-checkout-lib',
-        scope: 'backend',
+        platform: 'backend',
         type: 'services'
       })
     ).toBe('legacy-checkout-lib');
   });
 
   it('accepts `name` alone with no domain or group', () => {
-    expect(projectNameFromOpts({ name: 'legacy-lib', scope: 'shared', type: 'utils' })).toBe(
+    expect(projectNameFromOpts({ name: 'legacy-lib', platform: 'shared', type: 'utils' })).toBe(
       'legacy-lib'
     );
   });
 
   it('returns `name` exclusively for app projects', () => {
-    expect(projectNameFromOpts({ name: 'game-collector', scope: 'frontend', type: 'app' })).toBe(
+    expect(projectNameFromOpts({ name: 'game-collector', platform: 'frontend', type: 'app' })).toBe(
       'game-collector'
     );
   });
@@ -89,7 +98,7 @@ describe('projectNameFromOpts', () => {
         domain: 'game-collector',
         group: 'admin',
         name: 'game-collector-admin-app',
-        scope: 'frontend',
+        platform: 'frontend',
         type: 'app'
       })
     ).toBe('game-collector-admin-app');
@@ -100,7 +109,7 @@ describe('projectNameFromOpts', () => {
       projectNameFromOpts({
         domain: 'game-collector',
         group: 'admin',
-        scope: 'frontend',
+        platform: 'frontend',
         type: 'app'
       })
     ).toThrow('`name` must be provided to derive a project name for app projects.');
@@ -111,7 +120,7 @@ describe('projectNameFromOpts', () => {
       projectNameFromOpts({
         domain: 'billing',
         group: 'foo/bar',
-        scope: 'backend',
+        platform: 'backend',
         type: 'services'
       })
     ).toThrow(
@@ -124,7 +133,7 @@ describe('projectNameFromOpts', () => {
       projectNameFromOpts({
         domain: 'billing',
         group: 'Orchestration',
-        scope: 'backend',
+        platform: 'backend',
         type: 'services'
       })
     ).toThrow(
@@ -179,50 +188,55 @@ describe('stripProjectTypeFromName', () => {
 describe('determineTopLevelProjectDir', () => {
   it('returns apps for an app project', () => {
     expect(
-      determineTopLevelProjectDir({ name: 'game-collector', scope: 'frontend', type: 'app' })
+      determineTopLevelProjectDir({ name: 'game-collector', platform: 'frontend', type: 'app' })
     ).toBe('apps');
   });
 
-  it('returns apps for an app project even when the scope is tools', () => {
-    expect(determineTopLevelProjectDir({ name: 'admin', scope: 'tools', type: 'app' })).toBe(
+  it('returns apps for an app project even when the platform is tools', () => {
+    expect(determineTopLevelProjectDir({ name: 'admin', platform: 'tools', type: 'app' })).toBe(
       'apps'
     );
   });
 
   it('returns tools for a tools-scoped project', () => {
-    expect(determineTopLevelProjectDir({ group: 'git', scope: 'tools', type: 'utils' })).toBe(
+    expect(determineTopLevelProjectDir({ group: 'git', platform: 'tools', type: 'utils' })).toBe(
       'tools'
     );
   });
 
   it('returns libs for a library project', () => {
-    expect(determineTopLevelProjectDir({ domain: 'billing', scope: 'backend', type: 'api' })).toBe(
-      'libs'
-    );
+    expect(
+      determineTopLevelProjectDir({ domain: 'billing', platform: 'backend', type: 'api' })
+    ).toBe('libs');
   });
 });
 
 describe('projectDirFromOpts', () => {
   it('places a library under libs/<domain>/<type>', () => {
-    expect(projectDirFromOpts({ domain: 'game-collector', scope: 'backend', type: 'api' })).toBe(
+    expect(projectDirFromOpts({ domain: 'game-collector', platform: 'backend', type: 'api' })).toBe(
       'libs/game-collector/api'
     );
   });
 
   it('folds subdomains into nested directories', () => {
     expect(
-      projectDirFromOpts({ domain: 'billing/checkout', scope: 'backend', type: 'data-access' })
+      projectDirFromOpts({ domain: 'billing/checkout', platform: 'backend', type: 'data-access' })
     ).toBe('libs/billing/checkout/data-access');
   });
 
   it('inserts the group between the domain and the type', () => {
     expect(
-      projectDirFromOpts({ domain: 'shared', group: 'design-system', scope: 'shared', type: 'ui' })
+      projectDirFromOpts({
+        domain: 'shared',
+        group: 'design-system',
+        platform: 'shared',
+        type: 'ui'
+      })
     ).toBe('libs/shared/design-system/ui');
   });
 
   it('places a tools project under tools/<group>/<type>', () => {
-    expect(projectDirFromOpts({ group: 'git', scope: 'tools', type: 'utils' })).toBe(
+    expect(projectDirFromOpts({ group: 'git', platform: 'tools', type: 'utils' })).toBe(
       'tools/git/utils'
     );
   });
@@ -233,32 +247,34 @@ describe('projectDirFromOpts', () => {
         domain: 'game-collector',
         group: 'admin',
         name: 'game-collector-admin',
-        scope: 'frontend',
+        platform: 'frontend',
         type: 'app'
       })
     ).toBe('apps/game-collector-admin');
   });
 
   it('throws for an app project with no `name`', () => {
-    expect(() => projectDirFromOpts({ scope: 'frontend', type: 'app' })).toThrow(
+    expect(() => projectDirFromOpts({ platform: 'frontend', type: 'app' })).toThrow(
       '`name` must be provided to derive a project directory for app projects.'
     );
   });
 
   it('throws when none of domain, group, or name are provided', () => {
-    expect(() => projectDirFromOpts({ scope: 'backend', type: 'api' })).toThrow(
+    expect(() => projectDirFromOpts({ platform: 'backend', type: 'api' })).toThrow(
       'At least one of `domain`, `group`, or `name` must be provided to derive a project directory.'
     );
   });
 
   it('rejects a malformed domain the same way projectNameFromOpts does', () => {
     expect(() =>
-      projectDirFromOpts({ domain: 'billing//checkout', scope: 'backend', type: 'api' })
+      projectDirFromOpts({ domain: 'billing//checkout', platform: 'backend', type: 'api' })
     ).toThrow('`domain` segment "" must be lowercase alphanumeric words joined by single hyphens.');
   });
 
   it('rejects an uppercase domain segment', () => {
-    expect(() => projectDirFromOpts({ domain: 'Billing', scope: 'backend', type: 'api' })).toThrow(
+    expect(() =>
+      projectDirFromOpts({ domain: 'Billing', platform: 'backend', type: 'api' })
+    ).toThrow(
       '`domain` segment "Billing" must be lowercase alphanumeric words joined by single hyphens.'
     );
   });
@@ -268,7 +284,7 @@ describe('projectDirFromOpts', () => {
       projectDirFromOpts({
         domain: 'billing',
         group: 'foo/bar',
-        scope: 'backend',
+        platform: 'backend',
         type: 'services'
       })
     ).toThrow(
@@ -283,9 +299,9 @@ describe('BACKEND_LIB_TYPES', () => {
   });
 });
 
-describe('NX_PROJECT_SCOPES', () => {
-  it('lists every recognized scope, sorted', () => {
-    expect([...NX_PROJECT_SCOPES]).toEqual(['backend', 'frontend', 'shared', 'tools']);
+describe('NX_PROJECT_PLATFORMS', () => {
+  it('lists every recognized platform, sorted', () => {
+    expect([...NX_PROJECT_PLATFORMS]).toEqual(['backend', 'frontend', 'shared', 'tools']);
   });
 });
 
@@ -301,49 +317,51 @@ describe('normalizeProjectOptions', () => {
   });
 
   it('fills in the derived name, directory, bundler, and tag string', () => {
-    expect(normalizeProjectOptions({ domain: 'billing', scope: 'backend', type: 'api' })).toEqual({
+    expect(
+      normalizeProjectOptions({ domain: 'billing', platform: 'backend', type: 'api' })
+    ).toEqual({
       domain: 'billing',
-      scope: 'backend',
+      platform: 'backend',
       type: 'api',
       bundler: 'none',
       directory: 'libs/billing/api',
       name: 'billing-api',
-      tags: 'domain:billing,scope:backend,type:api'
+      tags: 'domain:billing,platform:backend,type:api'
     });
   });
 
   it('folds any freeform `tags` into the generated tag string', () => {
     const result = normalizeProjectOptions({
       name: 'legacy-lib',
-      scope: 'shared',
+      platform: 'shared',
       type: 'utils',
       tags: 'custom:one'
     });
 
-    expect(result.tags).toBe('custom:one,domain:shared,scope:shared,type:utils');
+    expect(result.tags).toBe('custom:one,domain:shared,platform:shared,type:utils');
   });
 
   it('derives an app project directory and name from `name` alone', () => {
-    const result = normalizeProjectOptions({ name: 'vault', scope: 'frontend', type: 'app' });
+    const result = normalizeProjectOptions({ name: 'vault', platform: 'frontend', type: 'app' });
 
     expect(result).toMatchObject({
       bundler: 'none',
       directory: 'apps/vault',
       name: 'vault',
-      tags: 'scope:frontend,type:app'
+      tags: 'platform:frontend,type:app'
     });
   });
 
   it('defaults the bundler to "none" when `buildable` is not requested', () => {
     expect(
-      normalizeProjectOptions({ domain: 'billing', scope: 'backend', type: 'api' }).bundler
+      normalizeProjectOptions({ domain: 'billing', platform: 'backend', type: 'api' }).bundler
     ).toBe('none');
   });
 
   it('maps `buildable: true` to the tsc bundler for non-testing library types', () => {
     const result = normalizeProjectOptions({
       domain: 'billing',
-      scope: 'backend',
+      platform: 'backend',
       type: 'api',
       buildable: true
     });
@@ -356,7 +374,7 @@ describe('normalizeProjectOptions', () => {
   it('forces the bundler to "none" for a requested-buildable testing library and warns', () => {
     const result = normalizeProjectOptions({
       group: 'test-helpers',
-      scope: 'shared',
+      platform: 'shared',
       type: 'testing',
       buildable: true
     });
@@ -370,7 +388,7 @@ describe('normalizeProjectOptions', () => {
   it('leaves a non-buildable testing library non-buildable and does not warn', () => {
     const result = normalizeProjectOptions({
       group: 'test-helpers',
-      scope: 'shared',
+      platform: 'shared',
       type: 'testing'
     });
 
@@ -379,7 +397,7 @@ describe('normalizeProjectOptions', () => {
   });
 
   it('throws when neither domain, group, nor name are provided for a library', () => {
-    expect(() => normalizeProjectOptions({ scope: 'shared', type: 'utils' })).toThrow(
+    expect(() => normalizeProjectOptions({ platform: 'shared', type: 'utils' })).toThrow(
       'At least one of `domain`, `group`, or `name` must be provided to derive a project name.'
     );
   });

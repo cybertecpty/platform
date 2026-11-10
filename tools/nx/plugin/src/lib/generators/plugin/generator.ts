@@ -23,7 +23,7 @@ import type { NxPluginGeneratorOptions } from './schema';
 /**
  * Workspace `nx-plugin` generator — a thin wrapper over `@nx/plugin:plugin`.
  *
- * Fixes the project as `scope:tools` / `type:plugin`, then derives its name,
+ * Fixes the project as `platform:tools` / `type:plugin`, then derives its name,
  * directory (`tools/<group>/plugin`), and tags from the shared ADR-0009
  * helpers rather than taking a raw `directory`. The `buildable` -> `bundler`
  * step of `normalizeProjectOptions` is deliberately skipped: a plugin's build
@@ -34,7 +34,7 @@ export async function pluginGenerator(
   tree: Tree,
   options: NxPluginGeneratorOptions
 ): Promise<GeneratorCallback> {
-  const projectOptions = { ...options, scope: 'tools' as const, type: 'plugin' as const };
+  const projectOptions = { ...options, platform: 'tools' as const, type: 'plugin' as const };
   const name = projectNameFromOpts(projectOptions);
   const directory = projectDirFromOpts(projectOptions);
   const tags = formatProjectTags(projectTagsFromOptions(projectOptions));

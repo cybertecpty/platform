@@ -60,16 +60,16 @@ describe('pluginGenerator', () => {
       });
     });
 
-    it('forwards the derived `scope:tools` / `type:plugin` tag string', async () => {
+    it('forwards the derived `platform:tools` / `type:plugin` tag string', async () => {
       await run(tree, { group: 'demo' });
 
-      expect(forwardedOptions().tags).toBe('scope:tools,type:plugin');
+      expect(forwardedOptions().tags).toBe('platform:tools,type:plugin');
     });
 
     it('appends key:value freeform tags after the derived ones', async () => {
       await run(tree, { group: 'demo', tags: 'lint:strict' });
 
-      expect(forwardedOptions().tags).toBe('lint:strict,scope:tools,type:plugin');
+      expect(forwardedOptions().tags).toBe('lint:strict,platform:tools,type:plugin');
     });
 
     it('rejects a malformed `group` before delegating', async () => {

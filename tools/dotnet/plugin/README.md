@@ -1,6 +1,6 @@
 # dotnet-plugin
 
-Nx plugin for the workspace's .NET projects (`scope:tools`, `type:plugin`). It holds the code that enforces the workspace's conventions on .NET projects, as ADR 0019 describes.
+Nx plugin for the workspace's .NET projects (`platform:tools`, `type:plugin`). It holds the code that enforces the workspace's conventions on .NET projects, as ADR 0019 describes.
 
 ## Executors
 

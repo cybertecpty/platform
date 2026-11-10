@@ -4,7 +4,7 @@ import type { ProjectConfiguration } from '@nx/devkit';
 import { domainPathToName, normalizeDomainPath } from './nx-domain.utils';
 
 /**
- * The separator between a tag's key and its value, as in `scope:backend`.
+ * The separator between a tag's key and its value, as in `platform:backend`.
  */
 export const PROJECT_TAG_SEPARATOR = ':';
 
@@ -107,16 +107,16 @@ export function parseProjectTags(input: string | readonly string[]): string[] {
 }
 
 /**
- * Derives a project's tags from its generator options: the explicit `tags`, plus `scope`,
+ * Derives a project's tags from its generator options: the explicit `tags`, plus `platform`,
  * `type` and, when the project has one, `domain` (a subdomain path is joined with hyphens).
  */
 export function projectTagsFromOptions(options: NxProjectOptions): string[] {
-  const { scope, tags, type } = options;
+  const { platform, tags, type } = options;
   const domainPath = normalizeDomainPath(options);
 
   return parseProjectTags([
     ...(tags ? tags.split(PROJECT_TAGS_SEPARATOR) : []),
-    createProjectTag('scope', scope),
+    createProjectTag('platform', platform),
     createProjectTag('type', type),
     ...(domainPath ? [createProjectTag('domain', domainPathToName(domainPath))] : [])
   ]);

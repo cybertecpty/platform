@@ -101,7 +101,7 @@ function seedPlugin(tree: Tree): void {
     root: PLUGIN_ROOT,
     sourceRoot: `${PLUGIN_ROOT}/src`,
     projectType: 'library',
-    tags: ['scope:tools', 'type:plugin']
+    tags: ['platform:tools', 'type:plugin']
   });
   tree.write(
     `${PLUGIN_ROOT}/src/index.ts`,
@@ -158,7 +158,7 @@ describe('nxGenGenerator', () => {
     });
 
     it('rejects a project that is not tagged `type:plugin`, before delegating', async () => {
-      setProjectTags(tree, ['scope:tools', 'type:utils']);
+      setProjectTags(tree, ['platform:tools', 'type:utils']);
 
       await expect(run(tree, { name: 'demo' })).rejects.toThrow(/not a plugin/);
       expect(nxGeneratorGeneratorMock).not.toHaveBeenCalled();

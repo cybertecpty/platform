@@ -23,10 +23,13 @@ const createDotnetNodeFixture = (name: string, tags: string[]): ProjectGraphProj
 describe('checkBoundariesExecutor', () => {
   const options: CheckBoundariesExecutorOptions = {};
 
-  const api = createDotnetNodeFixture('checkout-api', ['scope:backend', 'type:api']);
-  const services = createDotnetNodeFixture('checkout-services', ['scope:backend', 'type:services']);
-  const infra = createDotnetNodeFixture('checkout-infra', ['scope:backend', 'type:infra']);
-  const infraTwo = createDotnetNodeFixture('billing-infra', ['scope:backend', 'type:infra']);
+  const api = createDotnetNodeFixture('checkout-api', ['platform:backend', 'type:api']);
+  const services = createDotnetNodeFixture('checkout-services', [
+    'platform:backend',
+    'type:services'
+  ]);
+  const infra = createDotnetNodeFixture('checkout-infra', ['platform:backend', 'type:infra']);
+  const infraTwo = createDotnetNodeFixture('billing-infra', ['platform:backend', 'type:infra']);
 
   /** Runs the executor for `projectName` against a graph built from the nodes and references. */
   const runExecutor = (
@@ -76,7 +79,7 @@ describe('checkBoundariesExecutor', () => {
     it('fails and logs an error when the project is not a .NET project', async () => {
       const typescriptProject = createProjectNodeFixture({
         name: 'checkout-ui',
-        tags: ['scope:frontend', 'type:ui']
+        tags: ['platform:frontend', 'type:ui']
       });
 
       await expect(runExecutor('checkout-ui', [typescriptProject])).resolves.toEqual({
@@ -120,8 +123,11 @@ describe('checkBoundariesExecutor', () => {
     });
 
     it('reports a banned tag', async () => {
-      const testing = createDotnetNodeFixture('checkout-tests', ['scope:backend', 'type:testing']);
-      const app = createDotnetNodeFixture('checkout-host', ['scope:backend', 'type:app']);
+      const testing = createDotnetNodeFixture('checkout-tests', [
+        'platform:backend',
+        'type:testing'
+      ]);
+      const app = createDotnetNodeFixture('checkout-host', ['platform:backend', 'type:app']);
 
       await expect(
         runExecutor('checkout-tests', [testing, app], [['checkout-tests', 'checkout-host']])
@@ -197,7 +203,7 @@ describe('checkBoundariesExecutor', () => {
     it('skips a dependency on a project that is not a .NET project', async () => {
       const typescriptProject = createProjectNodeFixture({
         name: 'checkout-client',
-        tags: ['scope:frontend', 'type:models']
+        tags: ['platform:frontend', 'type:models']
       });
 
       await expect(

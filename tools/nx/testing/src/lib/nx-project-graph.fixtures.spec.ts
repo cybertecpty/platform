@@ -63,7 +63,7 @@ describe('createProjectNodeFixture', () => {
         name: 'checkout-host',
         type: 'app',
         root: 'apps/checkout-host',
-        tags: ['scope:backend', 'type:app'],
+        tags: ['platform:backend', 'type:app'],
         targets: { build },
         metadata: { technologies: ['dotnet'] }
       })
@@ -72,7 +72,7 @@ describe('createProjectNodeFixture', () => {
       type: 'app',
       data: {
         root: 'apps/checkout-host',
-        tags: ['scope:backend', 'type:app'],
+        tags: ['platform:backend', 'type:app'],
         targets: { build },
         metadata: { technologies: ['dotnet'] }
       }

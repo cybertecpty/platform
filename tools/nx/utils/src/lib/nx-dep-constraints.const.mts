@@ -1,7 +1,7 @@
 import type { DependencyConstraint } from '@cybertecpty/nx-types';
 
 /**
- * ADR 0004's dependency-constraint matrix — the single source of truth for which `scope:`,
+ * ADR 0004's dependency-constraint matrix — the single source of truth for which `platform:`,
  * `type:` and `domain:` tags may depend on which. Read by `@nx/enforce-module-boundaries` in the
  * root `eslint.config.mjs` for TypeScript imports, and by the .NET boundary check for the
  * `ProjectReference` edges that rule cannot see (ADR 0017).
@@ -48,38 +48,38 @@ export const DEP_CONSTRAINTS: ReadonlyArray<DependencyConstraint> = [
   },
   {
     // Backend code. May use other backend libs and
-    // environment-agnostic scope:shared libs, but never scope:frontend or
-    // scope:tools — a running service must not pull in browser code or
+    // environment-agnostic platform:shared libs, but never platform:frontend or
+    // platform:tools — a running service must not pull in browser code or
     // workspace tooling.
-    sourceTag: 'scope:backend',
-    onlyDependOnLibsWithTags: ['scope:shared', 'scope:backend']
+    sourceTag: 'platform:backend',
+    onlyDependOnLibsWithTags: ['platform:shared', 'platform:backend']
   },
   {
     // Frontend (browser) code must keep bundles small: zod's classic API
     // (`zod`, `zod/v4`) is not tree-shakeable, so browser code imports schema
     // builders from zod/mini and core errors/types from zod/v4/core. Backend
-    // code has no bundle budget and is not constrained (see scope:backend).
+    // code has no bundle budget and is not constrained (see platform:backend).
     // See ADR 0003.
-    sourceTag: 'scope:frontend',
-    onlyDependOnLibsWithTags: ['scope:frontend', 'scope:shared'],
+    sourceTag: 'platform:frontend',
+    onlyDependOnLibsWithTags: ['platform:frontend', 'platform:shared'],
     bannedExternalImports: ['zod', 'zod/v4']
   },
   {
     // Shared code can be pulled into a browser bundle, so it carries the
-    // same zod restriction as scope:frontend: type:models wire contracts
+    // same zod restriction as platform:frontend: type:models wire contracts
     // (and any other shared code) use zod/mini + zod/v4/core, never the
     // classic API. zod/mini runs fine on the backend too. See ADR 0003.
-    sourceTag: 'scope:shared',
-    onlyDependOnLibsWithTags: ['scope:shared'],
+    sourceTag: 'platform:shared',
+    onlyDependOnLibsWithTags: ['platform:shared'],
     bannedExternalImports: ['zod', 'zod/v4']
   },
   {
     // Plugins, generators, executors and their support libs. May reach into
-    // scope:backend because some tooling performs backend-side operations
+    // platform:backend because some tooling performs backend-side operations
     // (codegen against schemas, migration helpers). The reverse is blocked:
-    // scope:backend cannot import scope:tools.
-    sourceTag: 'scope:tools',
-    onlyDependOnLibsWithTags: ['scope:tools', 'scope:shared', 'scope:backend']
+    // platform:backend cannot import platform:tools.
+    sourceTag: 'platform:tools',
+    onlyDependOnLibsWithTags: ['platform:tools', 'platform:shared', 'platform:backend']
   },
   {
     // api libs contain controllers and backend request plumbing — the public
@@ -97,7 +97,7 @@ export const DEP_CONSTRAINTS: ReadonlyArray<DependencyConstraint> = [
     ]
   },
   {
-    // Deployable applications (Angular or .NET — scope: disambiguates). The
+    // Deployable applications (Angular or .NET — platform: disambiguates). The
     // composition root: it may wire any layer, including type:infra directly
     // (the one exception to the api -> services -> infra flow). Nothing
     // depends on a type:app project in turn.
@@ -134,7 +134,7 @@ export const DEP_CONSTRAINTS: ReadonlyArray<DependencyConstraint> = [
   {
     // Frontend data access: NgRx state, HTTP clients, facades. Talks to the
     // backend over the wire (type:models contracts) — never imports backend
-    // libs (scope rules enforce that) or UI/feature libs.
+    // libs (platform rules enforce that) or UI/feature libs.
     sourceTag: 'type:data-access',
     onlyDependOnLibsWithTags: [
       'type:data-access',
@@ -174,7 +174,7 @@ export const DEP_CONSTRAINTS: ReadonlyArray<DependencyConstraint> = [
   },
   {
     // Persistence layer: drizzle schema, inferred row types, connection and
-    // external-client factories. Backend-only (scope rules keep frontend out).
+    // external-client factories. Backend-only (platform rules keep frontend out).
     // Owns the persistence shape; it does NOT import type:models — the wire
     // contract is a separate representation, and mapping row <-> DTO is
     // type:services' job. Shared shape primitives go through type:types.
@@ -196,13 +196,13 @@ export const DEP_CONSTRAINTS: ReadonlyArray<DependencyConstraint> = [
   {
     // Wire contracts: zod schemas + inferred types, the shared FE/BE source
     // of truth for request/response shapes. Kept lean — types, utils, and
-    // other model libs only. (scope:shared, so the zod/mini ban applies.)
+    // other model libs only. (platform:shared, so the zod/mini ban applies.)
     sourceTag: 'type:models',
     onlyDependOnLibsWithTags: ['type:models', 'type:types', 'type:utils']
   },
   {
     // Nx generators / executors and their support code. Runs at build/tooling
-    // time only (scope:tools), so it stays off the application layers —
+    // time only (platform:tools), so it stays off the application layers —
     // other plugin libs, types, and utils only.
     sourceTag: 'type:plugin',
     onlyDependOnLibsWithTags: ['type:plugin', 'type:types', 'type:utils']
@@ -212,7 +212,7 @@ export const DEP_CONSTRAINTS: ReadonlyArray<DependencyConstraint> = [
     // it can build doubles for it — except type:app and type:e2e, which are
     // leaf projects nothing should import (notDependOnLibsWithTags is
     // transitive). Scoped to the environment its helpers are tied to; a lib
-    // whose helpers work anywhere is scope:shared (ADR 0004 2026-10-17 amendment).
+    // whose helpers work anywhere is platform:shared (ADR 0004 2026-10-17 amendment).
     sourceTag: 'type:testing',
     onlyDependOnLibsWithTags: ['type:*'],
     notDependOnLibsWithTags: ['type:app', 'type:e2e']

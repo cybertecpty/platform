@@ -3,20 +3,20 @@
   "cli": "nx",
   "$id": "TsLibGenerator",
   "title": "Create a TypeScript Library",
-  "description": "Create a TypeScript library under `libs/<domain>[/<subdomain>...]/[<group>/]<type>`, or `tools/[<group>/]<type>` for `--scope=tools`, wrapping `@nx/js:library` with the workspace naming, directory, and tag conventions (ADR 0009). Restricted to the framework-agnostic `type:` values (`models`, `testing`, `types`, `utils`) — Angular-only types are out of scope, and backend types (`api`, `services`, `infra`) are rejected because backend libraries are .NET projects created with `dotnet new` (ADR 0017).",
+  "description": "Create a TypeScript library under `libs/<domain>[/<subdomain>...]/[<group>/]<type>`, or `tools/[<group>/]<type>` for `--platform=tools`, wrapping `@nx/js:library` with the workspace naming, directory, and tag conventions (ADR 0009). Restricted to the framework-agnostic `type:` values (`models`, `testing`, `types`, `utils`) — Angular-only types are out of platform, and backend types (`api`, `services`, `infra`) are rejected because backend libraries are .NET projects created with `dotnet new` (ADR 0017).",
   "type": "object",
   "examples": [
     {
-      "command": "nx g ts-lib utils --domain=billing --scope=backend --group=orchestration",
+      "command": "nx g ts-lib utils --domain=billing --platform=backend --group=orchestration",
       "description": "Generates `billing-orchestration-utils` at `libs/billing/orchestration/utils`."
     },
     {
-      "command": "nx g ts-lib models --domain=billing/checkout --scope=shared",
+      "command": "nx g ts-lib models --domain=billing/checkout --platform=shared",
       "description": "Generates `billing-checkout-models` at `libs/billing/checkout/models`, tagged `domain:billing-checkout`."
     },
     {
-      "command": "nx g ts-lib testing --scope=tools --group=nx",
-      "description": "Generates `nx-testing` at `tools/nx/testing`, tagged `scope:tools,type:testing` — tools projects are domain-exempt, so `--domain` is not accepted."
+      "command": "nx g ts-lib testing --platform=tools --group=nx",
+      "description": "Generates `nx-testing` at `tools/nx/testing`, tagged `platform:tools,type:testing` — tools projects are domain-exempt, so `--domain` is not accepted."
     }
   ],
   "properties": {
@@ -32,13 +32,13 @@
     },
     "domain": {
       "type": "string",
-      "description": "The product domain (and optional `/`-separated subdomains, e.g. `billing/checkout`) this library belongs to. Required for every `--scope` except `tools` — a `libs/` project is never domain-exempt, while a `tools/` project always is, so `--domain` is rejected for `--scope=tools` (ADR 0009).",
+      "description": "The product domain (and optional `/`-separated subdomains, e.g. `billing/checkout`) this library belongs to. Required for every `--platform` except `tools` — a `libs/` project is never domain-exempt, while a `tools/` project always is, so `--domain` is rejected for `--platform=tools` (ADR 0009).",
       "pattern": "^[a-z0-9]+(?:-[a-z0-9]+)*(?:/[a-z0-9]+(?:-[a-z0-9]+)*)*$",
       "x-priority": "important"
     },
-    "scope": {
+    "platform": {
       "type": "string",
-      "description": "The project's `scope:` tag. Required — `models`/`testing`/`types`/`utils` are scope-polymorphic (ADR 0009) so this must be given explicitly. `tools` places the project under `tools/[<group>/]<type>` with no `domain:` tag.",
+      "description": "The project's `platform:` tag. Required — `models`/`testing`/`types`/`utils` are platform-polymorphic (ADR 0009) so this must be given explicitly. `tools` places the project under `tools/[<group>/]<type>` with no `domain:` tag.",
       "enum": ["backend", "frontend", "shared", "tools"],
       "x-priority": "important"
     },
@@ -67,7 +67,7 @@
       "x-priority": "important"
     },
     "unitTestRunner": {
-      "description": "Test runner to use for unit tests. The workspace standardizes on Vitest (ADR 0018); `jest` is no longer accepted. `none` is rejected for `scope:shared`, which needs the `typecheck` target that only a test runner brings (issue #164).",
+      "description": "Test runner to use for unit tests. The workspace standardizes on Vitest (ADR 0018); `jest` is no longer accepted. `none` is rejected for `platform:shared`, which needs the `typecheck` target that only a test runner brings (issue #164).",
       "type": "string",
       "enum": ["none", "vitest"],
       "default": "vitest",
@@ -75,7 +75,7 @@
     },
     "tags": {
       "type": "string",
-      "description": "Additional freeform tags appended to the generated `scope:`/`type:`/`domain:` tags, comma-separated.",
+      "description": "Additional freeform tags appended to the generated `platform:`/`type:`/`domain:` tags, comma-separated.",
       "alias": "t"
     },
     "publishable": {

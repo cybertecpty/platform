@@ -9,7 +9,7 @@ export type BackendLibType = Extract<NxProjectLibType, 'api' | 'infra' | 'servic
  * flag has been replaced by the concrete `bundler` the generator expects.
  */
 export type NormalizedNxProjectOptions<
-  S extends NxProjectScope = NxProjectScope,
+  S extends NxProjectPlatform = NxProjectPlatform,
   T extends NxProjectType = NxProjectType
 > = Omit<SetRequired<NxProjectOptions<S, T>, 'name' | 'tags'>, 'buildable'> & {
   bundler: NxProjectBundler;
@@ -26,7 +26,7 @@ export type NxProjectBundler = 'esbuild' | 'none' | 'rollup' | 'swc' | 'tsc' | '
  * Common options for all Nx project generators.
  */
 export interface NxProjectOptions<
-  S extends NxProjectScope = NxProjectScope,
+  S extends NxProjectPlatform = NxProjectPlatform,
   T extends NxProjectType = NxProjectType
 > {
   /**
@@ -77,18 +77,18 @@ export interface NxProjectOptions<
    */
   name?: string;
   /**
-   * Additional freeform tags to append to the generated `scope:`/`type:`/
+   * Additional freeform tags to append to the generated `platform:`/`type:`/
    * `domain:` tags, comma-separated as accepted by the underlying
    * `@nx/*:library` generator's `--tags` flag.
    */
   tags?: string;
   /**
-   * The project's `scope:` tag (ADR 0004's three-axis tag system) — one of
+   * The project's `platform:` tag (ADR 0004's three-axis tag system) — one of
    * `backend`, `frontend`, `shared`, or `tools`. Implied by `type` for most
-   * values; must be set explicitly for the three scope-polymorphic types
+   * values; must be set explicitly for the three platform-polymorphic types
    * (`utils`, `testing`, `types`), since the type alone doesn't determine it.
    */
-  scope: S;
+  platform: S;
   /**
    * The project's `type:` tag (ADR 0004) and the final segment of its
    * directory path (ADR 0009): `libs/<domain>[/<subdomain>...]/[<group>/]<type>`
@@ -98,9 +98,9 @@ export interface NxProjectOptions<
 }
 
 /**
- * Union of all valid Nx project scopes.
+ * Union of all valid Nx project platforms.
  */
-export type NxProjectScope = 'backend' | 'frontend' | 'shared' | 'tools';
+export type NxProjectPlatform = 'backend' | 'frontend' | 'shared' | 'tools';
 
 /**
  * Union of all valid Nx project types.

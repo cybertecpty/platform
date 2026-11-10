@@ -3,7 +3,7 @@
   "$schema": "../../../node_modules/nx/schemas/project-schema.json",
   "sourceRoot": "tools/git/testing/src",
   "projectType": "library",
-  "tags": ["scope:tools", "type:testing"],
+  "tags": ["platform:tools", "type:testing"],
   "targets": {
     "typecheck": {}
   }
