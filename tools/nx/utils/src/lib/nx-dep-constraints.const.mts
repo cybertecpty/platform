@@ -220,9 +220,12 @@ export const DEP_CONSTRAINTS: ReadonlyArray<DependencyConstraint> = [
   {
     // Pure type-only exports: interfaces, type aliases, enums-as-const. Zero
     // runtime, zero dependencies — may import nothing but other type:types
-    // libs. This is the leaf the whole graph can safely depend on.
+    // libs. This is the leaf the whole graph can safely depend on. `@angular/common/http` is
+    // banned (see type:ui): type:ui may depend on this layer, and the rule only checks a lib's
+    // own imports, not those of the libs it reaches.
     sourceTag: 'type:types',
-    onlyDependOnLibsWithTags: ['type:types']
+    onlyDependOnLibsWithTags: ['type:types'],
+    bannedExternalImports: ['@angular/common/http']
   },
   {
     // Presentational Angular components: inputs/outputs only, no injected
@@ -237,8 +240,11 @@ export const DEP_CONSTRAINTS: ReadonlyArray<DependencyConstraint> = [
   {
     // Stateless, isomorphic helper functions. Depends on type:types and other
     // util libs only — never type:models (that would couple generic helpers
-    // to domain shapes and risks a models <-> utils cycle).
+    // to domain shapes and risks a models <-> utils cycle). `@angular/common/http` is banned
+    // (see type:ui): type:ui may depend on this layer, and the rule only checks a lib's own
+    // imports, not those of the libs it reaches.
     sourceTag: 'type:utils',
-    onlyDependOnLibsWithTags: ['type:types', 'type:utils']
+    onlyDependOnLibsWithTags: ['type:types', 'type:utils'],
+    bannedExternalImports: ['@angular/common/http']
   }
 ];
