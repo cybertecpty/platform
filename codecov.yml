@@ -7,6 +7,60 @@ coverage:
       default:
         informational: true
 
+component_management:
+  individual_components:
+    - component_id: cybertec-io
+      name: cybertec-io
+      paths: [apps/cybertec-io/**]
+    - component_id: gaming-collection-api
+      name: gaming-collection-api
+      paths: [libs/gaming-collection/api/**]
+    - component_id: utils
+      name: utils
+      paths: [libs/shared/utils/**]
+    - component_id: fs-utils
+      name: fs-utils
+      paths: [libs/shared/fs/utils/**]
+    - component_id: playwright-testing
+      name: playwright-testing
+      paths: [libs/shared/playwright/testing/**]
+    - component_id: vitest-testing
+      name: vitest-testing
+      paths: [libs/shared/vitest/testing/**]
+    - component_id: azure-plugin
+      name: azure-plugin
+      paths: [tools/azure/plugin/**]
+    - component_id: dotnet-plugin
+      name: dotnet-plugin
+      paths: [tools/dotnet/plugin/**]
+    - component_id: git-testing
+      name: git-testing
+      paths: [tools/git/testing/**]
+    - component_id: git-utils
+      name: git-utils
+      paths: [tools/git/utils/**]
+    - component_id: github-utils
+      name: github-utils
+      paths: [tools/github/utils/**]
+    - component_id: js-plugin
+      name: js-plugin
+      paths: [tools/js/plugin/**]
+    - component_id: node-plugin
+      name: node-plugin
+      paths: [tools/node/plugin/**]
+    - component_id: nx-plugin
+      name: nx-plugin
+      paths: [tools/nx/plugin/**]
+    - component_id: nx-testing
+      name: nx-testing
+      paths: [tools/nx/testing/**]
+    - component_id: nx-utils
+      name: nx-utils
+      paths: [tools/nx/utils/**]
+    - component_id: release-plugin
+      name: release-plugin
+      paths: [tools/release/plugin/**]
+
 comment:
-  layout: 'condensed_header, condensed_files, condensed_footer'
+  layout: 'condensed_header, condensed_files, components, condensed_footer'
   require_changes: false
