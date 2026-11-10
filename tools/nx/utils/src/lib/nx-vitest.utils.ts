@@ -1,7 +1,6 @@
 import type { Tree } from '@nx/devkit';
 import {
   joinPathFragments,
-  logger,
   offsetFromRoot,
   readProjectConfiguration,
   updateJson
@@ -29,7 +28,6 @@ interface TsConfigFile {
 type VitestEnvironment = 'jsdom' | 'node';
 
 const ROOT_ESLINT_CONFIG = 'eslint.config.mjs';
-const VITEST_SPEC_FILES_ARRAY = /(const vitestSpecFiles = \[\n)([\s\S]*?)(\n\];)/;
 const DEPENDENCY_CHECKS_IGNORED_FILES = /(ignoredFiles:\s*\[)([^\]]*)(\])/;
 const ESLINT_IGNORED_VITEST_CONFIG = "'{projectRoot}/vitest.config.{js,cjs,mjs,ts,cts,mts}'";
 
@@ -51,9 +49,7 @@ export function assertNotJestRunner(unitTestRunner: string | undefined): void {
  * - Any `jest.config.*` is deleted.
  * - `tsconfig.spec.json` gets Vitest's globals, ESM modules and the `.mts` config import;
  *   `tsconfig.lib.json` excludes the config and specs.
- * - The project's spec glob joins `vitestSpecFiles` in the root `eslint.config.mjs`, so its
- *   specs are linted with the Vitest rules, and its own `eslint.config.mjs` ignores the
- *   Vitest config in `@nx/dependency-checks`.
+ * - The project's own `eslint.config.mjs` ignores the Vitest config in `@nx/dependency-checks`.
  *
  * Files the upstream generator did not write are skipped, not created, apart from the config.
  * The mirror image of the migration checklist in `.claude/rules/testing.md`.
@@ -69,7 +65,6 @@ export function configureVitestProject(
   deleteJestConfigs(tree, root);
   updateSpecTsConfig(tree, root);
   updateLibTsConfig(tree, root);
-  addToVitestSpecFiles(tree, root);
   ignoreVitestConfigInDependencyChecks(tree, root);
 }
 
@@ -121,32 +116,6 @@ export async function withoutUpstreamVitestSideEffects<T>(
   }
 
   return result;
-}
-
-function addToVitestSpecFiles(tree: Tree, root: string): void {
-  const source = tree.read(ROOT_ESLINT_CONFIG, 'utf-8');
-  const glob = `'${root}/**/*.{spec,test}.ts'`;
-
-  if (!source || source.includes(glob)) {
-    return;
-  }
-
-  if (!VITEST_SPEC_FILES_ARRAY.test(source)) {
-    logger.warn(
-      `Could not find \`vitestSpecFiles\` in ${ROOT_ESLINT_CONFIG}; add ${glob} to it by hand so the specs get the Vitest lint rules.`
-    );
-
-    return;
-  }
-
-  tree.write(
-    ROOT_ESLINT_CONFIG,
-    source.replace(
-      VITEST_SPEC_FILES_ARRAY,
-      (_match, open: string, entries: string, close: string) =>
-        `${open}${entries},\n  ${glob}${close}`
-    )
-  );
 }
 
 function deleteJestConfigs(tree: Tree, root: string): void {
