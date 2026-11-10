@@ -224,7 +224,7 @@ ADR 0012 (`astro-content-sites`) allows **Astro for static or mostly static cont
 sites** (marketing, docs, landing pages), starting with `apps/cybertec-io`.
 
 - **Product frontends are still Angular.** The exception covers content sites only.
-- **No new `type:` tag values.** An Astro site is `type:app` + `scope:frontend`, and ADR
+- **No new `type:` tag values.** An Astro site is `type:app` + `platform:frontend`, and ADR
   0004's catalog is unchanged.
 - **Not plugin-managed.** Astro has no first-party Nx plugin, so the "framework tooling is
   the Nx plugins" rule above does not apply to it. Upgrades are manual. See ADR 0012.

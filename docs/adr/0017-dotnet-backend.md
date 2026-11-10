@@ -129,10 +129,10 @@ decisions stand.**
 - **A generated TypeScript client lib replaces the zod-based `type:models`** as the
   frontend's contract. The frontend imports its request/response types and its HTTP calls
   from that lib, as it would have imported zod-inferred types before.
-- That lib is **derived output**, tagged **`scope:frontend`**, and is **never hand-edited**.
+- That lib is **derived output**, tagged **`platform:frontend`**, and is **never hand-edited**.
   A change to the contract is a change to the C# code followed by a regeneration.
 - **ADR 0003's zod bans stay exactly as they are.** `zod` and `zod/v4` remain banned on
-  `scope:frontend` and `scope:shared`; `zod/mini`, `zod/v4/mini` and `zod/v4/core` remain
+  `platform:frontend` and `platform:shared`; `zod/mini`, `zod/v4/mini` and `zod/v4/core` remain
   allowed. The bans
   are about bundle size, not about where the contract comes from, so frontend-side
   validation written in zod is still written in `zod/mini`.
@@ -165,7 +165,7 @@ therefore go unenforced across the entire backend.
 - Scope: backend-to-backend .NET edges. TypeScript-to-TypeScript edges stay with
   `@nx/enforce-module-boundaries`; there is no C#-to-TypeScript edge to check (the only link
   is the generated client, which is derived output).
-- Where the check lives and how it runs is likewise left to that ticket; a `scope:tools`
+- Where the check lives and how it runs is likewise left to that ticket; a `platform:tools`
   project with a CI target alongside `lint` is the obvious shape, given its feasibility is
   unverified.
 
@@ -192,20 +192,20 @@ therefore go unenforced across the entire backend.
 
 ### Tags — names unchanged, backend descriptions reworded
 
-Every `scope:` and `type:` **name** in ADR 0004 is unchanged. No tag is added, removed or
+Every `platform:` and `type:` **name** in ADR 0004 is unchanged. No tag is added, removed or
 renamed, so ADR 0004's "value sets are closed" rule is not reopened — only the prose
 describing three of them:
 
-| tag             | was                                                        | now                                                             |
-| --------------- | ---------------------------------------------------------- | --------------------------------------------------------------- |
-| `scope:backend` | Node only (NestJS)                                         | .NET only (ASP.NET Core)                                        |
-| `type:app`      | deployable application (Angular or Nest)                   | deployable application (Angular or ASP.NET Core)                |
-| `type:api`      | Nest controllers, resolvers, DTOs                          | ASP.NET Core controllers / endpoints and DTOs                   |
-| `type:services` | Nest injectable providers: business logic, orchestration   | .NET injectable services: business logic, orchestration         |
-| `type:models`   | wire contracts: zod schemas + inferred types, shared FE/BE | the **generated TypeScript client lib** — derived, never edited |
+| tag                | was                                                        | now                                                             |
+| ------------------ | ---------------------------------------------------------- | --------------------------------------------------------------- |
+| `platform:backend` | Node only (NestJS)                                         | .NET only (ASP.NET Core)                                        |
+| `type:app`         | deployable application (Angular or Nest)                   | deployable application (Angular or ASP.NET Core)                |
+| `type:api`         | Nest controllers, resolvers, DTOs                          | ASP.NET Core controllers / endpoints and DTOs                   |
+| `type:services`    | Nest injectable providers: business logic, orchestration   | .NET injectable services: business logic, orchestration         |
+| `type:models`      | wire contracts: zod schemas + inferred types, shared FE/BE | the **generated TypeScript client lib** — derived, never edited |
 
 `type:models` is the one semantic change: it stops being a hand-written contract shared by
-both sides and becomes derived frontend output. It is `scope:frontend`, not `scope:shared`.
+both sides and becomes derived frontend output. It is `platform:frontend`, not `platform:shared`.
 
 ### Layout
 
@@ -231,7 +231,7 @@ both sides and becomes derived frontend output. It is `scope:frontend`, not `sco
   is rejected. Adding .NET capability goes through the plugin and `dotnet new`, not
   hand-written targets.
 - **No Nx Enterprise**, therefore no Nx Conformance rules anywhere in the workspace.
-- **`type:models` is the generated client lib** — `scope:frontend`, derived, never
+- **`type:models` is the generated client lib** — `platform:frontend`, derived, never
   hand-edited.
 - **Test runners: xUnit (+ coverlet) for .NET, Jest for Angular and TypeScript libs**, Vitest
   for Astro sites. 80% coverage floor on both, CI-gated.
@@ -462,8 +462,8 @@ tags on all four projects.
 - **The fallback, if it is not enough, is more than one row.** Nx enforces every row that
   applies to a project, and rows only add restrictions, so a combo row cannot exempt backend
   tests from the base `type:testing` row. The exemption means taking the `type:app` ban off the
-  `type:testing` row and adding combo rows (`type:testing` with each of `scope:frontend`,
-  `scope:shared` and `scope:tools`) that ban `type:app` for those scopes. That is an amendment
+  `type:testing` row and adding combo rows (`type:testing` with each of `platform:frontend`,
+  `platform:shared` and `platform:tools`) that ban `type:app` for those platforms. That is an amendment
   to ADR 0004.
 
 ### Still unverified

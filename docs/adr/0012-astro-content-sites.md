@@ -76,8 +76,8 @@ Chosen option: **1 — Astro, scoped to static or mostly static content sites.**
   - The archived site was on v3. It moves to v4 during the import, using
     `@tailwindcss/upgrade`, with a visual check for classes v4 renamed.
 - **Layout and naming follow ADR 0010:** flat `apps/<name>`, so `apps/cybertec-io`.
-- **Tags (ADR 0004):** `scope:frontend`, `type:app`, `domain:shared`.
-  - `scope:frontend` applies ADR 0003's browser-bundle rules (the `zod` / `lodash` bans) to
+- **Tags (ADR 0004):** `platform:frontend`, `type:app`, `domain:shared`.
+  - `platform:frontend` applies ADR 0003's browser-bundle rules (the `zod` / `lodash` bans) to
     anything the site ships to the client.
   - `domain:shared` is a placeholder until a product-domain ADR says otherwise. Nothing
     imports an app, so it does not widen any boundary.
@@ -123,7 +123,7 @@ Chosen option: **1 — Astro, scoped to static or mostly static content sites.**
   amendment.
 - ADR 0004 (`nx-module-boundaries`) and ADR 0010 (`app-directory-layout`): tags and
   placement.
-- ADR 0003 (`frontend-bundle-hygiene`): applies to the site through `scope:frontend`.
+- ADR 0003 (`frontend-bundle-hygiene`): applies to the site through `platform:frontend`.
 
 ## Amendment (2026-10-06): hosting and deploy (issue #76)
 

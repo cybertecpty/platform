@@ -32,19 +32,19 @@ Moved here from `docs/agents/conventions.md` §8, §9 and §11. Loads when editi
     `tsconfig.spec.json`.** Specs import the source, so the spec pass type-checks it with the
     spec config's `types`, which must include `node` and `vitest/globals`.
     The lib pass is the one that enforces the lib config's narrower `types`.
-  - **A `scope:shared` lib's `tsconfig.lib.json` must not load `node` types** (ADR 0004: shared
+  - **A `platform:shared` lib's `tsconfig.lib.json` must not load `node` types** (ADR 0004: shared
     code stays browser-safe), so a Node global like `process` or `Buffer` in its source fails
     `typecheck`. Set `types` explicitly (`[]`, or `["vitest/globals"]` for a testing lib) — with no
     `types`, every `@types` package loads, `node` included. The workspace `ts-lib` generator
-    removes `node` for `--scope=shared`; a lib made any other way gets `node` from the Nx
+    removes `node` for `--platform=shared`; a lib made any other way gets `node` from the Nx
     generator, so remove it by hand. `.github/scripts/shared-lib-types.test.cjs` (run by
-    `pnpm verify` and CI) fails if any project tagged `scope:shared` loads it or has no
+    `pnpm verify` and CI) fails if any project tagged `platform:shared` loads it or has no
     `typecheck` target. See issue #164.
   - **The lib pass checks everything in `tsconfig.lib.json`'s `include`, test artifacts too.** A
     `*.mock.ts` or `*.fixture.ts` in a lib's `src` that uses `vi.fn()` fails with TS2304 unless
     the lib config's `types` has `vitest/globals` (a `type:testing` lib gets it from the generator) or its
     `exclude` lists the artifact.
-  - **The `scope:shared` guard has two blind spots.** It reads only `compilerOptions.types`, so
+  - **The `platform:shared` guard has two blind spots.** It reads only `compilerOptions.types`, so
     Node types that arrive through a `/// <reference types="node" />` or a dependency's typings
     pass it, and it finds projects through `project.json` tags, not a `package.json` `nx.tags`
     field. Keep shared libs' tags in `project.json` and don't reference `node` types in them.

@@ -24,7 +24,7 @@ purposes (`game-collector`, `game-collector-admin`), chosen outright rather than
 composed. `projectNameFromOpts` already special-cases this: for `type: 'app'`, `name` is
 required and returned exclusively, with `domain`/`group` ignored for naming purposes.
 This ADR is the formal record of that decision and the two 0009 left open — directory
-placement and how `domain:`/`scope:`/`type:` get assigned.
+placement and how `domain:`/`platform:`/`type:` get assigned.
 
 ## Decision drivers
 
@@ -82,11 +82,11 @@ apps/game-collector-admin       name=game-collector-admin
 apps/checkout-api               name=checkout-api
 ```
 
-### `domain:`/`scope:`/`type:` are explicit generator inputs, never derived from path
+### `domain:`/`platform:`/`type:` are explicit generator inputs, never derived from path
 
 Unlike libs, an app's directory carries no information the generator parses back into
-tags. `--domain`, `--scope`, and `--type` are passed directly to the generator and
-stamped onto the project as `domain:<value>`, `scope:<value>`, `type:app` — useful for
+tags. `--domain`, `--platform`, and `--type` are passed directly to the generator and
+stamped onto the project as `domain:<value>`, `platform:<value>`, `type:app` — useful for
 `@nx/enforce-module-boundaries` (ADR 0004) exactly as they are for a lib, just supplied
 outright instead of inferred. The generator may still validate `--domain` against
 `workspaceDomains` (catching a typo'd domain the same way a lib's path-parse would), but
@@ -133,7 +133,7 @@ _decision_, not the code.
 
 - No new registry-parsing mechanism for apps — the generator only has to accept flags and
   write tags, matching the naming behavior that's already shipped.
-- One consistent story for an app's whole identity: name, domain, scope, and type are all
+- One consistent story for an app's whole identity: name, domain, platform, and type are all
   explicit inputs, none of them inferred from where the folder happens to sit.
 - Formally records the naming rule already shipped in `projectNameFromOpts`, closing the
   gap flagged in review (the code had no ADR backing it).
@@ -161,7 +161,7 @@ _decision_, not the code.
 
 - ADR 0009 (`lib-directory-layout`) — the lib/tools layout and domain registry this ADR
   deliberately does _not_ reuse for apps, and why.
-- ADR 0004 (`nx-module-boundaries`) — `type:app`, `type:e2e`, and the `scope:`/`domain:`
+- ADR 0004 (`nx-module-boundaries`) — `type:app`, `type:e2e`, and the `platform:`/`domain:`
   tags apps carry.
 - ADR 0005 (`application-frameworks`) — Angular / NestJS, the two stacks `type:app`
   covers.
@@ -180,12 +180,12 @@ _decision_, not the code.
 
 ADR 0009's 2026-10-14 amendment dropped the planned `workspaceDomains` map in `nx.json`:
 the `domain:` tags on projects are the only domain registry. The app generator's optional
-`--domain` validation (see "`domain:`/`scope:`/`type:` are explicit generator inputs")
+`--domain` validation (see "`domain:`/`platform:`/`type:` are explicit generator inputs")
 therefore runs against `collectTags('domain:')` — the distinct `domain:` tags already on
 projects in the Nx project graph — instead of `workspaceDomains`. It stays a validation
 nicety: the value still comes from the flag, and an unknown domain is a new domain, which
 still needs its own ADR (ADR 0004), enforced by the conformance check that amendment plans.
 
 Supersedes the `workspaceDomains` references in "Considered options" (option 3),
-"`domain:`/`scope:`/`type:` are explicit generator inputs", and "Negative / risks". The
+"`domain:`/`platform:`/`type:` are explicit generator inputs", and "Negative / risks". The
 original text is kept for the record.

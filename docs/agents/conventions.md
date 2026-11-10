@@ -583,7 +583,7 @@ path → tier table is in the `review-pr` skill.
     beside each `.csproj` carrying the three tags (ADR 0017). The root solution is `Platform.slnx`; add every
     new .NET project to it.
   - `type:models` is the **generated TypeScript client lib** derived from the backend's
-    OpenAPI document — `scope:frontend`, derived output, never hand-edited (ADR 0017). ADR
+    OpenAPI document — `platform:frontend`, derived output, never hand-edited (ADR 0017). ADR
     0003's zod bans are unchanged.
   - `@nx/enforce-module-boundaries` only reads TypeScript imports, so ADR 0004's matrix is
     enforced between .NET projects by the `check-boundaries` target (ADR 0019).

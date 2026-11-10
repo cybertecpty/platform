@@ -24,8 +24,8 @@ covers it — an existing dependency, an Nx plugin, or a shared helper.
 - Some packages ship an import entry point that defeats bundler tree-shaking.
   Before adding a utility or validation library, check
   `docs/adr/0003-frontend-bundle-hygiene.md` for the entry-point rules — `lodash`
-  → `lodash-es` workspace-wide, `zod` → `zod/mini` in `scope:frontend` and
-  `scope:shared` code, both lint-enforced.
+  → `lodash-es` workspace-wide, `zod` → `zod/mini` in `platform:frontend` and
+  `platform:shared` code, both lint-enforced.
 - Adding a dependency is a `build` change (`build(deps): ...`). A new framework, or a new
   test, lint or CI tool, needs a new ADR or an amendment to the one that owns its area
   (`write-adr` skill) — e.g. ADR 0007 for unit tests, ADR 0016 for e2e and quality gates,

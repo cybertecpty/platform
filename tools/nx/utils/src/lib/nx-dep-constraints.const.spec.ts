@@ -11,7 +11,7 @@ const findRow = (sourceTag: string) =>
 describe('DEP_CONSTRAINTS', () => {
   describe('the Angular HTTP entry point ban', () => {
     // `findRow` matches only a row on the bare tag, which binds a lib of every scope, so a
-    // `scope:shared` util is covered too.
+    // `platform:shared` util is covered too.
     it.each(['type:ui', 'type:utils', 'type:types'])(
       'bans the Angular HTTP entry point on the bare %s row',
       sourceTag => {

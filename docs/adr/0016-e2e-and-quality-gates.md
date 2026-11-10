@@ -152,7 +152,7 @@ threshold change would have meant editing every app. Both specs also checked onl
 ### Decision
 
 - **The gates live in `playwright-testing`** at `libs/shared/playwright/testing` (`type:testing`,
-  `scope:frontend`, `domain:shared`), which exports spec factories rather than spec files:
+  `platform:frontend`, `domain:shared`), which exports spec factories rather than spec files:
   `defineLighthouseTests` (`playwright-lighthouse.utils.ts`) and `defineAxeTests`
   (`playwright-axe.utils.ts`). Each `-e2e` project calls them from its own one-line spec,
   `lighthouse/lighthouse.spec.ts` and `e2e/a11y.spec.ts`, and carries no copy of the gate code.

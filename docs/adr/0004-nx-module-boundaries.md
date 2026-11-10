@@ -19,8 +19,8 @@ single multi-domain monorepo — all product code lives here, targeting Angular 
 frontend and NestJS on the backend (ADR 0005) — so the boundary model has to cover runtime
 environment, architectural layer, and product domain at once.
 
-ADR 0003 already put the first `depConstraints` entries in place (the `scope:frontend` /
-`scope:shared` external-import bans for zod). This ADR defines the full tag vocabulary and
+ADR 0003 already put the first `depConstraints` entries in place (the `platform:frontend` /
+`platform:shared` external-import bans for zod). This ADR defines the full tag vocabulary and
 the complete constraint matrix those entries live in.
 
 ## Decision drivers
@@ -31,7 +31,7 @@ the complete constraint matrix those entries live in.
 - One place to change a rule, applied across the whole workspace.
 - Product domains isolated by default — sharing between them is a deliberate, reviewable
   act.
-- The same tag axis (`scope:`) that answers "is this browser-reachable?" for ADR 0003
+- The same tag axis (`platform:`) that answers "is this browser-reachable?" for ADR 0003
   should answer "can this import that?" here — no parallel mechanism.
 
 ## Considered options
@@ -60,20 +60,20 @@ Chosen option: **1 — `@nx/enforce-module-boundaries` with a three-axis tag sys
 Every project carries **exactly one tag on each of three axes**. All three are mandatory
 (see "no catch-all" below).
 
-**`scope:<env>`** — runtime environment.
+**`platform:<env>`** — runtime environment.
 
-| value            | meaning                                                                                |
-| ---------------- | -------------------------------------------------------------------------------------- |
-| `scope:frontend` | browser only (Angular)                                                                 |
-| `scope:backend`  | Node only (NestJS)                                                                     |
-| `scope:shared`   | environment-agnostic; importable by both, so it must stay browser-safe                 |
-| `scope:tools`    | workspace tooling (generators, executors, scripts); not importable by application code |
+| value               | meaning                                                                                |
+| ------------------- | -------------------------------------------------------------------------------------- |
+| `platform:frontend` | browser only (Angular)                                                                 |
+| `platform:backend`  | Node only (NestJS)                                                                     |
+| `platform:shared`   | environment-agnostic; importable by both, so it must stay browser-safe                 |
+| `platform:tools`    | workspace tooling (generators, executors, scripts); not importable by application code |
 
 **`type:<role>`** — architectural role.
 
 | value              | meaning                                                                        |
 | ------------------ | ------------------------------------------------------------------------------ |
-| `type:app`         | deployable application (Angular or Nest; `scope:` disambiguates)               |
+| `type:app`         | deployable application (Angular or Nest; `platform:` disambiguates)            |
 | `type:e2e`         | end-to-end test project for one app                                            |
 | `type:core`        | eagerly-loaded Angular libs: app-level providers, config, guards, interceptors |
 | `type:feature`     | lazy-loaded, routed Angular feature libs                                       |
@@ -101,15 +101,15 @@ owns, and its `depConstraints` row(s).
 
 ### Constraint matrix
 
-`scope:` and `domain:` axes:
+`platform:` and `domain:` axes:
 
-| sourceTag        | may depend on                                  | also                                        |
-| ---------------- | ---------------------------------------------- | ------------------------------------------- |
-| `scope:backend`  | `scope:backend`, `scope:shared`                |                                             |
-| `scope:frontend` | `scope:frontend`, `scope:shared`               | bans `zod`, `zod/v4` (ADR 0003)             |
-| `scope:shared`   | `scope:shared`                                 | bans `zod`, `zod/v4` (ADR 0003)             |
-| `scope:tools`    | `scope:tools`, `scope:shared`, `scope:backend` | tooling may run backend-side ops; not v.v.  |
-| `domain:shared`  | `domain:shared`                                | product-domain rows added by their own ADRs |
+| sourceTag           | may depend on                                           | also                                        |
+| ------------------- | ------------------------------------------------------- | ------------------------------------------- |
+| `platform:backend`  | `platform:backend`, `platform:shared`                   |                                             |
+| `platform:frontend` | `platform:frontend`, `platform:shared`                  | bans `zod`, `zod/v4` (ADR 0003)             |
+| `platform:shared`   | `platform:shared`                                       | bans `zod`, `zod/v4` (ADR 0003)             |
+| `platform:tools`    | `platform:tools`, `platform:shared`, `platform:backend` | tooling may run backend-side ops; not v.v.  |
+| `domain:shared`     | `domain:shared`                                         | product-domain rows added by their own ADRs |
 
 `type:` axis:
 
@@ -133,7 +133,7 @@ owns, and its `depConstraints` row(s).
 ### How the rule reads these (verified against `@nx/eslint-plugin` 23.1.1)
 
 - **AND semantics.** A project's tags select _every_ matching `depConstraints` entry, and
-  an import must satisfy all of them. A `scope:backend` + `type:services` + `domain:shared`
+  an import must satisfy all of them. A `platform:backend` + `type:services` + `domain:shared`
   lib is checked against all three rows on every import. Order in the array does not
   matter.
 - **No catch-all.** There is no `{ sourceTag: '*' }` entry, so a project whose tags match
@@ -145,7 +145,7 @@ owns, and its `depConstraints` row(s).
   `type:e2e`.
 - **`bannedExternalImports` is exact-match** unless it contains a wildcard, and only
   direct imports are checked (`checkNestedExternalImports` is off by default) — this is
-  why the zod ban has to sit on `scope:shared` and not only `scope:frontend` (ADR 0003).
+  why the zod ban has to sit on `platform:shared` and not only `platform:frontend` (ADR 0003).
 - **Static imports of lazy-loaded libs are flagged automatically.** Once any project
   reaches a lib through `loadChildren` / dynamic `import()`, a static import of that same
   lib from the same source is a separate error (`noImportsOfLazyLoadedLibraries`) — this
@@ -157,12 +157,12 @@ owns, and its `depConstraints` row(s).
 
 ### Locked parameters
 
-- **Three axes, always — exactly one tag each.** Every project carries one `scope:`, one
-  `type:`, and one `domain:` tag. Omitting one is not allowed — use `scope:shared` /
+- **Three axes, always — exactly one tag each.** Every project carries one `platform:`, one
+  `type:`, and one `domain:` tag. Omitting one is not allowed — use `platform:shared` /
   `type:utils` / `domain:shared` if nothing more specific fits. Two tags on one axis is
   not a shorthand: the rule applies both rows and a project may only depend on the
   intersection, which is almost never what you want.
-- **`scope:` and `type:` value sets are closed.** Adding, removing, or renaming a value
+- **`platform:` and `type:` value sets are closed.** Adding, removing, or renaming a value
   requires reopening this ADR.
 - **`domain:` values grow by ADR.** `domain:shared` is fixed here; every `domain:<product>`
   value and its constraint row is added by that domain's own ADR.
@@ -171,8 +171,8 @@ owns, and its `depConstraints` row(s).
   non-buildable one.
 - **Constraint rows change only by reopening this ADR** (or, for `domain:<product>` rows,
   the ADR that owns that domain).
-- **Testing libs are scoped `scope:frontend` or `scope:backend`, never `scope:shared`** —
-  a mock is environment-specific, and the `scope:` row then keeps it from crossing.
+- **Testing libs are scoped `platform:frontend` or `platform:backend`, never `platform:shared`** —
+  a mock is environment-specific, and the `platform:` row then keeps it from crossing.
 
 ### Deliberate design choices worth stating
 
@@ -196,12 +196,12 @@ owns, and its `depConstraints` row(s).
 - **`type:app` may import `type:infra`** — a deliberate hole in the api/services/infra
   layering, for the Nest application's own composition root (module wiring). `type:api`
   still may not; it reaches persistence only through `type:services`.
-- **`scope:tools` may reach into `scope:backend`, not the reverse** — some tooling runs
+- **`platform:tools` may reach into `platform:backend`, not the reverse** — some tooling runs
   backend-side operations (codegen against schemas, migration helpers), so it needs to
-  import backend libs. `scope:backend` has no `scope:tools` in its list, so application
+  import backend libs. `platform:backend` has no `platform:tools` in its list, so application
   code can never pull a generator or executor into a running service.
-- **`type:core` is not pinned to `scope:frontend` by a rule** — it is Angular-only by
-  convention, but the `scope:` axis blocks a mis-scoped `type:core` lib from reaching
+- **`type:core` is not pinned to `platform:frontend` by a rule** — it is Angular-only by
+  convention, but the `platform:` axis blocks a mis-tagged `type:core` lib from reaching
   frontend-only libs anyway.
 
 ## Consequences
@@ -216,7 +216,7 @@ owns, and its `depConstraints` row(s).
 
 ### Negative / risks
 
-- Every project needs three correct tags at creation. A mis-tag (e.g. `scope:shared` on
+- Every project needs three correct tags at creation. A mis-tag (e.g. `platform:shared` on
   what is really frontend-only code) silently widens that project's boundary.
 - Inert until a project has a `lint` target and CI runs it — there are no projects yet, so
   the matrix is **unverified against a real graph**. First real projects should include a
@@ -230,7 +230,7 @@ owns, and its `depConstraints` row(s).
 
 - `eslint.config.mjs` — the `@nx/enforce-module-boundaries` block.
 - ADR 0003 (`frontend-bundle-hygiene`) — the zod / lodash external-import bans that ride
-  the `scope:frontend` and `scope:shared` constraint rows.
+  the `platform:frontend` and `platform:shared` constraint rows.
 - ADR 0005 (`application-frameworks`) — records Angular + NestJS as the application stacks
   this catalog is built around, and the path-alias TypeScript layout they run on.
 - ADR 0006 (`typed-linting`) — the workspace's type-aware ESLint policy. Separate
@@ -241,41 +241,41 @@ owns, and its `depConstraints` row(s).
   options (`onlyDependOnLibsWithTags`, `notDependOnLibsWithTags`, `bannedExternalImports`,
   `enforceBuildableLibDependency`, `checkNestedExternalImports`).
 
-## Amendment (2026-10-17): environment-agnostic testing libs may be `scope:shared`
+## Amendment (2026-10-17): environment-agnostic testing libs may be `platform:shared`
 
 - Status: accepted
 - Deciders: djmcgrath
 - Implemented by: `jest-testing` (`libs/shared/jest/testing`, tagged `domain:shared`,
-  `scope:shared`, `type:testing`); the `type:testing` comment in `eslint.config.mjs`;
+  `platform:shared`, `type:testing`); the `type:testing` comment in `eslint.config.mjs`;
   issue #158
 
-The locked parameter "Testing libs are scoped `scope:frontend` or `scope:backend`, never
-`scope:shared`" rests on "a mock is environment-specific". That holds for a double of an
+The locked parameter "Testing libs are scoped `platform:frontend` or `platform:backend`, never
+`platform:shared`" rests on "a mock is environment-specific". That holds for a double of an
 Angular service or a Nest provider, but not for every test helper. `lastCallArg` (added to
 `nx-testing` in #157) only reads a Jest mock's `mock.calls`: it imports nothing and runs the
 same in a browser-environment spec as in a Node one. Under the old rule it could only live in
-a `scope:backend` or `scope:tools` lib, which frontend specs may not import. ADR 0009 already
-describes `type:testing` as spanning all three scopes, the same as `type:utils`, so the two
+a `platform:backend` or `platform:tools` lib, which frontend specs may not import. ADR 0009 already
+describes `type:testing` as spanning all three platforms, the same as `type:utils`, so the two
 ADRs disagreed.
 
 ### Considered options
 
-1. **Leave general-purpose helpers in `nx-testing`** (`scope:tools`) until a spec outside
+1. **Leave general-purpose helpers in `nx-testing`** (`platform:tools`) until a spec outside
    `tools/` needs one. No change now, but the first frontend consumer forces this decision
    anyway, and the helper keeps an Nx name it has nothing to do with.
-2. **Move them to a `scope:backend` testing lib.** Allowed today, since `scope:tools` may import
-   `scope:backend`, but frontend specs still couldn't use it.
-3. **Allow `scope:shared` testing libs for environment-agnostic helpers.** **(chosen)**
+2. **Move them to a `platform:backend` testing lib.** Allowed today, since `platform:tools` may import
+   `platform:backend`, but frontend specs still couldn't use it.
+3. **Allow `platform:shared` testing libs for environment-agnostic helpers.** **(chosen)**
 
 ### Decision
 
-- **The locked parameter is replaced by:** a testing lib takes the `scope:` of the code its
-  helpers are tied to: `scope:frontend` for Angular doubles, `scope:backend` for Node and Nest
-  ones, `scope:tools` for helpers built on Nx devkit types. A lib whose helpers work in any
-  environment is `scope:shared`.
-- **No `depConstraints` row changes.** The `scope:shared` row already limits such a lib to other
-  `scope:shared` libs and carries the zod ban, so an environment-specific import fails
-  `nx lint` there just as it does for a `scope:shared` util. Only the `type:testing` comment in
+- **The locked parameter is replaced by:** a testing lib takes the `platform:` of the code its
+  helpers are tied to: `platform:frontend` for Angular doubles, `platform:backend` for Node and Nest
+  ones, `platform:tools` for helpers built on Nx devkit types. A lib whose helpers work in any
+  environment is `platform:shared`.
+- **No `depConstraints` row changes.** The `platform:shared` row already limits such a lib to other
+  `platform:shared` libs and carries the zod ban, so an environment-specific import fails
+  `nx lint` there just as it does for a `platform:shared` util. Only the `type:testing` comment in
   `eslint.config.mjs` changes.
 - **The first such lib is `jest-testing`** (`libs/shared/jest/testing`, ADR 0009 layout). It is
   for helpers that need nothing but Jest's own mock shape. `lastCallArg` moves there from
@@ -284,16 +284,16 @@ ADRs disagreed.
 ### Consequences
 
 - **Positive:** frontend, backend and tools specs share one copy of each general-purpose helper.
-  ADR 0004 and ADR 0009 now agree that `type:testing` spans every scope.
+  ADR 0004 and ADR 0009 now agree that `type:testing` spans every platform.
 - **Negative / risk:** "works in any environment" is a judgement made when a helper is added,
   and lint catches only imports, not runtime use. A helper that touches a Node global (`process`,
-  `Buffer`) without importing anything would pass lint in a `scope:shared` lib and fail only in
-  a browser-environment spec. Keep `scope:shared` testing helpers to plain JavaScript and Jest's
+  `Buffer`) without importing anything would pass lint in a `platform:shared` lib and fail only in
+  a browser-environment spec. Keep `platform:shared` testing helpers to plain JavaScript and Jest's
   own APIs.
 - **Update (2026-10-19, #164):** `typecheck` now also checks each project's `tsconfig.lib.json`,
-  and no `scope:shared` lib's lib tsconfig loads `node` types, so a Node global in their source
+  and no `platform:shared` lib's lib tsconfig loads `node` types, so a Node global in their source
   fails `typecheck` and CI. A `node --test` guard (`.github/scripts/shared-lib-types.test.cjs`)
-  keeps `node` out of every `scope:shared` lib's lib tsconfig, including new ones.
+  keeps `node` out of every `platform:shared` lib's lib tsconfig, including new ones.
 
 ## Amendment (2026-10-20): the backend stack changed — see ADR 0017
 
@@ -307,16 +307,16 @@ changes here.
 
 ### Tag names are unchanged
 
-No `scope:` or `type:` value is added, removed or renamed, so the "value sets are closed"
+No `platform:` or `type:` value is added, removed or renamed, so the "value sets are closed"
 rule above is **not** reopened. Three descriptions are reworded and one changes meaning:
 
-- `scope:backend` — read "Node only (NestJS)" as **".NET only (ASP.NET Core)"**.
+- `platform:backend` — read "Node only (NestJS)" as **".NET only (ASP.NET Core)"**.
 - `type:app` — read "(Angular or Nest)" as **"(Angular or ASP.NET Core)"**.
 - `type:api` / `type:services` — read Nest's "controllers, resolvers, DTOs" and "injectable
   providers" as the **ASP.NET Core** equivalents. The architectural roles are identical.
 - `type:models` **changes meaning**: it is no longer a hand-written zod wire contract shared
   by frontend and backend, but the **generated TypeScript client lib** derived from the
-  backend's OpenAPI document — `scope:frontend`, derived output, never hand-edited. ADR
+  backend's OpenAPI document — `platform:frontend`, derived output, never hand-edited. ADR
   0003's zod bans are unaffected.
 
 ### The matrix is unenforced on the backend until a DIY check exists
@@ -368,7 +368,7 @@ The loader existed because of the test runner and that transpiler. See the 2026-
 
 ### What the .NET check covers
 
-The check applies every row of the matrix, whatever its tag axis (`scope:`, `type:` or
+The check applies every row of the matrix, whatever its tag axis (`platform:`, `type:` or
 `domain:`), to the edges between a .NET project and the .NET projects it references. For each
 row whose source tags the project has, the referenced project must have at least one of the
 row's `onlyDependOnLibsWithTags` and none of its `notDependOnLibsWithTags`. The latter applies
@@ -377,9 +377,9 @@ for .NET, as it does for TypeScript. Unlike ESLint it does not follow references
 projects. As in ESLint, a .NET project that no row applies to fails the check, and implicit
 dependencies (from `implicitDependencies`, not a `ProjectReference`) are not checked.
 
-Because every axis is checked, each `project.json` beside a `.csproj` needs its `scope:` tag as
-well as `type:` and `domain:`. For edges between .NET projects the `scope:` rows are met
-automatically, since every .NET project is `scope:backend`.
+Because every axis is checked, each `project.json` beside a `.csproj` needs its `platform:` tag as
+well as `type:` and `domain:`. For edges between .NET projects the `platform:` rows are met
+automatically, since every .NET project is `platform:backend`.
 
 That makes the open edge above bite for .NET integration tests. The first attempt is to keep
 the host thin so tests reference a library, not the app; ADR 0017's 2026-10-21 amendment records
@@ -487,7 +487,7 @@ relative path, because bare Node loads it without the workspace's path aliases.
 
 The 2026-10-17 amendment names `jest-testing` at `libs/shared/jest/testing`. ADR 0018 renamed it
 to `vitest-testing` at `libs/shared/vitest/testing`, and `lastCallArg` now reads a `vi.fn()` mock's
-`mock.calls`. The tags and the `scope:shared` reasoning are unchanged, and "plain JavaScript and
+`mock.calls`. The tags and the `platform:shared` reasoning are unchanged, and "plain JavaScript and
 Jest's own APIs" now reads "plain JavaScript and Vitest's own APIs".
 
 The 2026-11-10 barrel amendment's remark that `dotnet-plugin` still ran Jest is history: no project
@@ -534,7 +534,7 @@ would put transport code in the view layer.
 
 The two amendments and ADR 0003 leave one gap: `bannedExternalImports` checks a project's own direct
 imports, so a banned package still reaches a project through a workspace lib that imports it (a
-`type:ui` lib to `@angular/common/http` through a `type:utils` lib, or `scope:frontend` code to
+`type:ui` lib to `@angular/common/http` through a `type:utils` lib, or `platform:frontend` code to
 zod's classic API). `checkNestedExternalImports` is the rule's option for that. Issue #319 asked
 whether to turn it on.
 
@@ -551,8 +551,8 @@ whether to turn it on.
   tests each against the constraint with the import specifier of the _workspace lib_
   (`@cybertecpty/playwright-testing`), not the package's own. That test returns `false` unless the
   specifier is the package name or starts with it, so the two never match.
-- **The trial shows the same.** The graph holds the edge `cybertec-io-e2e` (`scope:frontend`) to
-  `playwright-testing`, which imports `lighthouse`. With `lighthouse` added to the `scope:frontend`
+- **The trial shows the same.** The graph holds the edge `cybertec-io-e2e` (`platform:frontend`) to
+  `playwright-testing`, which imports `lighthouse`. With `lighthouse` added to the `platform:frontend`
   row's `bannedExternalImports` and the option on, `nx lint cybertec-io-e2e` still passed. The zero
   violations of the real trial therefore says nothing about the workspace, and enabling the option
   would pass silently while checking nothing, which is worse than no check.
@@ -585,14 +585,14 @@ The `checkNestedExternalImports` amendment leaves a `type:ui` lib able to reach 
 through a lib it may depend on. `type:ui` may depend on `type:utils` and `type:types` libs, and the
 rule checks only a lib's own imports, so a `type:utils` lib that imports the entry point passes lint
 and is then importable from a UI lib. ADR 0003 closes the same kind of gap for zod by banning it on
-`scope:shared` as well as `scope:frontend`, so the ban moves to the libs a UI lib reaches.
+`platform:shared` as well as `platform:frontend`, so the ban moves to the libs a UI lib reaches.
 
 ### Considered options
 
-1. **A combo row for `scope:frontend` and `type:utils`.** Rejected: utils are the libs most likely to
-   be `scope:shared`, and a `scope:shared` util would not match the row, though a UI lib can import it.
+1. **A combo row for `platform:frontend` and `type:utils`.** Rejected: utils are the libs most likely to
+   be `platform:shared`, and a `platform:shared` util would not match the row, though a UI lib can import it.
 2. **The bare `type:utils` and `type:types` rows.** **(chosen)** A row on the bare tag binds a lib of
-   every scope.
+   every platform.
 3. **Also ban it on `type:testing`.** Rejected: a frontend testing lib may import `HttpClient` to
    build a stub, which is a legitimate use.
 
@@ -618,3 +618,20 @@ and is then importable from a UI lib. ADR 0003 closes the same kind of gap for z
   belongs in `type:data-access`, so move the code there.
 - **Still unverified on a real graph.** No `type:ui`, Angular-using `type:utils` or `type:types` lib
   exists yet, so a spec on the matrix rows covers the rule, not a lint failure.
+
+## Amendment (2026-11-10): the `scope:` tag is renamed `platform:`
+
+- Status: accepted
+- Deciders: djmcgrath
+- Implemented by: issue #320 (code and config), issue #321 (docs, rules and ADRs)
+
+The first tag axis is now `platform:`, and the generator flag is `--platform`. Both were `scope:` and
+`--scope` before. "Scope" is overloaded in this repo (npm scope, Conventional Commit scope, "out of
+scope"), and `platform` names the axis for what it is: the runtime platform the code targets. The
+values (`frontend`, `backend`, `shared`, `tools`), their meanings and every `depConstraints` row are
+unchanged, so this is a rename, not a decision to revisit.
+
+- **Prose says "the `platform:` tag" on first use**, since the repo and solution are already called
+  "platform".
+- **Other ADRs that name the tag** (0003, 0005, 0008, 0009, 0010, 0011, 0012, 0016, 0017, 0018) are
+  updated in place where they describe the current tag. Their decision history is not rewritten.
