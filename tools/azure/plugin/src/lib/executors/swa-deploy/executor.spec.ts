@@ -1,7 +1,7 @@
-import { lastCallArg } from '@cybertecpty/jest-testing';
 import { createExecutorContextFixture } from '@cybertecpty/nx-testing';
 import type * as NxUtils from '@cybertecpty/nx-utils';
 import { runCommand } from '@cybertecpty/nx-utils';
+import { lastCallArg } from '@cybertecpty/vitest-testing';
 import { logger, type ExecutorContext, type TargetConfiguration } from '@nx/devkit';
 import { join } from 'node:path';
 import { vi } from 'vitest';

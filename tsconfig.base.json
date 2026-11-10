@@ -9,7 +9,6 @@
       "@cybertecpty/git-testing": ["./tools/git/testing/src/index.ts"],
       "@cybertecpty/git-utils": ["./tools/git/utils/src/index.ts"],
       "@cybertecpty/github-utils": ["./tools/github/utils/src/index.ts"],
-      "@cybertecpty/jest-testing": ["./libs/shared/jest/testing/src/index.ts"],
       "@cybertecpty/js-plugin": ["./tools/js/plugin/src/index.ts"],
       "@cybertecpty/node-plugin": ["./tools/node/plugin/src/index.ts"],
       "@cybertecpty/nx-plugin": ["./tools/nx/plugin/src/index.ts"],
@@ -19,7 +18,8 @@
       "@cybertecpty/playwright-testing": ["./libs/shared/playwright/testing/src/index.ts"],
       "@cybertecpty/release-plugin": ["./tools/release/plugin/src/index.ts"],
       "@cybertecpty/types": ["./libs/shared/types/src/index.ts"],
-      "@cybertecpty/utils": ["./libs/shared/utils/src/index.ts"]
+      "@cybertecpty/utils": ["./libs/shared/utils/src/index.ts"],
+      "@cybertecpty/vitest-testing": ["./libs/shared/vitest/testing/src/index.ts"]
     },
     "target": "es2022",
     "module": "esnext",
