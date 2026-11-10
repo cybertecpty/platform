@@ -28,7 +28,8 @@ const vitestSpecFiles = [
   'tools/js/plugin/**/*.{spec,test}.ts',
   'tools/node/plugin/**/*.{spec,test}.ts',
   'tools/nx/plugin/**/*.{spec,test}.ts',
-  'tools/release/plugin/**/*.{spec,test}.ts'
+  'tools/release/plugin/**/*.{spec,test}.ts',
+  'tools/dotnet/plugin/**/*.{spec,test}.ts'
 ];
 
 // type:e2e projects (ADR 0010): Playwright, not Jest or Vitest — same "list by path"

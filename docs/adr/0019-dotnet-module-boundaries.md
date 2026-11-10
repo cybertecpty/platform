@@ -89,9 +89,8 @@ project by an inferred target, reading the ADR 0004 matrix from its shared modul
   any of them changes and `nx affected` selects it when a project's references change.
 - **The check itself** is `checkDepConstraints(source, target, constraints)` in `nx-utils`: pure,
   with the constraints passed in, so `nx-utils` never loads the matrix.
-- **The matrix** is `DEP_CONSTRAINTS` in `nx-dep-constraints.const.mts`. The executor gets it from
-  `loadDepConstraints()` in `nx-utils`, which `require`s the file by absolute path (ADR 0004,
-  2026-10-22 amendment).
+- **The matrix** is `DEP_CONSTRAINTS` in `nx-dep-constraints.const.mts`. The executor imports it from
+  the `nx-utils` barrel (ADR 0004, 2026-11-10 amendment).
 - **The plugin** is registered in `nx.json` as `@cybertecpty/dotnet-plugin`, with the target name
   as its option, **in the change that adds the workspace's first .NET project**. Until then it
   stays unregistered, so the Node warning below does not print on every command for a check that
@@ -360,3 +359,15 @@ change. It does not build a project graph of its own.
 
 The Negative consequence "Nothing fails at `dotnet build`" no longer holds where Node is installed.
 Live feedback while typing is still a separate matter (see the 2026-10-29 amendment).
+
+## Amendment (2026-11-10): the executor imports the matrix from the barrel
+
+- Status: accepted
+- Deciders: djmcgrath
+- Implemented by: issue #223
+
+The executor no longer calls `loadDepConstraints()`, which `require`d the matrix by absolute path.
+`nx-utils` exports `DEP_CONSTRAINTS` from its barrel and the executor imports it by name, because
+Vitest transforms the `.mts` file and the transpiler Nx runs executors with loads the import. The
+check still passes and fails correctly under Nx against a .NET project. The reasoning and the test
+are in ADR 0004's 2026-11-10 amendment.

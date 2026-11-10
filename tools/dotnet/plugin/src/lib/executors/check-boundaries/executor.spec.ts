@@ -12,20 +12,6 @@ import {
 import checkBoundariesExecutor from './executor';
 import type { CheckBoundariesExecutorOptions } from './schema';
 
-// Jest cannot load the real matrix, an `.mts` file, so the executor gets a small one. The rest of
-// `nx-utils`, including the check itself, is real.
-jest.mock('@cybertecpty/nx-utils', () => ({
-  ...jest.requireActual<typeof import('@cybertecpty/nx-utils')>('@cybertecpty/nx-utils'),
-  loadDepConstraints: () => [
-    { sourceTag: 'type:api', onlyDependOnLibsWithTags: ['type:services'] },
-    {
-      sourceTag: 'type:testing',
-      onlyDependOnLibsWithTags: ['type:*'],
-      notDependOnLibsWithTags: ['type:app']
-    }
-  ]
-}));
-
 const DOTNET_METADATA = { technologies: ['dotnet', 'C#'] };
 
 const NO_MATCHING_CONSTRAINT_MESSAGE =
@@ -57,14 +43,14 @@ describe('checkBoundariesExecutor', () => {
     );
 
   const loggedErrors = (): string[] =>
-    jest.mocked(logger.error).mock.calls.map(([message]) => String(message));
+    vi.mocked(logger.error).mock.calls.map(([message]) => String(message));
 
   beforeEach(() => {
-    jest.spyOn(logger, 'error').mockImplementation(() => undefined);
+    vi.spyOn(logger, 'error').mockImplementation(() => undefined);
   });
 
   afterEach(() => {
-    jest.restoreAllMocks();
+    vi.restoreAllMocks();
   });
 
   describe('when it cannot check', () => {
@@ -125,8 +111,11 @@ describe('checkBoundariesExecutor', () => {
         runExecutor('checkout-api', [api, infra], [['checkout-api', 'checkout-infra']])
       ).resolves.toEqual({ success: false });
 
+      // The message lists the real matrix's allowed tags, so only its start is pinned here.
       expect(loggedErrors()).toEqual([
-        'checkout-api -> checkout-infra: A project tagged with "type:api" can only depend on libs tagged with "type:services"'
+        expect.stringMatching(
+          /^checkout-api -> checkout-infra: A project tagged with "type:api" can only depend on libs tagged with /
+        )
       ]);
     });
 

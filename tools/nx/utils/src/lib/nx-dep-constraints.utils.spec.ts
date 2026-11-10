@@ -1,18 +1,12 @@
 import { createProjectNodeFixture } from '@cybertecpty/nx-testing';
 import type { DependencyConstraint } from '@cybertecpty/nx-types';
 import type { ProjectGraphProjectNode } from '@nx/devkit';
-import { existsSync } from 'node:fs';
-import Module from 'node:module';
-import { basename } from 'node:path';
-import type { MockInstance } from 'vitest';
 import {
   checkBannedTagsViolations,
   checkDepConstraints,
   checkExpectedTagsViolations,
-  DEP_CONSTRAINTS_PATH,
   isComboSrcTagConstraint,
-  isSingleSrcTagConstraint,
-  loadDepConstraints
+  isSingleSrcTagConstraint
 } from './nx-dep-constraints.utils';
 
 const API_CONSTRAINT_FIXTURE: DependencyConstraint = {
@@ -558,51 +552,5 @@ describe('isSingleSrcTagConstraint', () => {
 
   it('is false for a constraint with several source tags', () => {
     expect(isSingleSrcTagConstraint(COMBO_CONSTRAINT_FIXTURE)).toBe(false);
-  });
-});
-
-describe('DEP_CONSTRAINTS_PATH', () => {
-  it('is the path of the matrix module, next to the constraint code', () => {
-    expect(basename(DEP_CONSTRAINTS_PATH)).toBe('nx-dep-constraints.const.mts');
-  });
-
-  it('is a file that exists, so renaming or moving the matrix module fails here', () => {
-    expect(existsSync(DEP_CONSTRAINTS_PATH)).toBe(true);
-  });
-});
-
-describe('loadDepConstraints', () => {
-  // `loadDepConstraints` uses CommonJS `require`, which `vi.mock` does not intercept, so the
-  // module loader is stubbed for the matrix path and defers to the real one for everything else.
-  type ModuleLoader = (request: string, parent: unknown, isMain: boolean) => unknown;
-  const internals = Module as unknown as { _load: ModuleLoader };
-
-  const stubMatrixModule = (exports: unknown): MockInstance<ModuleLoader> => {
-    const load = internals._load;
-
-    return vi
-      .spyOn(internals, '_load')
-      .mockImplementation((request, parent, isMain) =>
-        request === DEP_CONSTRAINTS_PATH ? exports : load.call(Module, request, parent, isMain)
-      );
-  };
-
-  afterEach(() => {
-    vi.restoreAllMocks();
-  });
-
-  it('returns the matrix that the matrix module exports', () => {
-    // The real `.mts` module cannot be required here, so it is replaced for the call.
-    stubMatrixModule({ DEP_CONSTRAINTS: [API_CONSTRAINT_FIXTURE, TESTING_CONSTRAINT_FIXTURE] });
-
-    expect(loadDepConstraints()).toEqual([API_CONSTRAINT_FIXTURE, TESTING_CONSTRAINT_FIXTURE]);
-  });
-
-  it('loads the module from DEP_CONSTRAINTS_PATH', () => {
-    const load = stubMatrixModule({ DEP_CONSTRAINTS: [] });
-
-    loadDepConstraints();
-
-    expect(load.mock.calls.map(([request]) => request)).toContain(DEP_CONSTRAINTS_PATH);
   });
 });
