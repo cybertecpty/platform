@@ -372,8 +372,8 @@ unit tests are removed.
 - **The 80% gate stays in the test runners** (Vitest, coverlet), so it keeps a single source.
   Codecov's project and patch statuses are informational in `codecov.yml`. Making them
   required, or changing the threshold, is separate work.
-- **A workflow step prefixes Vitest's project-relative lcov paths** (`src/lib/a.ts`) with the
-  project root, since Codecov cannot tell apart the same `src/` path in several projects.
+- **Vitest's lcov reporter sets `projectRoot` to the workspace** (`vitest.base.mts`), so its paths
+  are repo-relative. Without it, Codecov cannot tell apart the same `src/` path in several projects.
 - **The `coverage/{projectRoot}` outputs of .NET tests projects stay**, so a cached run still
   has a report to upload. The `coverage/` artifact upload stays too.
 

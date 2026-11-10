@@ -82,8 +82,8 @@ defaults. Loads when working on specs, test artifacts, `type:testing` libs, or V
   Vitest `lcov.info` and coverlet `coverage.info` reports to Codecov (`codecov.yml`), which posts
   the per-PR comment (totals + patch coverage for changed lines) and the status
   checks. Those start informational, so the runners above stay the only gate. The upload needs
-  the `CODECOV_TOKEN` secret, so fork PRs skip it. A workflow step prefixes Vitest's
-  project-relative lcov paths with the project root so Codecov can place them. The dotnet
+  the `CODECOV_TOKEN` secret, so fork PRs skip it. Vitest's lcov reporter sets
+  `projectRoot` to the workspace so the paths are repo-relative. The dotnet
   plugin adds `{workspaceRoot}/coverage/{projectRoot}` to the `test` outputs of every .NET
   project tagged `type:testing`, so a tests project declares nothing itself (ADR
   0017); the cached `check-coverage-output` target fails CI, naming the project, if the resolved
