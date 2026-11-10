@@ -69,6 +69,9 @@
       "dependsOn": ["^build"],
       "inputs": ["production", "^production"]
     },
+    "test": {
+      "inputs": ["...", "{workspaceRoot}/vitest.base.mts"]
+    },
     "lighthouse": {
       "executor": "nx:run-commands",
       "cache": true,
