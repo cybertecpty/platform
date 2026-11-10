@@ -101,6 +101,12 @@ superseded; its coverage policy is carried forward verbatim against Vitest.
   The base config is **`vitest.base.mts`** at the workspace root, extended by each
   project's `vitest.config.ts`; it is the direct replacement for `jest.preset.js` and holds
   every parameter below.
+- **`vitest.base.mts` is an input of every `test` target.** Each `vitest.config.mts` imports
+  it by a relative path, which the project graph does not follow, so `nx.json`
+  `targetDefaults.test.inputs` adds it (spreading the inferred inputs with `"..."`). A PR
+  that changes only the base config then runs every project's `test`, while a change to an
+  unrelated file leaves the Vitest `test` caches valid. It is not in `sharedGlobals`, which
+  would also invalidate lint, typecheck and build.
 - **Angular projects test through `@angular/build:unit-test` with `runner: vitest`.** Karma
   is never used.
 - **`globals: true`.** The 50 existing specs call bare `describe` / `it` / `expect`, so
