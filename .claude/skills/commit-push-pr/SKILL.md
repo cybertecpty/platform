@@ -63,11 +63,13 @@ git fetch origin
 git worktree add --no-track -b {type}/{n}-{slug} ../platform-{name} origin/develop
 cd ../platform-{name}
 pnpm install --frozen-lockfile
+dotnet restore Platform.slnx
 ```
 
 `pnpm install` is mandatory before the first commit: it generates `.husky/_`, and a worktree
-without it commits with no `commit-msg` or `pre-commit` hook, silently. Run every later command
-from inside the worktree. Do not start agent work in the main clone.
+without it commits with no `commit-msg` or `pre-commit` hook, silently. `dotnet restore` is needed
+because the .NET `build` and `test` targets run with `--no-restore` (conventions §5). Run every
+later command from inside the worktree. Do not start agent work in the main clone.
 
 ### Splitting work across subagents
 
@@ -79,10 +81,11 @@ branch, never the parent's: two writers in one working tree race over the index 
 git worktree add --no-track -b {branch}-{part} ../platform-{name}-{part} {branch}
 cd ../platform-{name}-{part}
 pnpm install --frozen-lockfile
+dotnet restore Platform.slnx
 ```
 
 In Claude Code, the Agent tool's `isolation: "worktree"` makes the worktree for you; run
-`pnpm install --frozen-lockfile` in it before the subagent commits. The parent integrates the
+`pnpm install --frozen-lockfile` and `dotnet restore Platform.slnx` in it before the subagent commits. The parent integrates the
 subagent's commits into its own branch (merge or cherry-pick), then removes the subagent
 worktree and branch it created, per step 10. Read-only subagents (search, review, fetching CI
 status) share the parent's worktree and need nothing extra.
