@@ -80,11 +80,10 @@ defaults. Loads when working on specs, test artifacts, `type:testing` libs, or V
   CI. Each project runs its own Vitest process, so it is a per-project gate. `type:types` libs
   have no `test` target and are exempt. CI uploads `coverage/` as an artifact and sends the
   Vitest `lcov.info` and coverlet `coverage.info` reports to Codecov (`codecov.yml`), which posts
-  the per-PR comment (per-project totals + patch coverage for changed lines) and the status
+  the per-PR comment (totals + patch coverage for changed lines) and the status
   checks. Those start informational, so the runners above stay the only gate. The upload needs
   the `CODECOV_TOKEN` secret, so fork PRs skip it. Vitest's lcov reporter sets `projectRoot` to
-  the workspace so the paths are repo-relative. Each tested project needs a `component_management`
-  entry in `codecov.yml` (its root path) to get its own line in the comment. The dotnet
+  the workspace so the paths are repo-relative. The dotnet
   plugin adds `{workspaceRoot}/coverage/{projectRoot}` to the `test` outputs of every .NET
   project tagged `type:testing`, so a tests project declares nothing itself (ADR
   0017); the cached `check-coverage-output` target fails CI, naming the project, if the resolved
