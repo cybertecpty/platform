@@ -540,8 +540,8 @@ whether to turn it on.
 
 ### Considered options
 
-1. **Turn it on.** It reported no violation across the 19 projects that were linted, so enabling it
-   would cost nothing today.
+1. **Turn it on.** It reported no violation across the projects with a `lint` target, so enabling it
+   appeared to cost nothing today.
 2. **Leave it off and record why.** **(chosen)**
 
 ### Decision
@@ -559,13 +559,16 @@ whether to turn it on.
 - **The gap stays open.** It is narrow today: of the projects the bans apply to, only
   `cybertec-io-e2e` imports another workspace lib, and no `type:ui` lib exists. Layer rules narrow it
   further: `type:ui` may depend only on `type:ui`, `type:testing`, `type:types` and `type:utils`, and
-  `type:types` has no dependencies. The remaining route is a `type:utils` or `type:testing` lib that
-  imports a banned entry point, so review must catch that until something does.
+  `type:types` depends only on other `type:types` libs. The remaining routes are a `type:utils` lib
+  that imports a banned entry point, and a `type:testing` lib, which may depend on almost any
+  `type:*` lib and so reaches a banned import through one of those. Review must catch both until
+  something does.
 
 ### Consequences
 
-- **The "turning it on" lines above and in ADR 0003 are not a fix.** Read "`checkNestedExternalImports`
-  is off" as "the rule has no working transitive check", not as a setting to flip.
+- **The notes that the option "is off" (ADR 0003 and above) and the line in the `@angular/common/http`
+  amendment that turning it on "is a workspace-wide change" do not describe a working check.** Read
+  them as "the rule has no working transitive check", not as a setting to flip.
 - **Revisit on an Nx upgrade.** Re-run the `lighthouse` experiment above against a newer
   `@nx/eslint-plugin`. If the nested ban fires, enable the option and amend this ADR and ADR 0003. If
   the gap starts to matter first, a check over the project graph is the other way to close it, the
