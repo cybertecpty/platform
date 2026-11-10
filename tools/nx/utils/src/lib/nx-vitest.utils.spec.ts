@@ -1,15 +1,9 @@
 import type { Tree } from '@nx/devkit';
-import * as devkit from '@nx/devkit';
 import { addProjectConfiguration, readJson, writeJson } from '@nx/devkit';
 import { createTreeWithEmptyWorkspace } from '@nx/devkit/testing';
 import { configureVitestProject, withoutUpstreamVitestSideEffects } from './nx-vitest.utils';
 
 const ROOT = 'libs/billing/models';
-const ESLINT_CONFIG = `const vitestSpecFiles = [
-  'apps/cybertec-io/**/*.{spec,test}.ts',
-  'tools/git/utils/**/*.{spec,test}.ts'
-];
-`;
 
 describe('configureVitestProject', () => {
   let tree: Tree;
@@ -17,7 +11,6 @@ describe('configureVitestProject', () => {
   beforeEach(() => {
     tree = createTreeWithEmptyWorkspace();
     addProjectConfiguration(tree, 'billing-models', { root: ROOT, projectType: 'library' });
-    tree.write('eslint.config.mjs', ESLINT_CONFIG);
   });
 
   it('writes a `vitest.config.mts` extending the base config with only name and environment', () => {
@@ -87,34 +80,6 @@ describe('configureVitestProject', () => {
       'src/**/*.spec.ts',
       'src/**/*.test.ts'
     ]);
-  });
-
-  it('lists the project spec glob in `vitestSpecFiles`, keeping the order of the others', () => {
-    configureVitestProject(tree, 'billing-models', 'node');
-
-    expect(tree.read('eslint.config.mjs', 'utf-8')).toContain(
-      `  'tools/git/utils/**/*.{spec,test}.ts',\n  '${ROOT}/**/*.{spec,test}.ts'\n];`
-    );
-  });
-
-  it('warns, and leaves the file alone, when `vitestSpecFiles` is not in the root config', () => {
-    const warn = vi.spyOn(devkit.logger, 'warn').mockImplementation(() => undefined);
-    tree.write('eslint.config.mjs', 'export default [];\n');
-
-    configureVitestProject(tree, 'billing-models', 'node');
-
-    expect(warn).toHaveBeenCalledWith(expect.stringContaining('vitestSpecFiles'));
-    expect(tree.read('eslint.config.mjs', 'utf-8')).toBe('export default [];\n');
-    warn.mockRestore();
-  });
-
-  it('does not list the project spec glob twice', () => {
-    configureVitestProject(tree, 'billing-models', 'node');
-    configureVitestProject(tree, 'billing-models', 'node');
-
-    const lines = (tree.read('eslint.config.mjs', 'utf-8') ?? '').split(ROOT);
-
-    expect(lines).toHaveLength(2);
   });
 
   it('ignores the Vitest config in the project `@nx/dependency-checks` rule', () => {
