@@ -113,6 +113,7 @@ jobs:
       - name: Make lcov paths repo-relative
         if: always()
         run: |
+          [ -d coverage ] || exit 0
           find coverage -name lcov.info | while read -r f; do
             root=$(dirname "$f"); root=${root#coverage/}
             sed -i "s|^SF:src/|SF:$root/src/|" "$f"
