@@ -573,3 +573,47 @@ whether to turn it on.
   `@nx/eslint-plugin`. If the nested ban fires, enable the option and amend this ADR and ADR 0003. If
   the gap starts to matter first, a check over the project graph is the other way to close it, the
   approach ADR 0019 takes for .NET edges.
+
+## Amendment (2026-11-10): `type:utils` and `type:types` may not import `@angular/common/http`
+
+- Status: accepted
+- Deciders: djmcg
+- Implemented by: issue #323
+
+The `checkNestedExternalImports` amendment leaves a `type:ui` lib able to reach `@angular/common/http`
+through a lib it may depend on. `type:ui` may depend on `type:utils` and `type:types` libs, and the
+rule checks only a lib's own imports, so a `type:utils` lib that imports the entry point passes lint
+and is then importable from a UI lib. ADR 0003 closes the same kind of gap for zod by banning it on
+`scope:shared` as well as `scope:frontend`, so the ban moves to the libs a UI lib reaches.
+
+### Considered options
+
+1. **A combo row for `scope:frontend` and `type:utils`.** Rejected: utils are the libs most likely to
+   be `scope:shared`, and a `scope:shared` util would not match the row, though a UI lib can import it.
+2. **The bare `type:utils` and `type:types` rows.** **(chosen)** A row on the bare tag binds a lib of
+   every scope.
+3. **Also ban it on `type:testing`.** Rejected: a frontend testing lib may import `HttpClient` to
+   build a stub, which is a legitimate use.
+
+### Decision
+
+- **The `type:utils` and `type:types` rows carry `bannedExternalImports: ['@angular/common/http']`**,
+  the same entry point and mechanism as the `type:ui` row. Utils are stateless isomorphic helpers
+  and `type:types` libs are pure type-only exports, so neither has a use for Angular's HTTP layer.
+- **`import type` is banned here too**, for the reason in the `type:ui` amendment, which is the case
+  that matters for `type:types`, since it has no runtime code.
+- **`type:testing` is not banned.** The route from `type:ui` through a testing lib stays open: a
+  testing lib may import the entry point, and `type:testing` may depend on almost any `type:*` lib,
+  so a banned import can reach a UI lib through one. Review must catch it until a working transitive
+  check exists.
+
+### Consequences
+
+- **A `type:ui` lib can no longer reach the entry point through `type:utils` or `type:types`.** The
+  `type:testing` route is the one left, as above. The `type:utils` route named as open in the
+  `checkNestedExternalImports` amendment and the "direct imports only" note in the
+  `@angular/common/http` amendment are closed by this change.
+- **A `type:utils` or `type:types` lib that needs Angular's HTTP layer is mis-tagged.** Transport
+  belongs in `type:data-access`, so move the code there.
+- **Still unverified on a real graph.** No `type:ui`, Angular-using `type:utils` or `type:types` lib
+  exists yet, so a spec on the matrix rows covers the rule, not a lint failure.
