@@ -572,7 +572,8 @@ whether to turn it on.
 - **Revisit on an Nx upgrade.** Re-run the `lighthouse` experiment above against a newer
   `@nx/eslint-plugin`. If the nested ban fires, enable the option and amend this ADR and ADR 0003. If
   the gap starts to matter first, a check over the project graph is the other way to close it, the
-  approach ADR 0019 takes for .NET edges.
+  approach ADR 0019 takes for .NET edges. This is a reminder, not a tracked task: the follow-up ticket
+  (#326) was dropped once the `type:utils` and `type:types` bans closed the `type:ui` route.
 
 ## Amendment (2026-11-10): `type:utils` and `type:types` may not import `@angular/common/http`
 
