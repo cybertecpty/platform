@@ -99,7 +99,7 @@ superseded; its coverage policy is carried forward verbatim against Vitest.
   reverses ADR 0007's two bans (no `@nx/vite` / `@nx/vitest` plugin, no root Vitest config)
   — they existed to keep an accidental toolchain out, and the toolchain is now deliberate.
   The base config is **`vitest.base.mts`** at the workspace root, extended by each
-  project's `vitest.config.ts`; it is the direct replacement for `jest.preset.js` and holds
+  project's `vitest.config.mts`; it is the direct replacement for `jest.preset.js` and holds
   every parameter below.
 - **`vitest.base.mts` is an input of every `test` target.** Each `vitest.config.mts` imports
   it by a relative path, which the project graph does not follow, so `nx.json`
