@@ -525,3 +525,48 @@ would put transport code in the view layer.
 - **Unverified on a real graph.** No `type:ui` lib exists and Angular is not a dependency yet, so the
   rule is covered by a spec on the row (`nx-dep-constraints.const.spec.ts`), not by a lint failure.
   The first `type:ui` lib should include a deliberate pass/fail check.
+
+## Amendment (2026-11-10): `checkNestedExternalImports` stays off — it cannot match a workspace lib's imports
+
+- Status: accepted
+- Deciders: djmcg
+- Implemented by: issue #319
+
+The two amendments and ADR 0003 leave one gap: `bannedExternalImports` checks a project's own direct
+imports, so a banned package still reaches a project through a workspace lib that imports it (a
+`type:ui` lib to `@angular/common/http` through a `type:utils` lib, or `scope:frontend` code to
+zod's classic API). `checkNestedExternalImports` is the rule's option for that. Issue #319 asked
+whether to turn it on.
+
+### Considered options
+
+1. **Turn it on.** It reported no violation across the 19 projects that were linted, so enabling it
+   would cost nothing today.
+2. **Leave it off and record why.** **(chosen)**
+
+### Decision
+
+- **The option stays off.** In `@nx/eslint-plugin` 23.1.1 it cannot report anything for an import of a
+  workspace lib. The nested check collects the external packages reachable from the imported lib, then
+  tests each against the constraint with the import specifier of the _workspace lib_
+  (`@cybertecpty/playwright-testing`), not the package's own. That test returns `false` unless the
+  specifier is the package name or starts with it, so the two never match.
+- **The trial shows the same.** The graph holds the edge `cybertec-io-e2e` (`scope:frontend`) to
+  `playwright-testing`, which imports `lighthouse`. With `lighthouse` added to the `scope:frontend`
+  row's `bannedExternalImports` and the option on, `nx lint cybertec-io-e2e` still passed. The zero
+  violations of the real trial therefore says nothing about the workspace, and enabling the option
+  would pass silently while checking nothing, which is worse than no check.
+- **The gap stays open.** It is narrow today: of the projects the bans apply to, only
+  `cybertec-io-e2e` imports another workspace lib, and no `type:ui` lib exists. Layer rules narrow it
+  further: `type:ui` may depend only on `type:ui`, `type:testing`, `type:types` and `type:utils`, and
+  `type:types` has no dependencies. The remaining route is a `type:utils` or `type:testing` lib that
+  imports a banned entry point, so review must catch that until something does.
+
+### Consequences
+
+- **The "turning it on" lines above and in ADR 0003 are not a fix.** Read "`checkNestedExternalImports`
+  is off" as "the rule has no working transitive check", not as a setting to flip.
+- **Revisit on an Nx upgrade.** Re-run the `lighthouse` experiment above against a newer
+  `@nx/eslint-plugin`. If the nested ban fires, enable the option and amend this ADR and ADR 0003. If
+  the gap starts to matter first, a check over the project graph is the other way to close it, the
+  approach ADR 0019 takes for .NET edges.
