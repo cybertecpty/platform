@@ -10,9 +10,6 @@ on:
 permissions:
   actions: read
   contents: read
-  # The coverage step upserts a single PR comment (skipped on forks, which get a
-  # read-only token anyway).
-  pull-requests: write
 
 env:
   # The Nx Cloud organization is disabled (over the free plan) and not being paid for, so CI
@@ -78,8 +75,7 @@ jobs:
       - name: Install Playwright browsers
         run: pnpm exec playwright install --with-deps chromium
 
-      # Unit-test the CI-only coverage reporter and the Claude Code hooks (plain
-      # Node, not Nx projects). `pnpm verify` runs the same step locally.
+      # Unit-test the CI scripts and the Claude Code hooks (plain Node, not Nx projects). `pnpm verify` runs the same step locally.
       - name: Run CI script and hook unit tests
         run: node --test .github/scripts/*.test.cjs .claude/hooks/*.test.cjs scripts/*.test.cjs
 
@@ -107,24 +103,31 @@ jobs:
         if: github.event_name != 'pull_request'
         run: pnpm exec nx run-many -t lint test build typecheck check-boundaries check-coverage-output format-check e2e lighthouse
 
-      # Coverage reporting (ADR 0018, carrying forward ADR 0007 / issue #52). The `test` targets
-      # collect coverage in CI (vitest.base.mts) and declare
-      # `coverage/{projectRoot}` as an output, which Nx writes (or restores from
-      # its local cache) on this runner. This step merges the reports into one
-      # number (the whole workspace on a push, the affected projects on a PR),
-      # writes the job summary, and — on a non-fork PR — upserts a single
-      # coverage comment. `always()` so a coverage-threshold failure above still
-      # produces the report.
-      - name: Coverage report
+      # Coverage reporting (ADR 0007, 2026-11-10 amendment). The `test` targets collect
+      # coverage in CI (vitest.base.mts) and declare `coverage/{projectRoot}` as an output, which
+      # Nx writes (or restores from its local cache) on this runner. Codecov merges the reports
+      # (the whole workspace on a push, the affected projects on a PR) and posts the PR comment
+      # and status checks. `always()` so a coverage-threshold failure above still uploads.
+      # Vitest writes lcov paths relative to the project root (`src/lib/a.ts`), which Codecov
+      # cannot place when several projects share `src/`, so prefix them with the project root.
+      - name: Make lcov paths repo-relative
         if: always()
-        # Reporting only — the coverage *gate* is the `test` run above. A broken
-        # reporter (or missing coverage dirs) must not block a merge.
-        continue-on-error: true
-        uses: actions/github-script@v9
+        run: |
+          find coverage -name lcov.info | while read -r f; do
+            root=$(dirname "$f"); root=${root#coverage/}
+            sed -i "s|^SF:src/|SF:$root/src/|" "$f"
+          done
+
+      # Fork PRs get no secrets, so they skip the upload instead of failing for lack of the
+      # token. Reporting only: the coverage gate is the `test` run above, so a Codecov outage
+      # must not block a merge.
+      - name: Upload coverage to Codecov
+        if: always() && (github.event_name != 'pull_request' || github.event.pull_request.head.repo.full_name == github.repository)
+        uses: codecov/codecov-action@v7
         with:
-          script: |
-            const report = require(`${process.env.GITHUB_WORKSPACE}/.github/scripts/coverage-report.cjs`);
-            await report({ github, context, core });
+          token: ${{ secrets.CODECOV_TOKEN }}
+          files: ./coverage/**/lcov.info,./coverage/**/coverage.info
+          fail_ci_if_error: false
 
       - name: Upload coverage report
         if: always()

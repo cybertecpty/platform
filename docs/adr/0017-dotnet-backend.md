@@ -373,13 +373,11 @@ changes here.
   forward verbatim onto Vitest.
 - **The coverlet wiring reaches the PR comment.** Coverlet writes `coverage.json` and lcov
   `coverage.info` to `coverage/{projectRoot}` (`CoverletOutputFormat` in
-  `Directory.Build.props`), and `.github/scripts/coverage-report.cjs` reads the lcov file. A
-  .NET project's lines, branches and functions join the workspace total (lines also count as
-  statements, since .NET has none) and the lines a PR adds to C# count toward patch coverage.
+  `Directory.Build.props`), and CI uploads the lcov file to Codecov (ADR 0007, 2026-11-10
+  amendment), so a .NET project's coverage and the lines a PR adds to C# appear in its PR comment.
   `@nx/dotnet` infers only `TestResults` as an output of `test`, so `@cybertecpty/dotnet-plugin`
   adds `{workspaceRoot}/coverage/{projectRoot}` to the `test` target of every .NET project tagged
-  `type:testing`; without it a cache hit would restore no report. The plugin also infers a cached `check-coverage-output` target on those projects that reads the resolved project graph and fails CI if their `test` outputs lack it, since a plugin reorder in `nx.json` would otherwise drop it silently. Its inputs include `nx.json` and the `@nx/dotnet` version, so a change to the resolved outputs invalidates the cache. Vitest's v8 provider writes the same Istanbul files Jest did, so the
-  Istanbul side of the script is unchanged.
+  `type:testing`; without it a cache hit would restore no report. The plugin also infers a cached `check-coverage-output` target on those projects that reads the resolved project graph and fails CI if their `test` outputs lack it, since a plugin reorder in `nx.json` would otherwise drop it silently. Its inputs include `nx.json` and the `@nx/dotnet` version, so a change to the resolved outputs invalidates the cache.
 - **Unverified item 5** (`type:testing` may not depend on `type:app`, which
   `WebApplicationFactory` integration tests need) is a tag-matrix question, not a runner
   question, and is unaffected.

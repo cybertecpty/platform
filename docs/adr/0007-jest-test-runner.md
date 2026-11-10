@@ -1,9 +1,10 @@
 # 7. Jest as the workspace test runner
 
 - Status: accepted (**runner choice superseded 2026-10-20 — the TypeScript runner is Vitest,
-  see ADR 0018**. The 80% CI-gated coverage floor, the reporting layer, `passWithNoTests`,
+  see ADR 0018**. The 80% CI-gated coverage floor, `passWithNoTests`,
   the `type:types` exemption and `nx test {project}` as the entry point stand, and the
-  dated amendments below remain in force except where ADR 0018 names them.)
+  dated amendments below remain in force except where ADR 0018 names them. **The reporting
+  layer is superseded by Codecov, see the 2026-11-10 amendment.**)
 - Date: 2026-09-02
 - Deciders: djmcgrath
 - Implemented by: `unitTestRunner: jest` in the `nx.json` generator defaults for
@@ -348,3 +349,39 @@ ADR 0005). Jest cannot run C#, so "one runner" no longer means one runner worksp
 - CI needs a .NET SDK as well as Node, and coverlet output has to reach the coverage
   reporting layer above (which reads `coverage/{projectRoot}` per project) or .NET projects
   will be absent from the PR comment. That wiring is separate work.
+
+## Amendment (2026-11-10): Codecov replaces the custom coverage reporter
+
+- Status: accepted
+- Deciders: djmcgrath
+- Implemented by: `.github/workflows/lint-and-test-affected.yml`, `codecov.yml`; issue #250
+
+The "No third-party coverage service" decision and the reporting layer built to avoid one
+(`coverage-report.cjs`, the `pull-requests: write` comment) are superseded. Codecov's free tier
+posts the PR coverage comment, patch coverage and status checks, so the custom script and its
+unit tests are removed.
+
+### Decision
+
+- **CI uploads the Vitest `lcov.info` and coverlet `coverage.info` reports** under
+  `coverage/**` to Codecov with the `CODECOV_TOKEN` repo secret, on pushes and same-repo PRs.
+  A push uploads every project, a PR the affected ones, as before.
+- **Fork PRs skip the upload.** They get no secret, and a tokenless upload is not worth the
+  failure modes. The upload step is also `fail_ci_if_error: false`, so a Codecov outage never
+  blocks a merge.
+- **The 80% gate stays in the test runners** (Vitest, coverlet), so it keeps a single source.
+  Codecov's project and patch statuses are informational in `codecov.yml`. Making them
+  required, or changing the threshold, is separate work.
+- **A workflow step prefixes Vitest's project-relative lcov paths** (`src/lib/a.ts`) with the
+  project root, since Codecov cannot tell apart the same `src/` path in several projects.
+- **The `coverage/{projectRoot}` outputs of .NET tests projects stay**, so a cached run still
+  has a report to upload. The `coverage/` artifact upload stays too.
+
+### Consequences
+
+- Line-level coverage data of this private repo is sent to Codecov. The earlier objection
+  stands as a cost, accepted here for the comment, patch coverage and trend history.
+- The "Reporting layer (2026-09-08)" section, the 2026-10-16 amendment's comment labelling
+  (the "Affected projects" line) and the Astro section's reference to the script describe
+  the removed reporter. The 2026-10-16 amendment's affected-only vs full-run split still holds
+  for what gets uploaded.
