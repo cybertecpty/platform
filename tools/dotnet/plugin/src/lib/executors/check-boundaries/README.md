@@ -8,7 +8,7 @@ Run it as `@cybertecpty/dotnet-plugin:check-boundaries`.
 
 For the project it runs on, the executor looks at each `ProjectReference` dependency in the Nx project graph and checks it against the dependency-constraint matrix:
 
-- Every row of the matrix applies, whatever its tag axis (`scope:`, `type:` or `domain:`), when the project has the row's source tag (or all of a combo row's source tags).
+- Every row of the matrix applies, whatever its tag axis (`platform:`, `type:` or `domain:`), when the project has the row's source tag (or all of a combo row's source tags).
 - The referenced project must carry at least one of the row's `onlyDependOnLibsWithTags` and none of its `notDependOnLibsWithTags`. Tag patterns are exact tags, `*` wildcards and `/regex/` patterns, as in `@nx/enforce-module-boundaries`.
 - A project that no row applies to is a violation too.
 - Only direct references are checked; unlike ESLint, banned tags are not followed through other projects.

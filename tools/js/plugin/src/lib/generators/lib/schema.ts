@@ -2,7 +2,7 @@ import type {
   BackendLibType,
   NormalizedNxProjectOptions,
   NxProjectOptions,
-  NxProjectScope
+  NxProjectPlatform
 } from '@cybertecpty/nx-types';
 import type { libraryGenerator } from '@nx/js';
 import type { Except } from 'type-fest';
@@ -17,12 +17,12 @@ export type JsLibType = 'models' | 'testing' | 'types' | 'utils';
 /**
  * Inputs to the `js-plugin` `lib` generator — a thin wrapper over `@nx/js:library`.
  *
- * `domain` is required at runtime for every `scope` except `tools`: a `libs/` project
- * is never domain-exempt, while a `scope:tools` project lives under `tools/` and is
- * domain-exempt (ADR 0009), so a `domain` with `scope:tools` is a thrown error.
+ * `domain` is required at runtime for every `platform` except `tools`: a `libs/` project
+ * is never domain-exempt, while a `platform:tools` project lives under `tools/` and is
+ * domain-exempt (ADR 0009), so a `domain` with `platform:tools` is a thrown error.
  *
- * `scope` is optional here even though the generator requires it at runtime: every
- * allowed type is scope-polymorphic (ADR 0009 "Scope on the polymorphic types") and
+ * `platform` is optional here even though the generator requires it at runtime: every
+ * allowed type is platform-polymorphic (ADR 0009 "Scope on the polymorphic types") and
  * needs it as an explicit input (see `generator.ts`). `type` is `JsLibType` plus
  * `BackendLibType`, which the generator rejects.
  *
@@ -35,7 +35,7 @@ export type JsLibType = 'models' | 'testing' | 'types' | 'utils';
  * to this workspace's supported values — `unitTestRunner` loses `jest` (Vitest-only,
  * ADR 0018), `linter` loses the deprecated `Linter` enum members.
  */
-export type LibGeneratorOptions = Except<NxProjectOptions, 'buildable' | 'scope' | 'type'> &
+export type LibGeneratorOptions = Except<NxProjectOptions, 'buildable' | 'platform' | 'type'> &
   Except<
     NxJsLibraryGeneratorSchema,
     | 'directory'
@@ -49,18 +49,18 @@ export type LibGeneratorOptions = Except<NxProjectOptions, 'buildable' | 'scope'
     | 'linter'
   > & {
     /**
-     * The project's `scope:` tag; `tools` places the project under `tools/`.
+     * The project's `platform:` tag; `tools` places the project under `tools/`.
      * Required (enforced at runtime in `generator.ts`, not by this type — see the doc
      * comment above).
      */
-    scope?: NxProjectScope;
+    platform?: NxProjectPlatform;
     /** The `type:` tag and final directory segment; a `BackendLibType` is rejected at runtime. */
     type: JsLibType | BackendLibType;
     /** Tool for running lint checks. */
     linter?: 'eslint' | 'none';
     /**
      * Test runner for unit tests. Vitest-only per ADR 0018; `jest` is rejected at runtime.
-     * `none` is rejected for `scope:shared`.
+     * `none` is rejected for `platform:shared`.
      */
     unitTestRunner?: 'vitest' | 'none';
   };
@@ -70,7 +70,7 @@ export type LibGeneratorOptions = Except<NxProjectOptions, 'buildable' | 'scope'
  * `tags`, and forwarded `bundler` to `@nx/js:library` unchanged.
  */
 export type NormalizedLibGeneratorOptions = LibGeneratorOptions &
-  Except<NormalizedNxProjectOptions<NxProjectScope, JsLibType>, 'bundler'>;
+  Except<NormalizedNxProjectOptions<NxProjectPlatform, JsLibType>, 'bundler'>;
 
 /** Options accepted by `@nx/js`'s `libraryGenerator`, in its installed version. */
 type NxJsLibraryGeneratorSchema = Parameters<typeof libraryGenerator>[1];

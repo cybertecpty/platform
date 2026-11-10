@@ -1,6 +1,6 @@
 # git-utils
 
-Workspace tooling for git and commit workflows (`scope:tools`, not application code).
+Workspace tooling for git and commit workflows (`platform:tools`, not application code).
 
 ## Contents
 

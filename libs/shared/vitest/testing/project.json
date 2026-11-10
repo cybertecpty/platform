@@ -3,7 +3,7 @@
   "$schema": "../../../../node_modules/nx/schemas/project-schema.json",
   "sourceRoot": "libs/shared/vitest/testing/src",
   "projectType": "library",
-  "tags": ["domain:shared", "scope:shared", "type:testing"],
+  "tags": ["domain:shared", "platform:shared", "type:testing"],
   "targets": {
     "typecheck": {}
   }

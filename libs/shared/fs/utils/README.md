@@ -1,6 +1,6 @@
 # fs-utils
 
-Filesystem-related utilities shared across `scope:backend` (Node-only) projects.
+Filesystem-related utilities shared across `platform:backend` (Node-only) projects.
 
 ## Contents
 

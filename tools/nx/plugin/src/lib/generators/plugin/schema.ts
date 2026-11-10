@@ -4,7 +4,7 @@ import type { Except, SetRequired } from 'type-fest';
 
 /**
  * `NxPluginGeneratorOptions` after the generator has resolved `name`,
- * `directory`, and `tags` and pinned `scope` / `type`.
+ * `directory`, and `tags` and pinned `platform` / `type`.
  *
  * `bundler` (and `domain`) are omitted from the shared `NormalizedNxProjectOptions`
  * shape: a plugin has no bundler — its build target is driven by `compiler` —
@@ -17,7 +17,7 @@ export type NormalizedNxPluginGeneratorOptions = NxPluginGeneratorOptions &
  * Inputs to the workspace `nx-plugin` generator — a thin wrapper over
  * `@nx/plugin:plugin`.
  *
- * `scope` (`tools`) and `type` (`plugin`) are fixed by the generator, and
+ * `platform` (`tools`) and `type` (`plugin`) are fixed by the generator, and
  * `domain` / `buildable` don't apply to a `tools/` project (ADR 0009), so all
  * four are dropped from `NxProjectOptions`. `directory` is derived from
  * `group` per the `tools/<group>/<type>` convention rather than supplied;
@@ -29,7 +29,7 @@ export type NormalizedNxPluginGeneratorOptions = NxPluginGeneratorOptions &
  * members. Everything else is forwarded to `@nx/plugin:plugin` unchanged.
  */
 export type NxPluginGeneratorOptions = SetRequired<
-  Except<NxProjectOptions, 'scope' | 'type' | 'domain' | 'buildable'>,
+  Except<NxProjectOptions, 'platform' | 'type' | 'domain' | 'buildable'>,
   'group'
 > &
   Except<

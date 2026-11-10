@@ -3,7 +3,7 @@
   "$schema": "../../../../node_modules/nx/schemas/project-schema.json",
   "sourceRoot": "libs/shared/playwright/testing/src",
   "projectType": "library",
-  "tags": ["domain:shared", "scope:frontend", "type:testing"],
+  "tags": ["domain:shared", "platform:frontend", "type:testing"],
   "targets": {
     "typecheck": {}
   }

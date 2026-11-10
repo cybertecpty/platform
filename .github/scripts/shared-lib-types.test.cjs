@@ -33,15 +33,15 @@ describe('findViolations', () => {
     fs.rmSync(root, { recursive: true, force: true });
   });
 
-  it('passes a scope:shared lib whose lib tsconfig has no node types', () => {
-    addProject('libs/shared/a', { tags: ['scope:shared'], types: ['vitest/globals'] });
-    addProject('libs/shared/b', { tags: ['scope:shared'], types: [] });
+  it('passes a platform:shared lib whose lib tsconfig has no node types', () => {
+    addProject('libs/shared/a', { tags: ['platform:shared'], types: ['vitest/globals'] });
+    addProject('libs/shared/b', { tags: ['platform:shared'], types: [] });
 
     assert.deepEqual(findViolations(root), []);
   });
 
-  it('flags a scope:shared lib whose lib tsconfig lists node', () => {
-    addProject('libs/shared/a', { tags: ['scope:shared'], types: ['vitest/globals', 'node'] });
+  it('flags a platform:shared lib whose lib tsconfig lists node', () => {
+    addProject('libs/shared/a', { tags: ['platform:shared'], types: ['vitest/globals', 'node'] });
 
     assert.deepEqual(findViolations(root), [
       { project: 'libs/shared/a', problem: 'tsconfig.lib.json loads "node" types' }
@@ -51,7 +51,7 @@ describe('findViolations', () => {
   it('flags node types inherited through extends', () => {
     write('tsconfig.base.json', { compilerOptions: { types: ['node'] } });
     addProject('libs/shared/a', {
-      tags: ['scope:shared'],
+      tags: ['platform:shared'],
       libConfig: { extends: '../../../tsconfig.base.json', include: [] }
     });
 
@@ -61,7 +61,7 @@ describe('findViolations', () => {
   });
 
   it('flags a lib tsconfig with no types list, which loads every @types package', () => {
-    addProject('libs/shared/a', { tags: ['scope:shared'] });
+    addProject('libs/shared/a', { tags: ['platform:shared'] });
 
     assert.deepEqual(findViolations(root), [
       {
@@ -71,23 +71,23 @@ describe('findViolations', () => {
     ]);
   });
 
-  it('flags a scope:shared lib with no typecheck target, since nothing would check its source', () => {
-    addProject('libs/shared/a', { tags: ['scope:shared'], types: [], targets: {} });
+  it('flags a platform:shared lib with no typecheck target, since nothing would check its source', () => {
+    addProject('libs/shared/a', { tags: ['platform:shared'], types: [], targets: {} });
 
     assert.deepEqual(findViolations(root), [
       { project: 'libs/shared/a', problem: 'has no "typecheck" target' }
     ]);
   });
 
-  it('ignores projects not tagged scope:shared, and node_modules', () => {
+  it('ignores projects not tagged platform:shared, and node_modules', () => {
     addProject('tools/a', { tags: ['scope:node'], types: ['node'] });
-    addProject('node_modules/pkg', { tags: ['scope:shared'], types: ['node'] });
+    addProject('node_modules/pkg', { tags: ['platform:shared'], types: ['node'] });
 
     assert.deepEqual(findViolations(root), []);
   });
 });
 
-describe('scope:shared libs in this workspace', () => {
+describe('platform:shared libs in this workspace', () => {
   it('load no node types in their lib tsconfig', () => {
     assert.deepEqual(findViolations(REPO_ROOT), []);
   });

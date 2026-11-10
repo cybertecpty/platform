@@ -26,7 +26,7 @@ const DOMAIN_CONSTRAINT_FIXTURE: DependencyConstraint = {
 };
 
 const COMBO_CONSTRAINT_FIXTURE: DependencyConstraint = {
-  allSourceTags: ['scope:backend', 'type:probe'],
+  allSourceTags: ['platform:backend', 'type:probe'],
   onlyDependOnLibsWithTags: ['type:utils']
 };
 
@@ -114,7 +114,7 @@ describe('checkDepConstraints', () => {
       const source = createProjectNodeFixture({ name: 'api', tags: ['type:api'] });
       const target = createProjectNodeFixture({
         name: 'mixed',
-        tags: ['scope:backend', 'type:services']
+        tags: ['platform:backend', 'type:services']
       });
 
       expect(checkDepConstraints(source, target, constraints)).toEqual([]);
@@ -288,7 +288,7 @@ describe('checkDepConstraints', () => {
     const sharedRow: DependencyConstraint = DOMAIN_CONSTRAINT_FIXTURE;
     const app = createProjectNodeFixture({
       name: 'gamers-source-api',
-      tags: ['scope:backend', 'type:app', 'domain:gamers-source']
+      tags: ['platform:backend', 'type:app', 'domain:gamers-source']
     });
 
     it.each(['domain:shared', 'domain:gamers-source', 'domain:another-product'])(
@@ -333,7 +333,7 @@ describe('checkDepConstraints', () => {
     it('applies it when the source has all of them', () => {
       const source = createProjectNodeFixture({
         name: 'probe',
-        tags: ['scope:backend', 'type:probe']
+        tags: ['platform:backend', 'type:probe']
       });
       const target = createProjectNodeFixture({ name: 'api', tags: ['type:api'] });
 
@@ -341,7 +341,7 @@ describe('checkDepConstraints', () => {
         prefixWithEdge(
           source,
           target,
-          'A project tagged with "scope:backend" and "type:probe" can only depend on libs tagged with "type:utils"'
+          'A project tagged with "platform:backend" and "type:probe" can only depend on libs tagged with "type:utils"'
         )
       ]);
     });
@@ -349,7 +349,7 @@ describe('checkDepConstraints', () => {
     it('allows a target that satisfies it', () => {
       const source = createProjectNodeFixture({
         name: 'probe',
-        tags: ['scope:backend', 'type:probe']
+        tags: ['platform:backend', 'type:probe']
       });
       const target = createProjectNodeFixture({ name: 'utils', tags: ['type:utils'] });
 
@@ -391,7 +391,7 @@ describe('checkDepConstraints', () => {
     });
 
     it('does not apply it to a source without a matching tag', () => {
-      const source = createProjectNodeFixture({ name: 'a', tags: ['scope:backend'] });
+      const source = createProjectNodeFixture({ name: 'a', tags: ['platform:backend'] });
       const target = createProjectNodeFixture({ name: 'ui', tags: ['type:ui'] });
 
       expect(checkDepConstraints(source, target, wildcardConstraints)).toEqual([
@@ -471,9 +471,9 @@ describe('checkExpectedTagsViolations', () => {
 
   it('matches a wildcard expected tag', () => {
     expect(checkExpectedTagsViolations('type:testing', ['type:ui'], ['type:*'])).toEqual([]);
-    expect(checkExpectedTagsViolations('type:testing', ['scope:tools'], ['type:*'])).toHaveLength(
-      1
-    );
+    expect(
+      checkExpectedTagsViolations('type:testing', ['platform:tools'], ['type:*'])
+    ).toHaveLength(1);
   });
 
   it('reports a target with no tags when something is expected', () => {
@@ -488,10 +488,14 @@ describe('checkExpectedTagsViolations', () => {
   });
 
   it('puts the given source tag label in the message', () => {
-    const [message] = checkExpectedTagsViolations('scope:backend" and "type:probe', [], ['type:a']);
+    const [message] = checkExpectedTagsViolations(
+      'platform:backend" and "type:probe',
+      [],
+      ['type:a']
+    );
 
     expect(message).toBe(
-      'A project tagged with "scope:backend" and "type:probe" can only depend on libs tagged with "type:a"'
+      'A project tagged with "platform:backend" and "type:probe" can only depend on libs tagged with "type:a"'
     );
   });
 });
@@ -526,8 +530,8 @@ describe('checkBannedTagsViolations', () => {
   });
 
   it('matches a wildcard banned tag against the target tags', () => {
-    expect(checkBannedTagsViolations('scope:tools', ['type:ui'], ['type:*'])).toHaveLength(1);
-    expect(checkBannedTagsViolations('scope:tools', ['scope:tools'], ['type:*'])).toEqual([]);
+    expect(checkBannedTagsViolations('platform:tools', ['type:ui'], ['type:*'])).toHaveLength(1);
+    expect(checkBannedTagsViolations('platform:tools', ['platform:tools'], ['type:*'])).toEqual([]);
   });
 
   it('returns nothing for a target with no tags', () => {

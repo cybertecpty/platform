@@ -16,7 +16,7 @@ e.g. `nx g @cybertecpty/nx-plugin:nx-plugin release` generates `release-plugin` 
 
 - Takes a `group` instead of a raw `directory`, and derives the project name
   (`{group}-plugin`), directory and tags from the shared ADR 0009 helpers.
-- Always tags the project `scope:tools` and `type:plugin`, which `nx-gen` and `nx-exec` require.
+- Always tags the project `platform:tools` and `type:plugin`, which `nx-gen` and `nx-exec` require.
 - Adds a `typecheck` target stub, so the plugin's specs are type-checked in CI from the start
   (issue #48).
 - Skips the `buildable` → `bundler` step: a plugin's build is driven by `compiler`, and it has no
@@ -28,7 +28,7 @@ e.g. `nx g @cybertecpty/nx-plugin:nx-plugin release` generates `release-plugin` 
   prefix.
 - `name`: overrides the derived `{group}-plugin` project name. The directory still comes from
   `group`.
-- `tags`: extra comma-separated tags, appended to `scope:tools` / `type:plugin`.
+- `tags`: extra comma-separated tags, appended to `platform:tools` / `type:plugin`.
 
 Every other option (`importPath`, `linter`, `unitTestRunner`, `compiler`, `e2eTestRunner`,
 `publishable`, …) is forwarded to `@nx/plugin:plugin` unchanged; `--help` lists them.

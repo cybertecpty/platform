@@ -14,7 +14,7 @@ import {
 
 const PLUGIN_ROOT = 'tools/demo/plugin';
 
-function seedPlugin(tree: Tree, tags = ['scope:tools', 'type:plugin']): void {
+function seedPlugin(tree: Tree, tags = ['platform:tools', 'type:plugin']): void {
   addProjectConfiguration(tree, 'demo-plugin', {
     root: PLUGIN_ROOT,
     sourceRoot: `${PLUGIN_ROOT}/src`,
@@ -186,7 +186,7 @@ describe('readPluginProject', () => {
   });
 
   it('rejects a project without the `type:plugin` tag, naming the scaffold command', () => {
-    seedPlugin(tree, ['scope:tools', 'type:utils']);
+    seedPlugin(tree, ['platform:tools', 'type:utils']);
 
     expect(() => readPluginProject(tree, 'demo-plugin')).toThrow(
       /"demo-plugin" is not a plugin .*nx-plugin:nx-plugin/

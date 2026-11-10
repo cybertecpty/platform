@@ -1,6 +1,6 @@
 # nx-plugin
 
-The workspace's own Nx plugin (`scope:tools`, not application code) — thin wrappers
+The workspace's own Nx plugin (`platform:tools`, not application code) — thin wrappers
 over the `@nx/*` generators that apply the naming, directory, and tag conventions from
 `docs/adr/0009-lib-directory-layout.md` / `0010-app-directory-layout.md`.
 

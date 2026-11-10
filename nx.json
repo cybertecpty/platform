@@ -96,7 +96,7 @@
     "projectsRelationship": "independent",
     "groups": {
       "apps": {
-        "projects": ["apps/*", "!tag:scope:backend"]
+        "projects": ["apps/*", "!tag:platform:backend"]
       }
     },
     "version": {

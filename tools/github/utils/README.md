@@ -1,7 +1,7 @@
 # github-utils
 
 Workspace tooling for GitHub operations driven through the `gh` CLI
-(`scope:tools`, not application code). Consumed by the release plugin to open and
+(`platform:tools`, not application code). Consumed by the release plugin to open and
 update the release pull request.
 
 ## Contents

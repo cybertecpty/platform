@@ -74,9 +74,12 @@ describe('wildcardToRegExp', () => {
       expect(wildcardToRegExp('type:*').test(value)).toBe(true);
     });
 
-    it.each(['scope:backend', 'type', 'my-type:api'])('does not match %p against type:*', value => {
-      expect(wildcardToRegExp('type:*').test(value)).toBe(false);
-    });
+    it.each(['platform:backend', 'type', 'my-type:api'])(
+      'does not match %p against type:*',
+      value => {
+        expect(wildcardToRegExp('type:*').test(value)).toBe(false);
+      }
+    );
   });
 
   describe('matching a bare wildcard', () => {

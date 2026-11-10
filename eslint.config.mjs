@@ -216,7 +216,7 @@ export default [
   // NgRx SignalStore lint rules. Spread the plugin's flat config (the `ngrx/base`
   // plugin registration + the signals rule set) and narrow each entry to app/lib
   // TS source. NgRx is Angular-only, but the workspace has no frontend path
-  // convention (ADR 0003 makes browser-reachability a `scope:` tag, which flat
+  // convention (ADR 0003 makes browser-reachability a `platform:` tag, which flat
   // config's path globs can't read), so `{apps,libs}` is a coarse proxy that at
   // least keeps the rules off `tools/**` and root scripts. The rules are inert on
   // non-NgRx files. Revisit (per-project spread) when the Angular ADR lands.

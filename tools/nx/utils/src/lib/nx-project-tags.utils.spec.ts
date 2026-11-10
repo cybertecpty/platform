@@ -19,7 +19,7 @@ describe('nx-project-tags.utils', () => {
   });
 
   describe('isValidProjectTag', () => {
-    it.each(['scope:backend', 'type:api', 'custom:a:b'])('accepts %p', tag => {
+    it.each(['platform:backend', 'type:api', 'custom:a:b'])('accepts %p', tag => {
       expect(isValidProjectTag(tag)).toBe(true);
     });
 
@@ -30,9 +30,9 @@ describe('nx-project-tags.utils', () => {
 
   describe('parseProjectTags', () => {
     it('reads a comma-separated string', () => {
-      expect(parseProjectTags('framework:angular,scope:frontend')).toEqual([
+      expect(parseProjectTags('framework:angular,platform:frontend')).toEqual([
         'framework:angular',
-        'scope:frontend'
+        'platform:frontend'
       ]);
     });
 
@@ -48,20 +48,23 @@ describe('nx-project-tags.utils', () => {
     });
 
     it('trims whitespace around each tag', () => {
-      expect(parseProjectTags(' scope:tools , type:utils ')).toEqual(['scope:tools', 'type:utils']);
+      expect(parseProjectTags(' platform:tools , type:utils ')).toEqual([
+        'platform:tools',
+        'type:utils'
+      ]);
     });
 
     it('removes duplicate tags', () => {
-      expect(parseProjectTags(['type:api', 'type:api', 'scope:backend'])).toEqual([
-        'scope:backend',
+      expect(parseProjectTags(['type:api', 'type:api', 'platform:backend'])).toEqual([
+        'platform:backend',
         'type:api'
       ]);
     });
 
     it('sorts tags alphabetically', () => {
-      expect(parseProjectTags(['type:utils', 'domain:shared', 'scope:tools'])).toEqual([
+      expect(parseProjectTags(['type:utils', 'domain:shared', 'platform:tools'])).toEqual([
         'domain:shared',
-        'scope:tools',
+        'platform:tools',
         'type:utils'
       ]);
     });
@@ -72,11 +75,11 @@ describe('nx-project-tags.utils', () => {
     });
 
     it('does not modify the array it is given', () => {
-      const input = ['type:utils', 'scope:tools'];
+      const input = ['type:utils', 'platform:tools'];
 
       parseProjectTags(input);
 
-      expect(input).toEqual(['type:utils', 'scope:tools']);
+      expect(input).toEqual(['type:utils', 'platform:tools']);
     });
   });
 
@@ -85,26 +88,33 @@ describe('nx-project-tags.utils', () => {
       const options: NxProjectOptions = {
         name: 'material',
         type: 'ui',
-        scope: 'shared',
+        platform: 'shared',
         tags: 'custom:tag1,custom:tag2'
       };
 
       expect(formatProjectTags(projectTagsFromOptions(options))).toBe(
-        'custom:tag1,custom:tag2,domain:shared,scope:shared,type:ui'
+        'custom:tag1,custom:tag2,domain:shared,platform:shared,type:ui'
       );
+    });
+
+    it('tags the project with `platform:` and never with `scope:`', () => {
+      const tags = projectTagsFromOptions({ name: 'game', type: 'models', platform: 'backend' });
+
+      expect(tags).toContain('platform:backend');
+      expect(tags.some(tag => tag.startsWith('scope:'))).toBe(false);
     });
 
     it('includes the explicit domain tag when provided', () => {
       const options: NxProjectOptions = {
         name: 'game',
         type: 'models',
-        scope: 'shared',
+        platform: 'shared',
         domain: 'atlas'
       };
 
       expect(projectTagsFromOptions(options)).toEqual([
         'domain:atlas',
-        'scope:shared',
+        'platform:shared',
         'type:models'
       ]);
     });
@@ -113,13 +123,13 @@ describe('nx-project-tags.utils', () => {
       const options: NxProjectOptions = {
         name: 'checkout',
         type: 'services',
-        scope: 'backend',
+        platform: 'backend',
         domain: 'billing/checkout'
       };
 
       expect(projectTagsFromOptions(options)).toEqual([
         'domain:billing-checkout',
-        'scope:backend',
+        'platform:backend',
         'type:services'
       ]);
     });
@@ -128,7 +138,7 @@ describe('nx-project-tags.utils', () => {
       const options: NxProjectOptions = {
         name: 'checkout',
         type: 'services',
-        scope: 'backend',
+        platform: 'backend',
         domain: 'billing//checkout'
       };
 
@@ -138,57 +148,61 @@ describe('nx-project-tags.utils', () => {
     });
 
     it('does not add a domain tag for app projects when domain is unspecified', () => {
-      const options: NxProjectOptions = { name: 'vault', type: 'app', scope: 'frontend' };
+      const options: NxProjectOptions = { name: 'vault', type: 'app', platform: 'frontend' };
 
-      expect(projectTagsFromOptions(options)).toEqual(['scope:frontend', 'type:app']);
+      expect(projectTagsFromOptions(options)).toEqual(['platform:frontend', 'type:app']);
     });
 
     it('includes the explicit domain tag for app projects when provided', () => {
       const options: NxProjectOptions = {
         name: 'vault',
         type: 'app',
-        scope: 'frontend',
+        platform: 'frontend',
         domain: 'vault'
       };
 
       expect(projectTagsFromOptions(options)).toEqual([
         'domain:vault',
-        'scope:frontend',
+        'platform:frontend',
         'type:app'
       ]);
     });
 
     it('does not add a domain tag for tools projects when domain is unspecified', () => {
-      const options: NxProjectOptions = { name: 'github', type: 'utils', scope: 'tools' };
+      const options: NxProjectOptions = { name: 'github', type: 'utils', platform: 'tools' };
 
-      expect(projectTagsFromOptions(options)).toEqual(['scope:tools', 'type:utils']);
+      expect(projectTagsFromOptions(options)).toEqual(['platform:tools', 'type:utils']);
     });
 
     it('omits the domain tag for tools projects even when a domain is provided', () => {
       const options: NxProjectOptions = {
         name: 'github',
         type: 'plugin',
-        scope: 'tools',
+        platform: 'tools',
         domain: 'atlas'
       };
 
-      expect(projectTagsFromOptions(options)).toEqual(['scope:tools', 'type:plugin']);
+      expect(projectTagsFromOptions(options)).toEqual(['platform:tools', 'type:plugin']);
     });
 
     it('does not repeat a tag that the options also list explicitly', () => {
       const options: NxProjectOptions = {
         name: 'github',
         type: 'utils',
-        scope: 'tools',
-        tags: 'scope:tools,custom:one'
+        platform: 'tools',
+        tags: 'platform:tools,custom:one'
       };
 
-      expect(projectTagsFromOptions(options)).toEqual(['custom:one', 'scope:tools', 'type:utils']);
+      expect(projectTagsFromOptions(options)).toEqual([
+        'custom:one',
+        'platform:tools',
+        'type:utils'
+      ]);
     });
   });
 
   describe('projectTagValues', () => {
-    const tags = ['scope:backend', 'type:api', 'type:services'];
+    const tags = ['platform:backend', 'type:api', 'type:services'];
 
     it('returns every value for a key', () => {
       expect(projectTagValues(tags, 'type')).toEqual(['api', 'services']);
@@ -205,9 +219,9 @@ describe('nx-project-tags.utils', () => {
 
   describe('groupProjectTags', () => {
     it('groups values by key', () => {
-      expect(groupProjectTags(['type:api', 'type:app', 'scope:backend'])).toEqual({
+      expect(groupProjectTags(['type:api', 'type:app', 'platform:backend'])).toEqual({
         type: ['api', 'app'],
-        scope: ['backend']
+        platform: ['backend']
       });
     });
 
@@ -222,7 +236,7 @@ describe('nx-project-tags.utils', () => {
 
   describe('formatProjectTags', () => {
     it('joins tags with commas', () => {
-      expect(formatProjectTags(['scope:tools', 'type:core'])).toBe('scope:tools,type:core');
+      expect(formatProjectTags(['platform:tools', 'type:core'])).toBe('platform:tools,type:core');
     });
 
     it('returns an empty string for no tags', () => {
@@ -232,11 +246,11 @@ describe('nx-project-tags.utils', () => {
 
   describe('isProjectOfType', () => {
     it('is true for a project carrying the `type:{type}` tag', () => {
-      expect(isProjectOfType({ tags: ['scope:tools', 'type:plugin'] }, 'plugin')).toBe(true);
+      expect(isProjectOfType({ tags: ['platform:tools', 'type:plugin'] }, 'plugin')).toBe(true);
     });
 
     it('is false for a project of another type', () => {
-      expect(isProjectOfType({ tags: ['scope:tools', 'type:utils'] }, 'plugin')).toBe(false);
+      expect(isProjectOfType({ tags: ['platform:tools', 'type:utils'] }, 'plugin')).toBe(false);
     });
 
     it('is false for a project without tags', () => {
@@ -244,22 +258,22 @@ describe('nx-project-tags.utils', () => {
     });
 
     it('matches only the `type` key, not the same value under another key', () => {
-      expect(isProjectOfType({ tags: ['scope:plugin', 'domain:plugin'] }, 'plugin')).toBe(false);
+      expect(isProjectOfType({ tags: ['platform:plugin', 'domain:plugin'] }, 'plugin')).toBe(false);
     });
   });
 
   describe('hasProjectTag', () => {
-    const tags = ['domain:shared', 'scope:backend', 'type:api', 'type:services'];
+    const tags = ['domain:shared', 'platform:backend', 'type:api', 'type:services'];
 
     describe('with an exact key:value tag', () => {
-      it.each(['scope:backend', 'type:api', 'type:services', 'domain:shared'])(
+      it.each(['platform:backend', 'type:api', 'type:services', 'domain:shared'])(
         'is true for the tag %s that the project has',
         tag => {
           expect(hasProjectTag(tags, tag)).toBe(true);
         }
       );
 
-      it.each(['scope:frontend', 'type:infra', 'domain:checkout', 'type:app', 'type'])(
+      it.each(['platform:frontend', 'type:infra', 'domain:checkout', 'type:app', 'type'])(
         'is false for %s, which the project does not have',
         tag => {
           expect(hasProjectTag(tags, tag)).toBe(false);
@@ -281,7 +295,7 @@ describe('nx-project-tags.utils', () => {
     describe('with a wildcard pattern', () => {
       it('is true when any tag has the prefix before the wildcard', () => {
         expect(hasProjectTag(tags, 'type:*')).toBe(true);
-        expect(hasProjectTag(tags, 'scope:*')).toBe(true);
+        expect(hasProjectTag(tags, 'platform:*')).toBe(true);
       });
 
       it('is false when no tag has that prefix', () => {
@@ -318,7 +332,7 @@ describe('nx-project-tags.utils', () => {
       });
 
       it('matches against the whole key:value tag', () => {
-        expect(hasProjectTag(tags, '/^scope:/')).toBe(true);
+        expect(hasProjectTag(tags, '/^platform:/')).toBe(true);
         expect(hasProjectTag(tags, '/^backend$/')).toBe(false);
       });
 
