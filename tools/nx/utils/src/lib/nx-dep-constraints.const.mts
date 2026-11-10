@@ -14,13 +14,9 @@ import type { DependencyConstraint } from '@cybertecpty/nx-types';
  * `.ts` file here would be read as CommonJS, since this lib's `package.json` declares
  * `"type": "commonjs"`, leaving the named export invisible to an ESM importer.
  *
- * Do not re-export it from the `@cybertecpty/nx-utils` barrel, and do not import it by name. The
- * barrel pulls in modules that break all three of the above. Jest does not transform `.mts`
- * files, so every spec that imports the barrel would fail with
- * `SyntaxError: Unexpected token 'export'`. The transpiler that Nx runs plugins and executors
- * with rewrites an import of it to a relative path with no extension, which Node cannot find.
- * Code other than the ESLint config calls `loadDepConstraints()` in `nx-dep-constraints.utils.ts`,
- * which loads it by absolute path.
+ * It is also exported from the `@cybertecpty/nx-utils` barrel, so the .NET check imports it by name.
+ * The barrel imports it as `./nx-dep-constraints.const.mjs`, which Vitest and the transpiler Nx
+ * runs executors with both resolve (ADR 0004, 2026-11-10 amendment).
  */
 export const DEP_CONSTRAINTS: ReadonlyArray<DependencyConstraint> = [
   {

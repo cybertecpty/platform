@@ -1,4 +1,4 @@
-import { checkDepConstraints, loadDepConstraints } from '@cybertecpty/nx-utils';
+import { checkDepConstraints, DEP_CONSTRAINTS } from '@cybertecpty/nx-utils';
 import { logger, type ProjectGraphProjectNode, type PromiseExecutor } from '@nx/devkit';
 import { isDotNetProjectNode } from '../../utils/nx-dotnet-projects.utils';
 import type { CheckBoundariesExecutorOptions } from './schema';
@@ -35,10 +35,6 @@ const checkBoundariesExecutor: PromiseExecutor<CheckBoundariesExecutorOptions> =
   const dependencies = context.projectGraph.dependencies[projectName] || [];
   const violations: string[] = [];
 
-  // Loaded once, before the loop, so that a failure to load the matrix surfaces even for a
-  // project with no dependencies, instead of letting the check pass without having run.
-  const constraints = loadDepConstraints();
-
   for (const dependency of dependencies) {
     // An implicit dependency (`DependencyType.implicit`) comes from `implicitDependencies`, not
     // from a `ProjectReference`. `@nx/enforce-module-boundaries` does not check those, so neither
@@ -56,7 +52,7 @@ const checkBoundariesExecutor: PromiseExecutor<CheckBoundariesExecutorOptions> =
       continue;
     }
 
-    violations.push(...checkDepConstraints(srcNode, targetNode, constraints));
+    violations.push(...checkDepConstraints(srcNode, targetNode, DEP_CONSTRAINTS));
   }
 
   // Report every violation, across all of the project's dependencies, before failing.

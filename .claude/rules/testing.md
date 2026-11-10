@@ -69,7 +69,7 @@ defaults. Loads when working on specs, test artifacts, `type:testing` libs, or J
   only packages that are installed (an ESM-only one such as `lighthouse` mocks plainly). A
   `mockImplementation` that the code under test calls with `new` must be a `function () {}`: an
   arrow function throws "is not a constructor". `vi.mock` and `vi.doMock` do not intercept a
-  CommonJS `require` in the source (`loadDepConstraints`): spy on `Module._load` for that one
+  CommonJS `require` in the source: spy on `Module._load` for that one
   path and defer to the real loader otherwise. Assert only the requested path, since its
   `parent` and `isMain` arguments differ between Windows and Linux.
 - For Nx generators / workspace utilities, use `createTreeWithEmptyWorkspace()` and

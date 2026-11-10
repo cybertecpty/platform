@@ -353,19 +353,18 @@ boundary check reads the same array, so the matrix stays the single source of tr
 
 - **The ESLint config** imports the file by relative path. Bare Node loads it with type
   stripping, which is why it is an `.mts` file that avoids value imports.
-- **Everything else**, including the .NET check in `dotnet-plugin`, calls `loadDepConstraints()`
-  in `nx-utils`, which `require`s the file by absolute path. The matrix cannot be imported by
-  name. Jest does not transform `.mts` files, so a barrel that re-exported it would make every
-  spec that imports the barrel fail with `SyntaxError: Unexpected token 'export'` (seen in
+- **Everything else**, including the .NET check in `dotnet-plugin`, imports `DEP_CONSTRAINTS`
+  from the `nx-utils` barrel (see the 2026-11-10 amendment below; until then it called a
+  `loadDepConstraints()` function that `require`d the file by absolute path). The matrix could not
+  be imported by name at first. Jest did not transform `.mts` files, so a barrel that re-exported
+  it would make every spec that imports the barrel fail with `SyntaxError: Unexpected token 'export'` (seen in
   `nx-plugin` and `js-plugin`). And the transpiler Nx runs plugins and executors with rewrites an
   import of a path alias that points at the `.mts` file into a relative path with no extension,
   which Node cannot find (seen when running the executor under Nx). An earlier version of this
   amendment used a `@cybertecpty/nx-utils/dep-constraints` path alias for this, and it failed
   under Nx for that reason.
 
-The loader exists because of the test runner and that transpiler. ADR 0018 moves the TypeScript
-projects to Vitest, which transforms `.mts` files itself. After that migration, check whether
-exporting the matrix from the barrel works and the loader can become a plain import.
+The loader existed because of the test runner and that transpiler. See the 2026-11-10 amendment.
 
 ### What the .NET check covers
 
@@ -453,3 +452,29 @@ A `type:services` project may not depend on a `type:api` project, and the wire t
 the API library. So a service cannot return a DTO. **Service libraries return domain types, and the
 API library maps them to DTOs.** A service library never references an API library; the API library
 references the service library. ADR 0020 records the layout of an API library.
+
+## Amendment (2026-11-10): the barrel exports the matrix, and the loader is gone
+
+- Status: accepted
+- Deciders: djmcgrath
+- Implemented by: issue #223
+
+The 2026-10-22 amendment kept the matrix out of the `nx-utils` barrel because Jest could not load
+an `.mts` file and the transpiler Nx runs executors with broke an import of it. Both limits were
+re-tested after the Vitest migration (ADR 0018):
+
+- **Vitest** transforms the `.mts` file itself, so a barrel that re-exports it no longer breaks the
+  specs that import the barrel. `typecheck`, `test` and `build` pass for `nx-utils` and
+  `dotnet-plugin`.
+- **The Nx transpiler** loads the executor with the barrel import in place. The barrel exports the
+  matrix as `./lib/nx-dep-constraints.const.mjs`, and `nx run {project}:check-boundaries` against the
+  workspace's .NET projects passes on a clean reference and fails on a forbidden one (a tests
+  project referencing an app of another domain).
+
+`dotnet-plugin` still ran Jest after #206, and a Jest spec that imports the barrel fails on the
+`.mts` export, so this change moves `dotnet-plugin` to Vitest first. Its executor spec now runs
+against the real matrix.
+
+So `loadDepConstraints()` and `DEP_CONSTRAINTS_PATH` are removed. `nx-utils` exports
+`DEP_CONSTRAINTS` and the executor imports it by name. The ESLint config still imports the file by
+relative path, because bare Node loads it without the workspace's path aliases.

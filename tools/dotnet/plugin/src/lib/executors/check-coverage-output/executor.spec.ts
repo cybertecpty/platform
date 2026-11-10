@@ -26,7 +26,7 @@ const run = (outputs: string[] | undefined, projectName: string | undefined = 'c
 
 describe('checkCoverageOutputExecutor', () => {
   beforeEach(() => {
-    jest.spyOn(logger, 'error').mockImplementation(() => undefined);
+    vi.spyOn(logger, 'error').mockImplementation(() => undefined);
   });
 
   it('passes when the test target caches the coverage report', async () => {

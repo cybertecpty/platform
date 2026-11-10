@@ -27,7 +27,7 @@ It logs an error and fails when it runs without a project name, or on a project 
 
 ## The matrix
 
-The rules come from the shared `DEP_CONSTRAINTS` module in `nx-utils`, the same array the ESLint configuration uses. The executor gets it from `loadDepConstraints()` in `nx-utils`, which `require`s the module by absolute path (ADR 0004, 2026-10-22 amendment): the module is an `.mts` file that Jest cannot load and that the transpiler Nx runs executors with cannot find through an import by name. The executor loads the matrix before looking at any dependency, so a failure to load it fails the run even for a project with no dependencies.
+The rules come from the shared `DEP_CONSTRAINTS` module in `nx-utils`, the same array the ESLint configuration uses. The executor imports it from the `nx-utils` barrel.
 
 ## Options
 
