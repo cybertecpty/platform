@@ -10,9 +10,10 @@ const findRow = (sourceTag: string) =>
 
 describe('DEP_CONSTRAINTS', () => {
   describe('the Angular HTTP entry point ban', () => {
-    // A row on the bare tag binds a lib of every scope, so a `scope:shared` util is covered too.
+    // `findRow` matches only a row on the bare tag, which binds a lib of every scope, so a
+    // `scope:shared` util is covered too.
     it.each(['type:ui', 'type:utils', 'type:types'])(
-      'is on the %s row, whatever the lib scope',
+      'bans the Angular HTTP entry point on the bare %s row',
       sourceTag => {
         expect(findRow(sourceTag)?.bannedExternalImports).toContain(ANGULAR_HTTP_ENTRY_POINT);
       }

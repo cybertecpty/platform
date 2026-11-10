@@ -584,7 +584,7 @@ The `checkNestedExternalImports` amendment leaves a `type:ui` lib able to reach 
 through a lib it may depend on. `type:ui` may depend on `type:utils` and `type:types` libs, and the
 rule checks only a lib's own imports, so a `type:utils` lib that imports the entry point passes lint
 and is then importable from a UI lib. ADR 0003 closes the same kind of gap for zod by banning it on
-the shared layer itself, so the ban moves to the libs a UI lib reaches.
+`scope:shared` as well as `scope:frontend`, so the ban moves to the libs a UI lib reaches.
 
 ### Considered options
 
@@ -598,9 +598,8 @@ the shared layer itself, so the ban moves to the libs a UI lib reaches.
 ### Decision
 
 - **The `type:utils` and `type:types` rows carry `bannedExternalImports: ['@angular/common/http']`**,
-  the same entry point and mechanism as the `type:ui` row. Utils are "stateless, isomorphic helpers"
-  and `type:types` libs are "pure type-only exports", so neither has a use for Angular's HTTP layer.
-  Both rows already exist, so no row is added.
+  the same entry point and mechanism as the `type:ui` row. Utils are stateless isomorphic helpers
+  and `type:types` libs are pure type-only exports, so neither has a use for Angular's HTTP layer.
 - **`import type` is banned here too**, for the reason in the `type:ui` amendment, which is the case
   that matters for `type:types`, since it has no runtime code.
 - **`type:testing` is not banned.** The route from `type:ui` through a testing lib stays open: a
@@ -611,7 +610,9 @@ the shared layer itself, so the ban moves to the libs a UI lib reaches.
 ### Consequences
 
 - **A `type:ui` lib can no longer reach the entry point through `type:utils` or `type:types`.** The
-  `type:testing` route is the one left, as above.
+  `type:testing` route is the one left, as above. The `type:utils` route named as open in the
+  `checkNestedExternalImports` amendment and the "direct imports only" note in the
+  `@angular/common/http` amendment are closed by this change.
 - **A `type:utils` or `type:types` lib that needs Angular's HTTP layer is mis-tagged.** Transport
   belongs in `type:data-access`, so move the code there.
 - **Still unverified on a real graph.** No `type:ui`, Angular-using `type:utils` or `type:types` lib
