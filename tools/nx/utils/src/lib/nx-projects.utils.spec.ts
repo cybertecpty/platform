@@ -3,6 +3,7 @@ import { logger, type Tree } from '@nx/devkit';
 import { createTreeWithEmptyWorkspace } from '@nx/devkit/testing';
 import type { MockInstance } from 'vitest';
 import {
+  addProjectTarget,
   BACKEND_LIB_TYPES,
   collectProjectDependencies,
   determineTopLevelProjectDir,
@@ -400,6 +401,40 @@ describe('normalizeProjectOptions', () => {
     expect(() => normalizeProjectOptions({ platform: 'shared', type: 'utils' })).toThrow(
       'At least one of `domain`, `group`, or `name` must be provided to derive a project name.'
     );
+  });
+});
+
+describe('addProjectTarget', () => {
+  it('adds the target to a project that has no targets', () => {
+    const config = addProjectTarget({ root: 'apps/web' }, 'deploy', { executor: 'nx:noop' });
+
+    expect(config.targets).toEqual({ deploy: { executor: 'nx:noop' } });
+  });
+
+  it('keeps the existing targets', () => {
+    const config = addProjectTarget(
+      { root: 'apps/web', targets: { build: { executor: 'nx:noop' } } },
+      'deploy',
+      { executor: 'nx:noop' }
+    );
+
+    expect(Object.keys(config.targets ?? {})).toEqual(['build', 'deploy']);
+  });
+
+  it('replaces a target of the same name', () => {
+    const config = addProjectTarget(
+      { root: 'apps/web', targets: { deploy: { executor: 'nx:noop', options: { a: 1 } } } },
+      'deploy',
+      { executor: 'nx:run-commands' }
+    );
+
+    expect(config.targets?.['deploy']).toEqual({ executor: 'nx:run-commands' });
+  });
+
+  it('returns the project configuration it was given', () => {
+    const input = { root: 'apps/web' };
+
+    expect(addProjectTarget(input, 'deploy', { executor: 'nx:noop' })).toBe(input);
   });
 });
 

@@ -6,7 +6,15 @@ import type {
   NxProjectPlatform,
   NxProjectType
 } from '@cybertecpty/nx-types';
-import { joinPathFragments, logger, readJson, type ProjectGraph, type Tree } from '@nx/devkit';
+import {
+  joinPathFragments,
+  logger,
+  readJson,
+  type ProjectConfiguration,
+  type ProjectGraph,
+  type TargetConfiguration,
+  type Tree
+} from '@nx/devkit';
 import type { PackageJson } from 'type-fest';
 import { domainPathToName, splitDomainPath } from './nx-domain.utils';
 import { assertValidPathSegment } from './nx-path-segment.utils';
@@ -70,6 +78,21 @@ export const NX_PROJECT_TYPES: readonly NxProjectType[] = Object.keys(
  * .NET projects created with `dotnet new`, not scaffolded by the TypeScript generators.
  */
 export const BACKEND_LIB_TYPES: readonly BackendLibType[] = ['api', 'infra', 'services'];
+
+/**
+ * Sets `targetName` on `projectConfig`, replacing a target of that name if there is one, and
+ * returns `projectConfig`. It mutates `projectConfig` rather than copying it.
+ */
+export function addProjectTarget(
+  projectConfig: ProjectConfiguration,
+  targetName: string,
+  targetConfig: TargetConfiguration
+): ProjectConfiguration {
+  const targets = projectConfig.targets ?? {};
+  targets[targetName] = targetConfig;
+  projectConfig.targets = targets;
+  return projectConfig;
+}
 
 /**
  * Lists the workspace projects `project` depends on, directly or transitively, in the order the

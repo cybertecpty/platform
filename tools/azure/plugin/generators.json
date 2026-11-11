@@ -1,0 +1,9 @@
+{
+  "generators": {
+    "setup-swa": {
+      "factory": "./src/lib/generators/setup-swa/generator",
+      "schema": "./src/lib/generators/setup-swa/schema.json",
+      "description": "Configures an app project for Azure Static Web App deployment"
+    }
+  }
+}
