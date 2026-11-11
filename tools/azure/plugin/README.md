@@ -2,6 +2,10 @@
 
 This library was generated with [Nx](https://nx.dev).
 
+## Generators
+
+- [`setup-swa`](src/lib/generators/setup-swa/README.md): add a `deploy` target that runs `swa-deploy` after `build` to an app project.
+
 ## Executors
 
 - [`swa-deploy`](src/lib/executors/swa-deploy/README.md): deploy a project's build output to Azure Static Web Apps.
