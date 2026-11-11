@@ -1,0 +1,28 @@
+{
+  "$schema": "https://json-schema.org/schema",
+  "$id": "SetupSwaGeneratorSchema",
+  "title": "Setup SWA Generator Schema",
+  "description": "Configures an app project for Azure Static Web App deployment",
+  "type": "object",
+  "properties": {
+    "project": {
+      "type": "string",
+      "description": "The name of the app project to be configured",
+      "$default": {
+        "$source": "argv",
+        "index": 0
+      },
+      "x-prompt": "What is the name of the app project?"
+    },
+    "outputPath": {
+      "type": "string",
+      "description": "The workspace-relative folder to deploy. Defaults to the output the build target declares, resolved by the swa-deploy executor"
+    },
+    "skipFormat": {
+      "description": "Skip formatting files",
+      "type": "boolean",
+      "default": false
+    }
+  },
+  "required": ["project"]
+}
