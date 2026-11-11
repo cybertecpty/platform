@@ -8,8 +8,8 @@ export interface RunCommandOptions {
   /** Arguments passed to the command. Each is quoted for the platform's shell. */
   args: readonly string[];
 
-  /** Absolute working directory. */
-  cwd: string;
+  /** Absolute working directory.  Defaults to the process's current working directory. */
+  cwd?: string;
 
   /** Standard IO mode for the child process. Defaults to `inherit`. */
   stdio?: 'ignore' | 'inherit';
@@ -30,7 +30,7 @@ export interface RunCommandOptions {
  * environment, never as args.
  */
 export const runCommand = (options: RunCommandOptions): Promise<{ success: boolean }> => {
-  const { command, args, cwd, notFoundHint } = options;
+  const { command, args, cwd = process.cwd(), notFoundHint } = options;
 
   logger.info(`Running "${[command, ...args].join(' ')}" in ${cwd}`);
 

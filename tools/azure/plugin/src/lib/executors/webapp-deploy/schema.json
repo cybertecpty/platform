@@ -1,0 +1,31 @@
+{
+  "$schema": "https://json-schema.org/schema",
+  "version": 2,
+  "title": "webapp-deploy executor",
+  "description": "Deploy a build artifact to an Azure Web App with the Azure CLI. Requires an existing `az login` session.",
+  "type": "object",
+  "properties": {
+    "name": {
+      "type": "string",
+      "description": "Name of the Azure Web App.",
+      "minLength": 1
+    },
+    "resourceGroup": {
+      "type": "string",
+      "description": "Name of the resource group that contains the Web App.",
+      "minLength": 1
+    },
+    "srcPath": {
+      "type": "string",
+      "description": "Artifact to deploy (for example a .zip, .war or .jar file), relative to the workspace root.",
+      "minLength": 1
+    },
+    "subscription": {
+      "type": "string",
+      "description": "Name or ID of the Azure subscription that contains the Web App. Always passed, so the deploy never falls back to the CLI's default subscription.",
+      "minLength": 1
+    }
+  },
+  "required": ["name", "resourceGroup", "srcPath", "subscription"],
+  "additionalProperties": false
+}

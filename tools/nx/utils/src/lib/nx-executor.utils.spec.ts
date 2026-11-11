@@ -47,6 +47,21 @@ describe('runCommand', () => {
     });
   });
 
+  it('defaults the working directory to the current process directory', async () => {
+    const childProcess = mockChildProcess();
+
+    const execution = runCommand({ command: baseOptions.command, args: baseOptions.args });
+    childProcess.emit('close', 0, null);
+
+    await execution;
+    expect(spawnMock).toHaveBeenCalledWith(
+      'az',
+      ['account', 'show'],
+      expect.objectContaining({ cwd: process.cwd() })
+    );
+    expect(logger.info).toHaveBeenCalledWith(`Running "az account show" in ${process.cwd()}`);
+  });
+
   it('forwards a custom stdio mode', async () => {
     const childProcess = mockChildProcess();
 
