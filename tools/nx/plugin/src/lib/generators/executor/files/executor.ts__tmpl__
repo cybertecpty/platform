@@ -4,7 +4,7 @@ import type { <%= className %>ExecutorOptions } from './schema';
 /**
  * TODO: describe what the `<%= name %>` executor does.
  */
-const <%= executorFnName %>: PromiseExecutor<<%= className %>ExecutorOptions> = (_options, context) => {
+const <%= executorFnName %>: PromiseExecutor<<%= className %>ExecutorOptions> = (options, context) => {
   const projectName = context.projectName;
   if (!projectName) {
     logger.error('<%= name %> must run as a project target.');
