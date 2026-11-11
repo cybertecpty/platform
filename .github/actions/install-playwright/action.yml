@@ -1,0 +1,24 @@
+name: Install Playwright browsers
+description: Install Chromium and its system dependencies, retrying transient apt or network failures.
+
+runs:
+  using: composite
+  steps:
+    # `--with-deps` runs apt-get on every run, even on a browser cache hit, so a mirror or DNS blip
+    # fails the install. Retry a few times; a real failure (a bad Playwright version) fails every
+    # attempt and the step exits non-zero with the last error.
+    - name: Install Chromium and system dependencies
+      shell: bash
+      run: |
+        attempts=3
+        for attempt in $(seq 1 "$attempts"); do
+          if pnpm exec playwright install --with-deps chromium; then
+            exit 0
+          fi
+          echo "::warning::Playwright install failed (attempt $attempt of $attempts)"
+          if [ "$attempt" -lt "$attempts" ]; then
+            sleep $((attempt * 15))
+          fi
+        done
+        echo "::error::Playwright install failed after $attempts attempts"
+        exit 1

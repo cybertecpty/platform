@@ -63,7 +63,7 @@ jobs:
 
       # The e2e and lighthouse targets launch Chromium through Playwright. The download is
       # cached per Playwright version; the system dependencies (`--with-deps`) are not part
-      # of the cache, so the install always runs.
+      # of the cache, so the install always runs, and retries a transient apt or network failure.
       - name: Get Playwright version
         id: playwright
         run: echo "version=$(pnpm exec playwright --version | cut -d' ' -f2)" >> "$GITHUB_OUTPUT"
@@ -73,7 +73,7 @@ jobs:
           path: ~/.cache/ms-playwright
           key: playwright-${{ runner.os }}-${{ steps.playwright.outputs.version }}
       - name: Install Playwright browsers
-        run: pnpm exec playwright install --with-deps chromium
+        uses: ./.github/actions/install-playwright
 
       # Unit-test the CI scripts and the Claude Code hooks (plain Node, not Nx projects). `pnpm verify` runs the same step locally.
       - name: Run CI script and hook unit tests
@@ -111,8 +111,21 @@ jobs:
       # Fork PRs get no secrets, so they skip the upload instead of failing for lack of the
       # token. Reporting only: the coverage gate is the `test` run above, so a Codecov outage
       # must not block a merge.
+      # A run that aborts before the tests (or affects no project with tests) leaves `coverage/`
+      # empty; the upload is skipped then, so its "No coverage reports found" error is not read as
+      # the cause of an earlier failure.
+      - name: Check for coverage reports
+        id: coverage
+        if: always()
+        run: |
+          if [ -n "$(find coverage -type f 2>/dev/null | head -n 1)" ]; then
+            echo "found=true" >> "$GITHUB_OUTPUT"
+          else
+            echo "No coverage files were produced, skipping the Codecov upload."
+            echo "found=false" >> "$GITHUB_OUTPUT"
+          fi
       - name: Upload coverage to Codecov
-        if: always() && (github.event_name != 'pull_request' || github.event.pull_request.head.repo.full_name == github.repository)
+        if: always() && steps.coverage.outputs.found == 'true' && (github.event_name != 'pull_request' || github.event.pull_request.head.repo.full_name == github.repository)
         uses: codecov/codecov-action@v7
         with:
           token: ${{ secrets.CODECOV_TOKEN }}
