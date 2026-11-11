@@ -142,7 +142,7 @@ jobs:
         run: pnpm install --frozen-lockfile
 
       - name: Install Playwright browsers
-        run: pnpm exec playwright install --with-deps chromium
+        uses: ./.github/actions/install-playwright
 
       # Gate: re-run the app's own checks on this exact commit. Targets an app doesn't
       # have are skipped, so an app without tests or an e2e project still deploys.
