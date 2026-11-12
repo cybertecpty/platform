@@ -1,0 +1,37 @@
+{
+  "$schema": "https://json-schema.org/schema",
+  "version": 2,
+  "title": "file-archive executor",
+  "description": "Archive a folder, or a target's declared build output, into a zip or tar written next to it.",
+  "type": "object",
+  "properties": {
+    "source": {
+      "type": "string",
+      "description": "Folder to archive, relative to the workspace root. Takes precedence over buildTarget. Defaults to the single output the build target declares.",
+      "minLength": 1
+    },
+    "buildTarget": {
+      "type": "string",
+      "description": "Target whose declared output is archived when source is not set. Ignored when source is set. Defaults to build.",
+      "minLength": 1
+    },
+    "format": {
+      "type": "string",
+      "enum": ["zip", "tar"],
+      "default": "zip",
+      "description": "Archive format. tar is uncompressed."
+    },
+    "destination": {
+      "type": "string",
+      "description": "Folder the archive is written into, relative to the workspace root. Defaults to the folder that contains source.",
+      "minLength": 1
+    },
+    "filename": {
+      "type": "string",
+      "description": "Archive filename, written under destination. Defaults to <basename(source)>.<format>.",
+      "minLength": 1
+    }
+  },
+  "required": [],
+  "additionalProperties": false
+}

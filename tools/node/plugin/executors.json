@@ -1,0 +1,9 @@
+{
+  "executors": {
+    "file-archive": {
+      "implementation": "./src/lib/executors/file-archive/executor",
+      "schema": "./src/lib/executors/file-archive/schema.json",
+      "description": "Archive a folder, or a target's build output, into a zip or tar."
+    }
+  }
+}
