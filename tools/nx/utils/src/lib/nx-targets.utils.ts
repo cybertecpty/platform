@@ -54,3 +54,43 @@ export const resolveTargetOutputFolder = (
 
   return outputs[0];
 };
+
+const DEFAULT_BUILD_TARGET = 'build';
+
+export interface ResolveOutputFolderOptions {
+  projectGraph: ProjectGraph;
+  projectName: string;
+  /** The folder an executor option names explicitly. When set, the build target is not read. */
+  explicitFolder?: string;
+  /** The target whose declared output is used without `explicitFolder`. Defaults to `build`. */
+  buildTarget?: string;
+  /** Appended to the resolution error, naming the option that avoids the lookup. */
+  hint: string;
+}
+
+export type ResolveOutputFolderResult = { folder: string } | { error: string };
+
+/**
+ * Resolve the folder an executor works on: `explicitFolder` when set, else the single
+ * output the build target declares. Returns the failure as `{ error }` rather than
+ * throwing, with `hint` appended, so an executor can log it and fail the task.
+ */
+export const resolveOutputFolder = ({
+  projectGraph,
+  projectName,
+  explicitFolder,
+  buildTarget = DEFAULT_BUILD_TARGET,
+  hint
+}: ResolveOutputFolderOptions): ResolveOutputFolderResult => {
+  if (explicitFolder) {
+    return { folder: explicitFolder };
+  }
+
+  try {
+    return { folder: resolveTargetOutputFolder(projectGraph, projectName, buildTarget) };
+  } catch (error) {
+    const message = error instanceof Error ? error.message : String(error);
+
+    return { error: `${message} ${hint}` };
+  }
+};

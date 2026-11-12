@@ -1,44 +1,10 @@
 import { FileBufferArchiver, listFiles, type FileArchiveSource } from '@cybertecpty/fs-utils';
-import { resolveTargetOutputFolder } from '@cybertecpty/nx-utils';
-import {
-  joinPathFragments,
-  logger,
-  normalizePath,
-  type ExecutorContext,
-  type PromiseExecutor
-} from '@nx/devkit';
+import { resolveOutputFolder } from '@cybertecpty/nx-utils';
+import { joinPathFragments, logger, normalizePath, type PromiseExecutor } from '@nx/devkit';
 import { existsSync, statSync } from 'node:fs';
 import { mkdir, readFile, writeFile } from 'node:fs/promises';
 import { join, posix } from 'node:path';
 import type { FileArchiveExecutorOptions } from './schema';
-
-const DEFAULT_BUILD_TARGET = 'build';
-
-type SourceResult = { source: string } | { error: string };
-
-/**
- * Resolve the folder to archive: the `source` option, else the single output the build
- * target declares. `buildTarget` is only read when `source` is omitted.
- */
-const resolveSource = (
-  options: FileArchiveExecutorOptions,
-  context: ExecutorContext,
-  projectName: string
-): SourceResult => {
-  if (options.source) {
-    return { source: normalizePath(options.source) };
-  }
-
-  const buildTarget = options.buildTarget ?? DEFAULT_BUILD_TARGET;
-
-  try {
-    return { source: resolveTargetOutputFolder(context.projectGraph, projectName, buildTarget) };
-  } catch (error) {
-    const message = error instanceof Error ? error.message : String(error);
-
-    return { error: `${message} Set the source option on the archive target.` };
-  }
-};
 
 /**
  * Archive a folder, or a target's resolved build output, into a zip or tar.
@@ -58,14 +24,20 @@ const fileArchiveExecutor: PromiseExecutor<FileArchiveExecutorOptions> = async (
     return { success: false };
   }
 
-  const resolved = resolveSource(options, context, projectName);
+  const resolved = resolveOutputFolder({
+    projectGraph: context.projectGraph,
+    projectName,
+    explicitFolder: options.source && normalizePath(options.source),
+    buildTarget: options.buildTarget,
+    hint: 'Set the source option on the archive target.'
+  });
 
   if ('error' in resolved) {
     logger.error(resolved.error);
     return { success: false };
   }
 
-  const { source } = resolved;
+  const source = resolved.folder;
   const format = options.format ?? 'zip';
 
   if (
