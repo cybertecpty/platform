@@ -1,11 +1,9 @@
-import { resolveTargetOutputFolder, runCommand } from '@cybertecpty/nx-utils';
-import { logger, type ExecutorContext, type PromiseExecutor } from '@nx/devkit';
+import { resolveOutputFolder, runCommand } from '@cybertecpty/nx-utils';
+import { logger, type PromiseExecutor } from '@nx/devkit';
 import { join } from 'node:path';
 import type { SwaDeployExecutorOptions } from './schema';
 
 export const TOKEN_VARIABLE = 'SWA_CLI_DEPLOYMENT_TOKEN';
-
-const DEFAULT_BUILD_TARGET = 'build';
 
 const missingTokenMessage = (projectRoot: string): string =>
   [
@@ -14,35 +12,6 @@ const missingTokenMessage = (projectRoot: string): string =>
     `and set the token from the Azure portal (Static Web App > Manage deployment token).`,
     `In CI, it comes from the AZURE_STATIC_WEB_APPS_API_TOKEN secret of the project's GitHub Environment.`
   ].join('\n');
-
-type OutputPathResult = { outputPath: string } | { error: string };
-
-/**
- * Resolve the folder to deploy: the `outputPath` option, else the single output the
- * build target declares. There is no `dist/` fallback: a guessed folder either deploys
- * the wrong thing or fails inside `swa` with an unclear error.
- */
-const resolveOutputPath = (
-  options: SwaDeployExecutorOptions,
-  context: ExecutorContext,
-  projectName: string
-): OutputPathResult => {
-  if (options.outputPath) {
-    return { outputPath: options.outputPath };
-  }
-
-  const buildTarget = options.buildTarget ?? DEFAULT_BUILD_TARGET;
-
-  try {
-    return {
-      outputPath: resolveTargetOutputFolder(context.projectGraph, projectName, buildTarget)
-    };
-  } catch (error) {
-    const message = error instanceof Error ? error.message : String(error);
-
-    return { error: `${message} Set the outputPath option on the deploy target.` };
-  }
-};
 
 /**
  * Deploy a project's build output to Azure Static Web Apps.
@@ -60,7 +29,13 @@ const swaDeployExecutor: PromiseExecutor<SwaDeployExecutorOptions> = (options, c
     return Promise.resolve({ success: false });
   }
 
-  const resolved = resolveOutputPath(options, context, projectName);
+  const resolved = resolveOutputFolder({
+    projectGraph: context.projectGraph,
+    projectName,
+    explicitFolder: options.outputPath,
+    buildTarget: options.buildTarget,
+    hint: 'Set the outputPath option on the deploy target.'
+  });
 
   if ('error' in resolved) {
     logger.error(resolved.error);
@@ -76,13 +51,7 @@ const swaDeployExecutor: PromiseExecutor<SwaDeployExecutorOptions> = (options, c
     // The root devDependency's bin shim, so the deploy doesn't depend on PATH. An OS path:
     // joinPathFragments would strip the Windows drive letter.
     command: join(context.root, 'node_modules', '.bin', 'swa'),
-    args: [
-      'deploy',
-      resolved.outputPath,
-      '--env',
-      options.env ?? 'production',
-      '--no-use-keychain'
-    ],
+    args: ['deploy', resolved.folder, '--env', options.env ?? 'production', '--no-use-keychain'],
     cwd: context.root,
     notFoundHint:
       'Run `pnpm install`: the SWA CLI is the root devDependency @azure/static-web-apps-cli.'

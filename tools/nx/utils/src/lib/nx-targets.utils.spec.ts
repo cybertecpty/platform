@@ -1,6 +1,6 @@
 import { createProjectGraphFixture } from '@cybertecpty/nx-testing';
 import type { ProjectGraph, TargetConfiguration } from '@nx/devkit';
-import { resolveTargetOutputFolder } from './nx-targets.utils';
+import { resolveOutputFolder, resolveTargetOutputFolder } from './nx-targets.utils';
 
 /** A project graph fixture with one project, `site`, that has the given targets. */
 const createGraphFixture = (targets: Record<string, TargetConfiguration>): ProjectGraph =>
@@ -68,5 +68,44 @@ describe('resolveTargetOutputFolder', () => {
     expect(() =>
       resolveTargetOutputFolder(createGraphFixture({ build: { outputs } }), 'site', 'build')
     ).toThrow(`site:build must declare exactly one output folder, but resolves to ${resolved}.`);
+  });
+});
+
+describe('resolveOutputFolder', () => {
+  const hint = 'Set the outputPath option.';
+  const graph = createGraphFixture({ build: { outputs: ['{workspaceRoot}/dist/{projectRoot}'] } });
+
+  it('returns the explicit folder without reading the build target', () => {
+    expect(
+      resolveOutputFolder({
+        projectGraph: createGraphFixture({}),
+        projectName: 'site',
+        explicitFolder: 'out/custom',
+        buildTarget: 'missing',
+        hint
+      })
+    ).toEqual({ folder: 'out/custom' });
+  });
+
+  it("resolves the build target's single output, defaulting the target to build", () => {
+    expect(resolveOutputFolder({ projectGraph: graph, projectName: 'site', hint })).toEqual({
+      folder: 'dist/apps/site'
+    });
+  });
+
+  it('reads the target named by buildTarget', () => {
+    const projectGraph = createGraphFixture({
+      'build-static': { outputs: ['{workspaceRoot}/dist/static'] }
+    });
+
+    expect(
+      resolveOutputFolder({ projectGraph, projectName: 'site', buildTarget: 'build-static', hint })
+    ).toEqual({ folder: 'dist/static' });
+  });
+
+  it('returns the original message followed by the hint when resolution fails', () => {
+    expect(
+      resolveOutputFolder({ projectGraph: createGraphFixture({}), projectName: 'site', hint })
+    ).toEqual({ error: `site has no "build" target. ${hint}` });
   });
 });
