@@ -17,6 +17,10 @@ Filesystem-related utilities shared across `platform:backend` (Node-only) projec
   compression defaults (max compression; `gzip: true` for tar), plus the lower-level
   `.archive(format, options)` for anything else.
 
+- **`listFiles(folder)`** — lists every file under a folder on the real file system, recursively,
+  as paths relative to the folder: forward-slashed on every platform, sorted, directories left
+  out. Its entries are ready to use as archive entry names.
+
 ## Tests
 
 `nx test fs-utils` — Vitest, exercising the real `archiver` dependency (no mocking)
