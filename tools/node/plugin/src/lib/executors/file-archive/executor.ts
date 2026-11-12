@@ -1,4 +1,4 @@
-import { FileBufferArchiver, type FileArchiveSource } from '@cybertecpty/fs-utils';
+import { FileBufferArchiver, listFiles, type FileArchiveSource } from '@cybertecpty/fs-utils';
 import { resolveTargetOutputFolder } from '@cybertecpty/nx-utils';
 import {
   joinPathFragments,
@@ -7,7 +7,7 @@ import {
   type ExecutorContext,
   type PromiseExecutor
 } from '@nx/devkit';
-import { existsSync, readdirSync, statSync } from 'node:fs';
+import { existsSync, statSync } from 'node:fs';
 import { mkdir, readFile, writeFile } from 'node:fs/promises';
 import { join, posix } from 'node:path';
 import type { FileArchiveExecutorOptions } from './schema';
@@ -39,13 +39,6 @@ const resolveSource = (
     return { error: `${message} Set the source option on the archive target.` };
   }
 };
-
-/** Workspace-relative, forward-slashed paths of every file under `folder`, sorted. */
-const listFiles = (root: string, folder: string): string[] =>
-  readdirSync(join(root, folder), { recursive: true, encoding: 'utf8' })
-    .map(entry => joinPathFragments(folder, normalizePath(entry)))
-    .filter(filePath => statSync(join(root, filePath)).isFile())
-    .sort();
 
 /**
  * Archive a folder, or a target's resolved build output, into a zip or tar.
@@ -90,17 +83,19 @@ const fileArchiveExecutor: PromiseExecutor<FileArchiveExecutorOptions> = async (
     options.filename ?? `${posix.basename(source)}.${format}`
   );
 
-  const filePaths = listFiles(context.root, source).filter(filePath => filePath !== archivePath);
+  const entryNames = listFiles(join(context.root, source)).filter(
+    entryName => joinPathFragments(source, entryName) !== archivePath
+  );
 
-  if (filePaths.length === 0) {
+  if (entryNames.length === 0) {
     logger.error(`The folder to archive "${source}" contains no files.`);
     return { success: false };
   }
 
   const sources: FileArchiveSource[] = await Promise.all(
-    filePaths.map(async filePath => ({
-      name: posix.relative(source, filePath),
-      content: await readFile(join(context.root, filePath))
+    entryNames.map(async name => ({
+      name,
+      content: await readFile(join(context.root, source, name))
     }))
   );
 
