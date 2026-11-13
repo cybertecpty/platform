@@ -38,11 +38,16 @@ describe('setupSwaGenerator', () => {
     });
   });
 
-  it('replaces an existing deploy target', async () => {
+  it('replaces an existing deploy target that runs swa-deploy', async () => {
     addProjectConfiguration(tree, 'web', {
       root: 'apps/web',
       tags: ['type:app'],
-      targets: { deploy: { executor: 'nx:noop', options: { outputPath: 'dist/old' } } }
+      targets: {
+        deploy: {
+          executor: '@cybertecpty/azure-plugin:swa-deploy',
+          options: { outputPath: 'dist/old' }
+        }
+      }
     });
 
     await setupSwaGenerator(tree, { project: 'web' });
@@ -51,6 +56,18 @@ describe('setupSwaGenerator', () => {
       executor: '@cybertecpty/azure-plugin:swa-deploy',
       dependsOn: ['build']
     });
+  });
+
+  it('rejects an existing deploy target that runs another executor', async () => {
+    addProjectConfiguration(tree, 'web', {
+      root: 'apps/web',
+      tags: ['type:app'],
+      targets: { deploy: { executor: 'nx:noop' } }
+    });
+
+    await expect(setupSwaGenerator(tree, { project: 'web' })).rejects.toThrow(
+      'Project web already has a "deploy" target that runs nx:noop.'
+    );
   });
 
   it('is idempotent', async () => {
