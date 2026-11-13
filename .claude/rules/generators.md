@@ -20,6 +20,14 @@ Moved here from `docs/agents/conventions.md` §8. Loads when working in an Nx pl
   yields valid JSON.
 - Keep generator/executor folders to actual implementations; supporting constants,
   helpers, and types go in sibling `src/lib/defaults/`, `src/lib/utils/`, etc.
+- Set a target on a project with `addProjectTarget` from `@cybertecpty/nx-utils`, not by assigning
+  to `projectConfig.targets`. It replaces a target of that name that runs the same executor, so a
+  rerun leaves the project unchanged, but throws when the existing target runs a different one, so
+  a generator can't silently wipe out a target the user wrote. Pass `{ replace: true }` only when
+  overwriting is the point.
+- Before the PR, run the generator against a real app as a dry run
+  (`nx g {plugin}:{name} {project} … --dry-run`). A spec on an empty workspace doesn't show how
+  the generator meets a project's existing targets.
 
 ## Scaffold with the workspace wrappers
 
