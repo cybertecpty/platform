@@ -1,7 +1,11 @@
 import { getOutputsForTargetAndConfiguration, type ProjectGraph } from '@nx/devkit';
 
-/** Glob characters: an output like `dist/app/**` is a file pattern, not a folder. */
-const GLOB_PATTERN = /[*?[\]{}!]/;
+/**
+ * Matches a string containing any glob character (`* ? [ ] { } !`). An output that matches, such
+ * as `dist/app/**`, selects files by pattern instead of naming one folder, so it can't be used
+ * as a deploy folder. A literal folder name containing one of these characters is rejected too.
+ */
+const GLOB_CHARACTER = /[*?[\]{}!]/;
 
 /**
  * Resolve the single output folder a project's target declares, using the target's
@@ -46,7 +50,7 @@ export const resolveTargetOutputFolder = (
     node
   );
 
-  if (outputs.length !== 1 || GLOB_PATTERN.test(outputs[0])) {
+  if (outputs.length !== 1 || GLOB_CHARACTER.test(outputs[0])) {
     throw new Error(
       `${projectName}:${targetName} must declare exactly one output folder, but resolves to ${JSON.stringify(outputs)}.`
     );
