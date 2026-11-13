@@ -2,7 +2,9 @@
 
 Wires an app project for Azure Static Web Apps deployment. It adds a `deploy` target that runs the
 [`swa-deploy`](../../executors/swa-deploy/README.md) executor after `build`. An existing `deploy`
-target is replaced, so running the generator again leaves the project unchanged.
+target that runs `swa-deploy` is replaced, so running the generator again leaves the project
+unchanged. A `deploy` target that runs a different executor is yours, so the generator fails
+instead of replacing it: rename or remove it first.
 
 It does not create a `staticwebapp.config.json`; that file is framework-specific, so add it
 yourself or from a framework generator.

@@ -9,10 +9,11 @@ import type { SetupSwaGeneratorOptions } from './schema';
 
 /**
  * Wires an app project for Azure Static Web Apps deployment by adding a `deploy` target that runs
- * the `swa-deploy` executor after `build`. An existing `deploy` target is replaced, so running the
- * generator again leaves the project unchanged.
+ * the `swa-deploy` executor after `build`. An existing `deploy` target that runs `swa-deploy` is
+ * replaced, so running the generator again leaves the project unchanged.
  *
- * @throws when the project is not an app.
+ * @throws when the project is not an app, or already has a `deploy` target that runs a different
+ * executor.
  */
 export async function setupSwaGenerator(
   tree: Tree,

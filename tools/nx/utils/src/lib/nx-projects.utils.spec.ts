@@ -421,11 +421,44 @@ describe('addProjectTarget', () => {
     expect(Object.keys(config.targets ?? {})).toEqual(['build', 'deploy']);
   });
 
-  it('replaces a target of the same name', () => {
+  it('replaces a target of the same name that runs the same executor', () => {
     const config = addProjectTarget(
       { root: 'apps/web', targets: { deploy: { executor: 'nx:noop', options: { a: 1 } } } },
       'deploy',
-      { executor: 'nx:run-commands' }
+      { executor: 'nx:noop', options: { a: 2 } }
+    );
+
+    expect(config.targets?.['deploy']).toEqual({ executor: 'nx:noop', options: { a: 2 } });
+  });
+
+  it('throws, naming the project, target and executor, when another executor owns the target', () => {
+    expect(() =>
+      addProjectTarget(
+        { name: 'web', root: 'apps/web', targets: { deploy: { executor: 'nx:noop' } } },
+        'deploy',
+        { executor: 'nx:run-commands' }
+      )
+    ).toThrow(
+      'Project web already has a "deploy" target that runs nx:noop. Rename or remove it first.'
+    );
+  });
+
+  it('names the project root when the project has no name', () => {
+    expect(() =>
+      addProjectTarget(
+        { root: 'apps/web', targets: { deploy: { executor: 'nx:noop' } } },
+        'deploy',
+        { executor: 'nx:run-commands' }
+      )
+    ).toThrow('Project apps/web already has');
+  });
+
+  it('replaces a target that runs another executor when replace is set', () => {
+    const config = addProjectTarget(
+      { root: 'apps/web', targets: { deploy: { executor: 'nx:noop', options: { a: 1 } } } },
+      'deploy',
+      { executor: 'nx:run-commands' },
+      { replace: true }
     );
 
     expect(config.targets?.['deploy']).toEqual({ executor: 'nx:run-commands' });

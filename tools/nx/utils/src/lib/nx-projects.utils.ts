@@ -79,15 +79,39 @@ export const NX_PROJECT_TYPES: readonly NxProjectType[] = Object.keys(
  */
 export const BACKEND_LIB_TYPES: readonly BackendLibType[] = ['api', 'infra', 'services'];
 
+export interface AddProjectTargetOptions {
+  /**
+   * Replace an existing target of that name even when it runs a different executor. Off by
+   * default, so a target the user wrote is never lost without being asked.
+   */
+  replace?: boolean;
+}
+
 /**
- * Sets `targetName` on `projectConfig`, replacing a target of that name if there is one, and
- * returns `projectConfig`. It mutates `projectConfig` rather than copying it.
+ * Sets `targetName` on `projectConfig` and returns `projectConfig`. It mutates `projectConfig`
+ * rather than copying it.
+ *
+ * A target of that name that runs the same executor is replaced, so a generator can run again
+ * and leave the project unchanged. One that runs a different executor is the user's own, so it
+ * throws unless `options.replace` is set.
+ *
+ * @throws when `projectConfig` has a `targetName` target that runs a different executor and
+ * `options.replace` is not set.
  */
 export function addProjectTarget(
   projectConfig: ProjectConfiguration,
   targetName: string,
-  targetConfig: TargetConfiguration
+  targetConfig: TargetConfiguration,
+  { replace = false }: AddProjectTargetOptions = {}
 ): ProjectConfiguration {
+  const existing = projectConfig.targets?.[targetName]?.executor;
+
+  if (!replace && existing && existing !== targetConfig.executor) {
+    throw new Error(
+      `Project ${projectConfig.name ?? projectConfig.root} already has a "${targetName}" target that runs ${existing}. Rename or remove it first.`
+    );
+  }
+
   const targets = projectConfig.targets ?? {};
   targets[targetName] = targetConfig;
   projectConfig.targets = targets;
