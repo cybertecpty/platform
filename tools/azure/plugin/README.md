@@ -5,6 +5,7 @@ This library was generated with [Nx](https://nx.dev).
 ## Generators
 
 - [`setup-swa`](src/lib/generators/setup-swa/README.md): add a `deploy` target that runs `swa-deploy` after `build` to an app project.
+- [`setup-webapp`](src/lib/generators/setup-webapp/README.md): add a `package` target that zips the build output and a `deploy` target that runs `webapp-deploy` after it to an app project.
 
 ## Executors
 
