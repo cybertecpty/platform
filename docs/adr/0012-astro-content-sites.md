@@ -42,7 +42,7 @@ Chosen option: **1 — Astro, scoped to static or mostly static content sites.**
 
 - Option 2 keeps the stack uniform but spends a rewrite on a site that already works, and
   gets a heavier result for this kind of page.
-- Option 3 loses shared tooling, shared libs (`type:models`, `type:utils`, `type:ui`
+- Option 3 loses shared tooling, shared libs (`type:types`, `type:utils`, `type:ui`
   tokens) and the CI and coverage gates, and it undoes "platform is the only product repo".
 
 ### Locked parameters
@@ -113,7 +113,7 @@ Chosen option: **1 — Astro, scoped to static or mostly static content sites.**
 - No Nx plugin, so no generators or migrations for Astro. For now that's acceptable with one
   app. If more Astro sites appear, write a thin in-repo generator, as `ts-lib` wraps `@nx/js`.
 - Angular `type:ui` libs can't be consumed by Astro pages. Only framework-agnostic libs
-  (`models`, `utils`, `types`, CSS or design tokens) can be shared with the site.
+  (`utils`, `types`, CSS or design tokens) can be shared with the site.
 
 ## More information
 

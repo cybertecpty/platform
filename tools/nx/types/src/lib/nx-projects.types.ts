@@ -53,7 +53,7 @@ export interface NxProjectOptions<
    *
    * Cosmetic only — unlike a subdomain, it carries no tag and isn't enforced
    * by module boundaries. Omittable for domain-singleton types (`infra`,
-   * `models`, `core`); expected from the first lib for types that are
+   * `core`); expected from the first lib for types that are
    * typically many-per-domain (`feature`, `ui`, `data-access`, `api`,
    * `services`, `utils`, `testing`) to avoid a rename once a second one
    * shows up.

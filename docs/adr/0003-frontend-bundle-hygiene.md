@@ -62,14 +62,14 @@ complementary future addition, not a substitute.
 - **zod — `platform:frontend` and `platform:shared`.** `zod` and `zod/v4` are banned for
   projects tagged `platform:frontend` **or** `platform:shared`, via `bannedExternalImports` on
   those `depConstraints` entries in `@nx/enforce-module-boundaries`. Both browser code
-  and shared code — including the `type:models` wire contracts — use `zod/mini` for
+  and shared code — including shared type libs — use `zod/mini` for
   schema builders and `zod/v4/core` for error/type primitives. `zod/mini`, `zod/v4/mini`
   and `zod/v4/core` stay allowed; the bans are exact-match, not prefix (verified against
   Nx's `mapGlobToRegExp`). `platform:backend`-only code is not restricted — `zod/mini` works
   there too, but the classic API is fine where nothing browser-facing consumes it.
 - **Shared must be browser-safe.** `platform:shared` is on the ban list because shared code
-  is, by definition, reachable from a browser bundle. A `platform:shared` `type:models` lib
-  that used the classic API would pull it into every frontend that imports the contract,
+  is, by definition, reachable from a browser bundle. A `platform:shared` lib
+  that used the classic API would pull it into every frontend that imports it,
   transitively — which `@nx/enforce-module-boundaries` does not flag by default
   (`checkNestedExternalImports` is off). Banning at the shared boundary closes that path
   at the source.
@@ -96,8 +96,8 @@ complementary future addition, not a substitute.
 - Frontend validation code uses `zod/mini`'s functional API, which is more verbose than
   `z.string().min(5)`. This is the accepted cost of a tree-shakeable schema layer in the
   browser; the rule message points at the mini docs.
-- Shared `type:models` libs write their schemas in `zod/mini` even though backend code
-  also consumes them — a deliberate uniformity cost so one contract lib is safe to pull
+- Shared libs write their schemas in `zod/mini` even though backend code
+  also consumes them — a deliberate uniformity cost so one shared lib is safe to pull
   into a browser bundle.
 - Both rules are inert until a project has a `lint` target and CI runs it — and the zod
   ban additionally needs `platform:frontend` / `platform:shared` tags to be assigned. Adding a

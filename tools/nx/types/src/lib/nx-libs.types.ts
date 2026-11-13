@@ -7,7 +7,6 @@ export type NxProjectLibType =
   | 'data-access'
   | 'feature'
   | 'infra'
-  | 'models'
   | 'plugin'
   | 'services'
   | 'testing'

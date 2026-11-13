@@ -12,7 +12,7 @@ import type { Except } from 'type-fest';
  * the ADR 0004 closed type set. `core`/`feature`/`ui`/`data-access` are Angular-only
  * (`@nx/angular:library`); `app`/`plugin` don't apply to a library generator.
  */
-export type JsLibType = 'models' | 'testing' | 'types' | 'utils';
+export type JsLibType = 'testing' | 'types' | 'utils';
 
 /**
  * Inputs to the `js-plugin` `lib` generator — a thin wrapper over `@nx/js:library`.

@@ -3,15 +3,15 @@ import { createFakeLibraryGenerator } from './nx-library-generator.fake';
 import { createWorkspaceTreeFixture } from './nx-workspace-tree.fixture';
 
 describe('createFakeLibraryGenerator', () => {
-  const options = { name: 'billing-models', directory: 'libs/billing/models' };
+  const options = { name: 'billing-types', directory: 'libs/billing/types' };
 
   it('adds the project configuration', async () => {
     const tree = createWorkspaceTreeFixture();
 
     await createFakeLibraryGenerator()(tree, options);
 
-    expect(readProjectConfiguration(tree, 'billing-models')).toMatchObject({
-      root: 'libs/billing/models',
+    expect(readProjectConfiguration(tree, 'billing-types')).toMatchObject({
+      root: 'libs/billing/types',
       projectType: 'library',
       targets: { build: {} }
     });
@@ -26,7 +26,7 @@ describe('createFakeLibraryGenerator', () => {
 
     expect(readJson(tree, 'tsconfig.base.json').compilerOptions.paths).toEqual({
       '@cybertecpty/zzz-existing': ['./tools/zzz/existing/src/index.ts'],
-      '@cybertecpty/billing-models': ['./libs/billing/models/src/index.ts']
+      '@cybertecpty/billing-types': ['./libs/billing/types/src/index.ts']
     });
   });
 
@@ -36,7 +36,7 @@ describe('createFakeLibraryGenerator', () => {
 
     await createFakeLibraryGenerator({ tsConfigLib })(tree, options);
 
-    expect(readJson(tree, 'libs/billing/models/tsconfig.lib.json')).toEqual(tsConfigLib);
+    expect(readJson(tree, 'libs/billing/types/tsconfig.lib.json')).toEqual(tsConfigLib);
   });
 
   it('writes no `tsconfig.lib.json` by default', async () => {
@@ -44,7 +44,7 @@ describe('createFakeLibraryGenerator', () => {
 
     await createFakeLibraryGenerator()(tree, options);
 
-    expect(tree.exists('libs/billing/models/tsconfig.lib.json')).toBe(false);
+    expect(tree.exists('libs/billing/types/tsconfig.lib.json')).toBe(false);
   });
 
   it('returns a no-op task', async () => {

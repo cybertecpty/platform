@@ -203,7 +203,7 @@ describe('checkBoundariesExecutor', () => {
     it('skips a dependency on a project that is not a .NET project', async () => {
       const typescriptProject = createProjectNodeFixture({
         name: 'checkout-client',
-        tags: ['platform:frontend', 'type:models']
+        tags: ['platform:frontend', 'type:types']
       });
 
       await expect(

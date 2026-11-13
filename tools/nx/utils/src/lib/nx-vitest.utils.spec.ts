@@ -3,24 +3,24 @@ import { addProjectConfiguration, readJson, writeJson } from '@nx/devkit';
 import { createTreeWithEmptyWorkspace } from '@nx/devkit/testing';
 import { configureVitestProject, withoutUpstreamVitestSideEffects } from './nx-vitest.utils';
 
-const ROOT = 'libs/billing/models';
+const ROOT = 'libs/billing/types';
 
 describe('configureVitestProject', () => {
   let tree: Tree;
 
   beforeEach(() => {
     tree = createTreeWithEmptyWorkspace();
-    addProjectConfiguration(tree, 'billing-models', { root: ROOT, projectType: 'library' });
+    addProjectConfiguration(tree, 'billing-types', { root: ROOT, projectType: 'library' });
   });
 
   it('writes a `vitest.config.mts` extending the base config with only name and environment', () => {
-    configureVitestProject(tree, 'billing-models', 'jsdom');
+    configureVitestProject(tree, 'billing-types', 'jsdom');
 
     const config = tree.read(`${ROOT}/vitest.config.mts`, 'utf-8') ?? '';
 
     expect(config).toContain("from '../../../vitest.base.mts'");
     expect(config).toContain('createBaseVitestConfig(import.meta.dirname)');
-    expect(config).toContain("name: 'billing-models'");
+    expect(config).toContain("name: 'billing-types'");
     expect(config).toContain("environment: 'jsdom'");
     expect(config).not.toContain('coverage');
   });
@@ -28,7 +28,7 @@ describe('configureVitestProject', () => {
   it('replaces the config the upstream generator wrote', () => {
     tree.write(`${ROOT}/vitest.config.mts`, 'export default {};');
 
-    configureVitestProject(tree, 'billing-models', 'node');
+    configureVitestProject(tree, 'billing-types', 'node');
 
     expect(tree.read(`${ROOT}/vitest.config.mts`, 'utf-8')).toContain('createBaseVitestConfig');
   });
@@ -37,7 +37,7 @@ describe('configureVitestProject', () => {
     tree.write(`${ROOT}/jest.config.cts`, 'module.exports = {};');
     tree.write(`${ROOT}/jest.config.ts`, 'export default {};');
 
-    configureVitestProject(tree, 'billing-models', 'node');
+    configureVitestProject(tree, 'billing-types', 'node');
 
     expect(tree.exists(`${ROOT}/jest.config.cts`)).toBe(false);
     expect(tree.exists(`${ROOT}/jest.config.ts`)).toBe(false);
@@ -50,7 +50,7 @@ describe('configureVitestProject', () => {
       include: ['jest.config.ts', 'src/**/*.spec.ts']
     });
 
-    configureVitestProject(tree, 'billing-models', 'node');
+    configureVitestProject(tree, 'billing-types', 'node');
 
     expect(readJson(tree, `${ROOT}/tsconfig.spec.json`)).toEqual({
       extends: './tsconfig.json',
@@ -73,7 +73,7 @@ describe('configureVitestProject', () => {
       exclude: ['jest.config.ts', 'src/**/*.spec.ts']
     });
 
-    configureVitestProject(tree, 'billing-models', 'node');
+    configureVitestProject(tree, 'billing-types', 'node');
 
     expect(readJson(tree, `${ROOT}/tsconfig.lib.json`).exclude).toEqual([
       'vitest.config.mts',
@@ -88,7 +88,7 @@ describe('configureVitestProject', () => {
       `export default [{ rules: { '@nx/dependency-checks': ['error', { ignoredFiles: ['{projectRoot}/eslint.config.{js,cjs,mjs,ts,cts,mts}'] }] } }];`
     );
 
-    configureVitestProject(tree, 'billing-models', 'node');
+    configureVitestProject(tree, 'billing-types', 'node');
 
     expect(tree.read(`${ROOT}/eslint.config.mjs`, 'utf-8')).toContain(
       "'{projectRoot}/vitest.config.{js,cjs,mjs,ts,cts,mts}'"
@@ -96,7 +96,7 @@ describe('configureVitestProject', () => {
   });
 
   it('leaves the files it has no reason to touch alone when they are missing', () => {
-    expect(() => configureVitestProject(tree, 'billing-models', 'node')).not.toThrow();
+    expect(() => configureVitestProject(tree, 'billing-types', 'node')).not.toThrow();
     expect(tree.exists(`${ROOT}/tsconfig.spec.json`)).toBe(false);
     expect(tree.exists(`${ROOT}/tsconfig.lib.json`)).toBe(false);
   });

@@ -196,16 +196,17 @@ Every `platform:` and `type:` **name** in ADR 0004 is unchanged. No tag is added
 renamed, so ADR 0004's "value sets are closed" rule is not reopened — only the prose
 describing three of them:
 
-| tag                | was                                                        | now                                                             |
-| ------------------ | ---------------------------------------------------------- | --------------------------------------------------------------- |
-| `platform:backend` | Node only (NestJS)                                         | .NET only (ASP.NET Core)                                        |
-| `type:app`         | deployable application (Angular or Nest)                   | deployable application (Angular or ASP.NET Core)                |
-| `type:api`         | Nest controllers, resolvers, DTOs                          | ASP.NET Core controllers / endpoints and DTOs                   |
-| `type:services`    | Nest injectable providers: business logic, orchestration   | .NET injectable services: business logic, orchestration         |
-| `type:models`      | wire contracts: zod schemas + inferred types, shared FE/BE | the **generated TypeScript client lib** — derived, never edited |
+| tag                | was                                                        | now                                                     |
+| ------------------ | ---------------------------------------------------------- | ------------------------------------------------------- |
+| `platform:backend` | Node only (NestJS)                                         | .NET only (ASP.NET Core)                                |
+| `type:app`         | deployable application (Angular or Nest)                   | deployable application (Angular or ASP.NET Core)        |
+| `type:api`         | Nest controllers, resolvers, DTOs                          | ASP.NET Core controllers / endpoints and DTOs           |
+| `type:services`    | Nest injectable providers: business logic, orchestration   | .NET injectable services: business logic, orchestration |
+| `type:models`      | wire contracts: zod schemas + inferred types, shared FE/BE | removed — see the 2026-11-13 amendment                  |
 
-`type:models` is the one semantic change: it stops being a hand-written contract shared by
-both sides and becomes derived frontend output. It is `platform:frontend`, not `platform:shared`.
+`type:models` was the one semantic change: it stopped being a hand-written contract shared by
+both sides and became derived frontend output. The 2026-11-13 amendment removes the tag and
+moves the generated types into `type:types`.
 
 ### Layout
 
@@ -231,8 +232,8 @@ both sides and becomes derived frontend output. It is `platform:frontend`, not `
   is rejected. Adding .NET capability goes through the plugin and `dotnet new`, not
   hand-written targets.
 - **No Nx Enterprise**, therefore no Nx Conformance rules anywhere in the workspace.
-- **`type:models` is the generated client lib** — `platform:frontend`, derived, never
-  hand-edited.
+- **Generated server-contract types live in `type:types` libs** — `platform:frontend`,
+  derived, never hand-edited (2026-11-13 amendment).
 - **Test runners: xUnit (+ coverlet) for .NET, Jest for Angular and TypeScript libs**, Vitest
   for Astro sites. 80% coverage floor on both, CI-gated.
 - **Warnings are errors** for .NET builds, and `dotnet format --verify-no-changes` gates
@@ -535,3 +536,24 @@ Platform.slnx`, because the `build` and `test` targets use `--no-restore`.
 - **Duplicate package references.** `dotnet new xunit` lists packages that `Directory.Build.props`
   already adds, and the duplicates fail restore (`NU1504`). The scaffolded `.csproj` must drop its
   own `PackageReference` and `Using` items.
+
+## Amendment (2026-11-13): the generated contract lives in `type:types`, not `type:models`
+
+- Status: accepted
+- Deciders: djmcgrath
+- Implemented by: issue #350; see ADR 0004's amendment of the same date
+
+ADR 0004's 2026-11-13 amendment removes `type:models`. This ADR chose a code-first contract: ASP.NET
+Core emits an OpenAPI document and a TypeScript lib generated from it is the frontend's contract. That
+choice stands. Only where the generated output lives changes.
+
+- **The generated types go in an existing `type:types` lib**, not a lib of their own. They are
+  derived output, never hand-edited, and ADR 0004 bans the lib from importing `@angular/common/http`.
+- **A generated file carries the suffix `.contracts.ts`** (for example `orders.contracts.ts`). The
+  suffix is the only marker that separates generated code from hand-written code in a `type:types`
+  lib, so do not hand-edit a `*.contracts.ts` file and do not give a hand-written file that suffix.
+- **The generator emits types only.** A runtime client, if one is wanted, goes in `type:data-access`.
+  The generator itself is not chosen here; this amendment constrains its output, not its identity.
+- **"A generated TypeScript client lib" in the sections above now reads as "a generated contract
+  types lib".** The context, considered options and consequences that name `type:models` record the
+  decision as it was made and are not rewritten.

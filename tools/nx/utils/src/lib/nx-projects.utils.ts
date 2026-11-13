@@ -56,7 +56,6 @@ const NX_PROJECT_TYPE_MAP: Record<NxProjectType, true> = {
   'data-access': true,
   feature: true,
   infra: true,
-  models: true,
   plugin: true,
   services: true,
   testing: true,
