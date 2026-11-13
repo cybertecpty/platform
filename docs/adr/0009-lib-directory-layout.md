@@ -33,7 +33,7 @@ expected to need one.
   one place it lives and one name it has.
 - A domain's whole vertical slice (frontend, backend, and shared parts) should stay
   colocated — not fragmented across a top-level `platform:` split.
-- Singleton libs (a domain's one `api`, one `infra`, one `models` lib) shouldn't need an
+- Singleton libs (a domain's one `api` and one `infra` lib) shouldn't need an
   invented, meaningless group segment.
 - Product domains that need internal sub-areas (e.g. `billing/checkout` vs
   `billing/invoices`) should be able to express that without paying for full
@@ -111,7 +111,7 @@ depends on how many libs of that type a domain will genuinely have, not on conve
 
 | typically **one** per domain — `<group>` omittable | typically **several** per domain — `<group>` expected                 |
 | -------------------------------------------------- | --------------------------------------------------------------------- |
-| `infra`, `models`, `core` (one per app)            | `feature`, `ui`, `data-access`, `api`, `services`, `utils`, `testing` |
+| `infra`, `core` (one per app)                      | `feature`, `ui`, `data-access`, `api`, `services`, `utils`, `testing` |
 
 For the right-hand column, supply `--group` on the very first lib. Treating omission as
 the default for these types just defers the rename to whenever the second lib of that

@@ -82,7 +82,6 @@ Every project carries **exactly one tag on each of three axes**. All three are m
 | `type:api`         | Nest controllers, resolvers, DTOs — the backend request surface                |
 | `type:services`    | Nest injectable providers: business logic, orchestration                       |
 | `type:infra`       | DB schema, connection factories, external service clients                      |
-| `type:models`      | wire contracts: zod schemas + inferred types, shared FE/BE source of truth     |
 | `type:types`       | pure type-only exports; zero runtime, zero deps                                |
 | `type:utils`       | stateless isomorphic helpers                                                   |
 | `type:testing`     | test helpers, mocks, fixtures, builders                                        |
@@ -113,22 +112,21 @@ owns, and its `depConstraints` row(s).
 
 `type:` axis:
 
-| sourceTag          | may depend on                                                                                             |
-| ------------------ | --------------------------------------------------------------------------------------------------------- |
-| `type:app`         | `api`, `core`, `data-access`, `feature`, `infra`, `models`, `services`, `testing`, `types`, `ui`, `utils` |
-| `type:e2e`         | `e2e`, `models`, `testing`, `types`, `utils`                                                              |
-| `type:api`         | `api`, `services`, `models`, `types`, `utils`                                                             |
-| `type:services`    | `services`, `infra`, `models`, `types`, `utils`                                                           |
-| `type:infra`       | `infra`, `types`, `utils`                                                                                 |
-| `type:core`        | `data-access`, `models`, `testing`, `types`, `ui`, `utils`                                                |
-| `type:feature`     | `data-access`, `models`, `testing`, `types`, `ui`, `utils`                                                |
-| `type:data-access` | `data-access`, `models`, `types`, `testing`, `utils`                                                      |
-| `type:ui`          | `ui`, `testing`, `types`, `utils`                                                                         |
-| `type:models`      | `models`, `types`, `utils`                                                                                |
-| `type:utils`       | `types`, `utils`                                                                                          |
-| `type:types`       | `types`                                                                                                   |
-| `type:plugin`      | `plugin`, `types`, `utils`                                                                                |
-| `type:testing`     | any `type:*` **except** `type:app` and `type:e2e`                                                         |
+| sourceTag          | may depend on                                                                                   |
+| ------------------ | ----------------------------------------------------------------------------------------------- |
+| `type:app`         | `api`, `core`, `data-access`, `feature`, `infra`, `services`, `testing`, `types`, `ui`, `utils` |
+| `type:e2e`         | `e2e`, `testing`, `types`, `utils`                                                              |
+| `type:api`         | `api`, `services`, `types`, `utils`                                                             |
+| `type:services`    | `services`, `infra`, `types`, `utils`                                                           |
+| `type:infra`       | `infra`, `types`, `utils`                                                                       |
+| `type:core`        | `data-access`, `testing`, `types`, `ui`, `utils`                                                |
+| `type:feature`     | `data-access`, `testing`, `types`, `ui`, `utils`                                                |
+| `type:data-access` | `data-access`, `types`, `testing`, `utils`                                                      |
+| `type:ui`          | `ui`, `testing`, `types`, `utils`                                                               |
+| `type:utils`       | `types`, `utils`                                                                                |
+| `type:types`       | `types`                                                                                         |
+| `type:plugin`      | `plugin`, `types`, `utils`                                                                      |
+| `type:testing`     | any `type:*` **except** `type:app` and `type:e2e`                                               |
 
 ### How the rule reads these (verified against `@nx/eslint-plugin` 23.1.1)
 
@@ -185,14 +183,12 @@ owns, and its `depConstraints` row(s).
 - **`type:feature` and `type:core` have no self-reference** — features cannot statically
   compose sub-features (each is its own lazy boundary); `type:core` is one lib per app.
   Shared behavior moves down to `data-access` / `ui` / `utils`.
-- **`type:ui` cannot import `type:models`** — presentational components type their inputs
-  against `type:types`, not the zod-inferred wire contracts, keeping the view layer
-  decoupled from the transport shape.
-- **`type:infra` cannot import `type:models`.** The persistence shape (drizzle schema,
-  `$inferSelect` row types) and the wire contract are separate representations that drift
-  apart in practice. `type:services` is the only layer that touches both and maps row ↔
-  DTO; `type:infra` needs only `type:types` and `type:utils`. Shape primitives shared
-  between infra and models live in `type:types`.
+- **`type:infra` stays off the wire shape.** The persistence shape (entities and rows) and
+  the wire contract (DTOs) are separate representations that drift apart in practice.
+  DTOs live in `type:api`, which `type:services` and `type:infra` cannot reach, so services
+  return domain types and the API library maps them to DTOs (2026-10-28 amendment).
+  `type:infra` needs only `type:types` and `type:utils`. Shape primitives shared between
+  infra and the other layers live in `type:types`.
 - **`type:app` may import `type:infra`** — a deliberate hole in the api/services/infra
   layering, for the Nest application's own composition root (module wiring). `type:api`
   still may not; it reaches persistence only through `type:services`.
@@ -635,3 +631,53 @@ unchanged, so this is a rename, not a decision to revisit.
   "platform".
 - **Other ADRs that name the tag** (0003, 0005, 0008, 0009, 0010, 0011, 0012, 0016, 0017, 0018) are
   updated in place where they describe the current tag. Their decision history is not rewritten.
+
+## Amendment (2026-11-13): `type:models` is removed; generated server contracts live in `type:types`
+
+- Status: accepted
+- Deciders: djmcgrath
+- Implemented by: issue #350
+
+`type:models` existed for the hand-written zod wire contract that the frontend and the Node backend
+shared. The backend is .NET (ADR 0017), and the 2026-10-20 amendment already turned `type:models` into
+a frontend-only lib generated from the backend's OpenAPI document. What is left is one derived lib
+whose rules are those of `type:types`: pure type exports, no runtime. A tag that only separates
+generated types from hand-written ones costs a matrix row, a generator value and a `ui` exception for
+a distinction a lib name can carry.
+
+### Considered options
+
+1. **Keep `type:models`, narrowed to generated server contracts.** Rejected: the tag adds a lib type
+   and a matrix row, and the generated-versus-hand-written line it draws does not need a boundary rule.
+2. **Fold it into `type:types`.** **(chosen)** Generated contract types are type-only exports, which
+   is the role of `type:types`.
+3. **Fold it into `type:data-access`.** Rejected for the types. `type:ui` cannot depend on
+   `type:data-access`, and a presentational component should be able to type its inputs against a
+   contract type.
+
+### Decision
+
+- **`type:models` is removed from the closed `type:` value set**, the catalog and every matrix row.
+  This reopens the "value sets are closed" rule once, for this value.
+- **Generated server-contract types live in `type:types` libs.** The generator emits types only: no
+  runtime, no `@angular/common/http`, which the `type:types` row already bans. They sit in an
+  existing `type:types` lib, in files suffixed `.contracts.ts` (ADR 0017).
+- **Any runtime client lives in `type:data-access`**, which already owns HTTP clients and facades.
+- **`type:ui` may import generated contract types.** The ban on `type:ui` importing `type:models` is
+  gone. Type imports are erased at compile time, and the HTTP ban on `type:types` and `type:utils`
+  keeps transport out of `type:ui`. A component that wants a different shape declares its own input
+  type in `type:types`.
+- **The `type:infra` rule is restated without `type:models`.** DTOs live in `type:api`, so neither
+  `type:services` nor `type:infra` can reference them (the 2026-10-28 amendment). The matrix rows for
+  `type:api` and `type:services` also lose `models`; those rows were left over from the zod contract.
+
+### Consequences
+
+- **The generated-versus-hand-written distinction is a file suffix, not a boundary rule.** The matrix
+  sees one `type:types` lib whichever file an import comes from. A review has to catch a hand edit
+  to a `*.contracts.ts` file.
+- **A view layer typed against contract types is coupled to the wire shape.** A server change that
+  regenerates the types can ripple into components. The generated types follow the DTOs, so that
+  coupling is accepted.
+- **The historical amendments that name `type:models`** (2026-10-20, 2026-10-28) are not rewritten.
+  Read them with this amendment.

@@ -66,9 +66,9 @@ export const DEP_CONSTRAINTS: ReadonlyArray<DependencyConstraint> = [
   },
   {
     // Shared code can be pulled into a browser bundle, so it carries the
-    // same zod restriction as platform:frontend: type:models wire contracts
-    // (and any other shared code) use zod/mini + zod/v4/core, never the
-    // classic API. zod/mini runs fine on the backend too. See ADR 0003.
+    // same zod restriction as platform:frontend: shared code uses zod/mini +
+    // zod/v4/core, never the classic API. zod/mini runs fine on the backend
+    // too. See ADR 0003.
     sourceTag: 'platform:shared',
     onlyDependOnLibsWithTags: ['platform:shared'],
     bannedExternalImports: ['zod', 'zod/v4']
@@ -83,18 +83,12 @@ export const DEP_CONSTRAINTS: ReadonlyArray<DependencyConstraint> = [
   },
   {
     // api libs contain controllers and backend request plumbing — the public
-    // API surface. Wire contracts (zod schemas + inferred types) live in shared
-    // type:models libs. Data access flows api -> type:services -> type:infra:
+    // API surface, and own the DTOs the generated frontend contract types derive from.
+    // Data access flows api -> type:services -> type:infra:
     // api never imports type:infra directly, only type:services does. (An
     // app's own composition root may also wire infra — see type:app.)
     sourceTag: 'type:api',
-    onlyDependOnLibsWithTags: [
-      'type:api',
-      'type:services',
-      'type:models',
-      'type:types',
-      'type:utils'
-    ]
+    onlyDependOnLibsWithTags: ['type:api', 'type:services', 'type:types', 'type:utils']
   },
   {
     // Deployable applications (Angular or .NET — platform: disambiguates). The
@@ -108,7 +102,6 @@ export const DEP_CONSTRAINTS: ReadonlyArray<DependencyConstraint> = [
       'type:data-access',
       'type:feature',
       'type:infra',
-      'type:models',
       'type:services',
       'type:testing',
       'type:types',
@@ -124,7 +117,6 @@ export const DEP_CONSTRAINTS: ReadonlyArray<DependencyConstraint> = [
     sourceTag: 'type:core',
     onlyDependOnLibsWithTags: [
       'type:data-access',
-      'type:models',
       'type:testing',
       'type:types',
       'type:ui',
@@ -133,29 +125,17 @@ export const DEP_CONSTRAINTS: ReadonlyArray<DependencyConstraint> = [
   },
   {
     // Frontend data access: NgRx state, HTTP clients, facades. Talks to the
-    // backend over the wire (type:models contracts) — never imports backend
+    // backend over the wire (generated type:types contracts) — never imports backend
     // libs (platform rules enforce that) or UI/feature libs.
     sourceTag: 'type:data-access',
-    onlyDependOnLibsWithTags: [
-      'type:data-access',
-      'type:models',
-      'type:types',
-      'type:testing',
-      'type:utils'
-    ]
+    onlyDependOnLibsWithTags: ['type:data-access', 'type:types', 'type:testing', 'type:utils']
   },
   {
     // e2e projects drive a deployed app from the outside (HTTP / browser).
-    // They may use shared wire contracts and test helpers but never reach
+    // They may use the generated contract types and test helpers but never reach
     // into app-internal libs (feature, ui, services, infra, ...).
     sourceTag: 'type:e2e',
-    onlyDependOnLibsWithTags: [
-      'type:e2e',
-      'type:models',
-      'type:testing',
-      'type:types',
-      'type:utils'
-    ]
+    onlyDependOnLibsWithTags: ['type:e2e', 'type:testing', 'type:types', 'type:utils']
   },
   {
     // Lazy-loaded, routed Angular feature areas: smart components wired to
@@ -165,7 +145,6 @@ export const DEP_CONSTRAINTS: ReadonlyArray<DependencyConstraint> = [
     sourceTag: 'type:feature',
     onlyDependOnLibsWithTags: [
       'type:data-access',
-      'type:models',
       'type:testing',
       'type:types',
       'type:ui',
@@ -175,9 +154,10 @@ export const DEP_CONSTRAINTS: ReadonlyArray<DependencyConstraint> = [
   {
     // Persistence layer: drizzle schema, inferred row types, connection and
     // external-client factories. Backend-only (platform rules keep frontend out).
-    // Owns the persistence shape; it does NOT import type:models — the wire
-    // contract is a separate representation, and mapping row <-> DTO is
-    // type:services' job. Shared shape primitives go through type:types.
+    // Owns the persistence shape. DTOs live in type:api, which infra cannot
+    // reach, so the services layer returns domain types and type:api maps
+    // them to DTOs (ADR 0004, 2026-10-28 amendment). Shared shape primitives
+    // go through type:types.
     sourceTag: 'type:infra',
     onlyDependOnLibsWithTags: ['type:infra', 'type:types', 'type:utils']
   },
@@ -185,20 +165,7 @@ export const DEP_CONSTRAINTS: ReadonlyArray<DependencyConstraint> = [
     // services libs are the abstraction layer between type:api and type:infra.
     // They contain injectable providers with business logic and data access.
     sourceTag: 'type:services',
-    onlyDependOnLibsWithTags: [
-      'type:services',
-      'type:infra',
-      'type:models',
-      'type:types',
-      'type:utils'
-    ]
-  },
-  {
-    // Wire contracts: zod schemas + inferred types, the shared FE/BE source
-    // of truth for request/response shapes. Kept lean — types, utils, and
-    // other model libs only. (platform:shared, so the zod/mini ban applies.)
-    sourceTag: 'type:models',
-    onlyDependOnLibsWithTags: ['type:models', 'type:types', 'type:utils']
+    onlyDependOnLibsWithTags: ['type:services', 'type:infra', 'type:types', 'type:utils']
   },
   {
     // Nx generators / executors and their support code. Runs at build/tooling
@@ -229,8 +196,8 @@ export const DEP_CONSTRAINTS: ReadonlyArray<DependencyConstraint> = [
   },
   {
     // Presentational Angular components: inputs/outputs only, no injected
-    // data services. Types its inputs against type:types, not type:models —
-    // the view layer stays decoupled from the wire shape. `@angular/common/http` is banned
+    // data services. Types its inputs against type:types, which includes the generated
+    // contract types: they are erased at compile time. `@angular/common/http` is banned
     // outright (`HttpClient`, `provideHttpClient`, interceptors, `httpResource`): the ban matches
     // a module, not an imported name, and transport belongs in type:data-access.
     sourceTag: 'type:ui',
@@ -239,8 +206,7 @@ export const DEP_CONSTRAINTS: ReadonlyArray<DependencyConstraint> = [
   },
   {
     // Stateless, isomorphic helper functions. Depends on type:types and other
-    // util libs only — never type:models (that would couple generic helpers
-    // to domain shapes and risks a models <-> utils cycle). `@angular/common/http` is banned
+    // util libs only. `@angular/common/http` is banned
     // (see type:ui): type:ui may depend on this layer, and the rule only checks a lib's own
     // imports, not those of the libs it reaches.
     sourceTag: 'type:utils',

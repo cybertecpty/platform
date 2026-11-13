@@ -98,7 +98,7 @@ describe('nx-project-tags.utils', () => {
     });
 
     it('tags the project with `platform:` and never with `scope:`', () => {
-      const tags = projectTagsFromOptions({ name: 'game', type: 'models', platform: 'backend' });
+      const tags = projectTagsFromOptions({ name: 'game', type: 'types', platform: 'backend' });
 
       expect(tags).toContain('platform:backend');
       expect(tags.some(tag => tag.startsWith('scope:'))).toBe(false);
@@ -107,7 +107,7 @@ describe('nx-project-tags.utils', () => {
     it('includes the explicit domain tag when provided', () => {
       const options: NxProjectOptions = {
         name: 'game',
-        type: 'models',
+        type: 'types',
         platform: 'shared',
         domain: 'atlas'
       };
@@ -115,7 +115,7 @@ describe('nx-project-tags.utils', () => {
       expect(projectTagsFromOptions(options)).toEqual([
         'domain:atlas',
         'platform:shared',
-        'type:models'
+        'type:types'
       ]);
     });
 
