@@ -70,8 +70,8 @@ export interface NxProjectOptions<
   /**
    * The project's `platform:` tag (ADR 0004's three-axis tag system) — one of
    * `backend`, `frontend`, `shared`, or `tools`. Implied by `type` for most
-   * values; must be set explicitly for the two platform-polymorphic types
-   * (`utils`, `testing`), since the type alone doesn't determine it.
+   * values; must be set explicitly for the three platform-polymorphic types
+   * (`utils`, `testing`, `types`), since the type alone doesn't determine it.
    */
   platform: S;
   /**
