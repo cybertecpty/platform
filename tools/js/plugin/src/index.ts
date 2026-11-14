@@ -1,6 +1,6 @@
-export { default as libGenerator } from './lib/generators/lib/generator';
+export { default as jsLibGenerator } from './lib/generators/library/generator';
 export type {
+  JsLibGeneratorOptions,
   JsLibType,
-  LibGeneratorOptions,
-  NormalizedLibGeneratorOptions
-} from './lib/generators/lib/schema';
+  NormalizedJsLibGeneratorOptions
+} from './lib/generators/library/schema';

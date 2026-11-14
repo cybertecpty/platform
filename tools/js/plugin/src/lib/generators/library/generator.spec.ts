@@ -5,8 +5,8 @@ import * as devkit from '@nx/devkit';
 import { addProjectConfiguration, readJson } from '@nx/devkit';
 import { libraryGenerator as nxJsLibraryGenerator } from '@nx/js';
 import { MockInstance, vi, type MockedFunction } from 'vitest';
-import { libGenerator } from './generator';
-import type { LibGeneratorOptions } from './schema';
+import { jsLibGenerator } from './generator';
+import type { JsLibGeneratorOptions } from './schema';
 
 vi.mock('@nx/js', () => ({
   libraryGenerator: vi.fn()
@@ -30,12 +30,13 @@ function forwardedOptions() {
 
 function run(
   tree: Tree,
-  options: Partial<LibGeneratorOptions> & Pick<LibGeneratorOptions, 'type'>
+  options: Partial<JsLibGeneratorOptions> & Pick<JsLibGeneratorOptions, 'type'>
 ) {
-  return libGenerator(tree, options);
+  // Cast: several tests deliberately omit required options to exercise the runtime validation.
+  return jsLibGenerator(tree, options as JsLibGeneratorOptions);
 }
 
-describe('libGenerator', () => {
+describe('jsLibGenerator', () => {
   let tree: Tree;
   let formatFiles: MockInstance;
   let loggerWarn: MockInstance;
@@ -54,7 +55,7 @@ describe('libGenerator', () => {
 
   describe('project-option normalization', () => {
     it('derives the name and directory from `domain`/`platform`/`type` per ADR 0009', async () => {
-      await run(tree, { domain: 'billing', platform: 'backend', type: 'types' });
+      await run(tree, { domain: 'billing', platform: 'shared', type: 'types' });
 
       expect(forwardedOptions()).toMatchObject({
         name: 'billing-types',
@@ -65,7 +66,7 @@ describe('libGenerator', () => {
     it('derives the name and directory with an explicit `group`', async () => {
       await run(tree, {
         domain: 'billing',
-        platform: 'backend',
+        platform: 'shared',
         type: 'utils',
         group: 'orchestration'
       });
@@ -88,7 +89,7 @@ describe('libGenerator', () => {
     it('takes `name` as a literal override while still deriving the directory from `domain`/`type`', async () => {
       await run(tree, {
         domain: 'billing',
-        platform: 'backend',
+        platform: 'shared',
         type: 'types',
         name: 'legacy-billing-types'
       });
@@ -100,9 +101,9 @@ describe('libGenerator', () => {
     });
 
     it('forwards the derived tags, compounding a multi-segment domain into one hyphenated tag', async () => {
-      await run(tree, { domain: 'billing/checkout', platform: 'backend', type: 'types' });
+      await run(tree, { domain: 'billing/checkout', platform: 'shared', type: 'types' });
 
-      expect(forwardedOptions().tags).toBe('domain:billing-checkout,platform:backend,type:types');
+      expect(forwardedOptions().tags).toBe('domain:billing-checkout,platform:shared,type:types');
     });
 
     it('appends key:value freeform tags after the derived ones', async () => {
@@ -118,45 +119,43 @@ describe('libGenerator', () => {
 
     it('rejects a malformed `domain` before delegating', async () => {
       await expect(
-        run(tree, { domain: 'Billing', platform: 'backend', type: 'types' })
+        run(tree, { domain: 'Billing', platform: 'shared', type: 'types' })
       ).rejects.toThrow('must be lowercase alphanumeric words joined by single hyphens');
       expect(nxJsLibraryGeneratorMock).not.toHaveBeenCalled();
     });
 
     it('rejects a doubled-slash `domain` before delegating', async () => {
       await expect(
-        run(tree, { domain: 'billing//checkout', platform: 'backend', type: 'types' })
+        run(tree, { domain: 'billing//checkout', platform: 'shared', type: 'types' })
       ).rejects.toThrow('must be lowercase alphanumeric words joined by single hyphens');
       expect(nxJsLibraryGeneratorMock).not.toHaveBeenCalled();
     });
 
     it('rejects a malformed `group` before delegating', async () => {
       await expect(
-        run(tree, { domain: 'billing', platform: 'backend', type: 'utils', group: 'Bad_Group' })
+        run(tree, { domain: 'billing', platform: 'shared', type: 'utils', group: 'Bad_Group' })
       ).rejects.toThrow('must be lowercase alphanumeric words joined by single hyphens');
       expect(nxJsLibraryGeneratorMock).not.toHaveBeenCalled();
     });
   });
 
-  describe('backend library types', () => {
-    it.each(['api', 'services', 'infra'] as const)(
-      'rejects `type:%s`, pointing to `dotnet new` and ADR 0017',
+  describe('frontend framework libraries', () => {
+    it.each(['utils', 'testing'] as const)(
+      'rejects a `platform:frontend` `%s` library, pointing to the Angular generator',
       async type => {
-        const result = run(tree, { domain: 'billing', platform: 'backend', type });
-
-        await expect(result).rejects.toThrow('`dotnet new`');
-        await expect(result).rejects.toThrow('ADR 0017');
+        await expect(run(tree, { domain: 'billing', platform: 'frontend', type })).rejects.toThrow(
+          '@cybertecpty/angular-plugin:ng-lib'
+        );
         expect(nxJsLibraryGeneratorMock).not.toHaveBeenCalled();
       }
     );
-  });
 
-  describe('platform resolution', () => {
-    it('rejects a missing `platform`', async () => {
-      await expect(run(tree, { domain: 'billing', type: 'utils' })).rejects.toThrow(
-        '`platform` must be provided'
-      );
-      expect(nxJsLibraryGeneratorMock).not.toHaveBeenCalled();
+    it('allows a `platform:frontend` `types` library', async () => {
+      await run(tree, { domain: 'billing', platform: 'frontend', type: 'types' });
+
+      expect(forwardedOptions()).toMatchObject({
+        tags: 'domain:billing,platform:frontend,type:types'
+      });
     });
   });
 
@@ -179,7 +178,7 @@ describe('libGenerator', () => {
     });
 
     it('rejects a missing `domain` for every platform except `tools`', async () => {
-      await expect(run(tree, { platform: 'backend', type: 'utils' })).rejects.toThrow(
+      await expect(run(tree, { platform: 'shared', type: 'utils' })).rejects.toThrow(
         '`domain` must be provided for every `platform` except `tools`'
       );
       expect(nxJsLibraryGeneratorMock).not.toHaveBeenCalled();
@@ -190,7 +189,7 @@ describe('libGenerator', () => {
     it('rejects `unitTestRunner: jest`, pointing to ADR 0018, before delegating', async () => {
       const result = run(tree, {
         domain: 'billing',
-        platform: 'backend',
+        platform: 'shared',
         type: 'types',
         unitTestRunner: 'jest' as 'vitest'
       });
@@ -202,7 +201,7 @@ describe('libGenerator', () => {
     it('writes a Vitest config extending the base config and no Jest config', async () => {
       await run(tree, {
         domain: 'billing',
-        platform: 'backend',
+        platform: 'shared',
         type: 'types',
         testEnvironment: 'jsdom'
       });
@@ -218,7 +217,7 @@ describe('libGenerator', () => {
     it('writes no Vitest config when there is no unit-test runner', async () => {
       await run(tree, {
         domain: 'billing',
-        platform: 'backend',
+        platform: 'frontend',
         type: 'types',
         unitTestRunner: 'none'
       });
@@ -229,7 +228,7 @@ describe('libGenerator', () => {
 
   describe('option passthrough and defaults', () => {
     it('applies the workspace defaults when options are omitted', async () => {
-      await run(tree, { domain: 'billing', platform: 'backend', type: 'types' });
+      await run(tree, { domain: 'billing', platform: 'shared', type: 'types' });
 
       expect(forwardedOptions()).toMatchObject({
         bundler: 'none',
@@ -250,7 +249,7 @@ describe('libGenerator', () => {
     it('forwards explicit options unchanged', async () => {
       await run(tree, {
         domain: 'billing',
-        platform: 'backend',
+        platform: 'frontend',
         type: 'types',
         bundler: 'tsc',
         linter: 'none',
@@ -287,20 +286,20 @@ describe('libGenerator', () => {
     });
 
     it('always delegates formatting so it runs once, after normalization', async () => {
-      await run(tree, { domain: 'billing', platform: 'backend', type: 'types' });
+      await run(tree, { domain: 'billing', platform: 'shared', type: 'types' });
 
       expect(forwardedOptions().skipFormat).toBe(true);
       expect(formatFiles).toHaveBeenCalledTimes(1);
     });
 
     it('skips formatting when `skipFormat` is set', async () => {
-      await run(tree, { domain: 'billing', platform: 'backend', type: 'types', skipFormat: true });
+      await run(tree, { domain: 'billing', platform: 'shared', type: 'types', skipFormat: true });
 
       expect(formatFiles).not.toHaveBeenCalled();
     });
 
     it('re-sorts `tsconfig.base.json` paths alphabetically after delegating', async () => {
-      await run(tree, { domain: 'billing', platform: 'backend', type: 'types' });
+      await run(tree, { domain: 'billing', platform: 'shared', type: 'types' });
 
       const { paths } = readJson(tree, 'tsconfig.base.json').compilerOptions;
       expect(Object.keys(paths)).toEqual([
@@ -310,7 +309,7 @@ describe('libGenerator', () => {
     });
 
     it('adds a `typecheck` target stub that inherits from nx.json target defaults', async () => {
-      await run(tree, { domain: 'billing', platform: 'backend', type: 'types' });
+      await run(tree, { domain: 'billing', platform: 'shared', type: 'types' });
 
       const { targets } = devkit.readProjectConfiguration(tree, 'billing-types');
 
@@ -321,7 +320,7 @@ describe('libGenerator', () => {
     it('skips the `typecheck` stub when there is no unit-test runner', async () => {
       await run(tree, {
         domain: 'billing',
-        platform: 'backend',
+        platform: 'frontend',
         type: 'types',
         unitTestRunner: 'none'
       });
@@ -332,15 +331,15 @@ describe('libGenerator', () => {
     });
 
     it("adds `vitest/globals` to `tsconfig.lib.json`'s `compilerOptions.types` for a `type:testing` library", async () => {
-      await run(tree, { domain: 'billing', platform: 'backend', type: 'testing' });
+      await run(tree, { platform: 'tools', group: 'nx', type: 'testing' });
 
-      const tsConfig = readJson(tree, 'libs/billing/testing/tsconfig.lib.json');
+      const tsConfig = readJson(tree, 'tools/nx/testing/tsconfig.lib.json');
 
       expect(tsConfig.compilerOptions.types).toEqual(['node', 'vitest/globals']);
     });
 
     it('does not touch `tsconfig.lib.json` types for a non-testing library', async () => {
-      await run(tree, { domain: 'billing', platform: 'backend', type: 'types' });
+      await run(tree, { domain: 'billing', platform: 'frontend', type: 'types' });
 
       const tsConfig = readJson(tree, 'libs/billing/types/tsconfig.lib.json');
 
@@ -373,7 +372,7 @@ describe('libGenerator', () => {
     it('forces a `type:testing` library to `bundler: none` even when a buildable bundler is requested', async () => {
       await run(tree, {
         domain: 'billing',
-        platform: 'backend',
+        platform: 'shared',
         type: 'testing',
         bundler: 'tsc'
       });
@@ -385,7 +384,7 @@ describe('libGenerator', () => {
     });
 
     it('does not warn when a `type:testing` library already requests `bundler: none`', async () => {
-      await run(tree, { domain: 'billing', platform: 'backend', type: 'testing' });
+      await run(tree, { domain: 'billing', platform: 'shared', type: 'testing' });
 
       expect(forwardedOptions().bundler).toBe('none');
       expect(loggerWarn).not.toHaveBeenCalled();
@@ -394,7 +393,7 @@ describe('libGenerator', () => {
     it('leaves a non-testing library’s requested bundler untouched', async () => {
       await run(tree, {
         domain: 'billing',
-        platform: 'backend',
+        platform: 'shared',
         type: 'types',
         bundler: 'tsc'
       });
@@ -413,7 +412,7 @@ describe('libGenerator', () => {
         return Promise.resolve(task);
       }) as unknown as typeof nxJsLibraryGenerator);
 
-      const callback = await run(tree, { domain: 'billing', platform: 'backend', type: 'types' });
+      const callback = await run(tree, { domain: 'billing', platform: 'frontend', type: 'types' });
       await callback();
 
       expect(task).toHaveBeenCalledTimes(1);
