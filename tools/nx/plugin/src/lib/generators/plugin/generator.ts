@@ -25,10 +25,9 @@ import type { NxPluginGeneratorOptions } from './schema';
  *
  * Fixes the project as `platform:tools` / `type:plugin`, then derives its name,
  * directory (`tools/<group>/plugin`), and tags from the shared ADR-0009
- * helpers rather than taking a raw `directory`. The `buildable` -> `bundler`
- * step of `normalizeProjectOptions` is deliberately skipped: a plugin's build
- * is driven by `compiler` (`tsc` / `swc`), it has no bundler. Every other
- * option is forwarded to `@nx/plugin:plugin` unchanged.
+ * helpers rather than taking a raw `directory`. A plugin's build is driven
+ * by `compiler` (`tsc` / `swc`); it has no bundler. Every other option is forwarded to
+ * `@nx/plugin:plugin` unchanged.
  */
 export async function pluginGenerator(
   tree: Tree,

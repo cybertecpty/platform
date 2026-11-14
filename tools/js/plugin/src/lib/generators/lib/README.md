@@ -21,9 +21,9 @@ directory, and tag conventions (ADR 0009).
 - Forwards every other option to `@nx/js:library` unchanged, with workspace defaults applied
   where the native generator's own default doesn't match this workspace's conventions
   (`unitTestRunner: vitest`, `linter: eslint`, `testEnvironment: node`, `strict: true`).
-- Forces a `type:testing` library to `bundler: none` even if a buildable bundler is requested —
-  a production library importing a buildable testing-helpers lib would otherwise pull it in as a
-  real buildable dependency.
+- Forces a `type:testing` library to `bundler: none` even if a buildable bundler is requested
+  (`forceTestingLibNotBuildable` in `@cybertecpty/nx-utils`) — a production library importing a
+  buildable testing-helpers lib would otherwise pull it in as a real buildable dependency.
 - Replaces the Vitest scaffold `@nx/js:library` writes with the ADR 0018 layout: a
   `vitest.config.mts` that extends the root `vitest.base.mts`, no `jest.config.*`, a Vitest
   `tsconfig.spec.json` (`configureVitestProject` in `@cybertecpty/nx-utils`). `--unitTestRunner=jest` is rejected with a pointer to ADR 0018.
