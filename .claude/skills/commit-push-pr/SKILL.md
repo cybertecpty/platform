@@ -113,7 +113,9 @@ worktree and branch as in [Before you start](#before-you-start-check-claim-workt
 (the stash is shared across worktrees, conventions §5). Once copied, compare each file's
 `git hash-object` in both trees, then restore the main clone (`git restore --staged --worktree .`
 and delete the untracked copies you moved). Do not leave the originals behind for the user to
-clean up. Only when you cannot make a worktree, use the shared-clone exception (conventions §5):
+clean up. When the source branch is ahead of `develop`, a copied file can also carry hunks from its
+unmerged commits: run `git diff origin/develop -- {file}` in the worktree for each copied file and
+check every hunk is yours, then run `tsc` on the affected projects there before committing. Only when you cannot make a worktree, use the shared-clone exception (conventions §5):
 
 ```bash
 git checkout -b {branch} develop
