@@ -6,20 +6,19 @@ import type { Except, SetRequired } from 'type-fest';
  * `NxPluginGeneratorOptions` after the generator has resolved `name`,
  * `directory`, and `tags` and pinned `platform` / `type`.
  *
- * `bundler` (and `domain`) are omitted from the shared `NormalizedNxProjectOptions`
- * shape: a plugin has no bundler — its build target is driven by `compiler` —
- * and a `tools/` project carries no `domain`.
+ * `domain` is omitted from the shared `NormalizedNxProjectOptions` shape: a `tools/`
+ * project carries no `domain`.
  */
 export type NormalizedNxPluginGeneratorOptions = NxPluginGeneratorOptions &
-  Except<NormalizedNxProjectOptions<'tools', 'plugin'>, 'bundler' | 'domain'>;
+  Except<NormalizedNxProjectOptions<'tools', 'plugin'>, 'domain'>;
 
 /**
  * Inputs to the workspace `nx-plugin` generator — a thin wrapper over
  * `@nx/plugin:plugin`.
  *
  * `platform` (`tools`) and `type` (`plugin`) are fixed by the generator, and
- * `domain` / `buildable` don't apply to a `tools/` project (ADR 0009), so all
- * four are dropped from `NxProjectOptions`. `directory` is derived from
+ * `domain` doesn't apply to a `tools/` project (ADR 0009), so all
+ * three are dropped from `NxProjectOptions`. `directory` is derived from
  * `group` per the `tools/<group>/<type>` convention rather than supplied;
  * `rootProject` / `addPlugin` are internal Nx flags a tools plugin never sets;
  * and `setParserOptionsProject` is a deprecated alias for `enableTypedLinting`.
@@ -29,7 +28,7 @@ export type NormalizedNxPluginGeneratorOptions = NxPluginGeneratorOptions &
  * members. Everything else is forwarded to `@nx/plugin:plugin` unchanged.
  */
 export type NxPluginGeneratorOptions = SetRequired<
-  Except<NxProjectOptions, 'platform' | 'type' | 'domain' | 'buildable'>,
+  Except<NxProjectOptions, 'platform' | 'type' | 'domain'>,
   'group'
 > &
   Except<

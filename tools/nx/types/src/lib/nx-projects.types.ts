@@ -5,22 +5,14 @@ export type BackendLibType = Extract<NxProjectLibType, 'api' | 'infra' | 'servic
 
 /**
  * The fully-resolved project options the generators consume: `name`,
- * `directory`, and `tags` are always present, and the ergonomic `buildable`
- * flag has been replaced by the concrete `bundler` the generator expects.
+ * `directory`, and `tags` are always present.
  */
 export type NormalizedNxProjectOptions<
   S extends NxProjectPlatform = NxProjectPlatform,
   T extends NxProjectType = NxProjectType
-> = Omit<SetRequired<NxProjectOptions<S, T>, 'name' | 'tags'>, 'buildable'> & {
-  bundler: NxProjectBundler;
+> = SetRequired<NxProjectOptions<S, T>, 'name' | 'tags'> & {
   directory: string;
 };
-
-/**
- * Bundlers accepted by the underlying `@nx/*:library` generators. `none` means
- * the library is not buildable.
- */
-export type NxProjectBundler = 'esbuild' | 'none' | 'rollup' | 'swc' | 'tsc' | 'vite';
 
 /**
  * Common options for all Nx project generators.
@@ -29,13 +21,6 @@ export interface NxProjectOptions<
   S extends NxProjectPlatform = NxProjectPlatform,
   T extends NxProjectType = NxProjectType
 > {
-  /**
-   * Whether the library should be buildable. Normalized to a `bundler` value
-   * before it reaches the underlying generator (`true` → `tsc`, omitted or
-   * `false` → `none`). Defaults to non-buildable. The `testing` type is always
-   * forced non-buildable regardless of this flag.
-   */
-  buildable?: boolean;
   /**
    * The product domain and optional subdomains this project belongs to.
    * Subdomains are separated by a forward slash (e.g. `atlas/identity`). Each

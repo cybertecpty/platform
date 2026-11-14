@@ -1,7 +1,6 @@
 import type {
   BackendLibType,
   NormalizedNxProjectOptions,
-  NxProjectBundler,
   NxProjectOptions,
   NxProjectPlatform,
   NxProjectType
@@ -86,6 +85,16 @@ export interface AddProjectTargetOptions {
   replace?: boolean;
 }
 
+export interface ForceTestingLibNotBuildableOptions<V extends boolean | string | undefined> {
+  /** The project name, used in the warning. */
+  name: string;
+  /** The generator option `value` came from, used in the warning. */
+  option: 'buildable' | 'bundler' | 'publishable';
+  type: NxProjectType;
+  /** The requested js `bundler`, or the Angular `buildable` / `publishable` flag. */
+  value: V;
+}
+
 /**
  * Sets `targetName` on `projectConfig` and returns `projectConfig`. It mutates `projectConfig`
  * rather than copying it.
@@ -158,35 +167,44 @@ export function determineTopLevelProjectDir(options: NxProjectOptions): string {
 }
 
 /**
+ * Enforces that a `testing` library is never buildable: a production library that imports
+ * one would otherwise pull it in as a buildable dependency. Returns `value` unchanged for any
+ * other type, or when it already asks for a non-buildable library. Otherwise returns the
+ * downgraded value (`'none'` for a `bundler`, `false` for a flag) and logs a warning.
+ */
+export function forceTestingLibNotBuildable<V extends boolean | string | undefined>({
+  name,
+  option,
+  type,
+  value
+}: ForceTestingLibNotBuildableOptions<V>): V {
+  const isBuildable = typeof value === 'string' ? value !== 'none' : value === true;
+
+  if (type !== 'testing' || !isBuildable) {
+    return value;
+  }
+
+  const downgraded = typeof value === 'string' ? 'none' : false;
+  logger.warn(
+    `The "testing" library type cannot be buildable. Setting ${option} to ${JSON.stringify(downgraded)} for project "${name}".`
+  );
+
+  return downgraded as V;
+}
+
+/**
  * Normalizes raw project options into the form the generators consume: derives
- * `name`, `directory`, and the `tags` string, and translates the ergonomic
- * `buildable` flag into a concrete `bundler` (`true` → `tsc`, omitted/`false` →
- * `none`). The deprecated `buildable` key is dropped from the result.
- *
- * The `testing` library type is always non-buildable: a production library that
- * imports it would otherwise pull it in as a buildable dependency. A `testing`
- * project that explicitly requests `buildable: true` is downgraded with a warning.
+ * `name`, `directory`, and the `tags` string. Options specific to one framework's
+ * generator (a `bundler`, `buildable`) are left to that generator.
  */
 export function normalizeProjectOptions<T extends NxProjectOptions>(
   options: T
-): Omit<T, 'buildable'> & NormalizedNxProjectOptions {
-  const { buildable: requestedBuildable, ...rest } = options;
+): T & NormalizedNxProjectOptions {
   const name = projectNameFromOpts(options);
-  const directory = projectDirFromOpts(options);
-
-  let bundler: NxProjectBundler = requestedBuildable ? 'tsc' : 'none';
-
-  if (options.type === 'testing' && requestedBuildable) {
-    logger.warn(
-      `The "testing" library type cannot be buildable. Setting bundler to "none" for project "${name}".`
-    );
-    bundler = 'none';
-  }
 
   return {
-    ...rest,
-    bundler,
-    directory,
+    ...options,
+    directory: projectDirFromOpts(options),
     name,
     tags: formatProjectTags(projectTagsFromOptions(options))
   };

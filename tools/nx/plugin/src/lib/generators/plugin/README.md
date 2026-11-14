@@ -19,8 +19,7 @@ e.g. `nx g @cybertecpty/nx-plugin:nx-plugin release` generates `release-plugin` 
 - Always tags the project `platform:tools` and `type:plugin`, which `nx-gen` and `nx-exec` require.
 - Adds a `typecheck` target stub, so the plugin's specs are type-checked in CI from the start
   (issue #48).
-- Skips the `buildable` → `bundler` step: a plugin's build is driven by `compiler`, and it has no
-  bundler.
+- Takes no `bundler` or `buildable`: a plugin's build is driven by `compiler`.
 
 ## Options
 

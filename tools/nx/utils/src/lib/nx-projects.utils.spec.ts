@@ -7,6 +7,7 @@ import {
   BACKEND_LIB_TYPES,
   collectProjectDependencies,
   determineTopLevelProjectDir,
+  forceTestingLibNotBuildable,
   normalizeProjectOptions,
   NX_PROJECT_PLATFORMS,
   NX_PROJECT_TYPES,
@@ -307,24 +308,13 @@ describe('NX_PROJECT_PLATFORMS', () => {
 });
 
 describe('normalizeProjectOptions', () => {
-  let warnSpy: MockInstance;
-
-  beforeEach(() => {
-    warnSpy = vi.spyOn(logger, 'warn').mockImplementation(() => undefined);
-  });
-
-  afterEach(() => {
-    warnSpy.mockRestore();
-  });
-
-  it('fills in the derived name, directory, bundler, and tag string', () => {
+  it('fills in the derived name, directory, and tag string', () => {
     expect(
       normalizeProjectOptions({ domain: 'billing', platform: 'backend', type: 'api' })
     ).toEqual({
       domain: 'billing',
       platform: 'backend',
       type: 'api',
-      bundler: 'none',
       directory: 'libs/billing/api',
       name: 'billing-api',
       tags: 'domain:billing,platform:backend,type:api'
@@ -346,61 +336,99 @@ describe('normalizeProjectOptions', () => {
     const result = normalizeProjectOptions({ name: 'vault', platform: 'frontend', type: 'app' });
 
     expect(result).toMatchObject({
-      bundler: 'none',
       directory: 'apps/vault',
       name: 'vault',
       tags: 'platform:frontend,type:app'
     });
   });
 
-  it('defaults the bundler to "none" when `buildable` is not requested', () => {
-    expect(
-      normalizeProjectOptions({ domain: 'billing', platform: 'backend', type: 'api' }).bundler
-    ).toBe('none');
+  it('throws when neither domain, group, nor name are provided for a library', () => {
+    expect(() => normalizeProjectOptions({ platform: 'shared', type: 'utils' })).toThrow(
+      'At least one of `domain`, `group`, or `name` must be provided to derive a project name.'
+    );
+  });
+});
+
+describe('forceTestingLibNotBuildable', () => {
+  let warnSpy: MockInstance;
+
+  beforeEach(() => {
+    warnSpy = vi.spyOn(logger, 'warn').mockImplementation(() => undefined);
   });
 
-  it('maps `buildable: true` to the tsc bundler for non-testing library types', () => {
-    const result = normalizeProjectOptions({
-      domain: 'billing',
-      platform: 'backend',
-      type: 'api',
-      buildable: true
-    });
-
-    expect(result.bundler).toBe('tsc');
-    expect(result).not.toHaveProperty('buildable');
-    expect(warnSpy).not.toHaveBeenCalled();
+  afterEach(() => {
+    warnSpy.mockRestore();
   });
 
-  it('forces the bundler to "none" for a requested-buildable testing library and warns', () => {
-    const result = normalizeProjectOptions({
-      group: 'test-helpers',
-      platform: 'shared',
+  it('downgrades a requested js bundler on a testing lib to "none" and warns', () => {
+    const result = forceTestingLibNotBuildable({
+      name: 'test-helpers-testing',
+      option: 'bundler',
       type: 'testing',
-      buildable: true
+      value: 'tsc'
     });
 
-    expect(result.bundler).toBe('none');
+    expect(result).toBe('none');
     expect(warnSpy).toHaveBeenCalledWith(
       'The "testing" library type cannot be buildable. Setting bundler to "none" for project "test-helpers-testing".'
     );
   });
 
-  it('leaves a non-buildable testing library non-buildable and does not warn', () => {
-    const result = normalizeProjectOptions({
-      group: 'test-helpers',
-      platform: 'shared',
-      type: 'testing'
-    });
+  it.each(['buildable', 'publishable'] as const)(
+    'downgrades `%s: true` on a testing lib to false and warns',
+    option => {
+      const result = forceTestingLibNotBuildable({
+        name: 'test-helpers-testing',
+        option,
+        type: 'testing',
+        value: true
+      });
 
-    expect(result.bundler).toBe('none');
+      expect(result).toBe(false);
+      expect(warnSpy).toHaveBeenCalledWith(
+        `The "testing" library type cannot be buildable. Setting ${option} to false for project "test-helpers-testing".`
+      );
+    }
+  );
+
+  it.each([
+    ['bundler', 'none'],
+    ['bundler', undefined],
+    ['buildable', false],
+    ['publishable', undefined]
+  ] as const)(
+    'leaves a non-buildable testing lib (%s: %s) alone without warning',
+    (option, value) => {
+      const result = forceTestingLibNotBuildable({
+        name: 'test-helpers-testing',
+        option,
+        type: 'testing',
+        value
+      });
+
+      expect(result).toBe(value);
+      expect(warnSpy).not.toHaveBeenCalled();
+    }
+  );
+
+  it('leaves a non-testing lib’s requested value untouched without warning', () => {
+    expect(
+      forceTestingLibNotBuildable({
+        name: 'billing-utils',
+        option: 'bundler',
+        type: 'utils',
+        value: 'vite'
+      })
+    ).toBe('vite');
+    expect(
+      forceTestingLibNotBuildable({
+        name: 'billing-utils',
+        option: 'buildable',
+        type: 'utils',
+        value: true
+      })
+    ).toBe(true);
     expect(warnSpy).not.toHaveBeenCalled();
-  });
-
-  it('throws when neither domain, group, nor name are provided for a library', () => {
-    expect(() => normalizeProjectOptions({ platform: 'shared', type: 'utils' })).toThrow(
-      'At least one of `domain`, `group`, or `name` must be provided to derive a project name.'
-    );
   });
 });
 

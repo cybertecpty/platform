@@ -26,16 +26,15 @@ export type JsLibType = 'testing' | 'types' | 'utils';
  * needs it as an explicit input (see `generator.ts`). `type` is `JsLibType` plus
  * `BackendLibType`, which the generator rejects.
  *
- * `buildable` is dropped in favor of forwarding `@nx/js:library`'s native `bundler`
- * enum unchanged — unlike a plugin, a JS library's buildability isn't a simple
- * on/off. `directory`/`tags` are dropped from the native schema (derived, not
+ * `@nx/js:library`'s native `bundler` enum is forwarded unchanged — unlike a plugin, a JS
+ * library's buildability isn't a simple on/off. `directory`/`tags` are dropped from the native schema (derived, not
  * accepted raw); `js` is dropped (the workspace is TypeScript-only, ADR 0005);
  * `buildable`/`compiler`/`setParserOptionsProject`/`config` are dropped (deprecated
  * or legacy on the native schema already). `linter`/`unitTestRunner` are re-narrowed
  * to this workspace's supported values — `unitTestRunner` loses `jest` (Vitest-only,
  * ADR 0018), `linter` loses the deprecated `Linter` enum members.
  */
-export type LibGeneratorOptions = Except<NxProjectOptions, 'buildable' | 'platform' | 'type'> &
+export type LibGeneratorOptions = Except<NxProjectOptions, 'platform' | 'type'> &
   Except<
     NxJsLibraryGeneratorSchema,
     | 'directory'
@@ -66,11 +65,11 @@ export type LibGeneratorOptions = Except<NxProjectOptions, 'buildable' | 'platfo
   };
 
 /**
- * `LibGeneratorOptions` after the generator has resolved `name`, `directory`, and
- * `tags`, and forwarded `bundler` to `@nx/js:library` unchanged.
+ * `LibGeneratorOptions` after the generator has resolved `name`, `directory`,
+ * and `tags`.
  */
 export type NormalizedLibGeneratorOptions = LibGeneratorOptions &
-  Except<NormalizedNxProjectOptions<NxProjectPlatform, JsLibType>, 'bundler'>;
+  NormalizedNxProjectOptions<NxProjectPlatform, JsLibType>;
 
 /** Options accepted by `@nx/js`'s `libraryGenerator`, in its installed version. */
 type NxJsLibraryGeneratorSchema = Parameters<typeof libraryGenerator>[1];
