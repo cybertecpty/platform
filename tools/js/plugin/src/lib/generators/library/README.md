@@ -10,6 +10,8 @@ directory, and tag conventions (ADR 0009).
   `utils`). `core`/`feature`/`ui`/`data-access` are Angular-only (`@nx/angular:library`).
 - Rejects the backend types `api`, `services` and `infra` with an error: the backend is .NET, and
   its libraries are created with `dotnet new`, not this generator (ADR 0017).
+- Rejects a `--platform=frontend` `utils` or `testing` library: those are Angular libraries, so use
+  `nx g @cybertecpty/angular-plugin:ng-lib` instead. A frontend `types` library is allowed.
 - `--platform` is required (all three types are platform-polymorphic, ADR 0009). `--platform=tools` places
   the project under `tools/[<group>/]<type>` (ADR 0009's `tools/` grammar).
 - `--domain` is required for every platform except `tools`. A `tools/` project is domain-exempt — it
@@ -48,7 +50,7 @@ pnpm nx g @cybertecpty/js-plugin:ts-lib <type> --domain=<domain> [options]
 | -------------------- | ------- | ----------------------- | -------- | ------------------------------------------------------------------------------------------------------ |
 | `type`               | string  | yes                     | —        | Positional 0. `testing` \| `types` \| `utils`. `api` \| `services` \| `infra` are rejected (ADR 0017). |
 | `domain`             | string  | yes, except for `tools` | —        | Product domain, optionally with `/`-separated subdomains (e.g. `billing/checkout`).                    |
-| `platform`           | string  | yes                     | —        | `backend` \| `frontend` \| `shared` \| `tools`.                                                        |
+| `platform`           | string  | yes                     | —        | `frontend` \| `shared` \| `tools`. `frontend` is rejected for `utils` and `testing` (use `ng-lib`).    |
 | `group`              | string  | no                      | —        | Distinguishes this library from siblings of the same type within its domain.                           |
 | `name`               | string  | no                      | derived  | Literal project-name override. Does not change where the project lives.                                |
 | `bundler`            | string  | no                      | `none`   | `swc` \| `tsc` \| `rollup` \| `vite` \| `esbuild` \| `none`. Forced to `none` for `testing`.           |
@@ -71,8 +73,8 @@ pnpm nx g @cybertecpty/js-plugin:ts-lib <type> --domain=<domain> [options]
 ## Examples
 
 ```bash
-# libs/billing/orchestration/utils, tagged platform:backend
-pnpm nx g @cybertecpty/js-plugin:ts-lib utils --domain=billing --platform=backend --group=orchestration
+# libs/billing/orchestration/utils, tagged platform:shared
+pnpm nx g @cybertecpty/js-plugin:ts-lib utils --domain=billing --platform=shared --group=orchestration
 
 # libs/billing/checkout/types, tagged domain:billing-checkout, platform:shared
 pnpm nx g @cybertecpty/js-plugin:ts-lib types --domain=billing/checkout --platform=shared

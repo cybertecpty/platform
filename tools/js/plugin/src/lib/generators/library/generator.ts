@@ -2,7 +2,6 @@ import {
   addTsConfigTypes,
   addTypecheckTarget,
   assertNotJestRunner,
-  BACKEND_LIB_TYPES,
   configureVitestProject,
   forceTestingLibNotBuildable,
   formatProjectTags,
@@ -21,7 +20,7 @@ import {
   runTasksInSerial
 } from '@nx/devkit';
 import { libraryGenerator as nxJsLibraryGenerator } from '@nx/js';
-import type { JsLibType, LibGeneratorOptions } from './schema';
+import type { JsLibGeneratorOptions } from './schema';
 
 /**
  * Workspace `ts-lib` generator — a thin wrapper over `@nx/js:library`.
@@ -37,18 +36,21 @@ import type { JsLibType, LibGeneratorOptions } from './schema';
  * default — unlike `domain`/`group`, there's no single sensible fallback across four
  * possible platforms.
  */
-export async function libGenerator(
+export async function jsLibGenerator(
   tree: Tree,
-  options: LibGeneratorOptions
+  options: JsLibGeneratorOptions
 ): Promise<GeneratorCallback> {
-  assertNotBackendType(options.type);
-  const platform = resolvePlatform(options);
+  const platform = options.platform;
+  assertNotFrontendFrameworkLib(options.type, platform);
   assertDomainMatchesPlatform(options.domain, platform);
+
   const projectOptions = { ...options, platform };
   const name = projectNameFromOpts(projectOptions);
   const directory = projectDirFromOpts(projectOptions);
   const tags = formatProjectTags(projectTagsFromOptions(projectOptions));
+
   assertNotJestRunner(options.unitTestRunner);
+
   const unitTestRunner = options.unitTestRunner ?? 'vitest';
   const testEnvironment = options.testEnvironment ?? 'node';
 
@@ -127,8 +129,8 @@ export async function libGenerator(
  * the project under `libs/<domain>/...`, which is never domain-exempt.
  */
 function assertDomainMatchesPlatform(
-  domain: LibGeneratorOptions['domain'],
-  platform: NonNullable<LibGeneratorOptions['platform']>
+  domain: JsLibGeneratorOptions['domain'],
+  platform: NonNullable<JsLibGeneratorOptions['platform']>
 ): void {
   if (platform === 'tools' && domain) {
     throw new Error(
@@ -141,26 +143,19 @@ function assertDomainMatchesPlatform(
   }
 }
 
-/** Backend libraries are .NET projects (ADR 0017), so the backend `type:` values aren't scaffolded here. */
-function assertNotBackendType(type: LibGeneratorOptions['type']): asserts type is JsLibType {
-  const backendTypes: readonly string[] = BACKEND_LIB_TYPES;
-
-  if (backendTypes.includes(type)) {
+/**
+ * A `platform:frontend` `utils` or `testing` library is an Angular library, so it comes from
+ * the `angular-plugin` generator rather than this framework-agnostic one.
+ */
+function assertNotFrontendFrameworkLib(
+  type: JsLibGeneratorOptions['type'],
+  platform: JsLibGeneratorOptions['platform']
+): void {
+  if (platform === 'frontend' && (type === 'utils' || type === 'testing')) {
     throw new Error(
-      `\`type:${type}\` is a backend library type, and backend libraries are .NET projects created with \`dotnet new\`, not this generator. See ADR 0017.`
+      `A \`platform:frontend\` \`${type}\` library is an Angular library — use \`nx g @cybertecpty/angular-plugin:ng-lib\` instead.`
     );
   }
 }
 
-/** Resolves the project's `platform:` tag from `options`; every type requires `--platform` explicitly. */
-function resolvePlatform(
-  options: LibGeneratorOptions
-): NonNullable<LibGeneratorOptions['platform']> {
-  if (!options.platform) {
-    throw new Error('`platform` must be provided.');
-  }
-
-  return options.platform;
-}
-
-export default libGenerator;
+export default jsLibGenerator;

@@ -557,3 +557,32 @@ condition and update its spec and the docstring on `projectDirFromOpts`; rename 
 and packages; fix the aliases and imports; update the READMEs under `libs/shared/utils` and
 `libs/shared/types`, `docs/agents/conventions.md`, `.claude/skills/nx-workspace/SKILL.md` and add a
 pointer to this amendment in ADR 0007 and ADR 0019 (their history is not rewritten).
+
+## Amendment (2026-11-14): the TypeScript generators never scaffold `platform:backend`, and frontend `utils`/`testing` are Angular libraries
+
+- Status: accepted
+- Deciders: djmcgrath
+- Implemented by: the `ts-lib` generator in `tools/js/plugin` (issue #355) and the `ng-lib`
+  generator in `tools/angular/plugin`
+
+"Scope on the polymorphic types" says a `utils`, `testing` or `types` lib can be
+`platform:frontend`, `platform:backend` or `platform:shared`, and ADR 0004's amendment gives
+Nest-specific helpers as `platform:backend` examples. The backend is now .NET (ADR 0017), so
+those examples are historical and the `platform` tag no longer maps onto a TypeScript lib.
+
+### Decision
+
+- **`ts-lib` rejects `platform:backend`.** `--platform` is `frontend`, `shared` or `tools`, in
+  both the schema's enum and the `JsLibGeneratorOptions` type. A backend library is created with
+  `dotnet new`. The `platform:backend` tag itself is unchanged: .NET projects still carry it.
+- **`ts-lib` rejects a `platform:frontend` `utils` or `testing` lib.** A frontend lib of those
+  types is framework-bound, so it comes from `nx g @cybertecpty/angular-plugin:ng-lib`. A
+  `platform:frontend` `types` lib stays allowed, since a `types` lib holds no framework code.
+- **`--platform` is a required option** of `ts-lib`, as `--type` already is.
+
+### Consequences
+
+- `ts-lib` scaffolds `utils` and `testing` only as `platform:shared` or `platform:tools`, and
+  `types` for any of the three. No `depConstraints` row, tag value or path rule changes.
+- The platform-polymorphic text above and in ADR 0004 is not rewritten; read its `backend`
+  and Nest examples as describing .NET projects that these generators do not create.
