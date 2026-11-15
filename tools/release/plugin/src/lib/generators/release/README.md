@@ -24,7 +24,11 @@ mechanics, not the rationale.
    `--skipBranch` commits straight to `baseBranch` instead. Skipped entirely in a dry run
    (`--dry-run` / `NX_DRY_RUN`): only the branch name is resolved, the working tree is untouched.
    On the release branch, `releaseVersion` runs once with `dryRun` (it writes nothing) so the
-   release is decided from the commits and tags the real run will see:
+   release is decided from the commits and tags the real run will see. This pass runs on every
+   invocation, not only with `--dry-run`, and Nx prints its normal version output for it, including
+   `written to manifest` lines and `[dry-run]` diffs. The generator brackets that output with
+   a `Previewing the release` note (`Nothing below is written yet.`) and a `Preview complete` banner; the real
+   `releaseVersion` output follows without a `[dry-run]` tag:
    - Unless `--skipTag` or `--dry-run`, no tag the run would create may already exist on a commit
      off the release branch. A same-day re-run on its existing local `release/<date>` branch still
      passes.
