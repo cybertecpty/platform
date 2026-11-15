@@ -11,6 +11,7 @@ import { dryRunEnabled, verboseEnabled } from '@cybertecpty/nx-utils';
 import { formatFiles, logger, type Tree } from '@nx/devkit';
 import { createTreeWithEmptyWorkspace } from '@nx/devkit/testing';
 import { releaseChangelog, releaseVersion } from 'nx/release';
+import { output } from 'nx/src/utils/output';
 import simpleGit from 'simple-git';
 import { vi, type Mock } from 'vitest';
 
@@ -51,6 +52,10 @@ vi.mock('@cybertecpty/nx-utils', () => ({
 vi.mock('nx/release', () => ({
   releaseChangelog: vi.fn(),
   releaseVersion: vi.fn()
+}));
+
+vi.mock('nx/src/utils/output', () => ({
+  output: { note: vi.fn(), success: vi.fn() }
 }));
 
 vi.mock('../../utils/release-branch.utils', () => ({
@@ -323,6 +328,26 @@ describe('releaseGenerator', () => {
 
       expect(mockReleaseVersion).toHaveBeenCalledWith(expect.objectContaining({ dryRun: true }));
       expect(mockReleaseChangelog).toHaveBeenCalledWith(expect.objectContaining({ dryRun: true }));
+    });
+  });
+
+  describe('preview pass', () => {
+    it('labels the preview output as unwritten, bracketing the dry-run releaseVersion call', async () => {
+      await releaseGenerator(tree, options());
+
+      const previewCall = mockReleaseVersion.mock.calls.findIndex(
+        ([callOpts]) => callOpts.dryRun === true
+      );
+      const previewOrder = mockReleaseVersion.mock.invocationCallOrder[previewCall];
+
+      expect(previewCall).toBeGreaterThanOrEqual(0);
+      expect(output.note).toHaveBeenCalledWith({
+        title: 'Previewing the release',
+        bodyLines: ['Nothing below is written yet.']
+      });
+      expect(output.success).toHaveBeenCalledWith({ title: 'Preview complete' });
+      expect(vi.mocked(output.note).mock.invocationCallOrder[0]).toBeLessThan(previewOrder);
+      expect(vi.mocked(output.success).mock.invocationCallOrder[0]).toBeGreaterThan(previewOrder);
     });
   });
 

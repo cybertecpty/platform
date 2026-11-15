@@ -14,6 +14,7 @@ import type {
 import { dryRunEnabled, verboseEnabled } from '@cybertecpty/nx-utils';
 import { formatFiles, logger, type Tree } from '@nx/devkit';
 import { releaseChangelog, releaseVersion } from 'nx/release';
+import { output } from 'nx/src/utils/output';
 import type { SimpleGit } from 'simple-git';
 import simpleGit from 'simple-git';
 import { checkoutReleaseBranch, resolveReleaseBranchName } from '../../utils/release-branch.utils';
@@ -108,6 +109,12 @@ export async function releaseGenerator(
     let projects: string[] | undefined;
 
     try {
+      // Nx labels its output from the preview as written changes, so say it is a preview.
+      output.note({
+        title: 'Previewing the release',
+        bodyLines: ['Nothing below is written yet.']
+      });
+
       const { projectsVersionData: previewVersionData, releaseGraph: previewGraph } =
         await releaseVersion({
           firstRelease: opts.firstRelease,
@@ -115,6 +122,9 @@ export async function releaseGenerator(
           specifier: opts.vers,
           ...getReleaseCommandOptions(true)
         });
+
+      output.success({ title: 'Preview complete' });
+
       const releasable = await selectReleasableProjects(opts, previewVersionData, previewGraph);
 
       if (releasable.released.length === 0) {
