@@ -153,6 +153,14 @@ describe('withoutUpstreamVitestSideEffects', () => {
     expect(readJson(tree, 'package.json').devDependencies).toEqual({ vite: '^8.0.0' });
   });
 
+  it('leaves a workspace without a root `package.json` without one', async () => {
+    tree.delete('package.json');
+
+    await withoutUpstreamVitestSideEffects(tree, () => undefined);
+
+    expect(tree.exists('package.json')).toBe(false);
+  });
+
   it('restores the root `eslint.config.mjs` the upstream generator rewrote', async () => {
     await withoutUpstreamVitestSideEffects(tree, () => {
       tree.write('eslint.config.mjs', 'export default [];\n');

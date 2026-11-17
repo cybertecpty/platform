@@ -1,3 +1,4 @@
+import type { PackageJsonDependencies } from '@cybertecpty/types';
 import type { Tree } from '@nx/devkit';
 import {
   joinPathFragments,
@@ -5,16 +6,12 @@ import {
   readProjectConfiguration,
   updateJson
 } from '@nx/devkit';
+import { readWorkspaceDependencies } from './nx-workspace.utils';
 
 /** Dependencies the upstream Vitest scaffold adds that nothing in the workspace uses. */
 const UPSTREAM_VITEST_PACKAGES = ['@nx/vite', 'vite'];
 const ROOT_VITEST_CONFIG = 'vitest.config.ts';
 const ROOT_PACKAGE_JSON = 'package.json';
-
-type DependencyMaps = Record<
-  'dependencies' | 'devDependencies',
-  Record<string, string> | undefined
->;
 
 /** Minimal shape of the tsconfig files `configureVitestProject` rewrites. */
 interface TsConfigFile {
@@ -89,7 +86,7 @@ export async function withoutUpstreamVitestSideEffects<T>(
 ): Promise<T> {
   const hadRootVitestConfig = tree.exists(ROOT_VITEST_CONFIG);
   const eslintConfig = tree.read(ROOT_ESLINT_CONFIG, 'utf-8');
-  const packageJson = readDependencyMaps(tree);
+  const packageJson = readWorkspaceDependencies(tree);
 
   const result = await run();
 
@@ -102,17 +99,21 @@ export async function withoutUpstreamVitestSideEffects<T>(
   }
 
   if (packageJson) {
-    updateJson<DependencyMaps, DependencyMaps>(tree, ROOT_PACKAGE_JSON, json => {
-      for (const field of ['dependencies', 'devDependencies'] as const) {
-        for (const name of [...UPSTREAM_VITEST_PACKAGES, ...extraPackages]) {
-          if (json[field] && !(name in (packageJson[field] ?? {}))) {
-            delete json[field][name];
+    updateJson<Required<PackageJsonDependencies>, Required<PackageJsonDependencies>>(
+      tree,
+      ROOT_PACKAGE_JSON,
+      json => {
+        for (const field of ['dependencies', 'devDependencies'] as const) {
+          for (const name of [...UPSTREAM_VITEST_PACKAGES, ...extraPackages]) {
+            if (json[field] && !(name in packageJson[field])) {
+              delete json[field][name];
+            }
           }
         }
-      }
 
-      return json;
-    });
+        return json;
+      }
+    );
   }
 
   return result;
@@ -142,18 +143,6 @@ function ignoreVitestConfigInDependencyChecks(tree: Tree, root: string): void {
         `${open}${entries.trimEnd()}${entries.trim() ? ',' : ''} ${ESLINT_IGNORED_VITEST_CONFIG}${close}`
     )
   );
-}
-
-function readDependencyMaps(tree: Tree): DependencyMaps | null {
-  if (!tree.exists(ROOT_PACKAGE_JSON)) {
-    return null;
-  }
-
-  const { dependencies, devDependencies } = JSON.parse(
-    tree.read(ROOT_PACKAGE_JSON, 'utf-8') ?? '{}'
-  ) as Partial<DependencyMaps>;
-
-  return { dependencies, devDependencies };
 }
 
 function updateLibTsConfig(tree: Tree, root: string): void {

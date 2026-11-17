@@ -1,6 +1,10 @@
 import { writeJson, type Tree } from '@nx/devkit';
 import { createTreeWithEmptyWorkspace } from '@nx/devkit/testing';
-import { getWorkspaceScope, readWorkspacePackageJson } from './nx-workspace.utils';
+import {
+  getWorkspaceScope,
+  readWorkspaceDependencies,
+  readWorkspacePackageJson
+} from './nx-workspace.utils';
 
 describe('getWorkspaceScope', () => {
   let tree: Tree;
@@ -65,5 +69,50 @@ describe('readWorkspacePackageJson', () => {
     tree.write('package.json', '{ not valid json');
 
     expect(() => readWorkspacePackageJson(tree)).toThrow();
+  });
+});
+
+describe('readWorkspaceDependencies', () => {
+  let tree: Tree;
+
+  beforeEach(() => {
+    tree = createTreeWithEmptyWorkspace();
+  });
+
+  it('returns the `dependencies` and `devDependencies` of the root package.json', () => {
+    writeJson(tree, 'package.json', {
+      name: '@proj/source',
+      dependencies: { tslib: '^2.3.0' },
+      devDependencies: { vitest: '^5.0.1' }
+    });
+
+    expect(readWorkspaceDependencies(tree)).toEqual({
+      dependencies: { tslib: '^2.3.0' },
+      devDependencies: { vitest: '^5.0.1' }
+    });
+  });
+
+  it('returns an empty object for a map the root package.json does not have', () => {
+    writeJson(tree, 'package.json', {
+      name: '@proj/source',
+      devDependencies: { vitest: '^5.0.1' }
+    });
+
+    expect(readWorkspaceDependencies(tree)).toEqual({
+      dependencies: {},
+      devDependencies: { vitest: '^5.0.1' }
+    });
+  });
+
+  it('returns null when the root package.json does not exist', () => {
+    tree.delete('package.json');
+
+    expect(readWorkspaceDependencies(tree)).toBeNull();
+  });
+
+  it('throws when the root package.json is not valid JSON', () => {
+    tree.write('package.json', '{ not valid json');
+
+    expect(() => readWorkspaceDependencies(tree)).toThrow();
   });
 });
