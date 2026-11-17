@@ -1,3 +1,4 @@
+import type { PackageJsonDependencies } from '@cybertecpty/types';
 import type { Tree } from '@nx/devkit';
 import { readJson } from '@nx/devkit';
 import type { PackageJson } from 'type-fest';
@@ -20,6 +21,25 @@ export function getWorkspaceScope(tree: Tree): string {
   }
 
   return parts[0];
+}
+
+/**
+ * Reads the `dependencies` and `devDependencies` from the workspace root `package.json`, returning
+ * them as a single object. Returns null when the workspace has no `package.json`.
+ */
+export function readWorkspaceDependencies(tree: Tree): Required<PackageJsonDependencies> | null {
+  const packageJson = readWorkspacePackageJson(tree);
+
+  if (!packageJson) {
+    return null;
+  }
+
+  const { dependencies = {}, devDependencies = {} } = packageJson;
+
+  return {
+    dependencies,
+    devDependencies
+  };
 }
 
 /**
