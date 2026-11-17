@@ -28,7 +28,7 @@ mechanics, not the rationale.
    invocation, not only with `--dry-run`, and Nx prints its normal version output for it, including
    `written to manifest` lines and `[dry-run]` diffs. The generator brackets that output with
    a `Previewing the release` note (`Nothing below is written yet.`) and a `Preview complete` banner; the real
-   `releaseVersion` output follows without a `[dry-run]` tag:
+   `releaseVersion` output follows, tagged `[dry-run]` only when the run itself is a dry run:
    - Unless `--skipTag` or `--dry-run`, no tag the run would create may already exist on a commit
      off the release branch. A same-day re-run on its existing local `release/<date>` branch still
      passes.
