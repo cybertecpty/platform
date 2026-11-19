@@ -47,9 +47,15 @@
     }
   ],
   "generators": {
+    "@nx/angular:component": {
+      "style": "scss"
+    },
     "@nx/angular:library": {
-      "style": "scss",
-      "unitTestRunner": "vitest"
+      "linter": "eslint",
+      "unitTestRunner": "vitest-analog",
+      "strict": true,
+      "prefix": "ct",
+      "style": "scss"
     },
     "@nx/js:library": {
       "bundler": "none",
@@ -86,7 +92,13 @@
     "typecheck": {
       "executor": "nx:run-commands",
       "cache": true,
-      "inputs": ["default", "^default", { "externalDependencies": ["typescript"] }],
+      "inputs": [
+        "default",
+        "^default",
+        {
+          "externalDependencies": ["typescript"]
+        }
+      ],
       "options": {
         "command": "tsc --noEmit -p {projectRoot}/tsconfig.lib.json && tsc --noEmit -p {projectRoot}/tsconfig.spec.json"
       }

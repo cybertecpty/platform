@@ -236,3 +236,64 @@ because there is none.
 - Angular docs: the `@angular/build:unit-test` builder and its `runner` option; the Angular
   22 release notes and the Karma-to-Vitest migration schematic.
 - Nx docs: `@nx/vitest`, and `@nx/angular`'s `unitTestRunner` option.
+
+## Amendment (2026-11-17): Angular libraries test through `@nx/vitest` with the Analog plugin (#349)
+
+- Status: accepted
+- Deciders: djmcgrath
+- Implemented by: the `ng-lib` generator in `tools/angular/plugin` (#349)
+
+The locked parameter "Angular projects test through `@angular/build:unit-test` with
+`runner: vitest`", and the first item under "Unverified until the first Angular project exists",
+assumed the Angular CLI builder would be the route. The `ng-lib` generator is the first code to
+exercise `@nx/angular`'s test setup, and the two routes it offers do not agree.
+
+### What was found
+
+- `@nx/angular:library` offers two runners. `vitest-angular` uses the Nx executor for Angular's
+  unit-test builder, and needs a buildable or publishable library. `vitest-analog` uses the
+  AnalogJS plugin with `@nx/vitest`, and works for any library.
+- `@nx/angular` 23.1.1 pins its own Vitest range to `^4.0.8` (`vitestVersion` in its
+  `versions.js`) and refuses `vitest-angular` when the installed Vitest is outside it. The
+  workspace is on Vitest 5.0.1, so the generator fails with "The installed vitest version "5.0.1"
+  is not compatible with the version range Angular requires". The range matches the Vitest peer
+  of `@angular/build` 22.0.x (`^4.0.8`), the line the workspace is on. `@angular/build` 22.2.x
+  widened it to `^4.0.8 || ^5.0.0`.
+- `vitest-analog` goes through `@nx/vitest`, the plugin this ADR already registers, so it keeps the
+  shape every other project has: a `vitest.config.mts` that merges `vitest.base.mts`.
+
+### Decision
+
+- **Angular libraries use `vitest-analog`.** The `ng-lib` generator defaults to it for every
+  library, buildable or not. It replaces the scaffold's `vite.config.mts` with a
+  `vitest.config.mts` that merges `vitest.base.mts` and adds the `angular()` plugin, the `jsdom`
+  environment and `src/test-setup.ts`. This replaces the locked parameter above for libraries.
+  Karma is still never used.
+- **The 80% per-project coverage gate applies unchanged**, through the base config. The setup file
+  is excluded from coverage.
+- **`vitest-angular` stays selectable but unusable** until `@nx/angular`'s pinned range accepts
+  Vitest 5. Revisit it when that range is widened, or on an Nx upgrade.
+
+### Consequences
+
+- An Angular project's Vitest config differs from the others by the `angular()` plugin, the
+  `jsdom` environment and the setup file, and the root gains dev dependencies on
+  `@analogjs/vite-plugin-angular` and `@analogjs/vitest-angular`.
+- `@nx/vitest` also adds `@vitest/ui` at `~4.1.0`, outside the workspace's Vitest range. The
+  generator removes it.
+- This covers libraries only. There is no Angular application generator yet, so an application
+  keeps the locked parameter above until one exists.
+
+### Still unverified
+
+- A component spec under TestBed passed with Vitest 5.0.1, `@analogjs/vite-plugin-angular` and
+  `@analogjs/vitest-angular` 2.6.4, and `@angular/build` 22.0.9, with v8 coverage, in an isolated
+  scratch project. It also passed in a library the `ng-lib` generator created in a scratch
+  worktree of the workspace, which merges `vitest.base.mts`, and `test`, `lint` and `typecheck`
+  passed for a library of each type. Item 2 above is answered for libraries. It was found there
+  that `tsconfig.spec.json` must not set `noEmit`, which leaves Analog's components unresolved.
+- The installed packages declare Vitest ranges that exclude 5.0.1: `@analogjs/vitest-angular` 2.6.x
+  (`^1.3.1 || ^2.0.0 || ^3.0.0 || ^4.0.0`) and `@angular/build` 22.0.x (`^4.0.8`). pnpm reports
+  unmet peers, and the spec still passed. Analog 2.9.7 and `@angular/build` 22.2.x declare
+  `^5.0.0`. Whether to move the generated libraries to those versions is open.
+- Item 1 is answered for libraries (the two routes disagree on Vitest 5) and not for applications.

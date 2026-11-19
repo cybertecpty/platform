@@ -1,9 +1,18 @@
-import type { Tree } from '@nx/devkit';
-import { addProjectConfiguration, readJson, readProjectConfiguration, writeJson } from '@nx/devkit';
+import type { NxJsonConfiguration, Tree } from '@nx/devkit';
+import {
+  addProjectConfiguration,
+  readJson,
+  readNxJson,
+  readProjectConfiguration,
+  updateNxJson,
+  updateProjectConfiguration,
+  writeJson
+} from '@nx/devkit';
 import { createTreeWithEmptyWorkspace } from '@nx/devkit/testing';
 import {
   addTsConfigTypes,
   addTypecheckTarget,
+  removeRedundantLintTarget,
   removeTsConfigTypes,
   sortTsConfigBasePaths
 } from './nx-generator.utils';
@@ -125,6 +134,91 @@ describe('addTypecheckTarget', () => {
 
     const { targets } = readProjectConfiguration(tree, 'demo');
     expect(targets?.['typecheck']).toBeUndefined();
+  });
+});
+
+describe('removeRedundantLintTarget', () => {
+  const eslintPlugin = { plugin: '@nx/eslint/plugin', options: { targetName: 'lint' } };
+  let tree: Tree;
+
+  function registerPlugins(plugins: NxJsonConfiguration['plugins']): void {
+    updateNxJson(tree, { ...readNxJson(tree), plugins });
+  }
+
+  beforeEach(() => {
+    tree = createTreeWithEmptyWorkspace();
+    addProjectConfiguration(tree, 'demo', {
+      root: 'libs/demo',
+      targets: { lint: { executor: '@nx/eslint:lint' }, build: {}, typecheck: {} }
+    });
+  });
+
+  it('removes the explicit `@nx/eslint:lint` target when `@nx/eslint/plugin` is registered', () => {
+    registerPlugins([eslintPlugin]);
+
+    removeRedundantLintTarget(tree, 'demo');
+
+    expect(readProjectConfiguration(tree, 'demo').targets).not.toHaveProperty('lint');
+  });
+
+  it('keeps the project`s other targets', () => {
+    registerPlugins([eslintPlugin]);
+
+    removeRedundantLintTarget(tree, 'demo');
+
+    expect(readProjectConfiguration(tree, 'demo').targets).toEqual({ build: {}, typecheck: {} });
+  });
+
+  it('recognizes the plugin registered by name only', () => {
+    registerPlugins(['@nx/eslint/plugin']);
+
+    removeRedundantLintTarget(tree, 'demo');
+
+    expect(readProjectConfiguration(tree, 'demo').targets).not.toHaveProperty('lint');
+  });
+
+  it('keeps the target when the plugin is not registered', () => {
+    registerPlugins([{ plugin: '@nx/vitest', options: { testTargetName: 'test' } }]);
+
+    removeRedundantLintTarget(tree, 'demo');
+
+    expect(readProjectConfiguration(tree, 'demo').targets).toHaveProperty('lint');
+  });
+
+  it('keeps the target when `nx.json` has no plugins', () => {
+    registerPlugins(undefined);
+
+    removeRedundantLintTarget(tree, 'demo');
+
+    expect(readProjectConfiguration(tree, 'demo').targets).toHaveProperty('lint');
+  });
+
+  it('keeps a `lint` target that runs another executor', () => {
+    registerPlugins([eslintPlugin]);
+    updateProjectConfiguration(tree, 'demo', {
+      root: 'libs/demo',
+      targets: { lint: { executor: 'nx:run-commands', options: { command: 'eslint .' } } }
+    });
+
+    removeRedundantLintTarget(tree, 'demo');
+
+    expect(readProjectConfiguration(tree, 'demo').targets).toHaveProperty('lint');
+  });
+
+  it('does nothing for a project without a `lint` target', () => {
+    registerPlugins([eslintPlugin]);
+    updateProjectConfiguration(tree, 'demo', { root: 'libs/demo', targets: { build: {} } });
+
+    removeRedundantLintTarget(tree, 'demo');
+
+    expect(readProjectConfiguration(tree, 'demo').targets).toEqual({ build: {} });
+  });
+
+  it('does nothing for a project without targets', () => {
+    registerPlugins([eslintPlugin]);
+    updateProjectConfiguration(tree, 'demo', { root: 'libs/demo' });
+
+    expect(() => removeRedundantLintTarget(tree, 'demo')).not.toThrow();
   });
 });
 

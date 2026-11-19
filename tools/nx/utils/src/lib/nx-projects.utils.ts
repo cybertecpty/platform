@@ -1,5 +1,4 @@
 import type {
-  BackendLibType,
   NormalizedNxProjectOptions,
   NxProjectOptions,
   NxProjectPlatform,
@@ -70,12 +69,6 @@ const NX_PROJECT_TYPE_MAP: Record<NxProjectType, true> = {
 export const NX_PROJECT_TYPES: readonly NxProjectType[] = Object.keys(
   NX_PROJECT_TYPE_MAP
 ) as NxProjectType[];
-
-/**
- * The backend `type:` values. The backend is .NET (ADR 0017), so these libraries are
- * .NET projects created with `dotnet new`, not scaffolded by the TypeScript generators.
- */
-export const BACKEND_LIB_TYPES: readonly BackendLibType[] = ['api', 'infra', 'services'];
 
 export interface AddProjectTargetOptions {
   /**

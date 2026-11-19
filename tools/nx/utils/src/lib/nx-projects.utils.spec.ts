@@ -4,7 +4,6 @@ import { createTreeWithEmptyWorkspace } from '@nx/devkit/testing';
 import type { MockInstance } from 'vitest';
 import {
   addProjectTarget,
-  BACKEND_LIB_TYPES,
   collectProjectDependencies,
   determineTopLevelProjectDir,
   forceTestingLibNotBuildable,
@@ -292,12 +291,6 @@ describe('projectDirFromOpts', () => {
     ).toThrow(
       '`group` segment "foo/bar" must be lowercase alphanumeric words joined by single hyphens.'
     );
-  });
-});
-
-describe('BACKEND_LIB_TYPES', () => {
-  it('lists the backend types, sorted', () => {
-    expect([...BACKEND_LIB_TYPES]).toEqual(['api', 'infra', 'services']);
   });
 });
 

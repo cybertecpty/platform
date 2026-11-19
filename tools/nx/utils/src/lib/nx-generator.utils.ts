@@ -1,6 +1,23 @@
 import { orderByKeys } from '@cybertecpty/utils';
 import type { Tree } from '@nx/devkit';
-import { readProjectConfiguration, updateJson, updateProjectConfiguration } from '@nx/devkit';
+import {
+  readNxJson,
+  readProjectConfiguration,
+  updateJson,
+  updateProjectConfiguration
+} from '@nx/devkit';
+
+/**
+ * The Nx plugin that infers a project's `lint` target from its ESLint config. `nx.json` is checked
+ * for it to tell whether `lint` is already provided, and it is never changed.
+ */
+const ESLINT_INFERENCE_PLUGIN = '@nx/eslint/plugin';
+
+/**
+ * The deprecated executor an upstream generator writes as an explicit `lint` target in a project's
+ * `project.json`. A target running it is what `removeRedundantLintTarget` deletes.
+ */
+const ESLINT_LINT_EXECUTOR = '@nx/eslint:lint';
 
 /** Minimal shape of the root tsconfig relevant to `sortTsConfigBasePaths`. */
 interface TsConfigWithPaths {
@@ -65,6 +82,24 @@ export function addTypecheckTarget(
 }
 
 /**
+ * Removes the explicit `lint` target an upstream generator wrote, which is redundant when `nx.json`
+ * registers `@nx/eslint/plugin`: the plugin infers `lint` from the project's ESLint config, and the
+ * explicit `@nx/eslint:lint` executor target is deprecated and ignores the plugin's options. A
+ * `lint` target that runs a different executor is the user's own and stays, and so does every
+ * other target.
+ *
+ * No-ops when the plugin is not registered: the explicit target is then the only `lint` target.
+ */
+export function removeRedundantLintTarget(tree: Tree, projectName: string): void {
+  const projectConfig = readProjectConfiguration(tree, projectName);
+  const { lint, ...otherTargets } = projectConfig.targets ?? {};
+
+  if (lint?.executor === ESLINT_LINT_EXECUTOR && isLintInferred(tree)) {
+    updateProjectConfiguration(tree, projectName, { ...projectConfig, targets: otherTargets });
+  }
+}
+
+/**
  * Removes `types` from a tsconfig file's `compilerOptions.types`, keeping the rest in order.
  * Always leaves an explicit array, even an empty one: a tsconfig with no `types` loads every
  * visible `@types` package, which would bring back whatever was removed.
@@ -98,4 +133,14 @@ export function sortTsConfigBasePaths(tree: Tree, tsConfigBasePath = 'tsconfig.b
 
     return json;
   });
+}
+
+/** Whether `nx.json` registers the plugin that infers `lint` from each project's ESLint config. */
+function isLintInferred(tree: Tree): boolean {
+  const plugins = readNxJson(tree)?.plugins ?? [];
+
+  // Nx 23 lets a plugin be a name or an object with a `plugin` property, so compare by name.
+  return plugins.some(
+    plugin => (typeof plugin === 'string' ? plugin : plugin.plugin) === ESLINT_INFERENCE_PLUGIN
+  );
 }

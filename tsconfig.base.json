@@ -3,6 +3,7 @@
   "compilerOptions": {
     "rootDir": ".",
     "paths": {
+      "@cybertecpty/angular-plugin": ["./tools/angular/plugin/src/index.ts"],
       "@cybertecpty/azure-plugin": ["./tools/azure/plugin/src/index.ts"],
       "@cybertecpty/dotnet-plugin": ["./tools/dotnet/plugin/src/index.ts"],
       "@cybertecpty/fs-utils": ["./libs/shared/fs/utils/src/index.ts"],

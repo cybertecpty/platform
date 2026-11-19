@@ -66,6 +66,30 @@ export function configureVitestProject(
 }
 
 /**
+ * Adds the project's `vitest.config.*` to the `ignoredFiles` of the `@nx/dependency-checks` rule in
+ * its `eslint.config.mjs`, so the config's imports (`vitest`, a plugin) are not counted as imports
+ * of a buildable library. A no-op when the project's ESLint config has no such rule, or already
+ * lists the config.
+ */
+export function ignoreVitestConfigInDependencyChecks(tree: Tree, root: string): void {
+  const path = joinPathFragments(root, 'eslint.config.mjs');
+  const source = tree.read(path, 'utf-8');
+
+  if (!source || source.includes(ESLINT_IGNORED_VITEST_CONFIG)) {
+    return;
+  }
+
+  tree.write(
+    path,
+    source.replace(
+      DEPENDENCY_CHECKS_IGNORED_FILES,
+      (_match, open: string, entries: string, close: string) =>
+        `${open}${entries.trimEnd()}${entries.trim() ? ',' : ''} ${ESLINT_IGNORED_VITEST_CONFIG}${close}`
+    )
+  );
+}
+
+/**
  * Runs an upstream `@nx/*` generator that scaffolds Vitest and then undoes the workspace-level
  * side effects it leaves behind. None of these is a rule in ADR 0018; each is a cost:
  *
@@ -125,24 +149,6 @@ function deleteJestConfigs(tree: Tree, root: string): void {
       tree.delete(joinPathFragments(root, file));
     }
   }
-}
-
-function ignoreVitestConfigInDependencyChecks(tree: Tree, root: string): void {
-  const path = joinPathFragments(root, 'eslint.config.mjs');
-  const source = tree.read(path, 'utf-8');
-
-  if (!source || source.includes(ESLINT_IGNORED_VITEST_CONFIG)) {
-    return;
-  }
-
-  tree.write(
-    path,
-    source.replace(
-      DEPENDENCY_CHECKS_IGNORED_FILES,
-      (_match, open: string, entries: string, close: string) =>
-        `${open}${entries.trimEnd()}${entries.trim() ? ',' : ''} ${ESLINT_IGNORED_VITEST_CONFIG}${close}`
-    )
-  );
 }
 
 function updateLibTsConfig(tree: Tree, root: string): void {
