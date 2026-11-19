@@ -36,7 +36,15 @@ const fakeNxLibraryGenerator = createFakeLibraryGenerator({
  */
 function fakeNxAngularLibraryGenerator(
   tree: Tree,
-  schema: { name: string; directory: string; routing?: boolean }
+  schema: {
+    name: string;
+    directory: string;
+    routing?: boolean;
+    lazy?: boolean;
+    parent?: string;
+    standalone?: boolean;
+    skipModule?: boolean;
+  }
 ) {
   const task = fakeNxLibraryGenerator(tree, schema);
   const projectConfig = readProjectConfiguration(tree, schema.name);
@@ -44,9 +52,21 @@ function fakeNxAngularLibraryGenerator(
   if (schema.routing) {
     tree.write(
       `${schema.directory}/src/lib/lib.routes.ts`,
-      "import { Route } from '@angular/router';\n\nexport const routes: Route[] = [];\n"
+      `import { Route } from '@angular/router';\n\nexport const ${devkit.names(schema.name).propertyName}Routes: Route[] = [];\n`
     );
     tree.write(`${schema.directory}/src/index.ts`, "export * from './lib/lib.routes';\n");
+  }
+
+  if (schema.routing && schema.lazy && schema.parent) {
+    // Nx registers a lazy library by its routes when it is standalone, and by its module when not.
+    const target = schema.standalone
+      ? `${devkit.names(schema.name).propertyName}Routes`
+      : `${devkit.names(schema.name).className}Module`;
+
+    tree.write(
+      schema.parent,
+      `export const appRoutes = [\n  { path: '${schema.name}', loadChildren: () => import('@cybertecpty/${schema.name}').then(m => m.${target}) }\n];\n`
+    );
   }
 
   updateJson(tree, 'package.json', json => ({
@@ -510,6 +530,41 @@ describe('ngLibGenerator', () => {
 
       expect(tree.exists('libs/billing/feature/src/lib/billing-feature.routes.ts')).toBe(false);
       expect(tree.exists('libs/billing/feature/src/lib/lib.routes.ts')).toBe(false);
+    });
+
+    describe('registering a lazy library in its parent routes', () => {
+      const PARENT = 'apps/shell/src/app/app.routes.ts';
+      const lazyFeature = (options: Partial<NgLibGeneratorOptions> = {}) =>
+        run(tree, { type: 'feature', lazy: true, parent: PARENT, ...options });
+
+      beforeEach(() => {
+        tree.write(PARENT, 'export const appRoutes = [];\n');
+      });
+
+      it('names the routes export when the library has no module', async () => {
+        await lazyFeature();
+
+        expect(tree.read(PARENT, 'utf-8')).toContain('.then(m => m.billingFeatureRoutes)');
+        expect(tree.read(PARENT, 'utf-8')).not.toContain('BillingFeatureModule');
+      });
+
+      it('keeps the routes export Nx wrote for a standalone library', async () => {
+        await lazyFeature({ standalone: true });
+
+        expect(tree.read(PARENT, 'utf-8')).toContain('.then(m => m.billingFeatureRoutes)');
+      });
+
+      it('keeps the module Nx registered when the library has one', async () => {
+        await lazyFeature({ standalone: false, skipModule: false });
+
+        expect(tree.read(PARENT, 'utf-8')).toContain('.then(m => m.BillingFeatureModule)');
+      });
+
+      it('leaves the parent alone when the library is not lazy', async () => {
+        await lazyFeature({ lazy: false });
+
+        expect(tree.read(PARENT, 'utf-8')).toBe('export const appRoutes = [];\n');
+      });
     });
 
     it('removes the `@vitest/ui` dependency the upstream generator added', async () => {

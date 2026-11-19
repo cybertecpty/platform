@@ -33,6 +33,10 @@ Creates an Angular library under `libs/<domain>[/<subdomain>...]/[<group>/]<type
   instead of Nx's `lib.routes.ts`, and points the `src/index.ts` export at it. It also makes the
   file's `Route` import a type import, which the workspace's `consistent-type-imports` rule
   requires.
+- Registers a `--lazy` library in the `--parent` route file by its routes export
+  (`.then(m => m.billingFeatureRoutes)`) when the library has no module. `@nx/angular:library`
+  would name a `BillingFeatureModule` that a library generated with the defaults does not export.
+  A standalone library, or one with a module, keeps the registration Nx writes.
 
 - Adds a folder skeleton from the files in `files/<type>/` (`.gitkeep` files for `core`,
   `data-access`, `feature`, `ui` and `testing`). A `utils` library also gets
@@ -76,8 +80,8 @@ pnpm nx g @cybertecpty/angular-plugin:ng-lib {type} --domain={domain} [options]
 | `publishable`    | boolean | no       | `false`         | Always `false` for `testing`. Requires `importPath`.                                      |
 | `importPath`     | string  | no       | —               | Required for a publishable library.                                                       |
 | `routing`        | boolean | no       | by type         | See the table above.                                                                      |
-| `lazy`           | boolean | no       | `false`         | `RouterModule.forChild` when `true`, a plain routes array when `false`.                   |
-| `parent`         | string  | no       | —               | Parent route configuration to register the library's routes in.                           |
+| `lazy`           | boolean | no       | `false`         | With `--parent`, registers with `loadChildren` when `true` and `children` when `false`.   |
+| `parent`         | string  | no       | —               | Parent route configuration to register the library in. Requires `--routing`.              |
 | `standalone`     | boolean | no       | by type         | A starter standalone component. See the table above.                                      |
 | `skipModule`     | boolean | no       | by type         | See the table above.                                                                      |
 | `prefix`         | string  | no       | `ct`            | Selector prefix. `ct` is for Cybertec, and keeps selectors apart from Cypress's `cy`.     |

@@ -23,7 +23,7 @@ import {
 } from '@nx/devkit';
 import { omit } from 'lodash-es';
 import type { NgUnitTestRunner } from '../../types/ng-projects.types';
-import { normalizeRoutesFile } from '../../utils/ng-routes.utils';
+import { normalizeRoutesFile, useRoutesInLazyRegistration } from '../../utils/ng-routes.utils';
 import { configureAngularVitestProject } from '../../utils/ng-vitest.utils';
 import type { NgLibGeneratorOptions, NormalizedNgLibGeneratorOptions } from './schema';
 
@@ -80,6 +80,18 @@ export async function ngLibGenerator(
   const projectConfig = readProjectConfiguration(tree, name);
 
   normalizeRoutesFile(tree, projectConfig.root, name);
+
+  // Nx registers a lazy, non-standalone library by its module. With no module generated the
+  // library exports only its routes, so the registration has to name those.
+  if (
+    options.routing &&
+    options.lazy &&
+    options.parent &&
+    !options.standalone &&
+    options.skipModule
+  ) {
+    useRoutesInLazyRegistration(tree, projectConfig.root, name, options.parent);
+  }
 
   // A `type:testing` library's own source (mocks, fixtures) commonly uses Vitest globals outside
   // `*.spec.ts`, so `tsconfig.lib.json` needs `vitest/globals` in `compilerOptions.types` too.

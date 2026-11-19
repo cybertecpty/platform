@@ -95,12 +95,12 @@
     "lazy": {
       "type": "boolean",
       "default": false,
-      "description": "Add `RouterModule.forChild` when set to true, and a simple array of routes when set to false.",
+      "description": "With `--parent`, register the library in the parent route configuration with `loadChildren` when set to true, and with `children` when set to false. Requires `--routing`. A library with a module also gets `RouterModule.forChild` when true, and a simple array of routes when false.",
       "x-priority": "important"
     },
     "parent": {
       "type": "string",
-      "description": "Path to the parent route configuration using `loadChildren` or `children`, depending on what `lazy` is set to.",
+      "description": "Path to the parent route configuration that registers the library, using `loadChildren` or `children`, depending on what `lazy` is set to. A library without a module is registered by its routes export.",
       "x-priority": "important"
     },
     "tags": {

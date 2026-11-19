@@ -1,4 +1,5 @@
-import { joinPathFragments, type Tree } from '@nx/devkit';
+import { joinPathFragments, readJson, type Tree } from '@nx/devkit';
+import { escapeRegExp } from 'lodash-es';
 
 const GENERATED_ROUTES_FILE = 'lib.routes';
 const ROUTE_VALUE_IMPORT = "import { Route } from '@angular/router';";
@@ -31,6 +32,51 @@ export function normalizeRoutesFile(tree: Tree, root: string, name: string): voi
     tree.delete(generatedPath);
     renameRoutesExport(tree, root, routesFile);
   }
+}
+
+/**
+ * Registers a lazy library in its `parent` route file by its routes export, not by a module.
+ *
+ * `@nx/angular:library` writes `loadChildren: () => import('…').then(m => m.<Name>Module)` for a
+ * library that is not standalone, which assumes a module the library may not have. A library
+ * generated without one exports only its routes (`src/lib/<name>.routes.ts`), so the registration
+ * names that export instead. A no-op when the parent has no registration for the library, or the
+ * library has no routes export or no `tsconfig.base.json` path.
+ *
+ * `root` and `name` are the library's root and project name.
+ */
+export function useRoutesInLazyRegistration(
+  tree: Tree,
+  root: string,
+  name: string,
+  parent: string
+): void {
+  const routes = tree.read(joinPathFragments(root, 'src/lib', `${name}.routes.ts`), 'utf-8');
+  const routesExport = routes?.match(/export const (\w+)/)?.[1];
+  const importPath = findImportPath(tree, root);
+  const parentSource = tree.read(parent, 'utf-8');
+
+  if (!routesExport || !importPath || !parentSource) {
+    return;
+  }
+
+  const registration = new RegExp(
+    String.raw`(import\('${escapeRegExp(importPath)}'\)\.then\(m => m\.)\w+(\))`
+  );
+
+  tree.write(parent, parentSource.replace(registration, `$1${routesExport}$2`));
+}
+
+/** The `tsconfig.base.json` path alias of the library at `root`, which is how a parent imports it. */
+function findImportPath(tree: Tree, root: string): string | undefined {
+  const { compilerOptions } = readJson<{
+    compilerOptions?: { paths?: Record<string, string[]> };
+  }>(tree, 'tsconfig.base.json');
+  const entryPoint = `./${root}/src/index.ts`;
+
+  return Object.entries(compilerOptions?.paths ?? {}).find(([, targets]) =>
+    targets.includes(entryPoint)
+  )?.[0];
 }
 
 /** Points the `src/index.ts` export of the generated routes file at `routesFile`. */

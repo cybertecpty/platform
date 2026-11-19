@@ -1,6 +1,7 @@
 import type { Tree } from '@nx/devkit';
+import { updateJson } from '@nx/devkit';
 import { createTreeWithEmptyWorkspace } from '@nx/devkit/testing';
-import { normalizeRoutesFile } from './ng-routes.utils';
+import { normalizeRoutesFile, useRoutesInLazyRegistration } from './ng-routes.utils';
 
 const ROOT = 'libs/billing/feature';
 const NAME = 'billing-feature';
@@ -101,5 +102,105 @@ describe('normalizeRoutesFile', () => {
 
     expect(() => normalizeRoutesFile(tree, ROOT, NAME)).not.toThrow();
     expect(tree.exists(ROUTES)).toBe(false);
+  });
+});
+
+describe('useRoutesInLazyRegistration', () => {
+  const PARENT = 'apps/shell/src/app/app.routes.ts';
+  const IMPORT_PATH = '@cybertecpty/billing-feature';
+  const registration = (target: string) =>
+    `{ path: 'billing-feature', loadChildren: () => import('${IMPORT_PATH}').then(m => m.${target}) }`;
+  let tree: Tree;
+
+  beforeEach(() => {
+    tree = createTreeWithEmptyWorkspace();
+    tree.write(
+      ROUTES,
+      "import type { Route } from '@angular/router';\n\nexport const billingFeatureRoutes: Route[] = [];\n"
+    );
+    tree.write(
+      PARENT,
+      `export const appRoutes = [\n  ${registration('BillingFeatureModule')}\n];\n`
+    );
+    updateJson(tree, 'tsconfig.base.json', json => ({
+      ...json,
+      compilerOptions: {
+        ...json.compilerOptions,
+        paths: { [IMPORT_PATH]: [`./${ROOT}/src/index.ts`] }
+      }
+    }));
+  });
+
+  it('registers the library by its routes export instead of a module', () => {
+    useRoutesInLazyRegistration(tree, ROOT, NAME, PARENT);
+
+    expect(tree.read(PARENT, 'utf-8')).toContain(registration('billingFeatureRoutes'));
+    expect(tree.read(PARENT, 'utf-8')).not.toContain('BillingFeatureModule');
+  });
+
+  it('reads the routes export from the routes file', () => {
+    tree.write(ROUTES, 'export const customRoutes = [];\n');
+
+    useRoutesInLazyRegistration(tree, ROOT, NAME, PARENT);
+
+    expect(tree.read(PARENT, 'utf-8')).toContain(registration('customRoutes'));
+  });
+
+  it('leaves the registrations of other libraries alone', () => {
+    const other =
+      "{ path: 'billing-other', loadChildren: () => import('@cybertecpty/billing-other').then(m => m.BillingOtherModule) }";
+    tree.write(
+      PARENT,
+      `export const appRoutes = [\n  ${other},\n  ${registration('BillingFeatureModule')}\n];\n`
+    );
+
+    useRoutesInLazyRegistration(tree, ROOT, NAME, PARENT);
+
+    expect(tree.read(PARENT, 'utf-8')).toContain(other);
+  });
+
+  it('leaves a registration that already names the routes export', () => {
+    const source = `export const appRoutes = [\n  ${registration('billingFeatureRoutes')}\n];\n`;
+    tree.write(PARENT, source);
+
+    useRoutesInLazyRegistration(tree, ROOT, NAME, PARENT);
+
+    expect(tree.read(PARENT, 'utf-8')).toBe(source);
+  });
+
+  it('leaves a parent that does not register the library', () => {
+    const source = 'export const appRoutes = [];\n';
+    tree.write(PARENT, source);
+
+    useRoutesInLazyRegistration(tree, ROOT, NAME, PARENT);
+
+    expect(tree.read(PARENT, 'utf-8')).toBe(source);
+  });
+
+  it('does nothing without a routes file', () => {
+    tree.delete(ROUTES);
+    const before = tree.read(PARENT, 'utf-8');
+
+    useRoutesInLazyRegistration(tree, ROOT, NAME, PARENT);
+
+    expect(tree.read(PARENT, 'utf-8')).toBe(before);
+  });
+
+  it('does nothing without a `tsconfig.base.json` path for the library', () => {
+    updateJson(tree, 'tsconfig.base.json', json => ({
+      ...json,
+      compilerOptions: { ...json.compilerOptions, paths: {} }
+    }));
+    const before = tree.read(PARENT, 'utf-8');
+
+    useRoutesInLazyRegistration(tree, ROOT, NAME, PARENT);
+
+    expect(tree.read(PARENT, 'utf-8')).toBe(before);
+  });
+
+  it('does nothing when the parent file does not exist', () => {
+    tree.delete(PARENT);
+
+    expect(() => useRoutesInLazyRegistration(tree, ROOT, NAME, PARENT)).not.toThrow();
   });
 });
