@@ -46,6 +46,7 @@ function fakeNxAngularLibraryGenerator(
       `${schema.directory}/src/lib/lib.routes.ts`,
       "import { Route } from '@angular/router';\n\nexport const routes: Route[] = [];\n"
     );
+    tree.write(`${schema.directory}/src/index.ts`, "export * from './lib/lib.routes';\n");
   }
 
   updateJson(tree, 'package.json', json => ({
@@ -467,12 +468,48 @@ describe('ngLibGenerator', () => {
       expect(tree.exists('vitest.config.ts')).toBe(false);
     });
 
+    it('names the routes file of a routed library after the library', async () => {
+      await run(tree, { type: 'feature' });
+
+      expect(tree.exists('libs/billing/feature/src/lib/billing-feature.routes.ts')).toBe(true);
+      expect(tree.exists('libs/billing/feature/src/lib/lib.routes.ts')).toBe(false);
+    });
+
+    it('points the barrel of a routed library at its routes file', async () => {
+      await run(tree, { type: 'feature' });
+
+      expect(tree.read('libs/billing/feature/src/index.ts', 'utf-8')).toBe(
+        "export * from './lib/billing-feature.routes';\n"
+      );
+    });
+
+    it('includes the group in the routes file name', async () => {
+      await run(tree, { type: 'feature', group: 'checkout' });
+
+      expect(
+        tree.exists('libs/billing/checkout/feature/src/lib/billing-checkout-feature.routes.ts')
+      ).toBe(true);
+    });
+
+    it('names the routes file of a routed `core` library after it too', async () => {
+      await run(tree, { type: 'core', routing: true });
+
+      expect(tree.exists('libs/billing/core/src/lib/billing-core.routes.ts')).toBe(true);
+    });
+
     it('makes the `Route` import of a routed library a type import', async () => {
       await run(tree, { type: 'feature' });
 
-      expect(tree.read('libs/billing/feature/src/lib/lib.routes.ts', 'utf-8')).toContain(
-        "import type { Route } from '@angular/router';"
-      );
+      expect(
+        tree.read('libs/billing/feature/src/lib/billing-feature.routes.ts', 'utf-8')
+      ).toContain("import type { Route } from '@angular/router';");
+    });
+
+    it('generates no routes file for a library without routing', async () => {
+      await run(tree, { type: 'feature', routing: false });
+
+      expect(tree.exists('libs/billing/feature/src/lib/billing-feature.routes.ts')).toBe(false);
+      expect(tree.exists('libs/billing/feature/src/lib/lib.routes.ts')).toBe(false);
     });
 
     it('removes the `@vitest/ui` dependency the upstream generator added', async () => {

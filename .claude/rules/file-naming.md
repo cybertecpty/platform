@@ -21,6 +21,7 @@ much the file exports, the same way as `.fixture` / `.fixtures` in `testing.md`:
 | `.types`                | types only, no runtime code (the `type:types` libs)                                 |
 | `.const` (`.const.mts`) | constants only; keep the `.mts` extension when a tool loads the file as ESM by name |
 | `.contracts`            | server-contract types generated from the backend's OpenAPI document; never edited   |
+| `.routes`               | an Angular library's route config: the `Routes` array a routed lib exports          |
 
 - **Judge by the file's name and role, not today's export count.** A file named for one thing
   (`uniq-multi-map`, `file-archiver`) is `.util`; a file named for a topic (`records`,
@@ -34,6 +35,9 @@ much the file exports, the same way as `.fixture` / `.fixtures` in `testing.md`:
 - **`.contracts` marks generated code.** A `*.contracts.ts` file lives in a `type:types` lib, is
   written only by the generator (ADR 0017, 2026-11-13 amendment), and is never hand-edited. Do not
   give a hand-written file the suffix, and use `.types` for hand-written type-only files.
+- **`.routes` is named for the library.** A routed Angular library has one routes file, so the
+  `ng-lib` generator names it after the library (`billing-feature.routes.ts`) instead of using Nx's
+  `lib.routes.ts`.
 - Specs mirror the full name: `git-tags.utils.spec.ts` tests `git-tags.utils.ts`, and a type-only
   `.types.ts` or `.contracts.ts` file has no spec (type-level tests use `.types.test-d.ts`).
 - Inside a group's lib, keep the group prefix the other files use (`nx-tree.utils.ts` in
@@ -58,7 +62,7 @@ List the source files that are neither exempt nor suffixed, then check each suff
 exports:
 
 ```bash
-git ls-files 'libs/**/*.ts' 'tools/**/*.ts' | grep -vE '\.(spec|test-d|utils?|types|contracts|const|fixtures?|fakes?|mocks?|stubs?)\.m?ts$' | grep -vE '(^|/)(index|main|generator|executor|schema|commitlint-formatter|dependency-changelog-renderer)\.ts$|/files/|config\.'
+git ls-files 'libs/**/*.ts' 'tools/**/*.ts' | grep -vE '\.(spec|test-d|utils?|types|contracts|routes|const|fixtures?|fakes?|mocks?|stubs?)\.m?ts$' | grep -vE '(^|/)(index|main|generator|executor|schema|commitlint-formatter|dependency-changelog-renderer)\.ts$|/files/|config\.'
 ```
 
 A misnamed file is visible in review, so there is no lint rule for it.

@@ -12,7 +12,7 @@
     },
     {
       "command": "nx g ng-lib feature --domain=billing",
-      "description": "Generates `billing-feature` at `libs/billing/feature` with a `lib.routes.ts` and no starter component."
+      "description": "Generates `billing-feature` at `libs/billing/feature` with a `billing-feature.routes.ts` and no starter component."
     },
     {
       "command": "nx g ng-lib utils --domain=billing --group=format",

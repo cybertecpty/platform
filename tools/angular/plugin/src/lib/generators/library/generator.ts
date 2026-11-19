@@ -23,7 +23,7 @@ import {
 } from '@nx/devkit';
 import { omit } from 'lodash-es';
 import type { NgUnitTestRunner } from '../../types/ng-projects.types';
-import { useTypeImportInRoutes } from '../../utils/ng-routes.utils';
+import { normalizeRoutesFile } from '../../utils/ng-routes.utils';
 import { configureAngularVitestProject } from '../../utils/ng-vitest.utils';
 import type { NgLibGeneratorOptions, NormalizedNgLibGeneratorOptions } from './schema';
 
@@ -79,7 +79,7 @@ export async function ngLibGenerator(
 
   const projectConfig = readProjectConfiguration(tree, name);
 
-  useTypeImportInRoutes(tree, projectConfig.root);
+  normalizeRoutesFile(tree, projectConfig.root, name);
 
   // A `type:testing` library's own source (mocks, fixtures) commonly uses Vitest globals outside
   // `*.spec.ts`, so `tsconfig.lib.json` needs `vitest/globals` in `compilerOptions.types` too.

@@ -26,7 +26,13 @@ Creates an Angular library under `libs/<domain>[/<subdomain>...]/[<group>/]<type
 
   A cell without "always" is a default the caller can change. With `standalone` and `skipModule`
   at these defaults a library is generated without a starter component or module; a `feature`
-  library gets a `lib.routes.ts`.
+  library gets its routes file.
+
+- Names the routes file of a routed library (a `feature` library, or a `core` library with
+  `--routing`) after the library, so `billing-feature` gets `src/lib/billing-feature.routes.ts`
+  instead of Nx's `lib.routes.ts`, and points the `src/index.ts` export at it. It also makes the
+  file's `Route` import a type import, which the workspace's `consistent-type-imports` rule
+  requires.
 
 - Adds a folder skeleton from the files in `files/<type>/` (`.gitkeep` files for `core`,
   `data-access`, `feature`, `ui` and `testing`). A `utils` library also gets
@@ -106,7 +112,7 @@ informational, and the library is still created. The `ts-lib` generator behaves 
 # libs/billing/ui, named billing-ui, tagged domain:billing,platform:frontend,type:ui
 pnpm nx g @cybertecpty/angular-plugin:ng-lib ui --domain=billing
 
-# libs/billing/checkout/feature, with lib.routes.ts
+# libs/billing/checkout/feature, with billing-checkout-feature.routes.ts
 pnpm nx g @cybertecpty/angular-plugin:ng-lib feature --domain=billing/checkout
 
 # libs/billing/format/utils, with billing-format.utils.ts and its spec
