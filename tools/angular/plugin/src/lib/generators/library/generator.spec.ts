@@ -366,6 +366,13 @@ describe('ngLibGenerator', () => {
       expect(tree.exists('libs/billing/utils/src/lib/billing-helpers.utils.ts')).toBe(true);
     });
 
+    it('gives a `utils` library without a unit test runner no spec, but still its file', async () => {
+      await run(tree, { type: 'utils', unitTestRunner: 'none' } as never);
+
+      expect(tree.exists('libs/billing/utils/src/lib/billing.utils.ts')).toBe(true);
+      expect(tree.exists('libs/billing/utils/src/lib/billing.utils.spec.ts')).toBe(false);
+    });
+
     it('leaves no `undefined` or stray separator in the generated paths', async () => {
       await run(tree, { type: 'utils' });
 

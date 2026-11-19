@@ -30,8 +30,9 @@ Creates an Angular library under `libs/<domain>[/<subdomain>...]/[<group>/]<type
 
 - Adds a folder skeleton from the files in `files/<type>/` (`.gitkeep` files for `core`,
   `data-access`, `feature`, `ui` and `testing`). A `utils` library also gets
-  `src/lib/<topic>.utils.ts`, its spec, and a barrel export. `<topic>` is the project name without
-  its `-utils` suffix, so `billing-format-utils` gets `billing-format.utils.ts`.
+  `src/lib/<topic>.utils.ts`, its spec (not with `--unitTestRunner=none`), and a barrel export.
+  `<topic>` is the project name without its `-utils` suffix, so `billing-format-utils` gets
+  `billing-format.utils.ts`.
 - Forces a `type:testing` library to `buildable: false` and `publishable: false`
   (`forceTestingLibNotBuildable` in `@cybertecpty/nx-utils`): a production library importing a
   buildable testing-helpers library would otherwise pull it in as a real buildable dependency.

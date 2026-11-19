@@ -95,6 +95,13 @@ export async function ngLibGenerator(
   const { fileName, propertyName } = names(options.name.replace(/-utils$/, ''));
   generateFiles(tree, filesPath, projectConfig.root, { fileName, propertyName, tmpl: '' });
 
+  // Without a unit test runner nothing can run or typecheck a spec, so the library gets none.
+  const specPath = joinPathFragments(projectConfig.root, 'src/lib', `${fileName}.utils.spec.ts`);
+
+  if (unitTestRunner === UnitTestRunner.None && tree.exists(specPath)) {
+    tree.delete(specPath);
+  }
+
   if (!rawOptions.skipFormat) {
     await formatFiles(tree);
   }
