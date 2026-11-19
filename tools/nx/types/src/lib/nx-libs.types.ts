@@ -1,3 +1,6 @@
+/**
+ * The library types a backend project may have: the shared types plus the .NET ones.
+ */
 export type BackendLibType =
   SharedLibType | Extract<NxProjectLibType, 'api' | 'infra' | 'services'>;
 
