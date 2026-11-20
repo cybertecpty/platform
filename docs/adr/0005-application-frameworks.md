@@ -263,3 +263,15 @@ The More information line that says Jest is the test runner for both frameworks 
 ADR 0018 superseded ADR 0007's runner choice, and Vitest runs every TypeScript project. Angular
 22's own unit-test builder defaults to Vitest, which is the reason the choice moved. Nothing else
 in this ADR changes.
+
+## Amendment (2026-11-17): Angular libraries use the `ct` selector prefix (#349)
+
+- Status: accepted
+- Deciders: djmcgrath
+- Implemented by: the `ng-lib` generator in `tools/angular/plugin` (#349)
+
+`@nx/angular:library` generates selectors with the prefix `lib`. The workspace uses `ct`, for
+Cybertec, so a component is `ct-billing-ui` and a directive `ctFoo`. The generator sets it in the
+library's `project.json` and in its `@angular-eslint` selector rules. `cy` was avoided because
+Cypress uses it. A library can still pass `--prefix`, but the default is `ct`. Changing the default
+later means renaming the selectors and templates that use it. Nothing else in this ADR changes.

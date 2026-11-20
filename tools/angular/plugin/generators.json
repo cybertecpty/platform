@@ -1,0 +1,9 @@
+{
+  "generators": {
+    "ng-lib": {
+      "factory": "./src/lib/generators/library/generator",
+      "schema": "./src/lib/generators/library/schema.json",
+      "description": "Create an Angular library under libs/<domain>/[<group>/]<type> (ADR 0009), wrapping @nx/angular:library."
+    }
+  }
+}

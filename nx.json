@@ -47,9 +47,15 @@
     }
   ],
   "generators": {
+    "@nx/angular:component": {
+      "style": "scss"
+    },
     "@nx/angular:library": {
-      "style": "scss",
-      "unitTestRunner": "vitest"
+      "linter": "eslint",
+      "unitTestRunner": "vitest-analog",
+      "strict": true,
+      "prefix": "ct",
+      "style": "scss"
     },
     "@nx/js:library": {
       "bundler": "none",

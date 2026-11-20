@@ -1,9 +1,19 @@
-import type { Tree } from '@nx/devkit';
-import { addProjectConfiguration, readJson, readProjectConfiguration, writeJson } from '@nx/devkit';
+import type { NxJsonConfiguration, Tree } from '@nx/devkit';
+import {
+  addProjectConfiguration,
+  readJson,
+  readNxJson,
+  readProjectConfiguration,
+  updateNxJson,
+  updateProjectConfiguration,
+  writeJson
+} from '@nx/devkit';
 import { createTreeWithEmptyWorkspace } from '@nx/devkit/testing';
 import {
   addTsConfigTypes,
   addTypecheckTarget,
+  findProjectImportPath,
+  removeRedundantLintTarget,
   removeTsConfigTypes,
   sortTsConfigBasePaths
 } from './nx-generator.utils';
@@ -125,6 +135,159 @@ describe('addTypecheckTarget', () => {
 
     const { targets } = readProjectConfiguration(tree, 'demo');
     expect(targets?.['typecheck']).toBeUndefined();
+  });
+});
+
+describe('findProjectImportPath', () => {
+  let tree: Tree;
+
+  function writePaths(paths: Record<string, string[]> | undefined): void {
+    writeJson(tree, 'tsconfig.base.json', { compilerOptions: { paths } });
+  }
+
+  beforeEach(() => {
+    tree = createTreeWithEmptyWorkspace();
+  });
+
+  it('finds the alias that points at the entry point of the project', () => {
+    writePaths({
+      '@acme/other': ['./libs/other/src/index.ts'],
+      '@acme/billing-feature': ['./libs/billing/feature/src/index.ts']
+    });
+
+    expect(findProjectImportPath(tree, 'libs/billing/feature')).toBe('@acme/billing-feature');
+  });
+
+  it('matches a custom entry point', () => {
+    writePaths({ '@acme/billing': ['./libs/billing/src/main.ts'] });
+
+    expect(findProjectImportPath(tree, 'libs/billing', 'src/main.ts')).toBe('@acme/billing');
+    expect(findProjectImportPath(tree, 'libs/billing')).toBeUndefined();
+  });
+
+  it('finds an alias that has several targets', () => {
+    writePaths({ '@acme/billing': ['./libs/legacy/src/index.ts', './libs/billing/src/index.ts'] });
+
+    expect(findProjectImportPath(tree, 'libs/billing')).toBe('@acme/billing');
+  });
+
+  it('does not match a project whose root only starts with the one given', () => {
+    writePaths({ '@acme/billing-extra': ['./libs/billing-extra/src/index.ts'] });
+
+    expect(findProjectImportPath(tree, 'libs/billing')).toBeUndefined();
+  });
+
+  it('reads another tsconfig when asked to', () => {
+    writeJson(tree, 'tsconfig.paths.json', {
+      compilerOptions: { paths: { '@acme/billing': ['./libs/billing/src/index.ts'] } }
+    });
+
+    expect(findProjectImportPath(tree, 'libs/billing', 'src/index.ts', 'tsconfig.paths.json')).toBe(
+      '@acme/billing'
+    );
+  });
+
+  it('returns undefined when no alias points at the project', () => {
+    writePaths({ '@acme/other': ['./libs/other/src/index.ts'] });
+
+    expect(findProjectImportPath(tree, 'libs/billing')).toBeUndefined();
+  });
+
+  it('returns undefined when the tsconfig has no `paths` map', () => {
+    writePaths(undefined);
+
+    expect(findProjectImportPath(tree, 'libs/billing')).toBeUndefined();
+  });
+
+  it('throws when the tsconfig does not exist', () => {
+    tree.delete('tsconfig.base.json');
+
+    expect(() => findProjectImportPath(tree, 'libs/billing')).toThrow();
+  });
+});
+
+describe('removeRedundantLintTarget', () => {
+  const eslintPlugin = { plugin: '@nx/eslint/plugin', options: { targetName: 'lint' } };
+  let tree: Tree;
+
+  function registerPlugins(plugins: NxJsonConfiguration['plugins']): void {
+    updateNxJson(tree, { ...readNxJson(tree), plugins });
+  }
+
+  beforeEach(() => {
+    tree = createTreeWithEmptyWorkspace();
+    addProjectConfiguration(tree, 'demo', {
+      root: 'libs/demo',
+      targets: { lint: { executor: '@nx/eslint:lint' }, build: {}, typecheck: {} }
+    });
+  });
+
+  it('removes the explicit `@nx/eslint:lint` target when `@nx/eslint/plugin` is registered', () => {
+    registerPlugins([eslintPlugin]);
+
+    removeRedundantLintTarget(tree, 'demo');
+
+    expect(readProjectConfiguration(tree, 'demo').targets).not.toHaveProperty('lint');
+  });
+
+  it('keeps the project`s other targets', () => {
+    registerPlugins([eslintPlugin]);
+
+    removeRedundantLintTarget(tree, 'demo');
+
+    expect(readProjectConfiguration(tree, 'demo').targets).toEqual({ build: {}, typecheck: {} });
+  });
+
+  it('recognizes the plugin registered by name only', () => {
+    registerPlugins(['@nx/eslint/plugin']);
+
+    removeRedundantLintTarget(tree, 'demo');
+
+    expect(readProjectConfiguration(tree, 'demo').targets).not.toHaveProperty('lint');
+  });
+
+  it('keeps the target when the plugin is not registered', () => {
+    registerPlugins([{ plugin: '@nx/vitest', options: { testTargetName: 'test' } }]);
+
+    removeRedundantLintTarget(tree, 'demo');
+
+    expect(readProjectConfiguration(tree, 'demo').targets).toHaveProperty('lint');
+  });
+
+  it('keeps the target when `nx.json` has no plugins', () => {
+    registerPlugins(undefined);
+
+    removeRedundantLintTarget(tree, 'demo');
+
+    expect(readProjectConfiguration(tree, 'demo').targets).toHaveProperty('lint');
+  });
+
+  it('keeps a `lint` target that runs another executor', () => {
+    registerPlugins([eslintPlugin]);
+    updateProjectConfiguration(tree, 'demo', {
+      root: 'libs/demo',
+      targets: { lint: { executor: 'nx:run-commands', options: { command: 'eslint .' } } }
+    });
+
+    removeRedundantLintTarget(tree, 'demo');
+
+    expect(readProjectConfiguration(tree, 'demo').targets).toHaveProperty('lint');
+  });
+
+  it('does nothing for a project without a `lint` target', () => {
+    registerPlugins([eslintPlugin]);
+    updateProjectConfiguration(tree, 'demo', { root: 'libs/demo', targets: { build: {} } });
+
+    removeRedundantLintTarget(tree, 'demo');
+
+    expect(readProjectConfiguration(tree, 'demo').targets).toEqual({ build: {} });
+  });
+
+  it('does nothing for a project without targets', () => {
+    registerPlugins([eslintPlugin]);
+    updateProjectConfiguration(tree, 'demo', { root: 'libs/demo' });
+
+    expect(() => removeRedundantLintTarget(tree, 'demo')).not.toThrow();
   });
 });
 

@@ -1,6 +1,6 @@
 import type { Tree } from '@nx/devkit';
 import { createTreeWithEmptyWorkspace } from '@nx/devkit/testing';
-import { listFilesRecursively } from './nx-tree.utils';
+import { listFilesRecursively, replaceBarrelExport } from './nx-tree.utils';
 
 describe('listFilesRecursively', () => {
   let tree: Tree;
@@ -60,5 +60,122 @@ describe('listFilesRecursively', () => {
     tree.write('dist/other/index.html', '<html></html>');
 
     expect(listFilesRecursively(tree, 'dist/web')).toEqual(['dist/web/index.html']);
+  });
+});
+
+describe('replaceBarrelExport', () => {
+  const BARREL = 'libs/demo/src/index.ts';
+  let tree: Tree;
+
+  beforeEach(() => {
+    tree = createTreeWithEmptyWorkspace();
+  });
+
+  it('points an `export *` of the module at the new one', () => {
+    tree.write(BARREL, `export * from './lib/a';\n`);
+
+    replaceBarrelExport(tree, BARREL, './lib/a', './lib/b');
+
+    expect(tree.read(BARREL, 'utf-8')).toBe(`export * from './lib/b';\n`);
+  });
+
+  it('points a named re-export of the module at the new one', () => {
+    tree.write(BARREL, `export { one, two } from './lib/a';\n`);
+
+    replaceBarrelExport(tree, BARREL, './lib/a', './lib/b');
+
+    expect(tree.read(BARREL, 'utf-8')).toBe(`export { one, two } from './lib/b';\n`);
+  });
+
+  it('handles a re-export written over several lines', () => {
+    tree.write(
+      BARREL,
+      `export {
+  one,
+  two
+} from './lib/a';
+`
+    );
+
+    replaceBarrelExport(tree, BARREL, './lib/a', './lib/b');
+
+    expect(tree.read(BARREL, 'utf-8')).toContain(`} from './lib/b';`);
+  });
+
+  it('handles a type re-export and a namespace re-export', () => {
+    tree.write(BARREL, `export type { One } from './lib/a';\nexport * as ns from './lib/a';\n`);
+
+    replaceBarrelExport(tree, BARREL, './lib/a', './lib/b');
+
+    expect(tree.read(BARREL, 'utf-8')).toBe(
+      `export type { One } from './lib/b';\nexport * as ns from './lib/b';\n`
+    );
+  });
+
+  it('matches either quote style and keeps the one the barrel uses', () => {
+    tree.write(BARREL, `export * from "./lib/a";\n`);
+
+    replaceBarrelExport(tree, BARREL, './lib/a', './lib/b');
+
+    expect(tree.read(BARREL, 'utf-8')).toBe(`export * from "./lib/b";\n`);
+  });
+
+  it('keeps the other exports of the barrel', () => {
+    tree.write(BARREL, `export * from './lib/other';\nexport * from './lib/a';\n`);
+
+    replaceBarrelExport(tree, BARREL, './lib/a', './lib/b');
+
+    expect(tree.read(BARREL, 'utf-8')).toBe(
+      `export * from './lib/other';\nexport * from './lib/b';\n`
+    );
+  });
+
+  it('does not match a module whose specifier only starts with the one given', () => {
+    tree.write(BARREL, `export * from './lib/ab';\n`);
+
+    replaceBarrelExport(tree, BARREL, './lib/a', './lib/b');
+
+    expect(tree.read(BARREL, 'utf-8')).toBe(`export * from './lib/ab';\n`);
+  });
+
+  it('takes the specifier literally, not as a pattern', () => {
+    tree.write(BARREL, `export * from './lib/a.b';\nexport * from './lib/axb';\n`);
+
+    replaceBarrelExport(tree, BARREL, './lib/a.b', './lib/c');
+
+    expect(tree.read(BARREL, 'utf-8')).toBe(
+      `export * from './lib/c';\nexport * from './lib/axb';\n`
+    );
+  });
+
+  it('writes a replacement that contains a `$` as it is', () => {
+    tree.write(BARREL, `export * from './lib/a';\n`);
+
+    replaceBarrelExport(tree, BARREL, './lib/a', './lib/$&b');
+
+    expect(tree.read(BARREL, 'utf-8')).toBe(`export * from './lib/$&b';\n`);
+  });
+
+  it('leaves an `import` of the same module alone', () => {
+    tree.write(BARREL, `import { one } from './lib/a';\nexport * from './lib/a';\n`);
+
+    replaceBarrelExport(tree, BARREL, './lib/a', './lib/b');
+
+    expect(tree.read(BARREL, 'utf-8')).toBe(
+      `import { one } from './lib/a';\nexport * from './lib/b';\n`
+    );
+  });
+
+  it('leaves a barrel that does not re-export the module as it is', () => {
+    tree.write(BARREL, `export * from './lib/other';\n`);
+
+    replaceBarrelExport(tree, BARREL, './lib/a', './lib/b');
+
+    expect(tree.read(BARREL, 'utf-8')).toBe(`export * from './lib/other';\n`);
+  });
+
+  it('does nothing when the barrel does not exist', () => {
+    expect(() => replaceBarrelExport(tree, BARREL, './lib/a', './lib/b')).not.toThrow();
+    expect(tree.exists(BARREL)).toBe(false);
   });
 });
