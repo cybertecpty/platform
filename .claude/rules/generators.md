@@ -25,9 +25,16 @@ Moved here from `docs/agents/conventions.md` §8. Loads when working in an Nx pl
   rerun leaves the project unchanged, but throws when the existing target runs a different one, so
   a generator can't silently wipe out a target the user wrote. Pass `{ replace: true }` only when
   overwriting is the point.
-- Before the PR, run the generator against a real app as a dry run
-  (`nx g {plugin}:{name} {project} … --dry-run`). A spec on an empty workspace doesn't show how
-  the generator meets a project's existing targets.
+- Before the PR, run the generator for real, not only as a dry run, and run what it made through the
+  project's own checks. A spec with a fake upstream generator, and `--dry-run`, show file names. They
+  don't show whether the generated project passes `nx test`, `nx lint` and `nx typecheck`, or how it
+  meets the workspace's existing targets and config. Do it in a throwaway worktree (see
+  `commit-push-pr`, "Before you start"): generate one project of each type the generator makes, run
+  `nx run-many -t test lint typecheck -p {projects}` (and `build` for a buildable one), and read the diff
+  of `nx.json`, `package.json` and `tsconfig.base.json`, which an upstream generator may have written
+  to. Then remove the worktree. To see what a TypeScript generator would write without touching disk,
+  load it in Node with `registerTsProject` (from `nx/src/plugins/js/utils/register`) and run it on
+  `new FsTree(root, false)` (from `nx/src/generators/tree`); nothing is flushed.
 
 ## Scaffold with the workspace wrappers
 
@@ -69,4 +76,6 @@ Executors also follow these rules:
 ## Generator changes — update all surfaces together
 
 1. `generator.ts` (runtime) 2. `schema.ts` (option types) 3. `schema.json` (CLI
-   schema) 4. `generator.spec.ts` (unit coverage) 5. generator-local `README.md`.
+   schema) 4. `generator.spec.ts` (unit coverage) 5. generator-local `README.md` 6. the plugin's
+   root `README.md`, which lists its generators (the `nx-plugin` scaffold leaves only Nx boilerplate
+   there).

@@ -97,6 +97,14 @@ starter standalone component and are forwarded unchanged. `addModuleSpec`, `comp
 `enableTypedLinting`, `skipPackageJson` and `skipTsConfig` are forwarded unchanged too; see
 `schema.json` for their descriptions.
 
+## `nx.json` defaults
+
+The `@nx/angular:library` and `@nx/angular:component` entries in the `generators` section of
+`nx.json` hold the values `@nx/angular:library` would write there itself on its first run
+(`linter`, `unitTestRunner`, `strict`, `prefix`, `style`). With them in place a run leaves
+`nx.json` unchanged. They only apply when someone runs the Nx generator directly, because `ng-lib`
+passes its own options. Keep them: without them the first `ng-lib` run edits `nx.json`.
+
 ## Buildable and publishable libraries
 
 A `--buildable` or `--publishable` library gets a `package.json` from `@nx/angular:library` whose
