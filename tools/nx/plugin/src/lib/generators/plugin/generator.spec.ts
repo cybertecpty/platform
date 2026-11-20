@@ -95,6 +95,11 @@ describe('pluginGenerator', () => {
 
       expect(config).toContain('createBaseVitestConfig');
       expect(config).toContain("environment: 'node'");
+      expect(config).toContain("from '../../../vitest.base.mts'");
+      expect(readJson(tree, 'tools/demo/plugin/tsconfig.spec.json').compilerOptions).toMatchObject({
+        outDir: '../../../dist/out-tsc',
+        types: ['vitest/globals', 'node']
+      });
       expect(tree.exists('tools/demo/plugin/jest.config.cts')).toBe(false);
     });
 
@@ -102,6 +107,7 @@ describe('pluginGenerator', () => {
       await run(tree, { group: 'demo', unitTestRunner: 'none' });
 
       expect(tree.exists('tools/demo/plugin/vitest.config.mts')).toBe(false);
+      expect(tree.exists('tools/demo/plugin/tsconfig.spec.json')).toBe(false);
     });
   });
 

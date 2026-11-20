@@ -1,12 +1,6 @@
 import type { PackageJsonDependencies } from '@cybertecpty/types';
 import type { Tree } from '@nx/devkit';
-import {
-  generateFiles,
-  joinPathFragments,
-  offsetFromRoot,
-  readProjectConfiguration,
-  updateJson
-} from '@nx/devkit';
+import { joinPathFragments, readProjectConfiguration, updateJson } from '@nx/devkit';
 import type { TsConfigJson } from 'type-fest';
 import { readWorkspaceDependencies } from './nx-workspace.utils';
 
@@ -14,9 +8,6 @@ import { readWorkspaceDependencies } from './nx-workspace.utils';
 const UPSTREAM_VITEST_PACKAGES = ['@nx/vite', 'vite'];
 const ROOT_VITEST_CONFIG = 'vitest.config.ts';
 const ROOT_PACKAGE_JSON = 'package.json';
-
-/** The Vitest `test.environment` a project's specs run in. */
-type VitestEnvironment = 'jsdom' | 'node';
 
 const ROOT_ESLINT_CONFIG = 'eslint.config.mjs';
 const DEPENDENCY_CHECKS_IGNORED_FILES = /(ignoredFiles:\s*\[)([^\]]*)(\])/;
@@ -32,34 +23,20 @@ export function assertNotJestRunner(unitTestRunner: string | undefined): void {
 }
 
 /**
- * Turns the project the upstream `@nx/*` generator just created into a Vitest project the way
- * ADR 0018 lays it out, replacing whatever test-runner scaffold that generator wrote:
+ * Tidies the project the upstream `@nx/*` generator just created for the Vitest layout of ADR 0018:
  *
- * - `vitest.config.mts` merges the root `vitest.base.mts` with the project's `name` and
- *   `environment` only, so the coverage numbers stay in one place.
  * - Any `jest.config.*` is deleted.
- * - `tsconfig.spec.json` is written with Vitest's globals, ESM modules and the `.mts` config import;
- *   `tsconfig.lib.json` excludes the config and specs.
+ * - `tsconfig.lib.json` excludes the Vitest config and specs.
  * - The project's own `eslint.config.mjs` ignores the Vitest config in `@nx/dependency-checks`.
  *
- * The Vitest config and `tsconfig.spec.json` come from the templates in `files/vitest`, replacing
- * the upstream ones. Other files the upstream generator did not write are skipped, not created.
+ * The Vitest config and `tsconfig.spec.json` are not written here: each generator generates them
+ * from its own templates. Files the upstream generator did not write are skipped, not created.
  * The mirror image of the migration checklist in `.claude/rules/testing.md`.
  */
-export function configureVitestProject(
-  tree: Tree,
-  projectName: string,
-  environment: VitestEnvironment
-): void {
+export function configureVitestProject(tree: Tree, projectName: string): void {
   const { root } = readProjectConfiguration(tree, projectName);
 
   deleteJestConfigs(tree, root);
-  generateFiles(tree, joinPathFragments(__dirname, 'files', 'vitest'), root, {
-    name: projectName,
-    environment,
-    offset: offsetFromRoot(root),
-    tmpl: ''
-  });
   updateLibTsConfig(tree, root);
   ignoreVitestConfigInDependencyChecks(tree, root);
 }

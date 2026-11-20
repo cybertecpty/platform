@@ -12,14 +12,7 @@
         "outputPath": "dist/tools/nx/utils",
         "main": "tools/nx/utils/src/index.ts",
         "tsConfig": "tools/nx/utils/tsconfig.lib.json",
-        "assets": [
-          "tools/nx/utils/*.md",
-          {
-            "input": "./tools/nx/utils/src/lib/files",
-            "glob": "**/*",
-            "output": "./src/lib/files"
-          }
-        ]
+        "assets": ["tools/nx/utils/*.md"]
       }
     },
     "typecheck": {}
