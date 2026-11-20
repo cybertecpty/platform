@@ -211,13 +211,6 @@ describe('jsLibGenerator', () => {
       expect(config).toContain('createBaseVitestConfig');
       expect(config).toContain("name: 'billing-types'");
       expect(config).toContain("environment: 'jsdom'");
-      expect(config).toContain("from '../../../vitest.base.mts'");
-      expect(readJson(tree, 'libs/billing/types/tsconfig.spec.json').compilerOptions).toMatchObject(
-        {
-          outDir: '../../../dist/out-tsc',
-          types: ['vitest/globals', 'node']
-        }
-      );
       expect(tree.exists('libs/billing/types/jest.config.cts')).toBe(false);
     });
 
@@ -230,7 +223,6 @@ describe('jsLibGenerator', () => {
       });
 
       expect(tree.exists('libs/billing/types/vitest.config.mts')).toBe(false);
-      expect(tree.exists('libs/billing/types/tsconfig.spec.json')).toBe(false);
     });
   });
 

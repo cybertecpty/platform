@@ -14,7 +14,6 @@ import {
   formatFiles,
   generateFiles,
   joinPathFragments,
-  offsetFromRoot,
   readProjectConfiguration,
   runTasksInSerial
 } from '@nx/devkit';
@@ -67,19 +66,13 @@ export async function pluginGenerator(
 
   sortTsConfigBasePaths(tree);
 
-  const projectConfig = readProjectConfiguration(tree, name);
-
   if (unitTestRunner === 'vitest') {
-    configureVitestProject(tree, name);
-    generateFiles(tree, joinPathFragments(__dirname, 'vitest-files'), projectConfig.root, {
-      name,
-      environment: 'node',
-      offset: offsetFromRoot(projectConfig.root),
-      tmpl: ''
-    });
+    configureVitestProject(tree, name, 'node');
   }
 
   addTypecheckTarget(tree, name, unitTestRunner);
+
+  const projectConfig = readProjectConfiguration(tree, name);
 
   generateFiles(tree, joinPathFragments(__dirname, 'files'), projectConfig.root, {
     tmpl: ''

@@ -15,9 +15,7 @@ import {
 import type { GeneratorCallback, Tree } from '@nx/devkit';
 import {
   formatFiles,
-  generateFiles,
   joinPathFragments,
-  offsetFromRoot,
   readProjectConfiguration,
   runTasksInSerial
 } from '@nx/devkit';
@@ -96,20 +94,13 @@ export async function jsLibGenerator(
 
   sortTsConfigBasePaths(tree);
 
-  const { root } = readProjectConfiguration(tree, name);
-
   if (unitTestRunner === 'vitest') {
-    configureVitestProject(tree, name);
-    generateFiles(tree, joinPathFragments(__dirname, 'vitest-files'), root, {
-      name,
-      environment: testEnvironment,
-      offset: offsetFromRoot(root),
-      tmpl: ''
-    });
+    configureVitestProject(tree, name, testEnvironment);
   }
 
   addTypecheckTarget(tree, name, unitTestRunner);
 
+  const { root } = readProjectConfiguration(tree, name);
   const tsConfigLibPath = joinPathFragments(root, 'tsconfig.lib.json');
 
   // A `type:testing` library's own source (mocks, builders, fixtures) commonly uses
