@@ -43,10 +43,10 @@ describe('configureVitestProject', () => {
     expect(tree.exists(`${ROOT}/jest.config.ts`)).toBe(false);
   });
 
-  it('points `tsconfig.spec.json` at Vitest', () => {
+  it('writes a `tsconfig.spec.json` for Vitest, replacing the upstream one', () => {
     writeJson(tree, `${ROOT}/tsconfig.spec.json`, {
       extends: './tsconfig.json',
-      compilerOptions: { outDir: '../../../dist/out-tsc', types: ['jest', 'node'] },
+      compilerOptions: { outDir: 'elsewhere', types: ['jest', 'node'] },
       include: ['jest.config.ts', 'src/**/*.spec.ts']
     });
 
@@ -56,14 +56,20 @@ describe('configureVitestProject', () => {
       extends: './tsconfig.json',
       compilerOptions: {
         outDir: '../../../dist/out-tsc',
+        types: ['vitest/globals', 'node'],
         module: 'esnext',
         moduleResolution: 'bundler',
-        types: ['vitest/globals', 'node'],
         allowImportingTsExtensions: true,
         noEmit: true
       },
       include: ['vitest.config.mts', 'src/**/*.test.ts', 'src/**/*.spec.ts', 'src/**/*.d.ts']
     });
+  });
+
+  it('writes a `tsconfig.spec.json` when the upstream generator wrote none', () => {
+    configureVitestProject(tree, 'billing-types', 'node');
+
+    expect(tree.exists(`${ROOT}/tsconfig.spec.json`)).toBe(true);
   });
 
   it('excludes the Vitest config from `tsconfig.lib.json`', () => {
@@ -95,9 +101,9 @@ describe('configureVitestProject', () => {
     );
   });
 
-  it('leaves the files it has no reason to touch alone when they are missing', () => {
-    expect(() => configureVitestProject(tree, 'billing-types', 'node')).not.toThrow();
-    expect(tree.exists(`${ROOT}/tsconfig.spec.json`)).toBe(false);
+  it('leaves a missing `tsconfig.lib.json` missing', () => {
+    configureVitestProject(tree, 'billing-types', 'node');
+
     expect(tree.exists(`${ROOT}/tsconfig.lib.json`)).toBe(false);
   });
 });
