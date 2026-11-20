@@ -1,25 +1,19 @@
 import type { PackageJsonDependencies } from '@cybertecpty/types';
 import type { Tree } from '@nx/devkit';
 import {
+  generateFiles,
   joinPathFragments,
   offsetFromRoot,
   readProjectConfiguration,
   updateJson
 } from '@nx/devkit';
+import type { TsConfigJson } from 'type-fest';
 import { readWorkspaceDependencies } from './nx-workspace.utils';
 
 /** Dependencies the upstream Vitest scaffold adds that nothing in the workspace uses. */
 const UPSTREAM_VITEST_PACKAGES = ['@nx/vite', 'vite'];
 const ROOT_VITEST_CONFIG = 'vitest.config.ts';
 const ROOT_PACKAGE_JSON = 'package.json';
-
-/** Minimal shape of the tsconfig files `configureVitestProject` rewrites. */
-interface TsConfigFile {
-  compilerOptions?: Record<string, unknown>;
-  include?: string[];
-  exclude?: string[];
-  [key: string]: unknown;
-}
 
 /** The Vitest `test.environment` a project's specs run in. */
 type VitestEnvironment = 'jsdom' | 'node';
@@ -44,11 +38,12 @@ export function assertNotJestRunner(unitTestRunner: string | undefined): void {
  * - `vitest.config.mts` merges the root `vitest.base.mts` with the project's `name` and
  *   `environment` only, so the coverage numbers stay in one place.
  * - Any `jest.config.*` is deleted.
- * - `tsconfig.spec.json` gets Vitest's globals, ESM modules and the `.mts` config import;
+ * - `tsconfig.spec.json` is written with Vitest's globals, ESM modules and the `.mts` config import;
  *   `tsconfig.lib.json` excludes the config and specs.
  * - The project's own `eslint.config.mjs` ignores the Vitest config in `@nx/dependency-checks`.
  *
- * Files the upstream generator did not write are skipped, not created, apart from the config.
+ * The Vitest config and `tsconfig.spec.json` come from the templates in `files/vitest`, replacing
+ * the upstream ones. Other files the upstream generator did not write are skipped, not created.
  * The mirror image of the migration checklist in `.claude/rules/testing.md`.
  */
 export function configureVitestProject(
@@ -58,9 +53,13 @@ export function configureVitestProject(
 ): void {
   const { root } = readProjectConfiguration(tree, projectName);
 
-  writeVitestConfig(tree, root, projectName, environment);
   deleteJestConfigs(tree, root);
-  updateSpecTsConfig(tree, root);
+  generateFiles(tree, joinPathFragments(__dirname, 'files', 'vitest'), root, {
+    name: projectName,
+    environment,
+    offset: offsetFromRoot(root),
+    tmpl: ''
+  });
   updateLibTsConfig(tree, root);
   ignoreVitestConfigInDependencyChecks(tree, root);
 }
@@ -158,56 +157,8 @@ function updateLibTsConfig(tree: Tree, root: string): void {
     return;
   }
 
-  updateJson<TsConfigFile, TsConfigFile>(tree, path, json => ({
+  updateJson<TsConfigJson>(tree, path, json => ({
     ...json,
     exclude: ['vitest.config.mts', 'src/**/*.spec.ts', 'src/**/*.test.ts']
   }));
-}
-
-function updateSpecTsConfig(tree: Tree, root: string): void {
-  const path = joinPathFragments(root, 'tsconfig.spec.json');
-
-  if (!tree.exists(path)) {
-    return;
-  }
-
-  updateJson<TsConfigFile, TsConfigFile>(tree, path, json => ({
-    ...json,
-    compilerOptions: {
-      ...json.compilerOptions,
-      module: 'esnext',
-      moduleResolution: 'bundler',
-      types: ['vitest/globals', 'node'],
-      allowImportingTsExtensions: true,
-      noEmit: true
-    },
-    include: ['vitest.config.mts', 'src/**/*.test.ts', 'src/**/*.spec.ts', 'src/**/*.d.ts']
-  }));
-}
-
-function writeVitestConfig(
-  tree: Tree,
-  root: string,
-  projectName: string,
-  environment: VitestEnvironment
-): void {
-  const baseConfig = `${offsetFromRoot(root)}vitest.base.mts`;
-
-  tree.write(
-    joinPathFragments(root, 'vitest.config.mts'),
-    `import { defineConfig, mergeConfig } from 'vitest/config';
-
-import { createBaseVitestConfig } from '${baseConfig}';
-
-export default mergeConfig(
-  createBaseVitestConfig(import.meta.dirname),
-  defineConfig({
-    test: {
-      name: '${projectName}',
-      environment: '${environment}'
-    }
-  })
-);
-`
-  );
 }

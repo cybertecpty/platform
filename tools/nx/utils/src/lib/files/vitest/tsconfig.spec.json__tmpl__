@@ -1,0 +1,12 @@
+{
+  "extends": "./tsconfig.json",
+  "compilerOptions": {
+    "outDir": "<%= offset %>dist/out-tsc",
+    "types": ["vitest/globals", "node"],
+    "module": "esnext",
+    "moduleResolution": "bundler",
+    "allowImportingTsExtensions": true,
+    "noEmit": true
+  },
+  "include": ["vitest.config.mts", "src/**/*.test.ts", "src/**/*.spec.ts", "src/**/*.d.ts"]
+}
