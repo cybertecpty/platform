@@ -1,4 +1,5 @@
-import { joinPathFragments, readJson, type Tree } from '@nx/devkit';
+import { findProjectImportPath, replaceBarrelExport } from '@cybertecpty/nx-utils';
+import { joinPathFragments, type Tree } from '@nx/devkit';
 import { escapeRegExp } from 'lodash-es';
 
 const GENERATED_ROUTES_FILE = 'lib.routes';
@@ -30,7 +31,12 @@ export function normalizeRoutesFile(tree: Tree, root: string, name: string): voi
 
   if (path !== generatedPath) {
     tree.delete(generatedPath);
-    renameRoutesExport(tree, root, routesFile);
+    replaceBarrelExport(
+      tree,
+      joinPathFragments(root, 'src/index.ts'),
+      `./lib/${GENERATED_ROUTES_FILE}`,
+      `./lib/${routesFile}`
+    );
   }
 }
 
@@ -53,7 +59,7 @@ export function useRoutesInLazyRegistration(
 ): void {
   const routes = tree.read(joinPathFragments(root, 'src/lib', `${name}.routes.ts`), 'utf-8');
   const routesExport = routes?.match(/export const (\w+)/)?.[1];
-  const importPath = findImportPath(tree, root);
+  const importPath = findProjectImportPath(tree, root);
   const parentSource = tree.read(parent, 'utf-8');
 
   if (!routesExport || !importPath || !parentSource) {
@@ -65,27 +71,4 @@ export function useRoutesInLazyRegistration(
   );
 
   tree.write(parent, parentSource.replace(registration, `$1${routesExport}$2`));
-}
-
-/** The `tsconfig.base.json` path alias of the library at `root`, which is how a parent imports it. */
-function findImportPath(tree: Tree, root: string): string | undefined {
-  const { compilerOptions } = readJson<{
-    compilerOptions?: { paths?: Record<string, string[]> };
-  }>(tree, 'tsconfig.base.json');
-  const entryPoint = `./${root}/src/index.ts`;
-
-  return Object.entries(compilerOptions?.paths ?? {}).find(([, targets]) =>
-    targets.includes(entryPoint)
-  )?.[0];
-}
-
-/** Points the `src/index.ts` export of the generated routes file at `routesFile`. */
-function renameRoutesExport(tree: Tree, root: string, routesFile: string): void {
-  const barrelPath = joinPathFragments(root, 'src/index.ts');
-  const barrel = tree.read(barrelPath, 'utf-8');
-  const generatedExport = `'./lib/${GENERATED_ROUTES_FILE}'`;
-
-  if (barrel?.includes(generatedExport)) {
-    tree.write(barrelPath, barrel.replace(generatedExport, `'./lib/${routesFile}'`));
-  }
 }

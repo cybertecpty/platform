@@ -12,6 +12,7 @@ import { createTreeWithEmptyWorkspace } from '@nx/devkit/testing';
 import {
   addTsConfigTypes,
   addTypecheckTarget,
+  findProjectImportPath,
   removeRedundantLintTarget,
   removeTsConfigTypes,
   sortTsConfigBasePaths
@@ -134,6 +135,74 @@ describe('addTypecheckTarget', () => {
 
     const { targets } = readProjectConfiguration(tree, 'demo');
     expect(targets?.['typecheck']).toBeUndefined();
+  });
+});
+
+describe('findProjectImportPath', () => {
+  let tree: Tree;
+
+  function writePaths(paths: Record<string, string[]> | undefined): void {
+    writeJson(tree, 'tsconfig.base.json', { compilerOptions: { paths } });
+  }
+
+  beforeEach(() => {
+    tree = createTreeWithEmptyWorkspace();
+  });
+
+  it('finds the alias that points at the entry point of the project', () => {
+    writePaths({
+      '@acme/other': ['./libs/other/src/index.ts'],
+      '@acme/billing-feature': ['./libs/billing/feature/src/index.ts']
+    });
+
+    expect(findProjectImportPath(tree, 'libs/billing/feature')).toBe('@acme/billing-feature');
+  });
+
+  it('matches a custom entry point', () => {
+    writePaths({ '@acme/billing': ['./libs/billing/src/main.ts'] });
+
+    expect(findProjectImportPath(tree, 'libs/billing', 'src/main.ts')).toBe('@acme/billing');
+    expect(findProjectImportPath(tree, 'libs/billing')).toBeUndefined();
+  });
+
+  it('finds an alias that has several targets', () => {
+    writePaths({ '@acme/billing': ['./libs/legacy/src/index.ts', './libs/billing/src/index.ts'] });
+
+    expect(findProjectImportPath(tree, 'libs/billing')).toBe('@acme/billing');
+  });
+
+  it('does not match a project whose root only starts with the one given', () => {
+    writePaths({ '@acme/billing-extra': ['./libs/billing-extra/src/index.ts'] });
+
+    expect(findProjectImportPath(tree, 'libs/billing')).toBeUndefined();
+  });
+
+  it('reads another tsconfig when asked to', () => {
+    writeJson(tree, 'tsconfig.paths.json', {
+      compilerOptions: { paths: { '@acme/billing': ['./libs/billing/src/index.ts'] } }
+    });
+
+    expect(findProjectImportPath(tree, 'libs/billing', 'src/index.ts', 'tsconfig.paths.json')).toBe(
+      '@acme/billing'
+    );
+  });
+
+  it('returns undefined when no alias points at the project', () => {
+    writePaths({ '@acme/other': ['./libs/other/src/index.ts'] });
+
+    expect(findProjectImportPath(tree, 'libs/billing')).toBeUndefined();
+  });
+
+  it('returns undefined when the tsconfig has no `paths` map', () => {
+    writePaths(undefined);
+
+    expect(findProjectImportPath(tree, 'libs/billing')).toBeUndefined();
+  });
+
+  it('throws when the tsconfig does not exist', () => {
+    tree.delete('tsconfig.base.json');
+
+    expect(() => findProjectImportPath(tree, 'libs/billing')).toThrow();
   });
 });
 

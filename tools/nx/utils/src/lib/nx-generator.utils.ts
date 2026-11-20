@@ -1,6 +1,7 @@
 import { orderByKeys } from '@cybertecpty/utils';
 import type { Tree } from '@nx/devkit';
 import {
+  readJson,
   readNxJson,
   readProjectConfiguration,
   updateJson,
@@ -79,6 +80,25 @@ export function addTypecheckTarget(
   const projectConfig = readProjectConfiguration(tree, projectName);
   projectConfig.targets = { ...projectConfig.targets, typecheck: {} };
   updateProjectConfiguration(tree, projectName, projectConfig);
+}
+
+/**
+ * Finds the `tsconfig.base.json` path alias of the project at `projectRoot`, which is how other
+ * projects import it: the alias whose target is `./<projectRoot>/<entryPoint>`. `undefined` when no
+ * alias points there, or the file has no `paths` map.
+ */
+export function findProjectImportPath(
+  tree: Tree,
+  projectRoot: string,
+  entryPoint = 'src/index.ts',
+  tsConfigBasePath = 'tsconfig.base.json'
+): string | undefined {
+  const { compilerOptions } = readJson<TsConfigWithPaths>(tree, tsConfigBasePath);
+  const target = `./${projectRoot}/${entryPoint}`;
+
+  return Object.entries(compilerOptions?.paths ?? {}).find(([, targets]) =>
+    targets.includes(target)
+  )?.[0];
 }
 
 /**
