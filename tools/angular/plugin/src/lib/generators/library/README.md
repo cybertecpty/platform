@@ -22,7 +22,7 @@ Creates an Angular library under `libs/<domain>[/<subdomain>...]/[<group>/]<type
   | `ui`          | always `false` (warns) | `true`                | `false`                |
   | `data-access` | always `false` (warns) | always `true` (warns) | always `false` (warns) |
   | `utils`       | always `false`         | always `true`         | always `false`         |
-  | `testing`     | `false`                | `true`                | `false`                |
+  | `testing`     | always `false` (warns) | always `true` (warns) | always `false` (warns) |
 
   A cell without "always" is a default the caller can change. With `standalone` and `skipModule`
   at these defaults a library is generated without a starter component or module; a `feature`

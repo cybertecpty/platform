@@ -196,11 +196,17 @@ function normalizeOptions(rawOptions: NgLibGeneratorOptions): NormalizedNgLibGen
 function normalizeTestingOptions(
   options: NormalizedNgLibGeneratorOptions
 ): NormalizedNgLibGeneratorOptions {
+  if (options.routing || options.standalone || options.skipModule === false) {
+    logger.warn(
+      'Testing libraries should not export any routes, components or modules, so the routing, standalone and skipModule options are ignored.'
+    );
+  }
+
   return {
     ...options,
-    routing: options.routing ?? false,
-    skipModule: options.skipModule ?? true,
-    standalone: options.standalone ?? false
+    routing: false,
+    skipModule: true,
+    standalone: false
   };
 }
 

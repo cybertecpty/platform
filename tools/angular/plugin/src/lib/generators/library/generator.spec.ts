@@ -284,7 +284,7 @@ describe('ngLibGenerator', () => {
     });
 
     describe('testing', () => {
-      it('defaults to no routing and no starter component', async () => {
+      it('exports no routes, components or modules, without a warning when nothing was set', async () => {
         await run(tree, { type: 'testing' });
 
         expect(forwardedOptions()).toMatchObject({
@@ -292,7 +292,24 @@ describe('ngLibGenerator', () => {
           skipModule: true,
           standalone: false
         });
+        expect(loggerWarn).not.toHaveBeenCalled();
       });
+
+      it.each([{ routing: true }, { standalone: true }, { skipModule: false }])(
+        'forces routes, components and modules off and warns for %o',
+        async options => {
+          await run(tree, { type: 'testing', ...options });
+
+          expect(forwardedOptions()).toMatchObject({
+            routing: false,
+            skipModule: true,
+            standalone: false
+          });
+          expect(loggerWarn).toHaveBeenCalledWith(
+            expect.stringContaining('Testing libraries should not export')
+          );
+        }
+      );
 
       it('is tested like any other lib: it gets the default runner, a Vitest config and a `typecheck` target', async () => {
         await run(tree, { type: 'testing' });
