@@ -297,3 +297,19 @@ exercise `@nx/angular`'s test setup, and the two routes it offers do not agree.
   unmet peers, and the spec still passed. Analog 2.9.7 and `@angular/build` 22.2.x declare
   `^5.0.0`. Whether to move the generated libraries to those versions is open.
 - Item 1 is answered for libraries (the two routes disagree on Vitest 5) and not for applications.
+
+## Amendment (2026-11-20): Vitest files come from templates; the upstream scaffold still runs (#368)
+
+`configureVitestProject` wrote `vitest.config.mts` as a string and rewrote the upstream
+`tsconfig.spec.json`. It now generates both from `__tmpl__` templates in `nx-utils`, shared by the
+`ts-lib` and `nx-plugin` generators. The generated `vitest.config.mts`, `tsconfig.spec.json` and
+`tsconfig.lib.json` are byte-identical for `ts-lib`, `nx-plugin` and `ng-lib`.
+
+### Considered: run the upstream generator with no unit test runner
+
+Not chosen, because there would be little to undo and much to recreate. With `unitTestRunner: none`
+the upstream generators also leave out the `test` target, the `@nx/vitest:test` default in
+`nx.json`, the spec reference in `tsconfig.json`, the sample spec and a README line, and
+`@nx/plugin:plugin` adds `@nx/jest`. `withoutUpstreamVitestSideEffects` and the `ignoredFiles` patch
+in `ignoreVitestConfigInDependencyChecks` stay: undoing a few side effects costs less than writing
+all of that.
