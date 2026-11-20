@@ -13,6 +13,11 @@ Moved here from `docs/agents/conventions.md` §8. Loads when working in an Nx pl
   `__tmpl__` is what the workspace already uses (`generators/plugin/files/src/lib/.gitkeep__tmpl__`),
   and a `__tmpl__` name falls outside the `src/**/*.ts` / `**/!(*.ts)` globs that lint,
   typecheck, and asset-copy would otherwise apply to it.
+- Keep a template in the plugin project whose generator writes it. One that more than one
+  generator writes, across plugins, may live in the shared `nx-utils` lib (the Vitest config and
+  spec tsconfig do). A lib built with `@nx/js:tsc` copies only `.ts` files, so add an `assets`
+  entry for the template folder to its `project.json`. Without it the build leaves the templates out
+  of `dist` and `generateFiles` finds nothing.
 - "Generator output" includes `schema.ts`, `schema.json` and READMEs. Don't build file contents
   in code (`writeJson`, string-building, rewriting upstream output) when a template would do.
   For a JSON value, write `<%- JSON.stringify(value) %>`: `<%= %>` HTML-escapes its output, so a
