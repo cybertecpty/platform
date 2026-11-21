@@ -1,15 +1,10 @@
 import { listFilesRecursively } from '@cybertecpty/nx-utils';
 import { joinPathFragments, readJson, writeJson, type Tree } from '@nx/devkit';
+import type { PackageJson } from 'type-fest';
 
 const ANGULAR_SCOPE = '@angular/';
 const IMPORT_SPECIFIER = /(?:from|import)\s*\(?\s*['"](@angular\/[^'"/]+)(?:\/[^'"]*)?['"]/g;
 const NON_PUBLISHED_FILE = /\.(spec|test-d)\.ts$|(^|\/)test-setup\.ts$/;
-
-interface PackageJson {
-  dependencies?: Record<string, string>;
-  devDependencies?: Record<string, string>;
-  peerDependencies?: Record<string, string>;
-}
 
 /**
  * Sets the `@angular/*` peer dependencies in a buildable or publishable library's `package.json`
