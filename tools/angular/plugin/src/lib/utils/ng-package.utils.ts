@@ -31,19 +31,19 @@ export function replaceAngularPeerDependencies(tree: Tree, root: string): void {
   const { dependencies = {}, devDependencies = {} } = readWorkspacePackageJson(tree) ?? {};
   const imported = listImportedAngularPackages(tree, joinPathFragments(root, 'src'));
 
-  const angularPeers = Object.fromEntries(
-    imported.flatMap(name => {
-      const range = peers[name] ?? dependencies[name] ?? devDependencies[name];
+  const angularPeers = imported.flatMap((name): [string, string][] => {
+    const range = peers[name] ?? dependencies[name] ?? devDependencies[name];
 
-      return range ? [[name, range]] : [];
-    })
+    return range ? [[name, range]] : [];
+  });
+  const otherPeers = Object.entries(peers).flatMap(([name, range]): [string, string][] =>
+    range && !name.startsWith(ANGULAR_SCOPE) ? [[name, range]] : []
   );
-  const otherPeers = Object.entries(peers).filter(([name]) => !name.startsWith(ANGULAR_SCOPE));
 
   writeJson(tree, packageJsonPath, {
     ...packageJson,
     peerDependencies: Object.fromEntries(
-      [...otherPeers, ...Object.entries(angularPeers)].sort(([a], [b]) => a.localeCompare(b))
+      [...otherPeers, ...angularPeers].sort(([a], [b]) => a.localeCompare(b))
     )
   });
 }
