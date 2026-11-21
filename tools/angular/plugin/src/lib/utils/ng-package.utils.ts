@@ -1,4 +1,4 @@
-import { listFilesRecursively, readWorkspaceDependencies } from '@cybertecpty/nx-utils';
+import { listFilesRecursively, readWorkspacePackageJson } from '@cybertecpty/nx-utils';
 import { joinPathFragments, readJson, writeJson, type Tree } from '@nx/devkit';
 import type { PackageJson } from 'type-fest';
 
@@ -28,7 +28,7 @@ export function replaceAngularPeerDependencies(tree: Tree, root: string): void {
 
   const packageJson = readJson<PackageJson>(tree, packageJsonPath);
   const peers = packageJson.peerDependencies ?? {};
-  const { dependencies = {}, devDependencies = {} } = readWorkspaceDependencies(tree) ?? {};
+  const { dependencies = {}, devDependencies = {} } = readWorkspacePackageJson(tree) ?? {};
   const imported = listImportedAngularPackages(tree, joinPathFragments(root, 'src'));
 
   const angularPeers = Object.fromEntries(
