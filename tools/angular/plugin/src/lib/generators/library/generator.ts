@@ -23,6 +23,7 @@ import {
 } from '@nx/devkit';
 import { omit } from 'lodash-es';
 import type { NgUnitTestRunner } from '../../types/ng-projects.types';
+import { replaceAngularPeerDependencies } from '../../utils/ng-package.utils';
 import { normalizeRoutesFile, useRoutesInLazyRegistration } from '../../utils/ng-routes.utils';
 import { configureAngularVitestProject } from '../../utils/ng-vitest.utils';
 import type { NgLibGeneratorOptions, NormalizedNgLibGeneratorOptions } from './schema';
@@ -34,7 +35,8 @@ import type { NgLibGeneratorOptions, NormalizedNgLibGeneratorOptions } from './s
  * (`libs/<domain>[/<subdomain>...]/[<group>/]<type>`) and tags from the ADR 0009 helpers rather
  * than taking a raw `directory`. Applies the per-type defaults for `routing`, `skipModule` and
  * `standalone`, forces a `testing` library non-buildable, and turns the Vitest scaffold into the
- * ADR 0018 layout. Adds the folder skeleton for the library's type, and the `typecheck` stub.
+ * ADR 0018 layout. Adds the folder skeleton for the library's type, and the `typecheck` stub, and
+ * sets a buildable library's `@angular/*` peer dependencies from what it imports.
  * Every other option is forwarded to `@nx/angular:library` unchanged.
  */
 export async function ngLibGenerator(
@@ -113,6 +115,10 @@ export async function ngLibGenerator(
   if (unitTestRunner === UnitTestRunner.None && tree.exists(specPath)) {
     tree.delete(specPath);
   }
+
+  // A buildable or publishable library gets a `package.json` whose peers assume a starter
+  // component, so they are set from what the finished library imports.
+  replaceAngularPeerDependencies(tree, projectConfig.root);
 
   if (!rawOptions.skipFormat) {
     await formatFiles(tree);

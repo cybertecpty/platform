@@ -44,6 +44,8 @@ function fakeNxAngularLibraryGenerator(
     parent?: string;
     standalone?: boolean;
     skipModule?: boolean;
+    buildable?: boolean;
+    publishable?: boolean;
   }
 ) {
   const task = fakeNxLibraryGenerator(tree, schema);
@@ -71,8 +73,24 @@ function fakeNxAngularLibraryGenerator(
 
   updateJson(tree, 'package.json', json => ({
     ...json,
+    dependencies: { ...json.dependencies, '@angular/router': '~22.0.4' },
     devDependencies: { ...json.devDependencies, '@vitest/ui': '~4.1.0' }
   }));
+
+  if (schema.buildable || schema.publishable) {
+    // A starter component or not, Nx writes the same two peers.
+    writeJson(tree, `${schema.directory}/package.json`, {
+      name: `@cybertecpty/${schema.name}`,
+      peerDependencies: { '@angular/common': '^22.0.0', '@angular/core': '^22.0.0' }
+    });
+
+    if (schema.standalone) {
+      tree.write(
+        `${schema.directory}/src/lib/${schema.name}.ts`,
+        "import { Component } from '@angular/core';"
+      );
+    }
+  }
 
   updateProjectConfiguration(tree, schema.name, {
     ...projectConfig,
@@ -442,6 +460,29 @@ describe('ngLibGenerator', () => {
       await run(tree, { type: 'ui', buildable: true, publishable: true, importPath: '@x/ui' });
 
       expect(forwardedOptions()).toMatchObject({ buildable: true, publishable: true });
+    });
+
+    describe('peer dependencies', () => {
+      const peers = (directory: string) =>
+        readJson(tree, `${directory}/package.json`).peerDependencies;
+
+      it('sets those of a routed buildable lib from the routes it imports', async () => {
+        await run(tree, { type: 'feature', buildable: true });
+
+        expect(peers('libs/billing/feature')).toEqual({ '@angular/router': '~22.0.4' });
+      });
+
+      it('keeps `@angular/core` for a buildable lib with a starter component', async () => {
+        await run(tree, { type: 'ui', buildable: true, standalone: true });
+
+        expect(peers('libs/billing/ui')).toEqual({ '@angular/core': '^22.0.0' });
+      });
+
+      it('writes no `package.json` for a lib that is not buildable', async () => {
+        await run(tree, { type: 'ui' });
+
+        expect(tree.exists('libs/billing/ui/package.json')).toBe(false);
+      });
     });
 
     it('forces both off for a `testing` lib and warns for each', async () => {

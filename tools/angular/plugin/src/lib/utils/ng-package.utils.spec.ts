@@ -1,0 +1,99 @@
+import type { Tree } from '@nx/devkit';
+import { readJson, writeJson } from '@nx/devkit';
+import { createTreeWithEmptyWorkspace } from '@nx/devkit/testing';
+import { replaceAngularPeerDependencies } from './ng-package.utils';
+
+const ROOT = 'libs/billing/feature';
+
+function peerDependencies(tree: Tree): Record<string, string> {
+  return readJson(tree, `${ROOT}/package.json`).peerDependencies;
+}
+
+describe('replaceAngularPeerDependencies', () => {
+  let tree: Tree;
+
+  beforeEach(() => {
+    tree = createTreeWithEmptyWorkspace();
+    writeJson(tree, 'package.json', {
+      dependencies: { '@angular/core': '~22.0.4', '@angular/router': '~22.0.4' }
+    });
+    writeJson(tree, `${ROOT}/package.json`, {
+      name: '@cybertecpty/billing-feature',
+      peerDependencies: { '@angular/common': '^22.0.0', '@angular/core': '^22.0.0' }
+    });
+  });
+
+  it('drops the peers the library does not import and adds the ones it does', () => {
+    tree.write(
+      `${ROOT}/src/lib/billing.routes.ts`,
+      "import type { Route } from '@angular/router';"
+    );
+
+    replaceAngularPeerDependencies(tree, ROOT);
+
+    expect(peerDependencies(tree)).toEqual({ '@angular/router': '~22.0.4' });
+  });
+
+  it('keeps the range of a peer that stays, and takes the root range for a new one', () => {
+    tree.write(
+      `${ROOT}/src/lib/billing.ts`,
+      "import { Component } from '@angular/core';\nimport { Router } from '@angular/router';"
+    );
+
+    replaceAngularPeerDependencies(tree, ROOT);
+
+    expect(peerDependencies(tree)).toEqual({
+      '@angular/core': '^22.0.0',
+      '@angular/router': '~22.0.4'
+    });
+  });
+
+  it('counts a secondary entry point and a dynamic import', () => {
+    tree.write(
+      `${ROOT}/src/lib/billing.ts`,
+      "import { HttpClient } from '@angular/common/http';\nconst core = import('@angular/core');"
+    );
+
+    replaceAngularPeerDependencies(tree, ROOT);
+
+    expect(Object.keys(peerDependencies(tree))).toEqual(['@angular/common', '@angular/core']);
+  });
+
+  it('ignores specs and the test setup, which are not published', () => {
+    tree.write(
+      `${ROOT}/src/lib/billing.spec.ts`,
+      "import { TestBed } from '@angular/core/testing';"
+    );
+    tree.write(`${ROOT}/src/test-setup.ts`, "import '@angular/compiler';");
+
+    replaceAngularPeerDependencies(tree, ROOT);
+
+    expect(peerDependencies(tree)).toEqual({});
+  });
+
+  it('leaves peers outside `@angular/` alone', () => {
+    writeJson(tree, `${ROOT}/package.json`, {
+      peerDependencies: { '@angular/core': '^22.0.0', rxjs: '^7.8.0' }
+    });
+
+    replaceAngularPeerDependencies(tree, ROOT);
+
+    expect(peerDependencies(tree)).toEqual({ rxjs: '^7.8.0' });
+  });
+
+  it('skips an imported package whose range cannot be found', () => {
+    tree.write(`${ROOT}/src/lib/billing.ts`, "import { x } from '@angular/forms';");
+
+    replaceAngularPeerDependencies(tree, ROOT);
+
+    expect(peerDependencies(tree)).toEqual({});
+  });
+
+  it('does nothing when the library has no `package.json`', () => {
+    tree.delete(`${ROOT}/package.json`);
+
+    replaceAngularPeerDependencies(tree, ROOT);
+
+    expect(tree.exists(`${ROOT}/package.json`)).toBe(false);
+  });
+});

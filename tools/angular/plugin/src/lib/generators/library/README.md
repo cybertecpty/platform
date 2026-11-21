@@ -108,10 +108,14 @@ passes its own options. Keep them: without them the first `ng-lib` run edits `nx
 ## Buildable and publishable libraries
 
 A `--buildable` or `--publishable` library gets a `package.json` from `@nx/angular:library` whose
-`peerDependencies` are `@angular/common` and `@angular/core`. A library generated without a starter
-component imports neither, so `@nx/dependency-checks` fails the first `nx lint`. Run
-`nx lint {project} --fix` once after generating it, and the peers are corrected to what the library
-imports (`@angular/router` for a routed one). The library builds without that step.
+`peerDependencies` are `@angular/common` and `@angular/core`, whatever the library contains. The
+generator sets the `@angular/*` peers to the Angular packages the library's source imports
+(`replaceAngularPeerDependencies`), so a routed `feature` library gets `@angular/router` only, and a
+library with a starter component gets `@angular/core` only. That is what `@nx/dependency-checks`
+expects, so the first `nx lint` passes without `--fix`. A kept peer keeps the range Nx wrote, and a
+new one takes the range from the root `package.json`. Peers outside `@angular/` are left alone.
+The peers are not kept up to date afterwards: import another Angular package, and `nx lint --fix`
+adds it.
 
 A `--publishable` library is not part of any `nx release` group: `nx.json` has only the `apps`
 group, and publishing libraries to npm is deferred until a real package exists (ADR 0011). Nx logs
