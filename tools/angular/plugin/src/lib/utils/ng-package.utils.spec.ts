@@ -89,6 +89,15 @@ describe('replaceAngularPeerDependencies', () => {
     expect(peerDependencies(tree)).toEqual({});
   });
 
+  it('keeps the range of a peer that stays when the workspace has no root `package.json`', () => {
+    tree.delete('package.json');
+    tree.write(`${ROOT}/src/lib/billing.ts`, "import { Component } from '@angular/core';");
+
+    replaceAngularPeerDependencies(tree, ROOT);
+
+    expect(peerDependencies(tree)).toEqual({ '@angular/core': '^22.0.0' });
+  });
+
   it('does nothing when the library has no `package.json`', () => {
     tree.delete(`${ROOT}/package.json`);
 
