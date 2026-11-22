@@ -20,7 +20,9 @@ export async function gitBranchExists(
  * @returns A promise that resolves to the current branch name, or `''` in detached `HEAD`.
  */
 export async function gitCurrentBranch(git: SimpleGit = simpleGit()): Promise<string> {
-  return (await git.branchLocal()).current;
+  const { current, detached } = await git.branchLocal();
+
+  return detached ? '' : current;
 }
 
 /**
@@ -42,5 +44,5 @@ export async function isCurrentGitBranch(
   branchName: string,
   git: SimpleGit = simpleGit()
 ): Promise<boolean> {
-  return (await git.branchLocal()).current === branchName;
+  return (await gitCurrentBranch(git)) === branchName;
 }

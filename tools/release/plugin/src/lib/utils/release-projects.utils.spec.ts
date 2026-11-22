@@ -1,4 +1,4 @@
-import { gitMergeBase, gitTagsMatching } from '@cybertecpty/git-utils';
+import { createGitRepoFixture, type GitRepoFixture } from '@cybertecpty/git-testing';
 import { createDependencyGraphFixture, createProjectNodeFixture } from '@cybertecpty/nx-testing';
 import { findMatchingProjects, getAffectedGraphNodes } from '@cybertecpty/nx-utils';
 import {
@@ -11,8 +11,7 @@ import {
 } from '@nx/devkit';
 import { createTreeWithEmptyWorkspace } from '@nx/devkit/testing';
 import { releaseChangelog } from 'nx/release';
-import simpleGit, { type SimpleGit } from 'simple-git';
-import { vi, type Mock } from 'vitest';
+import { vi } from 'vitest';
 
 import {
   getReleaseCommandOptions,
@@ -25,11 +24,6 @@ import {
   selectReleasableProjects,
   tagReleasedProjects
 } from './release-projects.utils';
-
-vi.mock('@cybertecpty/git-utils', () => ({
-  gitMergeBase: vi.fn(),
-  gitTagsMatching: vi.fn()
-}));
 
 vi.mock('@cybertecpty/nx-utils', () => ({
   findMatchingProjects: vi.fn(),
@@ -45,22 +39,10 @@ vi.mock('nx/release', () => ({
   releaseChangelog: vi.fn()
 }));
 
-vi.mock('simple-git', () => ({
-  __esModule: true,
-  default: vi.fn(),
-  simpleGit: vi.fn()
-}));
-
-const mockGitMergeBase = vi.mocked(gitMergeBase);
-const mockGitTagsMatching = vi.mocked(gitTagsMatching);
 const mockFindMatchingProjects = vi.mocked(findMatchingProjects);
 const mockGetAffectedGraphNodes = vi.mocked(getAffectedGraphNodes);
 const mockCreateProjectGraphAsync = vi.mocked(createProjectGraphAsync);
-const mockSimpleGit = vi.mocked(simpleGit);
 const mockReleaseChangelog = vi.mocked(releaseChangelog);
-
-/** A throwaway git client; every function under test has its git calls mocked. */
-const gitStub = {} as SimpleGit;
 
 /** Builds the affected-scan return shape from a list of project names. */
 const affectedNodes = (...names: string[]) =>
@@ -175,51 +157,86 @@ describe('selectAffectedReleaseProjects', () => {
   });
 });
 
-describe('resolveAffectedBase', () => {
-  it('resolves the merge-base of `targetBranch` and HEAD', async () => {
-    mockGitMergeBase.mockResolvedValue('abc123');
+/** Runs `fn` with the process cwd inside `dir`, for functions that default to a `simpleGit()` on the cwd. */
+const inDirectory = async (dir: string, fn: () => Promise<void>): Promise<void> => {
+  const originalCwd = process.cwd();
+  process.chdir(dir);
 
-    await expect(resolveAffectedBase({ targetBranch: 'main' }, gitStub)).resolves.toBe('abc123');
-    expect(mockGitMergeBase).toHaveBeenCalledWith('main', 'HEAD', gitStub);
+  try {
+    await fn();
+  } finally {
+    process.chdir(originalCwd);
+  }
+};
+
+describe('resolveAffectedBase', () => {
+  let repo: GitRepoFixture;
+  let first: string;
+
+  beforeEach(async () => {
+    repo = await createGitRepoFixture();
+    first = await repo.commit('first');
+  });
+
+  afterEach(() => {
+    repo.cleanup();
+  });
+
+  it('resolves the merge-base of `targetBranch` and HEAD, not the branch tip', async () => {
+    await repo.git.checkoutLocalBranch('release/x');
+    await repo.commit('release work');
+    await repo.git.checkout('main');
+    await repo.commit('hotfix on main');
+    await repo.git.checkout('release/x');
+
+    await expect(resolveAffectedBase({ targetBranch: 'main' }, repo.git)).resolves.toBe(first);
   });
 
   it('prefers an explicit `base` over `targetBranch`', async () => {
-    mockGitMergeBase.mockResolvedValue('deadbeef');
+    const second = await repo.commit('second');
+    await repo.git.raw(['tag', 'v1.2.0']);
+    const third = await repo.commit('third');
+    await repo.git.checkoutLocalBranch('release/x');
+    await repo.commit('release work');
 
-    await resolveAffectedBase({ targetBranch: 'main', base: 'v1.2.0' }, gitStub);
-
-    expect(mockGitMergeBase).toHaveBeenCalledWith('v1.2.0', 'HEAD', gitStub);
+    await expect(resolveAffectedBase({ targetBranch: 'main' }, repo.git)).resolves.toBe(third);
+    await expect(
+      resolveAffectedBase({ targetBranch: 'main', base: 'v1.2.0' }, repo.git)
+    ).resolves.toBe(second);
   });
 
   it('falls back to `targetBranch` when there is no merge-base', async () => {
-    mockGitMergeBase.mockResolvedValue(null);
+    await repo.git.checkout(['--orphan', 'unrelated']);
+    await repo.commit('unrelated history');
 
-    await expect(resolveAffectedBase({ targetBranch: 'main' }, gitStub)).resolves.toBe('main');
+    await expect(resolveAffectedBase({ targetBranch: 'main' }, repo.git)).resolves.toBe('main');
   });
 
   it('falls back to the explicit `base` when there is no merge-base', async () => {
-    mockGitMergeBase.mockResolvedValue(null);
-
     await expect(
-      resolveAffectedBase({ targetBranch: 'main', base: 'v1.2.0' }, gitStub)
-    ).resolves.toBe('v1.2.0');
+      resolveAffectedBase({ targetBranch: 'main', base: 'no-such-ref' }, repo.git)
+    ).resolves.toBe('no-such-ref');
   });
 
-  it('uses simpleGit() when no client is passed', async () => {
-    const fallbackGit = {} as SimpleGit;
-    mockSimpleGit.mockReturnValue(fallbackGit);
-    mockGitMergeBase.mockResolvedValue('abc123');
-
-    await resolveAffectedBase({ targetBranch: 'main' });
-
-    expect(mockGitMergeBase).toHaveBeenCalledWith('main', 'HEAD', fallbackGit);
+  it('works on the repository in the current directory when no client is passed', async () => {
+    await inDirectory(repo.dir, async () => {
+      await expect(resolveAffectedBase({ targetBranch: 'main' })).resolves.toBe(first);
+    });
   });
 });
 
 describe('resolveAffectedReleaseProjects', () => {
-  beforeEach(() => {
-    mockGitMergeBase.mockResolvedValue('base-sha');
+  let repo: GitRepoFixture;
+  let base: string;
+
+  beforeEach(async () => {
+    repo = await createGitRepoFixture();
+    base = await repo.commit('first');
     mockCreateProjectGraphAsync.mockResolvedValue({ nodes: {}, dependencies: {} });
+  });
+
+  afterEach(() => {
+    repo.cleanup();
   });
 
   it('returns the releasable projects that were affected, in release-config order', async () => {
@@ -228,7 +245,7 @@ describe('resolveAffectedReleaseProjects', () => {
     mockGetAffectedGraphNodes.mockResolvedValue(affectedNodes('pkg-c', 'pkg-a', 'unrelated'));
 
     await expect(
-      resolveAffectedReleaseProjects(tree, { targetBranch: 'main' }, gitStub)
+      resolveAffectedReleaseProjects(tree, { targetBranch: 'main' }, repo.git)
     ).resolves.toEqual(['pkg-a', 'pkg-c']);
   });
 
@@ -237,11 +254,10 @@ describe('resolveAffectedReleaseProjects', () => {
     mockFindMatchingProjects.mockReturnValue(['pkg-a']);
     mockGetAffectedGraphNodes.mockResolvedValue(affectedNodes());
 
-    await resolveAffectedReleaseProjects(tree, { targetBranch: 'main' }, gitStub);
+    await resolveAffectedReleaseProjects(tree, { targetBranch: 'main' }, repo.git);
 
-    expect(mockGitMergeBase).toHaveBeenCalledWith('main', 'HEAD', gitStub);
     expect(mockGetAffectedGraphNodes).toHaveBeenCalledWith(
-      { base: 'base-sha', head: 'HEAD' },
+      { base, head: 'HEAD' },
       expect.anything()
     );
   });
@@ -253,7 +269,7 @@ describe('resolveAffectedReleaseProjects', () => {
     mockFindMatchingProjects.mockReturnValue(['pkg-a']);
     mockGetAffectedGraphNodes.mockResolvedValue(affectedNodes('pkg-a'));
 
-    await resolveAffectedReleaseProjects(tree, { targetBranch: 'main' }, gitStub);
+    await resolveAffectedReleaseProjects(tree, { targetBranch: 'main' }, repo.git);
 
     expect(mockGetAffectedGraphNodes).toHaveBeenCalledWith(expect.anything(), graph);
     expect(mockFindMatchingProjects).toHaveBeenCalledWith(['pkg-a'], graph.nodes);
@@ -265,27 +281,30 @@ describe('resolveAffectedReleaseProjects', () => {
     mockGetAffectedGraphNodes.mockResolvedValue(affectedNodes('unrelated'));
 
     await expect(
-      resolveAffectedReleaseProjects(tree, { targetBranch: 'main' }, gitStub)
+      resolveAffectedReleaseProjects(tree, { targetBranch: 'main' }, repo.git)
     ).resolves.toEqual([]);
   });
 
-  it('falls back to simpleGit() when no client is passed', async () => {
-    const fallbackGit = {} as SimpleGit;
-    mockSimpleGit.mockReturnValue(fallbackGit);
+  it('works on the repository in the current directory when no client is passed', async () => {
     withRelease({ projects: 'pkg-a' });
     mockFindMatchingProjects.mockReturnValue(['pkg-a']);
     mockGetAffectedGraphNodes.mockResolvedValue(affectedNodes('pkg-a'));
 
-    await resolveAffectedReleaseProjects(tree, { targetBranch: 'main' });
+    await inDirectory(repo.dir, async () => {
+      await resolveAffectedReleaseProjects(tree, { targetBranch: 'main' });
+    });
 
-    expect(mockGitMergeBase).toHaveBeenCalledWith('main', 'HEAD', fallbackGit);
+    expect(mockGetAffectedGraphNodes).toHaveBeenCalledWith(
+      { base, head: 'HEAD' },
+      expect.anything()
+    );
   });
 
   it('surfaces the missing-config error from nx.json', async () => {
     mockGetAffectedGraphNodes.mockResolvedValue(affectedNodes('pkg-a'));
 
     await expect(
-      resolveAffectedReleaseProjects(tree, { targetBranch: 'main' }, gitStub)
+      resolveAffectedReleaseProjects(tree, { targetBranch: 'main' }, repo.git)
     ).rejects.toThrow('nx.json configures no releasable projects');
   });
 });
@@ -465,34 +484,73 @@ describe('tagReleasedProjects', () => {
     app: { currentVersion: '1.0.0', newVersion: '1.1.0', dependentProjects: [] },
     idle: { currentVersion: '2.0.0', newVersion: null, dependentProjects: [] }
   };
-  let addAnnotatedTag: Mock;
-  let git: SimpleGit;
+  let repo: GitRepoFixture;
+  let release: string;
 
-  beforeEach(() => {
-    addAnnotatedTag = vi.fn().mockResolvedValue(undefined);
-    git = { addAnnotatedTag } as unknown as SimpleGit;
-    mockGitTagsMatching.mockResolvedValue([]);
+  beforeEach(async () => {
+    repo = await createGitRepoFixture();
+    release = await repo.commit('release commit');
     vi.spyOn(logger, 'info').mockImplementation(() => undefined);
     vi.spyOn(logger, 'warn').mockImplementation(() => undefined);
   });
 
-  it('names the tag with a non-default pattern and tags only versioned projects', async () => {
-    await expect(tagReleasedProjects(versionData, false, git, CUSTOM_PATTERN)).resolves.toEqual([
-      'v1.1.0/app'
-    ]);
-    expect(addAnnotatedTag).toHaveBeenCalledTimes(1);
-    expect(addAnnotatedTag).toHaveBeenCalledWith('v1.1.0/app', 'v1.1.0/app');
+  afterEach(() => {
+    vi.restoreAllMocks();
+    repo.cleanup();
+  });
+
+  /** Every tag in the repository, with the commit it peels to. */
+  const tagCommits = async (): Promise<Record<string, string>> => {
+    const names = (await repo.git.tags()).all;
+
+    return Object.fromEntries(
+      await Promise.all(
+        names.map(async name => [name, (await repo.git.revparse([`${name}^{commit}`])).trim()])
+      )
+    );
+  };
+
+  it('tags the release commit with an annotated tag per versioned project', async () => {
+    await expect(
+      tagReleasedProjects(versionData, false, repo.git, CUSTOM_PATTERN)
+    ).resolves.toEqual(['v1.1.0/app']);
+    await expect(tagCommits()).resolves.toEqual({ 'v1.1.0/app': release });
+    await expect(repo.git.raw(['cat-file', '-t', 'v1.1.0/app'])).resolves.toBe('tag\n');
+  });
+
+  it('tags a project whose tag name only contains an existing tag name', async () => {
+    await repo.git.raw(['tag', 'v1.1.0/app-extra']);
+
+    await expect(
+      tagReleasedProjects(versionData, false, repo.git, CUSTOM_PATTERN)
+    ).resolves.toEqual(['v1.1.0/app']);
+    expect(Object.keys(await tagCommits()).sort()).toEqual(['v1.1.0/app', 'v1.1.0/app-extra']);
   });
 
   it('skips a tag that already exists under the pattern', async () => {
-    mockGitTagsMatching.mockResolvedValue(['v1.1.0/app']);
+    const earlier = await repo.commit('earlier run');
+    await repo.git.addAnnotatedTag('v1.1.0/app', 'v1.1.0/app');
+    await repo.commit('later');
 
-    await expect(tagReleasedProjects(versionData, false, git, CUSTOM_PATTERN)).resolves.toEqual([]);
-    expect(addAnnotatedTag).not.toHaveBeenCalled();
+    await expect(
+      tagReleasedProjects(versionData, false, repo.git, CUSTOM_PATTERN)
+    ).resolves.toEqual([]);
+    await expect(tagCommits()).resolves.toEqual({ 'v1.1.0/app': earlier });
   });
 
   it('creates nothing when tagging is skipped', async () => {
-    await expect(tagReleasedProjects(versionData, true, git, CUSTOM_PATTERN)).resolves.toEqual([]);
-    expect(addAnnotatedTag).not.toHaveBeenCalled();
+    await expect(tagReleasedProjects(versionData, true, repo.git, CUSTOM_PATTERN)).resolves.toEqual(
+      []
+    );
+    await expect(tagCommits()).resolves.toEqual({});
+  });
+
+  it('works on the repository in the current directory when no client is passed', async () => {
+    await inDirectory(repo.dir, async () => {
+      await expect(
+        tagReleasedProjects(versionData, false, undefined, CUSTOM_PATTERN)
+      ).resolves.toEqual(['v1.1.0/app']);
+    });
+    await expect(tagCommits()).resolves.toEqual({ 'v1.1.0/app': release });
   });
 });

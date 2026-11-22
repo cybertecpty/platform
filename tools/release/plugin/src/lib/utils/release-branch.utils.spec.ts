@@ -1,7 +1,12 @@
-import { gitBranchExists, gitCurrentBranch, isCleanGitBranch } from '@cybertecpty/git-utils';
+import {
+  cloneGitRepoFixture,
+  createGitRepoFixture,
+  type GitRepoFixture
+} from '@cybertecpty/git-testing';
 import { logger } from '@nx/devkit';
-import { simpleGit, type SimpleGit } from 'simple-git';
-import { vi, type Mock } from 'vitest';
+import { writeFileSync } from 'node:fs';
+import { join } from 'node:path';
+import { vi } from 'vitest';
 
 import {
   checkoutReleaseBranch,
@@ -9,42 +14,8 @@ import {
   type ReleaseBranchOptions
 } from './release-branch.utils';
 
-vi.mock('@cybertecpty/git-utils', () => ({
-  gitBranchExists: vi.fn(),
-  gitCurrentBranch: vi.fn(),
-  isCleanGitBranch: vi.fn()
-}));
-
-vi.mock('simple-git', () => ({
-  __esModule: true,
-  simpleGit: vi.fn(),
-  default: vi.fn()
-}));
-
-const mockBranchExists = vi.mocked(gitBranchExists);
-const mockCurrentBranch = vi.mocked(gitCurrentBranch);
-const mockIsClean = vi.mocked(isCleanGitBranch);
-const mockSimpleGit = vi.mocked(simpleGit);
-
-type GitSpies = {
-  checkout: Mock;
-  pull: Mock;
-  checkoutLocalBranch: Mock;
-};
-
-/** A git double exposing only the mutating calls `checkoutReleaseBranch` makes directly. */
-const makeGit = (): { git: SimpleGit; spies: GitSpies } => {
-  const spies: GitSpies = {
-    checkout: vi.fn(() => Promise.resolve()),
-    pull: vi.fn(() => Promise.resolve()),
-    checkoutLocalBranch: vi.fn(() => Promise.resolve())
-  };
-
-  return { git: spies as unknown as SimpleGit, spies };
-};
-
 const opts = (over: Partial<ReleaseBranchOptions> = {}): ReleaseBranchOptions => ({
-  baseBranch: 'develop',
+  baseBranch: 'main',
   releaseDate: '2026-09-09T12:34:56.000Z',
   skipBranch: false,
   ...over
@@ -59,62 +30,74 @@ describe('resolveReleaseBranchName', () => {
   });
 
   it('is the base branch itself when branch creation is skipped', () => {
-    expect(resolveReleaseBranchName(opts({ skipBranch: true }))).toBe('develop');
-    expect(resolveReleaseBranchName(opts({ skipBranch: true, baseBranch: 'main' }))).toBe('main');
+    expect(resolveReleaseBranchName(opts({ skipBranch: true }))).toBe('main');
+    expect(resolveReleaseBranchName(opts({ skipBranch: true, baseBranch: 'develop' }))).toBe(
+      'develop'
+    );
   });
 });
 
 describe('checkoutReleaseBranch', () => {
-  beforeEach(() => {
-    mockBranchExists.mockReset().mockResolvedValue(false);
-    mockCurrentBranch.mockReset().mockResolvedValue('feature/x');
-    mockIsClean.mockReset().mockResolvedValue(true);
-    mockSimpleGit.mockReset();
+  const RELEASE_BRANCH = 'release/2026-09-09';
+  let origin: GitRepoFixture;
+  let repo: GitRepoFixture;
+
+  /** The hash a branch points at in the clone. */
+  const branchHash = async (branch: string): Promise<string> =>
+    (await repo.git.revparse([branch])).trim();
+
+  /** Leaves the clone on a feature branch, as a developer's checkout would be. */
+  const checkoutFeatureBranch = async (): Promise<void> => {
+    await repo.git.checkoutLocalBranch('feature/x');
+  };
+
+  beforeEach(async () => {
+    origin = await createGitRepoFixture();
+    await origin.commit('first');
+    repo = await cloneGitRepoFixture(origin);
     vi.spyOn(logger, 'warn').mockImplementation(() => undefined);
   });
 
   afterEach(() => {
     vi.restoreAllMocks();
+    repo.cleanup();
+    origin.cleanup();
   });
 
   it('rejects without touching the tree when the working directory is dirty', async () => {
-    mockIsClean.mockResolvedValue(false);
-    const { git, spies } = makeGit();
+    await checkoutFeatureBranch();
+    writeFileSync(join(repo.dir, 'dirty.txt'), 'dirty');
 
-    await expect(checkoutReleaseBranch(opts(), git)).rejects.toThrow(
+    await expect(checkoutReleaseBranch(opts(), repo.git)).rejects.toThrow(
       'Working directory is not clean'
     );
-    expect(spies.checkout).not.toHaveBeenCalled();
-    expect(spies.checkoutLocalBranch).not.toHaveBeenCalled();
+    expect((await repo.git.branchLocal()).current).toBe('feature/x');
+    expect((await repo.git.branchLocal()).all).not.toContain(RELEASE_BRANCH);
   });
 
   describe('skipBranch', () => {
     it('checks out the base branch and reports the branch to restore', async () => {
-      mockCurrentBranch.mockResolvedValue('feature/x');
-      const { git, spies } = makeGit();
+      await checkoutFeatureBranch();
 
-      await expect(checkoutReleaseBranch(opts({ skipBranch: true }), git)).resolves.toEqual({
+      await expect(checkoutReleaseBranch(opts({ skipBranch: true }), repo.git)).resolves.toEqual({
         created: false,
-        releaseBranch: 'develop',
+        releaseBranch: 'main',
         restoreBranch: 'feature/x'
       });
-      expect(spies.checkout).toHaveBeenCalledWith('develop');
+      expect((await repo.git.branchLocal()).current).toBe('main');
     });
 
     it('stays put when already on the base branch', async () => {
-      mockCurrentBranch.mockResolvedValue('develop');
-      const { git, spies } = makeGit();
-
-      await expect(checkoutReleaseBranch(opts({ skipBranch: true }), git)).resolves.toEqual({
+      await expect(checkoutReleaseBranch(opts({ skipBranch: true }), repo.git)).resolves.toEqual({
         created: false,
-        releaseBranch: 'develop',
+        releaseBranch: 'main',
         restoreBranch: null
       });
-      expect(spies.checkout).not.toHaveBeenCalled();
+      expect((await repo.git.branchLocal()).current).toBe('main');
     });
 
     it('warns that the release will land on the base branch', async () => {
-      await checkoutReleaseBranch(opts({ skipBranch: true }), makeGit().git);
+      await checkoutReleaseBranch(opts({ skipBranch: true }), repo.git);
 
       expect(logger.warn).toHaveBeenCalledWith(
         expect.stringContaining('Skipping release branch creation')
@@ -123,88 +106,87 @@ describe('checkoutReleaseBranch', () => {
   });
 
   describe('an existing release branch', () => {
-    beforeEach(() => {
-      mockBranchExists.mockResolvedValue(true);
+    beforeEach(async () => {
+      await repo.git.checkoutLocalBranch(RELEASE_BRANCH);
+      await repo.commit('release work');
     });
 
     it('is checked out as-is, without refreshing from the base branch', async () => {
-      mockCurrentBranch.mockResolvedValue('feature/x');
-      const { git, spies } = makeGit();
+      await checkoutFeatureBranch();
+      const releaseHash = await branchHash(RELEASE_BRANCH);
+      const mainHash = await branchHash('main');
+      await origin.commit('origin moves on');
 
-      await expect(checkoutReleaseBranch(opts(), git)).resolves.toEqual({
+      await expect(checkoutReleaseBranch(opts(), repo.git)).resolves.toEqual({
         created: false,
-        releaseBranch: 'release/2026-09-09',
+        releaseBranch: RELEASE_BRANCH,
         restoreBranch: 'feature/x'
       });
-      expect(spies.checkout).toHaveBeenCalledWith('release/2026-09-09');
-      expect(spies.pull).not.toHaveBeenCalled();
-      expect(spies.checkoutLocalBranch).not.toHaveBeenCalled();
+      expect((await repo.git.branchLocal()).current).toBe(RELEASE_BRANCH);
+      expect(await branchHash(RELEASE_BRANCH)).toBe(releaseHash);
+      expect(await branchHash('main')).toBe(mainHash);
     });
 
     it('is left alone when it is already HEAD', async () => {
-      mockCurrentBranch.mockResolvedValue('release/2026-09-09');
-      const { git, spies } = makeGit();
-
-      await expect(checkoutReleaseBranch(opts(), git)).resolves.toEqual({
+      await expect(checkoutReleaseBranch(opts(), repo.git)).resolves.toEqual({
         created: false,
-        releaseBranch: 'release/2026-09-09',
+        releaseBranch: RELEASE_BRANCH,
         restoreBranch: null
       });
-      expect(spies.checkout).not.toHaveBeenCalled();
+      expect((await repo.git.branchLocal()).current).toBe(RELEASE_BRANCH);
     });
 
     it('reports no branch to restore from a detached HEAD', async () => {
-      mockCurrentBranch.mockResolvedValue('');
-      const { git } = makeGit();
+      await repo.git.checkout(['--detach']);
 
-      await expect(checkoutReleaseBranch(opts(), git)).resolves.toEqual({
+      await expect(checkoutReleaseBranch(opts(), repo.git)).resolves.toEqual({
         created: false,
-        releaseBranch: 'release/2026-09-09',
+        releaseBranch: RELEASE_BRANCH,
         restoreBranch: null
       });
+      expect((await repo.git.branchLocal()).current).toBe(RELEASE_BRANCH);
     });
   });
 
   describe('a new release branch', () => {
-    it('refreshes the base branch from origin, then cuts the release branch', async () => {
-      const { git, spies } = makeGit();
-      const calls: string[] = [];
-      spies.checkout.mockImplementation((branch: string) => {
-        calls.push(`checkout:${branch}`);
-        return Promise.resolve();
-      });
-      spies.pull.mockImplementation((remote: string, branch: string) => {
-        calls.push(`pull:${remote}/${branch}`);
-        return Promise.resolve();
-      });
-      spies.checkoutLocalBranch.mockImplementation((branch: string) => {
-        calls.push(`checkoutLocalBranch:${branch}`);
-        return Promise.resolve();
-      });
+    it('cuts the release branch from the base branch as it is on origin', async () => {
+      await checkoutFeatureBranch();
+      const latest = await origin.commit('origin moves on');
 
-      await expect(checkoutReleaseBranch(opts(), git)).resolves.toEqual({
+      await expect(checkoutReleaseBranch(opts(), repo.git)).resolves.toEqual({
         created: true,
-        releaseBranch: 'release/2026-09-09',
+        releaseBranch: RELEASE_BRANCH,
         restoreBranch: 'feature/x'
       });
-      expect(calls).toEqual([
-        'checkout:develop',
-        'pull:origin/develop',
-        'checkoutLocalBranch:release/2026-09-09'
-      ]);
+      expect((await repo.git.branchLocal()).current).toBe(RELEASE_BRANCH);
+      expect(await branchHash(RELEASE_BRANCH)).toBe(latest);
+      expect(await branchHash('main')).toBe(latest);
+    });
+
+    it('does not cut from the feature branch it was started on', async () => {
+      await checkoutFeatureBranch();
+      await repo.commit('feature work');
+
+      await checkoutReleaseBranch(opts(), repo.git);
+
+      expect(await branchHash(RELEASE_BRANCH)).toBe(await branchHash('main'));
+      expect(await branchHash(RELEASE_BRANCH)).not.toBe(await branchHash('feature/x'));
     });
   });
 
   describe('default git client', () => {
-    it('falls back to simpleGit() when no client is passed', async () => {
-      const { git } = makeGit();
-      mockSimpleGit.mockReturnValue(git);
-      mockBranchExists.mockResolvedValue(true);
-      mockCurrentBranch.mockResolvedValue('release/2026-09-09');
+    it('works on the repository in the current directory when no client is passed', async () => {
+      const originalCwd = process.cwd();
+      process.chdir(repo.dir);
 
-      await checkoutReleaseBranch(opts());
-
-      expect(mockSimpleGit).toHaveBeenCalledTimes(1);
+      try {
+        await expect(checkoutReleaseBranch(opts())).resolves.toMatchObject({
+          created: true,
+          releaseBranch: RELEASE_BRANCH
+        });
+      } finally {
+        process.chdir(originalCwd);
+      }
     });
   });
 });
