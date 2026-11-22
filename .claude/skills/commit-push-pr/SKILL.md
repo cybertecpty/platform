@@ -171,7 +171,10 @@ before staging, it's a no-op. If it changes files, they're re-staged into this c
 re-check `git show HEAD` and amend the PR body if a "prettier clean" box needs it. Only add
 `--no-verify` if the hook is actively failing the commit (say so in the PR).
 
-### 6. Run verify, then push via the bot remote
+### 6. Review, run verify, then push via the bot remote
+
+Run the `review-pr` skill at the tier its table gives for the riskiest path the diff touches, and
+fix what it finds before pushing. Record the tier in the PR's Test plan (step 7).
 
 ```bash
 git fetch origin
@@ -222,6 +225,7 @@ cat > {scratchpad}/pr-body-{branch-slug}.md << 'EOF'
 
 ## Test plan
 {checklist}
+- Review: {tier}, {why}
 
 Closes #{issue}
 
