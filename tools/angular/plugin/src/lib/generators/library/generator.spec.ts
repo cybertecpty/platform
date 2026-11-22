@@ -469,11 +469,31 @@ describe('ngLibGenerator', () => {
       it('sets those of a routed buildable lib from the routes it imports', async () => {
         await run(tree, { type: 'feature', buildable: true });
 
-        expect(peers('libs/billing/feature')).toEqual({ '@angular/router': '~22.0.4' });
+        expect(peers('libs/billing/feature')).toEqual({ '@angular/router': '^22.0.0' });
       });
 
       it('keeps `@angular/core` for a buildable lib with a starter component', async () => {
         await run(tree, { type: 'ui', buildable: true, standalone: true });
+
+        expect(peers('libs/billing/ui')).toEqual({ '@angular/core': '^22.0.0' });
+      });
+
+      it('sets those of a routed buildable lib that also has a starter component', async () => {
+        await run(tree, { type: 'feature', buildable: true, standalone: true });
+
+        expect(peers('libs/billing/feature')).toEqual({
+          '@angular/core': '^22.0.0',
+          '@angular/router': '^22.0.0'
+        });
+      });
+
+      it('sets those of a publishable lib too', async () => {
+        await run(tree, {
+          type: 'ui',
+          publishable: true,
+          importPath: '@cybertecpty/billing-ui',
+          standalone: true
+        });
 
         expect(peers('libs/billing/ui')).toEqual({ '@angular/core': '^22.0.0' });
       });

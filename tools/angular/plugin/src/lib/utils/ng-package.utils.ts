@@ -5,6 +5,9 @@ import type { PackageJson } from 'type-fest';
 const ANGULAR_SCOPE = '@angular/';
 const IMPORT_SPECIFIER = /(?:from|import)\s*\(?\s*['"](@angular\/[^'"/]+)(?:\/[^'"]*)?['"]/g;
 const NON_PUBLISHED_FILE = /\.(spec|test-d)\.ts$|(^|\/)test-setup\.ts$/;
+const BLOCK_COMMENT = /\/\*[\s\S]*?\*\//g;
+const LINE_COMMENT = /(^|[^:'"`])\/\/.*$/gm;
+const EXACT_VERSION = /^[~^]?(\d+)\.\d+\.\d+/;
 
 /**
  * Sets the `@angular/*` peer dependencies in a buildable or publishable library's `package.json`
@@ -14,10 +17,13 @@ const NON_PUBLISHED_FILE = /\.(spec|test-d)\.ts$|(^|\/)test-setup\.ts$/;
  * contains, so a library without a starter component fails its first `nx lint` on the unused ones,
  * and a routed one on the missing `@angular/router`.
  *
- * A package that stays a peer keeps its range, and a new one takes the range the workspace's root
- * `package.json` declares. Peers outside `@angular/` are left alone, and so is a package whose range
- * can't be found. Spec and test setup files are skipped: they are not published. A no-op when the
- * library has no `package.json`. `root` is the library's project root.
+ * A package that stays a peer keeps its range. A new one takes the range the workspace's root
+ * `package.json` declares, as a caret on its major version (`~22.0.4` becomes `^22.0.0`), the style
+ * Nx writes for the peers it adds. Peers outside `@angular/` are left alone, and so is a package
+ * whose range can't be found. Spec and test setup files are skipped: they are not published.
+ * Imports are read from the source text with comments removed, so an import written inside a string
+ * is still counted. A no-op when the library has no `package.json`. `root` is the library's project
+ * root.
  */
 export function replaceAngularPeerDependencies(tree: Tree, root: string): void {
   const packageJsonPath = joinPathFragments(root, 'package.json');
@@ -32,7 +38,8 @@ export function replaceAngularPeerDependencies(tree: Tree, root: string): void {
   const imported = listImportedAngularPackages(tree, joinPathFragments(root, 'src'));
 
   const angularPeers = imported.flatMap((name): [string, string][] => {
-    const range = peers[name] ?? dependencies[name] ?? devDependencies[name];
+    const workspaceRange = dependencies[name] ?? devDependencies[name];
+    const range = peers[name] ?? (workspaceRange && toPeerRange(workspaceRange));
 
     return range ? [[name, range]] : [];
   });
@@ -56,10 +63,21 @@ function listImportedAngularPackages(tree: Tree, sourceRoot: string): string[] {
       continue;
     }
 
-    for (const [, name] of (tree.read(file, 'utf-8') ?? '').matchAll(IMPORT_SPECIFIER)) {
+    const source = (tree.read(file, 'utf-8') ?? '')
+      .replace(BLOCK_COMMENT, '')
+      .replace(LINE_COMMENT, '$1');
+
+    for (const [, name] of source.matchAll(IMPORT_SPECIFIER)) {
       names.add(name);
     }
   }
 
   return [...names];
+}
+
+/** `~22.0.4` and `22.0.4` become `^22.0.0`; a range that is not a plain version is kept as is. */
+function toPeerRange(range: string): string {
+  const major = EXACT_VERSION.exec(range)?.[1];
+
+  return major ? `^${major}.0.0` : range;
 }

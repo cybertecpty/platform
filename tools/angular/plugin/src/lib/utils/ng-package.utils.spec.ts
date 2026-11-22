@@ -31,10 +31,10 @@ describe('replaceAngularPeerDependencies', () => {
 
     replaceAngularPeerDependencies(tree, ROOT);
 
-    expect(peerDependencies(tree)).toEqual({ '@angular/router': '~22.0.4' });
+    expect(peerDependencies(tree)).toEqual({ '@angular/router': '^22.0.0' });
   });
 
-  it('keeps the range of a peer that stays, and takes the root range for a new one', () => {
+  it('keeps the range of a peer that stays, and takes a caret on the root major for a new one', () => {
     tree.write(
       `${ROOT}/src/lib/billing.ts`,
       "import { Component } from '@angular/core';\nimport { Router } from '@angular/router';"
@@ -44,8 +44,32 @@ describe('replaceAngularPeerDependencies', () => {
 
     expect(peerDependencies(tree)).toEqual({
       '@angular/core': '^22.0.0',
-      '@angular/router': '~22.0.4'
+      '@angular/router': '^22.0.0'
     });
+  });
+
+  it('keeps a root range that is not a plain version as it is', () => {
+    writeJson(tree, 'package.json', { dependencies: { '@angular/router': 'workspace:*' } });
+    tree.write(`${ROOT}/src/lib/billing.ts`, "import { Router } from '@angular/router';");
+
+    replaceAngularPeerDependencies(tree, ROOT);
+
+    expect(peerDependencies(tree)).toEqual({ '@angular/router': 'workspace:*' });
+  });
+
+  it('ignores an import that only appears in a comment', () => {
+    tree.write(
+      `${ROOT}/src/lib/billing.ts`,
+      [
+        "// moved from '@angular/forms'",
+        "/* import { Router } from '@angular/router'; */",
+        "import { Component } from '@angular/core'; // not '@angular/common'"
+      ].join('\n')
+    );
+
+    replaceAngularPeerDependencies(tree, ROOT);
+
+    expect(peerDependencies(tree)).toEqual({ '@angular/core': '^22.0.0' });
   });
 
   it('counts a secondary entry point and a dynamic import', () => {

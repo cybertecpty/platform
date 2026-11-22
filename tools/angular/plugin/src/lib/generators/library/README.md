@@ -113,7 +113,7 @@ generator sets the `@angular/*` peers to the Angular packages the library's sour
 (`replaceAngularPeerDependencies`), so a routed `feature` library gets `@angular/router` only, and a
 library with a starter component gets `@angular/core` only. That is what `@nx/dependency-checks`
 expects, so the first `nx lint` passes without `--fix`. A kept peer keeps the range Nx wrote, and a
-new one takes the range from the root `package.json`. Peers outside `@angular/` are left alone.
+new one takes a caret on the major version of its range in the root `package.json`. Peers outside `@angular/` are left alone.
 The peers are not kept up to date afterwards: import another Angular package, and `nx lint --fix`
 adds it.
 
