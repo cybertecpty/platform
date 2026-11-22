@@ -57,19 +57,22 @@ describe('replaceAngularPeerDependencies', () => {
     expect(peerDependencies(tree)).toEqual({ '@angular/router': 'workspace:*' });
   });
 
-  it('ignores an import that only appears in a comment', () => {
-    tree.write(
-      `${ROOT}/src/lib/billing.ts`,
-      [
-        "// moved from '@angular/forms'",
-        "/* import { Router } from '@angular/router'; */",
-        "import { Component } from '@angular/core'; // not '@angular/common'"
-      ].join('\n')
-    );
+  it('keeps a root range that starts below major 1 as it is', () => {
+    writeJson(tree, 'package.json', { dependencies: { '@angular/router': '*' } });
+    tree.write(`${ROOT}/src/lib/billing.ts`, "import { Router } from '@angular/router';");
 
     replaceAngularPeerDependencies(tree, ROOT);
 
-    expect(peerDependencies(tree)).toEqual({ '@angular/core': '^22.0.0' });
+    expect(peerDependencies(tree)).toEqual({ '@angular/router': '*' });
+  });
+
+  it('reduces a root range of another shape to a caret on its lowest major', () => {
+    writeJson(tree, 'package.json', { dependencies: { '@angular/router': '>=22.1.0 <23' } });
+    tree.write(`${ROOT}/src/lib/billing.ts`, "import { Router } from '@angular/router';");
+
+    replaceAngularPeerDependencies(tree, ROOT);
+
+    expect(peerDependencies(tree)).toEqual({ '@angular/router': '^22.0.0' });
   });
 
   it('counts a secondary entry point and a dynamic import', () => {

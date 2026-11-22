@@ -11,6 +11,7 @@
     "@nx/angular": "23.1.1",
     "@nx/devkit": "23.1.1",
     "lodash-es": "^4.18.1",
+    "semver": "^7.8.5",
     "tslib": "^2.3.0",
     "type-fest": "^5.9.0"
   },
