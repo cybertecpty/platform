@@ -295,7 +295,7 @@ exercise `@nx/angular`'s test setup, and the two routes it offers do not agree.
 - The installed packages declare Vitest ranges that exclude 5.0.1: `@analogjs/vitest-angular` 2.6.x
   (`^1.3.1 || ^2.0.0 || ^3.0.0 || ^4.0.0`) and `@angular/build` 22.0.x (`^4.0.8`). pnpm reports
   unmet peers, and the spec still passed. Analog 2.9.7 and `@angular/build` 22.2.x declare
-  `^5.0.0`. Whether to move the generated libraries to those versions is open.
+  `^5.0.0`. Answered by the 2026-11-22 amendment (#369).
 - Item 1 is answered for libraries (the two routes disagree on Vitest 5) and not for applications.
 
 ## Amendment (2026-11-20): Vitest files come from templates; the upstream scaffold still runs (#368)
@@ -313,3 +313,44 @@ the upstream generators also leave out the `test` target, the `@nx/vitest:test` 
 `@nx/plugin:plugin` adds `@nx/jest`. `withoutUpstreamVitestSideEffects` and the `ignoredFiles` patch
 in `ignoreVitestConfigInDependencyChecks` stay: undoing a few side effects costs less than writing
 all of that.
+
+## Amendment (2026-11-22): Angular 22.2 and Analog 2.9, for Vitest 5 peers (#369)
+
+- Status: accepted
+- Deciders: djmcgrath
+- Implemented by: the root `package.json` pins
+
+Considered: accept the unmet peers, or allow Vitest 5 for them with
+`pnpm.peerDependencyRules.allowedVersions`. Not chosen: the first leaves the warnings in every
+install, and the second is an override nobody revisits once the packages declare Vitest 5 themselves.
+
+### Decision
+
+The workspace moves to Angular 22.2 and Analog 2.9, which declare `^5.0.0`. The root `package.json`
+pins them, because the generators install whatever is already there and otherwise use their own
+pins:
+
+- `@angular/build`, `@angular-devkit/core` at `~22.2.8`, and `@angular/compiler-cli` and the
+  `@angular/*` framework packages at `~22.2.7`. `@nx/angular` takes `@angular/build`'s version from
+  the installed `@angular-devkit/core`, and a framework left at `~22.0.4` makes a fresh resolution
+  pair it with a newer `@angular/compiler-cli`.
+- `@analogjs/vite-plugin-angular` and `@analogjs/vitest-angular` at `~2.9.7`, where `@nx/vitest`
+  pins `~2.6.0`.
+- `@emnapi/core` and `@emnapi/runtime` at `^1.11.3`. `@angular/build` brings an optional wasm binding
+  that peers on them, and without a root pin pnpm resolves `2.0.0-alpha.6` and shares it across the
+  tree, which crashes `astro check` in `cybertec-io`. Drop the pins once the peer range names a
+  stable 2.x.
+
+An `ng-lib` run keeps these versions and adds the rest of its dependencies beside them.
+
+### Consequences
+
+- `pnpm install` reports no unmet Vitest peers for Analog or `@angular/build`. One is left and
+  accepted: `@nx/vitest` 23.1.1 declares `vitest@^3.0.0 || ^4.0.0`. Nothing here depends on that
+  range, and the workspace's Vitest projects already run on 5.0.1.
+- A buildable library the generator created passed `test` (a TestBed component spec), `typecheck` and
+  `build` on the new versions. It linted clean before a component was added.
+- `vitest-angular` is still unusable: `@nx/angular` 23.1.1 requires Vitest `^4.0.8`, whatever
+  `@angular/build` declares.
+- `@angular/*` is pinned in the root, so an Angular upgrade changes those lines by hand until the
+  generators stop pinning their own.
