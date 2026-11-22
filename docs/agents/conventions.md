@@ -291,6 +291,10 @@ manual intervention. What to know:
 
 - **The first Nx run in a new worktree is cold:** the `.nx` cache and the Nx daemon are per
   worktree.
+- **A worktree's `nx` can still attach to the main clone's daemon.** It then runs the main clone's
+  workspace: the Nx Cloud cache path is under the main clone, a failing task reports "Successfully
+  ran target", and the run exits 1 with `EISDIR ... lstat 'C:'`. Before trusting a build or a real
+  generator run, set `NX_DAEMON=false` and `NX_NO_CLOUD=true`.
 - **A skill runs in the session's current directory,** which is the main clone if the session
   started there, not your worktree. On 2026-10-28 a forked `/code-review` read the main clone's
   working tree and reported another session's files. `cd` into the worktree for each command, and
