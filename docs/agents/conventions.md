@@ -324,13 +324,21 @@ leaving the folder. This happens on a fresh install that never ran Nx. Removing 
 `node_modules` was not enough while `apps/cybertec-io/node_modules` remained; removing every
 `node_modules` first let `git worktree remove` finish.
 
+The walk stops at each `node_modules` instead of descending into it, so it skips the `.pnpm` store,
+and it has no depth limit. It skips junctions. A `node_modules` the walk missed would keep its
+junctions, and `git worktree remove` deletes through a junction that points outside the worktree.
+
 ```powershell
 # from the main clone, never from inside the worktree
 $wt = (Resolve-Path ../platform-{name}).Path
 pnpm --dir $wt exec nx daemon --stop
-$nm = Get-ChildItem -LiteralPath $wt -Directory -Filter node_modules -Recurse -Depth 4 -Force |
-  Where-Object { $_.FullName -notmatch 'node_modules\\.+node_modules' }
-Remove-Item -Recurse -Force $nm.FullName -ErrorAction SilentlyContinue
+function Get-NodeModules($dir) {
+  foreach ($d in Get-ChildItem -LiteralPath $dir -Directory -Force) {
+    if ($d.Attributes -band [IO.FileAttributes]::ReparsePoint) { continue }
+    if ($d.Name -eq 'node_modules') { $d.FullName } elseif ($d.Name -ne '.git') { Get-NodeModules $d.FullName }
+  }
+}
+foreach ($nm in Get-NodeModules $wt) { Remove-Item -LiteralPath $nm -Recurse -Force -ErrorAction SilentlyContinue }
 git worktree remove $wt
 git branch -D {branch}
 ```
