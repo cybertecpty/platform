@@ -37,7 +37,11 @@ Moved here from `docs/agents/conventions.md` §8. Loads when working in an Nx pl
   `commit-push-pr`, "Before you start"): generate one project of each type the generator makes, run
   `nx run-many -t test lint typecheck -p {projects}` (and `build` for a buildable one), and read the diff
   of `nx.json`, `package.json` and `tsconfig.base.json`, which an upstream generator may have written
-  to. Then remove the worktree. To see what a TypeScript generator would write without touching disk,
+  to. Run `nx reset` after generating and before `nx lint`: the project graph computed before the
+  generator ran is stale, so `@nx/dependency-checks` reports the wrong packages and `lint --fix`
+  writes them. Don't `rm -rf dist` while cleaning up: builds that depend on the removed outputs fail
+  with `Cannot find module '@cybertecpty/...'`. Rebuild with `nx build {project} --skip-nx-cache`.
+  Then remove the worktree. To see what a TypeScript generator would write without touching disk,
   load it in Node with `registerTsProject` (from `nx/src/plugins/js/utils/register`) and run it on
   `new FsTree(root, false)` (from `nx/src/generators/tree`); nothing is flushed.
 
