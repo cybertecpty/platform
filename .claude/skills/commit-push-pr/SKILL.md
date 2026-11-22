@@ -176,6 +176,11 @@ re-check `git show HEAD` and amend the PR body if a "prettier clean" box needs i
 Run the `review-pr` skill at the tier its table gives for the riskiest path the diff touches, and
 fix what it finds before pushing. Record the tier in the PR's Test plan (step 7).
 
+At the Standard tier, run `/code-review medium {branch}` once the work is committed. It reviews the
+named branch from any working directory, so it works from the main clone while the branch is
+checked out in a worktree. Fix real findings in a follow-up commit, and say in the PR body which
+findings you declined and why.
+
 ```bash
 git fetch origin
 git diff origin/develop --stat
@@ -232,6 +237,10 @@ Closes #{issue}
 🤖 Generated with [Claude Code](https://claude.com/claude-code)
 EOF
 ```
+
+The PR template's Checklist holds only the CLA checkbox, which is for outside contributors
+(ADR 0013). Leave it, and its heading, out of a PR you or the maintainer create, and leave the
+template itself as it is.
 
 ```bash
 gh pr create --repo cybertecpty/platform --base develop --head {branch} --title "{title}" --body-file {scratchpad}/pr-body-{branch-slug}.md --reviewer djmcgrath101
