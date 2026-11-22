@@ -40,3 +40,10 @@ covers it — an existing dependency, an Nx plugin, or a shared helper.
 - Framework capability (`@angular/*`) comes through `@nx/angular` generators and `nx add`, not
   hand-installed packages (conventions §11). Backend (.NET) package references are
   `dotnet add package` against a `.csproj`, not pnpm (ADR 0017) — nothing is wired yet.
+- A new dependency can break a project that never imports it: pnpm auto-installs its peers
+  (`.npmrc` `auto-install-peers`) and shares what it resolves across the tree. Adding
+  `@angular/build` resolved `@emnapi/runtime@2.0.0-alpha.6` and crashed `astro check` in
+  `cybertec-io`. Run the full `pnpm verify`, not just the affected projects. A frozen
+  `pnpm install` prints no peer warnings, so to list them delete `pnpm-lock.yaml`, run
+  `pnpm install --lockfile-only`, then `git checkout pnpm-lock.yaml`. Pin a peer that resolves
+  badly in the root `package.json`, with the reason in the owning ADR.
