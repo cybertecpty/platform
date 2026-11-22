@@ -7,6 +7,24 @@ const ANGULAR_SCOPE = '@angular/';
 const NON_PUBLISHED_FILE = /\.(spec|test-d)\.ts$|(^|\/)test-setup\.ts$/;
 
 /**
+ * Gives a buildable or publishable library whose `src/index.ts` is empty a bare `export {};`.
+ * ng-packagr fails an entrypoint that exports nothing with "failed to get symbol for entrypoint",
+ * and the types that generate no starter component (`core`, `data-access`, `ui`) leave that file
+ * empty. A no-op when the library has no `package.json` (it has no `build` target), or when
+ * `src/index.ts` has content. `root` is the library's project root.
+ */
+export function ensureEntrypointExports(tree: Tree, root: string): void {
+  const indexPath = joinPathFragments(root, 'src/index.ts');
+
+  if (
+    tree.exists(joinPathFragments(root, 'package.json')) &&
+    !tree.read(indexPath, 'utf-8')?.trim()
+  ) {
+    tree.write(indexPath, 'export {};\n');
+  }
+}
+
+/**
  * Sets the `@angular/*` peer dependencies in a buildable or publishable library's `package.json`
  * to the Angular packages its source imports, which is what `@nx/dependency-checks` expects.
  *

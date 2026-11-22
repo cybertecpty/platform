@@ -43,6 +43,9 @@ Creates an Angular library under `libs/<domain>[/<subdomain>...]/[<group>/]<type
   `src/lib/<topic>.utils.ts`, its spec (not with `--unitTestRunner=none`), and a barrel export.
   `<topic>` is the project name without its `-utils` suffix, so `billing-format-utils` gets
   `billing-format.utils.ts`.
+- Writes `export {};` to a buildable or publishable library's `src/index.ts` when it is empty (the
+  `core`, `data-access` and `ui` types generate no starter component). ng-packagr fails an
+  entrypoint that exports nothing with "failed to get symbol for entrypoint".
 - Forces a `type:testing` library to `buildable: false` and `publishable: false`
   (`forceTestingLibNotBuildable` in `@cybertecpty/nx-utils`): a production library importing a
   buildable testing-helpers library would otherwise pull it in as a real buildable dependency.

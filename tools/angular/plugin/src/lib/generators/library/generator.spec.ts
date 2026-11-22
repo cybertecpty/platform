@@ -505,6 +505,33 @@ describe('ngLibGenerator', () => {
       });
     });
 
+    describe('entrypoint', () => {
+      const index = (directory: string) => tree.read(`${directory}/src/index.ts`, 'utf-8');
+
+      it.each(['core', 'data-access', 'ui'] as const)(
+        'exports an empty module from a buildable `%s` lib',
+        async type => {
+          await run(tree, { type, buildable: true });
+
+          expect(index(`libs/billing/${type}`)).toBe('export {};\n');
+        }
+      );
+
+      it('keeps the exports of a lib that has some', async () => {
+        await run(tree, { type: 'feature', buildable: true });
+
+        expect(index('libs/billing/feature')).toBe(
+          "export * from './lib/billing-feature.routes';\n"
+        );
+      });
+
+      it('leaves the entrypoint of a lib that is not buildable alone', async () => {
+        await run(tree, { type: 'ui' });
+
+        expect(index('libs/billing/ui')).toBeNull();
+      });
+    });
+
     it('forces both off for a `testing` lib and warns for each', async () => {
       await run(tree, { type: 'testing', buildable: true, publishable: true });
 
