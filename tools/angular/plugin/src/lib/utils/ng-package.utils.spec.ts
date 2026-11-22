@@ -1,7 +1,7 @@
 import type { Tree } from '@nx/devkit';
 import { readJson, writeJson } from '@nx/devkit';
 import { createTreeWithEmptyWorkspace } from '@nx/devkit/testing';
-import { replaceAngularPeerDependencies } from './ng-package.utils';
+import { ensureEntrypointExports, replaceAngularPeerDependencies } from './ng-package.utils';
 
 const ROOT = 'libs/billing/feature';
 
@@ -131,5 +131,46 @@ describe('replaceAngularPeerDependencies', () => {
     replaceAngularPeerDependencies(tree, ROOT);
 
     expect(tree.exists(`${ROOT}/package.json`)).toBe(false);
+  });
+});
+
+describe('ensureEntrypointExports', () => {
+  const INDEX = `${ROOT}/src/index.ts`;
+  let tree: Tree;
+
+  beforeEach(() => {
+    tree = createTreeWithEmptyWorkspace();
+    writeJson(tree, `${ROOT}/package.json`, { name: '@cybertecpty/billing-feature' });
+  });
+
+  it('writes `export {};` to an empty entrypoint', () => {
+    tree.write(INDEX, '');
+
+    ensureEntrypointExports(tree, ROOT);
+
+    expect(tree.read(INDEX, 'utf-8')).toBe('export {};\n');
+  });
+
+  it('writes it when the entrypoint is missing', () => {
+    ensureEntrypointExports(tree, ROOT);
+
+    expect(tree.read(INDEX, 'utf-8')).toBe('export {};\n');
+  });
+
+  it('keeps an entrypoint that has content', () => {
+    tree.write(INDEX, "export * from './lib/billing';\n");
+
+    ensureEntrypointExports(tree, ROOT);
+
+    expect(tree.read(INDEX, 'utf-8')).toBe("export * from './lib/billing';\n");
+  });
+
+  it('does nothing for a library without a `package.json`', () => {
+    tree.delete(`${ROOT}/package.json`);
+    tree.write(INDEX, '');
+
+    ensureEntrypointExports(tree, ROOT);
+
+    expect(tree.read(INDEX, 'utf-8')).toBe('');
   });
 });
