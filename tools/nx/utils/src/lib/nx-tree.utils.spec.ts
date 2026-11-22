@@ -1,6 +1,6 @@
 import type { Tree } from '@nx/devkit';
 import { createTreeWithEmptyWorkspace } from '@nx/devkit/testing';
-import { listFilesRecursively, replaceBarrelExport } from './nx-tree.utils';
+import { listFilesRecursively, listImportedPackages, replaceBarrelExport } from './nx-tree.utils';
 
 describe('listFilesRecursively', () => {
   let tree: Tree;
@@ -60,6 +60,87 @@ describe('listFilesRecursively', () => {
     tree.write('dist/other/index.html', '<html></html>');
 
     expect(listFilesRecursively(tree, 'dist/web')).toEqual(['dist/web/index.html']);
+  });
+});
+
+describe('listImportedPackages', () => {
+  const SRC = 'libs/demo/src';
+  let tree: Tree;
+
+  beforeEach(() => {
+    tree = createTreeWithEmptyWorkspace();
+  });
+
+  it('names each imported package once, in the order first seen', () => {
+    tree.write(
+      `${SRC}/a.ts`,
+      "import { map } from 'rxjs';\nimport { Component } from '@angular/core';"
+    );
+    tree.write(`${SRC}/b.ts`, "import { filter } from 'rxjs';");
+
+    expect(listImportedPackages(tree, SRC)).toEqual(['rxjs', '@angular/core']);
+  });
+
+  it('reduces a deep import to its package', () => {
+    tree.write(
+      `${SRC}/a.ts`,
+      "import { HttpClient } from '@angular/common/http';\nimport map from 'lodash-es/map';"
+    );
+
+    expect(listImportedPackages(tree, SRC)).toEqual(['@angular/common', 'lodash-es']);
+  });
+
+  it('reads a bare import, a dynamic import and a re-export', () => {
+    tree.write(
+      `${SRC}/a.ts`,
+      "import 'zone.js';\nconst x = import('@angular/forms');\nexport * from '@angular/router';"
+    );
+
+    expect(listImportedPackages(tree, SRC)).toEqual([
+      'zone.js',
+      '@angular/forms',
+      '@angular/router'
+    ]);
+  });
+
+  it('leaves out relative and absolute paths', () => {
+    tree.write(
+      `${SRC}/a.ts`,
+      "import { a } from './a';\nimport { b } from '../b';\nimport c from '/c';"
+    );
+
+    expect(listImportedPackages(tree, SRC)).toEqual([]);
+  });
+
+  it('ignores an import that only appears in a comment', () => {
+    tree.write(
+      `${SRC}/a.ts`,
+      [
+        "// moved from 'rxjs'",
+        "/* import { x } from 'zod'; */",
+        "import { Component } from '@angular/core'; // not 'tslib'"
+      ].join('\n')
+    );
+
+    expect(listImportedPackages(tree, SRC)).toEqual(['@angular/core']);
+  });
+
+  it('skips files that are not `.ts` and files that match `ignoredFiles`', () => {
+    tree.write(`${SRC}/a.js`, "import 'rxjs';");
+    tree.write(`${SRC}/a.spec.ts`, "import 'vitest';");
+    tree.write(`${SRC}/a.ts`, "import 'zod';");
+
+    expect(listImportedPackages(tree, SRC, /\.spec\.ts$/)).toEqual(['zod']);
+  });
+
+  it('reads files in nested directories', () => {
+    tree.write(`${SRC}/lib/deep/a.ts`, "import 'zod';");
+
+    expect(listImportedPackages(tree, SRC)).toEqual(['zod']);
+  });
+
+  it('returns an empty array for a directory that does not exist', () => {
+    expect(listImportedPackages(tree, 'does/not/exist')).toEqual([]);
   });
 });
 
