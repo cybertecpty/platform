@@ -73,6 +73,11 @@ defaults. Loads when working on specs, test artifacts, `type:testing` libs, or V
   CommonJS `require` in the source: spy on `Module._load` for that one
   path and defer to the real loader otherwise. Assert only the requested path, since its
   `parent` and `isMain` arguments differ between Windows and Linux.
+- **A mocked package hides a bad import of it.** A spec that `vi.mock`s a package never loads the
+  real one, so a named import that only works through a bundler's interop passes every test and
+  then fails in native Node ESM (`import { debug } from 'debug'`: `debug` is CommonJS). For a
+  CommonJS package use the default import, and check a new import once against the real package:
+  `node --input-type=module -e "import x from 'pkg'"` from the repo root.
 - For Nx generators / workspace utilities, use `createTreeWithEmptyWorkspace()` and
   assert against the in-memory `Tree`, generated files, and project config.
 - **Coverage mechanics.** The root `vitest.base.mts` sets the v8 coverage `thresholds` to 80 and
