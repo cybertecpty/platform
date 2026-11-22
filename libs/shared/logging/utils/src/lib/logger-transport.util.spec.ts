@@ -10,7 +10,7 @@ type MockDebugger = Mock & {
 const debugInstances = new Map<string, MockDebugger>();
 
 vitest.mock('debug', () => ({
-  debug: vitest.fn()
+  default: vitest.fn()
 }));
 
 const registerDebugger = (namespace: string): MockDebugger => {
@@ -33,7 +33,7 @@ describe('logger-transport.util', () => {
     beforeEach(async () => {
       transport = new ConsoleTransport();
       debugInstances.clear();
-      const { debug: debugMock } = await vitest.importMock<{ debug: Mock }>('debug');
+      const { default: debugMock } = await vitest.importMock<{ default: Mock }>('debug');
       debugMock.mockReset();
       debugMock.mockImplementation(namespaceArg => registerDebugger(namespaceArg));
     });
@@ -73,7 +73,7 @@ describe('logger-transport.util', () => {
     });
 
     it('reuses existing loggers when a namespace is initialized again', async () => {
-      const { debug: debugMock } = await vitest.importMock<{ debug: Mock }>('debug');
+      const { default: debugMock } = await vitest.importMock<{ default: Mock }>('debug');
 
       transport.initialize(namespace, LOG_LEVELS);
       const first = debugInstances.get(`${namespace}:info`);
@@ -131,7 +131,7 @@ describe('logger-transport.util', () => {
     });
 
     it('reuses the logger created by isEnabled when the namespace is logged to', async () => {
-      const { debug: debugMock } = await vitest.importMock<{ debug: Mock }>('debug');
+      const { default: debugMock } = await vitest.importMock<{ default: Mock }>('debug');
 
       transport.isEnabled('unknown-namespace', 'error');
       transport.log('unknown-namespace', 'error', 'message');

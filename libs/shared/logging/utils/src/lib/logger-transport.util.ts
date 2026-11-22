@@ -1,4 +1,4 @@
-import { debug, type Debugger } from 'debug';
+import createDebug, { type Debugger } from 'debug';
 import { LOG_NAMESPACE_SEPARATOR, type LogLevel } from './logger.util';
 
 export interface LogTransport {
@@ -53,7 +53,7 @@ export class ConsoleTransport implements LogTransport {
 
   protected createLogger(namespace: string, level: LogLevel): Debugger {
     const fullNamespace = this.fullNamespace(namespace, level);
-    const logger = debug(fullNamespace);
+    const logger = createDebug(fullNamespace);
 
     // Bind the logger to the corresponding console method.
     // This allows us to filter the logs in the browser console

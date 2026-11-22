@@ -59,7 +59,9 @@ export class Logger {
 
   /**
    * Creates a new Logger instance with an extended namespace.
-   * @param suffix The suffix to append to the current namespace.
+   * @param suffix One static scope name, such as `Invoice`. It is kebab-cased, so it cannot carry
+   * a `:`; call `extendScope` once per segment. Don't pass an id, because each scope keeps its
+   * own loggers for the life of the transport.
    * @returns A new Logger instance with the extended namespace.
    */
   extendScope(suffix: string): Logger {

@@ -27,13 +27,19 @@ own `debug` namespace, `<namespace>:<level>`:
 - Browser: set `localStorage.debug` to the same pattern and reload.
 - In code: call `enableAll()` on the transport.
 
-Change which levels are always logged with `alwaysEnabled`: `new ConsoleTransport({ alwaysEnabled: [] })`
+`DEBUG` cannot turn the always-logged levels off, so an exclusion such as `DEBUG=-billing:*` does
+not silence `warn` or `error`; use `alwaysEnabled` for that. Change which levels are always logged
+with `alwaysEnabled`: `new ConsoleTransport({ alwaysEnabled: [] })`
 makes every level opt-in, and `['info', 'warn', 'error']` suits a Node application whose normal
 output is `info`.
 
 A `Logger` created with a narrower `levels` list drops calls at the other levels, and
 `extendScope` keeps that list. A scope named like a level (`info`) produces a namespace that a
 `DEBUG` pattern for that level also matches, so avoid it.
+
+A scope is one static name per area (`invoice`, `payment-gateway`), not an id: every scope keeps its
+own `debug` instances for the life of the transport, so a per-request or per-component name grows
+without bound.
 
 ## Running unit tests
 
