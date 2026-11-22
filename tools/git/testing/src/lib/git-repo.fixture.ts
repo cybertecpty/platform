@@ -1,4 +1,4 @@
-import { mkdtempSync, rmSync } from 'node:fs';
+import { appendFileSync, mkdtempSync, rmSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import simpleGit, { type SimpleGit } from 'simple-git';
@@ -42,13 +42,22 @@ export async function createGitRepoFixture(): Promise<GitRepoFixture> {
   return configureGitRepoFixture(dir);
 }
 
-async function configureGitRepoFixture(dir: string): Promise<GitRepoFixture> {
+// Written to the repository config directly, because a `git config` process per key is slow on Windows.
+const LOCAL_CONFIG = [
+  '[user]',
+  '\tname = Fixture',
+  '\temail = fixture@example.com',
+  '[commit]',
+  '\tgpgsign = false',
+  '[tag]',
+  '\tgpgsign = false',
+  ''
+].join('\n');
+
+function configureGitRepoFixture(dir: string): GitRepoFixture {
   const git = simpleGit(dir);
 
-  await git.addConfig('user.name', 'Fixture', false, 'local');
-  await git.addConfig('user.email', 'fixture@example.com', false, 'local');
-  await git.addConfig('commit.gpgsign', 'false', false, 'local');
-  await git.addConfig('tag.gpgsign', 'false', false, 'local');
+  appendFileSync(join(dir, '.git', 'config'), LOCAL_CONFIG);
 
   return {
     cleanup: () => rmSync(dir, { force: true, recursive: true }),
