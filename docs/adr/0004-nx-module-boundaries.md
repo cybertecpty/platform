@@ -83,7 +83,7 @@ Every project carries **exactly one tag on each of three axes**. All three are m
 | `type:services`    | Nest injectable providers: business logic, orchestration                       |
 | `type:infra`       | DB schema, connection factories, external service clients                      |
 | `type:types`       | pure type-only exports; zero runtime, zero deps                                |
-| `type:utils`       | stateless isomorphic helpers                                                   |
+| `type:utils`       | isomorphic helpers; no framework or module-level state                         |
 | `type:testing`     | test helpers, mocks, fixtures, builders                                        |
 | `type:plugin`      | Nx generators / executors                                                      |
 
@@ -681,3 +681,40 @@ a distinction a lib name can carry.
   coupling is accepted.
 - **The historical amendments that name `type:models`** (2026-10-20, 2026-10-28) are not rewritten.
   Read them with this amendment.
+
+## Amendment (2026-11-22): `type:utils` may hold per-instance state
+
+- Status: accepted
+- Deciders: djmcgrath
+- Implemented by: the catalog row for `type:utils`; no `depConstraints` change. The logger in ADR 0021
+  (`logging-utils`) is the case that raised it.
+
+The catalog described `type:utils` as "stateless isomorphic helpers", and the 2026-11-10 amendment
+repeats the phrase. The libraries under that tag already hold state: `UniqMultiMap` in
+`@cybertecpty/utils` extends `Map`, and the `ConsoleTransport` in `logging-utils` keeps a map of its
+`debug` instances. The word was shorthand for "nothing that needs a framework or setup", not a ban on
+a class with fields.
+
+### Considered options
+
+1. **Leave the wording.** Rejected: it contradicts libraries already in the tree, so a review could
+   fairly reject a stateful class, or ignore the row.
+2. **A new `type:` value for helpers that hold state.** Rejected: `type:ui` may depend only on
+   `type:ui`, `type:testing`, `type:types` and `type:utils`, so a view layer could not reach a logger
+   in a new type, and the closed value set would be reopened for a wording problem.
+3. **Loosen the wording.** **(chosen)**
+
+### Decision
+
+- **The `type:utils` row now reads "isomorphic helpers; no framework or module-level state".** A
+  helper may be a class whose instances hold fields, such as a map, and may not depend on a framework, a dependency-injection container, or a mutable value shared
+  at module level, such as a singleton.
+- **The matrix is unchanged,** including the `@angular/common/http` ban from the 2026-11-10
+  amendment. No lint rule checks "module-level state", so a review has to.
+
+### Consequences
+
+- **The row is edited in place, and the 2026-11-10 amendment is not rewritten.** Read its "stateless"
+  with this amendment.
+- **The line is a judgment call.** A module-level cache or registry is easy to add to a utils lib and
+  is not caught by the boundary rules.

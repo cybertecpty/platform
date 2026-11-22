@@ -11,6 +11,7 @@
       "@cybertecpty/git-utils": ["./tools/git/utils/src/index.ts"],
       "@cybertecpty/github-utils": ["./tools/github/utils/src/index.ts"],
       "@cybertecpty/js-plugin": ["./tools/js/plugin/src/index.ts"],
+      "@cybertecpty/logging-utils": ["./libs/shared/logging/utils/src/index.ts"],
       "@cybertecpty/node-plugin": ["./tools/node/plugin/src/index.ts"],
       "@cybertecpty/nx-plugin": ["./tools/nx/plugin/src/index.ts"],
       "@cybertecpty/nx-testing": ["./tools/nx/testing/src/index.ts"],

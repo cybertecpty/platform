@@ -1,0 +1,10 @@
+{
+  "name": "logging-utils",
+  "$schema": "../../../../node_modules/nx/schemas/project-schema.json",
+  "sourceRoot": "libs/shared/logging/utils/src",
+  "projectType": "library",
+  "tags": ["domain:shared", "platform:shared", "type:utils"],
+  "targets": {
+    "typecheck": {}
+  }
+}
