@@ -3,7 +3,9 @@
   "compilerOptions": {
     "rootDir": ".",
     "paths": {
+      "@cybertecpty/angular-core": ["./libs/shared/angular/core/src/index.ts"],
       "@cybertecpty/angular-plugin": ["./tools/angular/plugin/src/index.ts"],
+      "@cybertecpty/angular-testing": ["./libs/shared/angular/testing/src/index.ts"],
       "@cybertecpty/angular-utils": ["./libs/shared/angular/utils/src/index.ts"],
       "@cybertecpty/azure-plugin": ["./tools/azure/plugin/src/index.ts"],
       "@cybertecpty/dotnet-plugin": ["./tools/dotnet/plugin/src/index.ts"],
