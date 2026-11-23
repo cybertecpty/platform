@@ -18,17 +18,16 @@ export type RouterEventsLoggingFeature = LoggerFeature<LoggerFeatureKind.RouterE
  * Logs router navigation events under the `router-navigation` scope: start and end at `info`,
  * a cancelled navigation at `warn`, a failed one at `error` and a skipped one at `debug`.
  * Adding it twice logs every event twice.
+ *
+ * URLs are logged as navigated, query string and fragment included. A transport that leaves the
+ * device, such as one added with `withTransports`, must strip sensitive parameters itself.
  */
 export function withRouterEventsLogging(): RouterEventsLoggingFeature {
   return {
     kind: LoggerFeatureKind.RouterEventsLogging,
     providers: [
       provideEnvironmentInitializer(() => {
-        subscribeToRouterNavigation(
-          inject(Logger),
-          inject(Router, { optional: true }),
-          inject(DestroyRef)
-        );
+        subscribeToRouterNavigation(inject(Logger), inject(Router), inject(DestroyRef));
       })
     ]
   };
@@ -78,15 +77,7 @@ function logRouterNavigationEvent(logger: Logger, event: RouterEvent): void {
   }
 }
 
-function subscribeToRouterNavigation(
-  logger: Logger,
-  router: Router | null,
-  destroyRef: DestroyRef
-): void {
-  if (!router) {
-    return;
-  }
-
+function subscribeToRouterNavigation(logger: Logger, router: Router, destroyRef: DestroyRef): void {
   const navigationLogger = logger.extendScope('router-navigation');
 
   router.events.pipe(takeUntilDestroyed(destroyRef)).subscribe(event => {

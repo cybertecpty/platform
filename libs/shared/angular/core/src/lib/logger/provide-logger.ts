@@ -1,7 +1,7 @@
-import { makeEnvironmentProviders, type EnvironmentProviders } from '@angular/core';
+import { inject, makeEnvironmentProviders, type EnvironmentProviders } from '@angular/core';
 import { mapFeaturesToProviders } from '@cybertecpty/angular-utils';
 import { Logger } from '@cybertecpty/logging-utils';
-import { injectLoggerTransports, type LoggerTransportsFeature } from './logger-transports';
+import { LOGGER_TRANSPORTS, type LoggerTransportsFeature } from './logger-transports';
 import type { RouterEventsLoggingFeature } from './router-events-logging';
 
 export type LoggerFeatures = LoggerTransportsFeature | RouterEventsLoggingFeature;
@@ -23,10 +23,7 @@ export function provideLogger(
       provide: Logger,
       useFactory: () => {
         const namespace = appCode.toLowerCase();
-        const transports = injectLoggerTransports();
-        const logger = new Logger(namespace, transports);
-
-        return logger;
+        return new Logger(namespace, inject(LOGGER_TRANSPORTS));
       }
     }
   ]);

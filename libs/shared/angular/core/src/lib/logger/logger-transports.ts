@@ -1,18 +1,17 @@
-import { inject, InjectionToken, isDevMode } from '@angular/core';
+import { InjectionToken, isDevMode } from '@angular/core';
 import { ConsoleTransport, type LogTransport } from '@cybertecpty/logging-utils';
 import { type LoggerFeature, LoggerFeatureKind } from './logger-feature';
 
 export type LoggerTransportsFeature = LoggerFeature<LoggerFeatureKind.Transports>;
 
 /**
- * The transports `withTransports` registers. When absent, `provideLogger` uses the default
+ * The transports the root `Logger` writes to: the ones `withTransports` registers, or a default
  * console transport.
  */
-export const LOGGER_TRANSPORTS = new InjectionToken<readonly LogTransport[]>('LOGGER_TRANSPORTS');
-
-export function injectLoggerTransports(): readonly LogTransport[] {
-  return inject(LOGGER_TRANSPORTS, { optional: true }) ?? createDefaultTransports();
-}
+export const LOGGER_TRANSPORTS = new InjectionToken<readonly LogTransport[]>('LOGGER_TRANSPORTS', {
+  providedIn: 'root',
+  factory: createDefaultTransports
+});
 
 /**
  * Replaces the default console transport with the given ones. Pass a `ConsoleTransport` as well
