@@ -1,0 +1,11 @@
+{
+  "name": "angular-testing",
+  "$schema": "../../../../node_modules/nx/schemas/project-schema.json",
+  "sourceRoot": "libs/shared/angular/testing/src",
+  "prefix": "ct",
+  "projectType": "library",
+  "tags": ["domain:shared", "platform:frontend", "type:testing"],
+  "targets": {
+    "typecheck": {}
+  }
+}
