@@ -17,7 +17,6 @@ export type RouterEventsLoggingFeature = LoggerFeature<LoggerFeatureKind.RouterE
 /**
  * Logs router navigation events under the `router-navigation` scope: start and end at `info`,
  * a cancelled navigation at `warn`, a failed one at `error` and a skipped one at `debug`.
- * Adding it twice logs every event twice.
  *
  * URLs are logged as navigated, query string and fragment included. A transport that leaves the
  * device, such as one added with `withTransports`, must strip sensitive parameters itself.

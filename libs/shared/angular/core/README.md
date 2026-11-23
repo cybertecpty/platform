@@ -30,9 +30,9 @@ production only `warn` and `error` are logged until enabled through `localStorag
   output. A transport you supply is not enabled for you in dev mode, so call `enableAll()` on it
   if you want that. Providing the feature twice keeps the last one.
 - **`withRouterEventsLogging`** logs start and end at `info`, a cancelled navigation at `warn`, a
-  failed one at `error` and a skipped one at `debug`. Adding it twice logs every event twice. URLs
-  are logged as navigated, query string and fragment included, so a transport that leaves the
-  device must strip sensitive parameters itself.
+  failed one at `error` and a skipped one at `debug`. URLs are logged as navigated, query string
+  and fragment included, so a transport that leaves the device must strip sensitive parameters
+  itself.
 
 ## Running unit tests
 
