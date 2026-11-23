@@ -586,3 +586,13 @@ those examples are historical and the `platform` tag no longer maps onto a TypeS
   `types` for any of the three. No `depConstraints` row, tag value or path rule changes.
 - The platform-polymorphic text above and in ADR 0004 is not rewritten; read its `backend`
   and Nest examples as describing .NET projects that these generators do not create.
+
+## Amendment (2026-11-23): a shared `core` lib is allowed
+
+- Status: accepted
+- Deciders: djmcgrath
+- Implemented by: ADR 0004's 2026-11-23 amendment; `angular-core` (`libs/shared/angular/core`)
+
+The table row "`infra`, `core` (one per app)" describes an app's own core lib. ADR 0004 now also
+allows a shared `type:core` lib for provider functions that every Angular app reuses, so `core` can
+sit in the `shared` domain, as `angular-core` does. No directory, naming or tag rule here changes.
