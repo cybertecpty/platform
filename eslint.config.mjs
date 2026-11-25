@@ -48,6 +48,43 @@ const vitestTestCode = {
 const lodashMessage =
   'Import from lodash-es instead so bundle builds can tree-shake lodash utilities.';
 
+const lodashRestrictions = {
+  paths: [{ name: 'lodash', message: lodashMessage, allowTypeImports: true }],
+  patterns: [{ group: ['lodash/*'], message: lodashMessage, allowTypeImports: true }]
+};
+
+// Testing libraries stay out of production source: they belong in specs and `testing` libs.
+// `@nx/enforce-module-boundaries` cannot enforce this, because a lib's specs and source share
+// one project and its tags. Type-only imports are banned too.
+const testingImportMessage =
+  'Testing libraries are for specs and `testing` libs only. Move this code into a spec or a `testing` lib.';
+
+const testingImportRestrictions = {
+  paths: ['vitest', '@playwright/test', '@angular/core/testing'].map(name => ({
+    name,
+    message: testingImportMessage
+  })),
+  patterns: [
+    {
+      group: ['vitest/*', '@vitest/*', '@cybertecpty/*-testing'],
+      message: testingImportMessage
+    }
+  ]
+};
+
+// Where testing imports are legitimate: specs, test artifacts (doubles and fixtures in `testing`
+// libs), the Playwright specs, configs and gate code, and the tool configs that load a test or
+// lint plugin.
+const testingImportFiles = [
+  '**/*.{spec,test}.{ts,tsx,cts,mts}',
+  ...testArtifactFiles,
+  'apps/*/e2e/**/*.{ts,mts,js,mjs}',
+  ...playwrightLibFiles,
+  '**/vitest.config.{ts,mts,js,mjs}',
+  'vitest.base.mts',
+  '**/eslint.config.{mjs,js,cjs}'
+];
+
 export default [
   ...nx.configs['flat/base'],
   ...nx.configs['flat/typescript'],
@@ -177,17 +214,27 @@ export default [
   {
     // Bundle hygiene (all code, all extensions): lodash's CommonJS entry points
     // defeat tree-shaking, so every runtime import must go through lodash-es. The
-    // TS-aware rule lets `import type` through since it is erased at build time.
+    // TS-aware rule lets `import type` through since it is erased at build time. Testing
+    // libraries are banned in the same rule (`testingImportRestrictions`): flat config replaces
+    // rule options instead of merging them, so a second entry would drop one of the two bans.
     files: ['**/*.{ts,tsx,cts,mts,js,jsx,cjs,mjs}'],
     rules: {
       'no-restricted-imports': 'off',
       '@typescript-eslint/no-restricted-imports': [
         'error',
         {
-          paths: [{ name: 'lodash', message: lodashMessage, allowTypeImports: true }],
-          patterns: [{ group: ['lodash/*'], message: lodashMessage, allowTypeImports: true }]
+          paths: [...lodashRestrictions.paths, ...testingImportRestrictions.paths],
+          patterns: [...lodashRestrictions.patterns, ...testingImportRestrictions.patterns]
         }
       ]
+    }
+  },
+  {
+    // The lodash ban alone where testing imports belong (`testingImportFiles`).
+    basePath: workspaceRoot,
+    files: testingImportFiles,
+    rules: {
+      '@typescript-eslint/no-restricted-imports': ['error', lodashRestrictions]
     }
   },
   {
