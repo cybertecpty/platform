@@ -1,15 +1,8 @@
 import { TestBed } from '@angular/core/testing';
 import { injectLogger } from '@cybertecpty/angular-utils';
-import type { LogTransport } from '@cybertecpty/logging-utils';
+import { createMockTransport } from '@cybertecpty/logging-testing';
 import { withTransports } from './logger-transports';
 import { provideLogger } from './provide-logger';
-
-const createMockTransport = (): LogTransport => ({
-  enableAll: vitest.fn(),
-  initialize: vitest.fn(),
-  isEnabled: vitest.fn().mockReturnValue(true),
-  log: vitest.fn()
-});
 
 describe('logger-transports', () => {
   afterEach(() => {
