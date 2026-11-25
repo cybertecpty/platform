@@ -5,8 +5,8 @@
 - Deciders: djmcgrath
 - Implemented by: `.claude/rules/file-naming.md` and `.claude/rules/testing.md`; the test-artifact
   blocks in `eslint.config.mjs` (`testArtifactFiles`, `vitestTestCode`); the renames in #390
-- Amends: ADR 0008 (2026-10-17 amendment) and ADR 0017 (2026-11-13 amendment), see
-  "Consequences"
+- Amends: ADR 0004 (2026-11-13 amendment), ADR 0008 (2026-10-17 amendment) and ADR 0017
+  (2026-11-13 amendment); each carries a 2026-11-25 amendment pointing here
 
 ## Context and problem statement
 
