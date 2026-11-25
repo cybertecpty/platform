@@ -210,6 +210,10 @@ After resolving conflicts, commit with the same `-m`.
 `pnpm verify` mirrors the required `lint-and-test-affected` check on affected projects (conventions §9). Don't push
 until it passes; on Windows, prefix `NX_NO_CLOUD=true` if Nx Cloud teardown fails with `EISDIR`.
 
+`pnpm verify` does not enforce the 80% coverage floor, which applies only when `CI` is set. For a
+new or untested project, also run `CI=true pnpm exec nx test {project}` before pushing
+(`testing.md`, coverage mechanics).
+
 Never `origin` for bot work — `origin` is HTTPS via GCM (maintainer), not the bot's key.
 
 ### 7. Create the PR as the bot

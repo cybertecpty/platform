@@ -719,6 +719,47 @@ a class with fields.
 - **The line is a judgment call.** A module-level cache or registry is easy to add to a utils lib and
   is not caught by the boundary rules.
 
+## Amendment (2026-11-23): a shared `type:core` lib holds provider functions that every app reuses
+
+- Status: accepted
+- Deciders: djmcgrath
+- Implemented by: `angular-core` (`libs/shared/angular/core`, tagged `domain:shared`,
+  `platform:frontend`, `type:core`), with `angular-utils` and `angular-testing`; issue #388
+
+The catalog's `type:core` row, "Deliberate design choices worth stating" and ADR 0009's table all
+call `type:core` "one lib per app". The Angular logger (#388) is app-level provider setup:
+`provideLogger(appCode, ...features)` is called once in an app config and configures the root
+injector. Every Angular app would write the same code, so it was built once, in a shared lib.
+
+### Considered options
+
+1. **One core lib per app, each with its own copy.** Rejected: the copies would drift, and a fix
+   would have to land in every app.
+2. **Put the providers in `angular-utils` (`type:utils`).** Rejected: `provideLogger` is setup an app
+   calls once in its config, which is what `type:core` is for. Keeping it out of `utils` leaves that
+   lib for helpers a feature lib calls without any app-level setup, such as `injectLogger`.
+3. **A shared `type:core` lib for provider functions that more than one app reuses.** **(chosen)**
+
+### Decision
+
+- **"One per app" describes an app's own core lib; it does not bar a shared `type:core` lib.**
+  `angular-core` is `domain:shared` and `platform:frontend`.
+- **Placement.** A provider function or `withX()` feature that an app calls in its config goes in the
+  core lib. A helper a feature lib calls without app-level setup (`injectLogger`) goes in a
+  `platform:frontend` `type:utils` lib, and the test double for them (`provideMockLogger`) in a
+  `platform:frontend` `type:testing` lib. ADR 0009's 2026-11-14 amendment already makes those two
+  Angular libs.
+- **The matrix is unchanged.** `type:core` may already depend on `type:utils` and `type:testing`.
+
+### Consequences
+
+- **No rule checks how many core libs exist,** so a review has to hold the line between a shared core
+  lib and an app's own.
+- **A core lib is eager.** What a shared core lib exports and imports reaches every app's bootstrap
+  bundle unless the bundler tree-shakes it. Whether the logger drops out of an app that does not use
+  it has not been checked.
+- **ADR 0009's table row keeps its wording.** Read "`core` (one per app)" with this amendment.
+
 ## Amendment (2026-11-25): generated contract types sit in a `generated` folder (#390)
 
 - Status: accepted
