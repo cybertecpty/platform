@@ -1,0 +1,10 @@
+{
+  "name": "logging-testing",
+  "$schema": "../../../../node_modules/nx/schemas/project-schema.json",
+  "sourceRoot": "libs/shared/logging/testing/src",
+  "projectType": "library",
+  "tags": ["domain:shared", "platform:shared", "type:testing"],
+  "targets": {
+    "typecheck": {}
+  }
+}
