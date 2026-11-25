@@ -16,7 +16,7 @@
     },
     {
       "command": "nx g ng-lib utils --domain=billing --group=format",
-      "description": "Generates `billing-format-utils` at `libs/billing/format/utils` with `billing-format.utils.ts` and its spec."
+      "description": "Generates `billing-format-utils` at `libs/billing/format/utils` with `billing-format.ts` and its spec."
     }
   ],
   "properties": {

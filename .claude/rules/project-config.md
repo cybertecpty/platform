@@ -41,7 +41,7 @@ Moved here from `docs/agents/conventions.md` §8, §9 and §11. Loads when editi
     `pnpm verify` and CI) fails if any project tagged `platform:shared` loads it or has no
     `typecheck` target. See issue #164.
   - **The lib pass checks everything in `tsconfig.lib.json`'s `include`, test artifacts too.** A
-    `*.mock.ts` or `*.fixture.ts` in a lib's `src` that uses `vi.fn()` fails with TS2304 unless
+    test artifact in a lib's `src` that uses `vi.fn()` fails with TS2304 unless
     the lib config's `types` has `vitest/globals` (a `type:testing` lib gets it from the generator) or its
     `exclude` lists the artifact.
   - **The `platform:shared` guard has two blind spots.** It reads only `compilerOptions.types`, so

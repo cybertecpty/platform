@@ -341,7 +341,7 @@ first .NET project decides; if the matrix changes, that is an amendment to this 
 - Implemented by: issue #195 (the .NET boundary check) and #216 (moving the matrix)
 
 The `depConstraints` matrix is no longer inlined in `eslint.config.mjs`. It is
-`DEP_CONSTRAINTS` in `tools/nx/utils/src/lib/nx-dep-constraints.const.mts`, with the same
+`DEP_CONSTRAINTS` in `tools/nx/utils/src/lib/dep-constraints-const.mts`, with the same
 rows and comments, and its `DependencyConstraint` type lives in `nx-types`. ADR 0017's .NET
 boundary check reads the same array, so the matrix stays the single source of truth.
 
@@ -414,7 +414,7 @@ domain's own ADR" above, and the locked parameter "`domain:` values grow by ADR"
   lib's `type:`) so that the apps are not matched.
 - **`domain:*` is accepted** by `@nx/enforce-module-boundaries` in `onlyDependOnLibsWithTags`
   (the existing `type:*` row on `type:testing` already relies on it), and the .NET check applies
-  the same match. `nx-dep-constraints.utils.spec.ts` tests the .NET side, and `check-boundaries`
+  the same match. `dep-constraints.spec.ts` tests the .NET side, and `check-boundaries`
   exercises the real row, since `gamers-source-api` references a lib of another domain. No
   TypeScript project crosses domains yet, so the ESLint side is not exercised until one does.
 - **Why this is acceptable:** the repo has one product, made of several domains. The row is
@@ -463,7 +463,7 @@ re-tested after the Vitest migration (ADR 0018):
   specs that import the barrel. `typecheck`, `test` and `build` pass for `nx-utils` and
   `dotnet-plugin`.
 - **The Nx transpiler** loads the executor with the barrel import in place. The barrel exports the
-  matrix as `./lib/nx-dep-constraints.const.mjs`, and `nx run {project}:check-boundaries` against the
+  matrix as `./lib/dep-constraints-const.mjs`, and `nx run {project}:check-boundaries` against the
   workspace's .NET projects passes on a clean reference and fails on a forbidden one (a tests
   project referencing an app of another domain).
 
@@ -519,7 +519,7 @@ would put transport code in the view layer.
   HTTP through a `type:utils` lib that imports it. Turning it on is a workspace-wide change and is not
   made here.
 - **Unverified on a real graph.** No `type:ui` lib exists and Angular is not a dependency yet, so the
-  rule is covered by a spec on the row (`nx-dep-constraints.const.spec.ts`), not by a lint failure.
+  rule is covered by a spec on the row (`dep-constraints-const.spec.ts`), not by a lint failure.
   The first `type:ui` lib should include a deliberate pass/fail check.
 
 ## Amendment (2026-11-10): `checkNestedExternalImports` stays off — it cannot match a workspace lib's imports
@@ -718,3 +718,15 @@ a class with fields.
   with this amendment.
 - **The line is a judgment call.** A module-level cache or registry is easy to add to a utils lib and
   is not caught by the boundary rules.
+
+## Amendment (2026-11-25): generated contract types sit in a `generated` folder (#390)
+
+- Status: accepted
+- Deciders: djmcgrath
+- Implemented by: ADR 0017's 2026-11-25 amendment; ADR 0022
+
+The 2026-11-13 amendment placed generated contract types "in files suffixed `.contracts.ts`".
+ADR 0022 retires that suffix, so they sit in `src/lib/generated/` of the `type:types` lib instead
+(ADR 0017, 2026-11-25 amendment). The matrix is unchanged, and the generated-versus-hand-written
+distinction is still a path, not a boundary rule: a review has to catch a hand edit to a file under
+`generated/`.

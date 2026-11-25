@@ -5,43 +5,42 @@ paths:
 
 # Naming source files
 
-Loads when working on a library or tool source file. Test artifacts (`.mock`, `.stub`, `.fake`,
-`.fixture` and their plurals) are in `testing.md`; this file covers the production side.
+Loads when working on a library or tool source file. Test artifacts follow the same rule; their
+kinds are in `testing.md`.
 
 ## The rule
 
-A module in a lib or tool carries a suffix naming what it holds, as `<name>.<kind>.ts`. The
-name says the topic (`git-tags`, `release-branch`), and the suffix is singular or plural by how
-much the file exports, the same way as `.fixture` / `.fixtures` in `testing.md`:
+Name a file after its main export, in kebab-case: `derivePort` is in `derive-port.ts`,
+`defineAxeTests` in `define-axe-tests.ts`. A file with several equal exports takes the name of
+their topic (`project-options.ts`, `nx-release-results.ts`). The name says what the file holds;
+there is no suffix for the kind of module, so `.util`, `.utils`, `.types`, `.const`, `.contracts`,
+`.mock`, `.stub`, `.fake` and `.fixture` are not used.
 
-| Suffix                  | For                                                                                 |
-| ----------------------- | ----------------------------------------------------------------------------------- |
-| `.util`                 | one util: a function or class, with the types and subclasses that support it        |
-| `.utils`                | a set of related functions named for a topic, or expected to grow into one          |
-| `.types`                | types only, no runtime code (the `type:types` libs)                                 |
-| `.const` (`.const.mts`) | constants only; keep the `.mts` extension when a tool loads the file as ESM by name |
-| `.contracts`            | server-contract types generated from the backend's OpenAPI document; never edited   |
-| `.routes`               | an Angular library's route config: the `Routes` array a routed lib exports          |
+Three suffixes stay, because a tool or a framework convention reads them:
 
-- **Judge by the file's name and role, not today's export count.** A file named for one thing
-  (`uniq-multi-map`, `file-archiver`) is `.util`; a file named for a topic (`records`,
-  `git-tags`) is `.utils`, even while it holds one function, because the next function on that
-  topic goes in the same file.
-- **A base class with its subclasses is one util.** `file-archiver.util.ts` exports an abstract
-  base, two subclasses and their types, and that is one `.util`: split them only if a subclass
-  stops sharing the base's purpose.
-- **Several unrelated functions are a smell, not a suffix.** Split the file by topic rather than
-  rename it `.utils`.
-- **`.contracts` marks generated code.** A `*.contracts.ts` file lives in a `type:types` lib, is
-  written only by the generator (ADR 0017, 2026-11-13 amendment), and is never hand-edited. Do not
-  give a hand-written file the suffix, and use `.types` for hand-written type-only files.
+| Suffix    | Why                                                                           |
+| --------- | ----------------------------------------------------------------------------- |
+| `.spec`   | Vitest and the lint globs match it: `derive-port.spec.ts`                     |
+| `.test-d` | Vitest's type-test runner matches it: `object-props.test-d.ts`                |
+| `.routes` | Angular's convention for a route config, which the `ng-lib` generator follows |
+
+- **A file named for one thing holds that thing and what supports it.** An abstract base with its
+  subclasses and their types is one file named after the base: split it only if a subclass stops
+  sharing the base's purpose.
+- **Several unrelated exports are a smell.** Split the file by topic rather than inventing a
+  catch-all name.
+- **Don't repeat the lib's path in the name.** `playwright/testing` has `define-axe-tests.ts`, not
+  `playwright-axe-tests.ts`. Keep a prefix only when the name would be ambiguous without it.
+- **Don't reuse a name another lib already uses for something else.** Two `vitest.ts` files open as
+  the same editor tab and read the same in a stack trace; name the second for what it does
+  (`configure-angular-vitest-project.ts`).
+- **A spec mirrors its file's name**: `derive-port.spec.ts` tests `derive-port.ts`. A type-only
+  file has no spec; its type-level tests are `<name>.test-d.ts`.
+- **A tool that loads a file by name decides the extension, not the name.** Keep `.mts` on
+  `dep-constraints-const.mts`, which bare Node and ESLint import as ESM.
 - **`.routes` is named for the library.** A routed Angular library has one routes file, so the
-  `ng-lib` generator names it after the library (`billing-feature.routes.ts`) instead of using Nx's
-  `lib.routes.ts`.
-- Specs mirror the full name: `git-tags.utils.spec.ts` tests `git-tags.utils.ts`, and a type-only
-  `.types.ts` or `.contracts.ts` file has no spec (type-level tests use `.types.test-d.ts`).
-- Inside a group's lib, keep the group prefix the other files use (`nx-tree.utils.ts` in
-  `tools/nx/utils`).
+  `ng-lib` generator names it after the library (`billing-feature.routes.ts`) instead of using
+  Nx's `lib.routes.ts`.
 
 ## Exemptions
 
@@ -51,18 +50,16 @@ module of helpers:
 - `index.ts` (the barrel), `main.ts`, `generator.ts`, `executor.ts`, `schema.ts`
 - `commitlint-formatter.ts`, which bare `node` loads by name (`commitlint.md`)
 - `dependency-changelog-renderer.ts`, which `nx.json` loads by path (`release.changelog`)
-- config files such as `eslint.config.mjs`, `vitest.config.mts`,
-  `playwright.config.ts`
+- config files such as `eslint.config.mjs`, `vitest.config.mts`, `playwright.config.ts`
 - template files under a `files/` folder, and `*.spec.ts` / `*.test-d.ts` files
-- test artifacts, which follow `testing.md`
 
 ## Repeating the scan
 
-List the source files that are neither exempt nor suffixed, then check each suffix against its
-exports:
+List the files that still carry a retired suffix:
 
 ```bash
-git ls-files 'libs/**/*.ts' 'tools/**/*.ts' | grep -vE '\.(spec|test-d|utils?|types|contracts|routes|const|fixtures?|fakes?|mocks?|stubs?)\.m?ts$' | grep -vE '(^|/)(index|main|generator|executor|schema|commitlint-formatter|dependency-changelog-renderer)\.ts$|/files/|config\.'
+git ls-files 'libs/**' 'tools/**' | grep -E '\.(util|utils|types|const|contracts|mocks?|stubs?|fakes?|fixtures?)\.m?ts(__tmpl__)?$'
 ```
 
-A misnamed file is visible in review, so there is no lint rule for it.
+Then check by eye that each remaining file is named for its main export or topic. There is no
+lint rule for that, because a misnamed file is visible in review.

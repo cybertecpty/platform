@@ -1,6 +1,6 @@
 import { checkDepConstraints, DEP_CONSTRAINTS } from '@cybertecpty/nx-utils';
 import { logger, type ProjectGraphProjectNode, type PromiseExecutor } from '@nx/devkit';
-import { isDotNetProjectNode } from '../../utils/nx-dotnet-projects.utils';
+import { isDotNetProjectNode } from '../../utils/is-dotnet-project-node';
 import type { CheckBoundariesExecutorOptions } from './schema';
 
 /**

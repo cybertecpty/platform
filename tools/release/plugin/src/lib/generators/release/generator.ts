@@ -17,19 +17,19 @@ import { releaseChangelog, releaseVersion } from 'nx/release';
 import { output } from 'nx/src/utils/output';
 import type { SimpleGit } from 'simple-git';
 import simpleGit from 'simple-git';
-import { checkoutReleaseBranch, resolveReleaseBranchName } from '../../utils/release-branch.utils';
-import { buildReleasePrBody } from '../../utils/release-pr.utils';
+import { checkoutReleaseBranch, resolveReleaseBranchName } from '../../utils/release-branch';
+import { buildReleasePrBody } from '../../utils/release-pr';
 import {
   assertBaseIncludesTarget,
   assertReleaseTagsAvailable
-} from '../../utils/release-preflight.utils';
+} from '../../utils/release-preflight';
 import {
   getReleaseCommandOptions,
   resolveAffectedReleaseProjects,
   selectReleasableProjects,
   tagReleasedProjects
-} from '../../utils/release-projects.utils';
-import { pickVersionData, resolveWorkspaceReleaseType } from '../../utils/release-versions.utils';
+} from '../../utils/release-projects';
+import { pickVersionData, resolveWorkspaceReleaseType } from '../../utils/release-versions';
 import { packageVersionGenerator } from '../package-version/generator';
 import releaseManifestGenerator from '../release-manifest/generator';
 import type { NormalizedReleaseGeneratorOptions, ReleaseGeneratorOptions } from './schema';

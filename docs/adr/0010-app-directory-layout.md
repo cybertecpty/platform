@@ -5,7 +5,7 @@
 - Date: 2026-09-04
 - Deciders: djmcgrath
 - Implemented by: the `type === 'app'` naming special case in `projectNameFromOpts`
-  (`tools/nx/utils/src/lib/nx-projects.ts`), already shipped; `apps/cybertec-io/e2e`
+  (`tools/nx/utils/src/lib/project-options.ts`), already shipped; `apps/cybertec-io/e2e`
   (2026-09-24, moved there 2026-10-09 — see the amendment) as the first `type:e2e` project under this ADR's placement/naming rule,
   hand-authored — the wrapper generator planned in ADR 0009 does not yet scaffold apps
   or e2e projects (see Negative/risks below, unchanged by this acceptance).
@@ -165,7 +165,7 @@ _decision_, not the code.
   tags apps carry.
 - ADR 0005 (`application-frameworks`) — Angular / NestJS, the two stacks `type:app`
   covers.
-- `tools/nx/utils/src/lib/nx-projects.ts` — `projectNameFromOpts`'s `type === 'app'`
+- `tools/nx/utils/src/lib/project-options.ts` — `projectNameFromOpts`'s `type === 'app'`
   branch, the already-shipped implementation of this ADR's naming decision.
 - ADR 0012 (`astro-content-sites`) — `apps/cybertec-io`, the app `apps/cybertec-io-e2e`
   pairs with under this ADR's `type:e2e` placement rule.

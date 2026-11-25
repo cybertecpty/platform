@@ -1,1 +1,1 @@
-export * from './lib/git-repo.fixture';
+export * from './lib/git-repo-fixture';

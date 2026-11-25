@@ -496,3 +496,27 @@ the Jest globals or `jest.spyOn` now reads as the Vitest block, `@vitest/eslint-
   undefined global and fails `typecheck` and `nx lint`.
 - The ADR 0007 pairing named under More information above no longer holds: the plugin lints for
   Vitest.
+
+## Amendment (2026-11-25): test artifacts are found by folder, not by suffix (#390)
+
+- Status: accepted
+- Deciders: djmcgrath
+- Implemented by: `testArtifactFiles` and `vitestTestCode` in `eslint.config.mjs`; ADR 0022
+
+ADR 0022 retires the `.mock`, `.stub`, `.fake` and `.fixture` suffixes. The 2026-10-17 amendment
+(the suffix glob) and the 2026-11-10 amendment's "every test-artifact suffix" no longer apply.
+
+### Decision
+
+- **The Vitest block has two entries.** `**/*.{spec,test}.ts` (minus `apps/*/e2e`) and every file
+  under a `testing` lib's `src`, `{libs,tools}/**/testing/src/**/*.ts`. Both use the same rules and
+  the same relaxations.
+- **The shared Playwright lib is excluded from the folder entry.** Its gate code keeps the
+  Playwright rules; its specs still match the first entry.
+- **The `spy`, `dummy` and `builder` decisions in the 2026-10-17 amendment stand.** A test-data
+  builder is a `fixture`, now a word in the file's name.
+
+### Consequences
+
+- A test artifact outside a `testing` lib's `src` is not linted as test code. `testing.md` requires
+  artifacts to live in a `testing` lib.

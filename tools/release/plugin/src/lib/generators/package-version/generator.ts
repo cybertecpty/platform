@@ -2,7 +2,7 @@ import type { Tree } from '@nx/devkit';
 import { formatFiles, readJson, writeJson } from '@nx/devkit';
 import { inc, RELEASE_TYPES, valid } from 'semver';
 import type { PackageJson } from 'type-fest';
-import { isReleaseType } from '../../utils/release-versions.utils';
+import { isReleaseType } from '../../utils/release-versions';
 import type { PackageVersionGeneratorOptions } from './schema';
 
 export async function packageVersionGenerator(

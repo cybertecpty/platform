@@ -1,13 +1,13 @@
 import { createExecutorContextFixture } from '@cybertecpty/nx-testing';
 import { logger, type ExecutorContext } from '@nx/devkit';
 import { vi } from 'vitest';
-import { assertAzLoggedIn } from '../../utils/az-cli-auth.utils';
-import { az } from '../../utils/az-cli.utils';
+import { az } from '../../utils/az-cli';
+import { assertAzLoggedIn } from '../../utils/az-cli-auth';
 import webappDeployExecutor from './executor';
 import type { WebappDeployExecutorOptions } from './schema';
 
-vi.mock('../../utils/az-cli-auth.utils', () => ({ assertAzLoggedIn: vi.fn() }));
-vi.mock('../../utils/az-cli.utils', () => ({ az: vi.fn() }));
+vi.mock('../../utils/az-cli-auth', () => ({ assertAzLoggedIn: vi.fn() }));
+vi.mock('../../utils/az-cli', () => ({ az: vi.fn() }));
 
 const assertAzLoggedInMock = vi.mocked(assertAzLoggedIn);
 const azMock = vi.mocked(az);

@@ -1,6 +1,6 @@
 import { createExecutorContextFixture } from '@cybertecpty/nx-testing';
 import { logger, type ProjectGraph } from '@nx/devkit';
-import { COVERAGE_OUTPUT } from '../../plugin/plugin.utils';
+import { COVERAGE_OUTPUT } from '../../plugin/create-nodes';
 import checkCoverageOutputExecutor from './executor';
 
 const graphWithTestOutputs = (outputs: string[] | undefined): ProjectGraph =>

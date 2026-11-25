@@ -3,8 +3,8 @@ import DefaultChangelogRenderer from 'nx/release/changelog-renderer';
 import {
   findDependencyChanges,
   type ConventionalCommitTypes
-} from '../utils/release-dependency-changes.utils';
-import { readReleaseTagPattern } from '../utils/release-tags.utils';
+} from '../utils/release-dependency-changes';
+import { readReleaseTagPattern } from '../utils/release-tags';
 
 /**
  * Nx's changelog renderer, extended so a project bumped because a workspace library it imports

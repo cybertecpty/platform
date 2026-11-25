@@ -406,27 +406,27 @@ describe('ngLibGenerator', () => {
     it('names the `utils` files for the project name without its `utils` suffix', async () => {
       await run(tree, { type: 'utils' });
 
-      expect(tree.exists('libs/billing/utils/src/lib/billing.utils.ts')).toBe(true);
-      expect(tree.exists('libs/billing/utils/src/lib/billing.utils.spec.ts')).toBe(true);
+      expect(tree.exists('libs/billing/utils/src/lib/billing.ts')).toBe(true);
+      expect(tree.exists('libs/billing/utils/src/lib/billing.spec.ts')).toBe(true);
     });
 
     it('includes the group in the `utils` file names', async () => {
       await run(tree, { type: 'utils', group: 'format' });
 
-      expect(tree.exists('libs/billing/format/utils/src/lib/billing-format.utils.ts')).toBe(true);
+      expect(tree.exists('libs/billing/format/utils/src/lib/billing-format.ts')).toBe(true);
     });
 
     it('uses a name the caller sets for the `utils` file names', async () => {
       await run(tree, { type: 'utils', name: 'billing-helpers' });
 
-      expect(tree.exists('libs/billing/utils/src/lib/billing-helpers.utils.ts')).toBe(true);
+      expect(tree.exists('libs/billing/utils/src/lib/billing-helpers.ts')).toBe(true);
     });
 
     it('gives a `utils` library without a unit test runner no spec, but still its file', async () => {
       await run(tree, { type: 'utils', unitTestRunner: 'none' } as never);
 
-      expect(tree.exists('libs/billing/utils/src/lib/billing.utils.ts')).toBe(true);
-      expect(tree.exists('libs/billing/utils/src/lib/billing.utils.spec.ts')).toBe(false);
+      expect(tree.exists('libs/billing/utils/src/lib/billing.ts')).toBe(true);
+      expect(tree.exists('libs/billing/utils/src/lib/billing.spec.ts')).toBe(false);
     });
 
     it('leaves no `undefined` or stray separator in the generated paths', async () => {
@@ -441,16 +441,16 @@ describe('ngLibGenerator', () => {
       await run(tree, { type: 'utils' });
 
       expect(tree.read('libs/billing/utils/src/index.ts', 'utf-8')).toContain(
-        "export * from './lib/billing.utils'"
+        "export * from './lib/billing'"
       );
-      expect(tree.read('libs/billing/utils/src/lib/billing.utils.ts', 'utf-8')).toContain('export');
+      expect(tree.read('libs/billing/utils/src/lib/billing.ts', 'utf-8')).toContain('export');
     });
 
     it('names the `utils` spec after the topic of the file', async () => {
       await run(tree, { type: 'utils', group: 'format' });
 
       expect(
-        tree.read('libs/billing/format/utils/src/lib/billing-format.utils.spec.ts', 'utf-8')
+        tree.read('libs/billing/format/utils/src/lib/billing-format.spec.ts', 'utf-8')
       ).toContain("describe('billingFormat'");
     });
   });

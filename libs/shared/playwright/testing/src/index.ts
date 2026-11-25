@@ -5,7 +5,7 @@ export {
   type AxePathOptions,
   type AxeViewport,
   type DefineAxeTestsOptions
-} from './lib/playwright-axe.utils';
+} from './lib/define-axe-tests';
 export {
   DEFAULT_LIGHTHOUSE_THRESHOLDS,
   LIGHTHOUSE_CATEGORIES,
@@ -17,10 +17,10 @@ export {
   type LighthousePreset,
   type LighthouseThresholdOverrides,
   type LighthouseThresholds
-} from './lib/playwright-lighthouse.utils';
-export { derivePort, type PortRange } from './lib/playwright-port.utils';
+} from './lib/define-lighthouse-tests';
 export {
   definePreviewConfig,
   type DefinePreviewConfigOptions,
   type PreviewConfig
-} from './lib/playwright-preview.utils';
+} from './lib/define-preview-config';
+export { derivePort, type PortRange } from './lib/derive-port';

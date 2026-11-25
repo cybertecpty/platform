@@ -1,2 +1,2 @@
-export * from './lib/logger-transport.util';
-export * from './lib/logger.util';
+export * from './lib/logger';
+export * from './lib/logger-transport';

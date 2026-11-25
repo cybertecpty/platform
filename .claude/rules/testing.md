@@ -2,7 +2,6 @@
 paths:
   - '**/*.spec.ts'
   - '**/*.test.ts'
-  - '**/*.{mock,mocks,stub,stubs,fake,fakes,fixture,fixtures}.ts'
   - '{libs,tools}/**/testing/**'
   - '**/vitest.config.*'
   - 'vitest.base.mts'
@@ -14,26 +13,25 @@ Moved here from `docs/agents/conventions.md` §9, which keeps the runner and ver
 defaults. Loads when working on specs, test artifacts, `type:testing` libs, or Vitest config.
 
 - Unit tests are `*.spec.ts`, beside the implementation.
-- **Name test artifacts `<name>.<kind>.ts`**, by what the file exports (Meszaros's
-  vocabulary), with the plural kind for a file holding several:
+- **Name a test artifact's file after what it exports, with the kind (Meszaros's vocabulary) in
+  the name**, like any source file (`file-naming.md`): `executor-context-fixture.ts`,
+  `library-generator-fake.ts`. The kind is a word in the name, not a suffix:
 
-  | Kind                     | Exports                                                                      |
-  | ------------------------ | ---------------------------------------------------------------------------- |
-  | `.mock` / `.mocks`       | a double the test checks calls on (`vi.fn()`, `vi.mock` factories)           |
-  | `.stub` / `.stubs`       | a double returning canned answers, checked only through the output           |
-  | `.fake` / `.fakes`       | a working, simplified implementation (an in-memory store, a fake executor)   |
-  | `.fixture` / `.fixtures` | test data: constants, presets, or a builder function with per-test overrides |
+  | Kind      | Exports                                                                      |
+  | --------- | ---------------------------------------------------------------------------- |
+  | `mock`    | a double the test checks calls on (`vi.fn()`, `vi.mock` factories)           |
+  | `stub`    | a double returning canned answers, checked only through the output           |
+  | `fake`    | a working, simplified implementation (an in-memory store, a fake executor)   |
+  | `fixture` | test data: constants, presets, or a builder function with per-test overrides |
 
-  Inside a group's lib, keep the group prefix the source files use
-  (`nx-executor-context.fixture.ts` in `tools/nx/testing`). Spies (`vi.spyOn`) and dummies
-  stay inline, with no suffix. These suffixes are reserved for test code; don't use them for
-  production files. There is deliberately no `.builder` suffix: a test-data builder is a
-  `.fixture`, because "builder" collides with production builders and Angular CLI builders.
+  Spies (`vi.spyOn`) and dummies stay inline. There is deliberately no `builder` kind: a
+  test-data builder is a `fixture`, because "builder" collides with production builders and
+  Angular CLI builders.
   **Always put test artifacts in a `type:testing` lib (ADR 0004), never beside the spec**,
-  even when one spec uses them. If the project has no testing lib yet, generate one
+  even when one spec uses them: the lint config finds them by that folder, not by their name
+  (see the lint bullet below). If the project has no testing lib yet, generate one
   (`nx g @cybertecpty/js-plugin:ts-lib testing ...`); a testing lib must not import the
-  project whose specs use it, or the project graph gets a cycle. Spies (`vi.spyOn`) and
-  dummies stay inline.
+  project whose specs use it, or the project graph gets a cycle.
 
 - **Name the function that creates a test artifact after its kind**, so a call site shows it
   isn't the real thing. Ask whether it pretends to be the thing or is data of that type:
@@ -43,16 +41,17 @@ defaults. Loads when working on specs, test artifacts, `type:testing` libs, or V
     goes **last**: `createExecutorContextFixture`, `createProjectGraphFixture`.
 
   The same applies to a spec's local wrappers (`createContextFixture`) and to exported constants
-  (`EXECUTOR_CONTEXT_FIXTURE`, `mockLogger`). File suffixes stay fixed at the end whatever the
-  kind, because the lint glob matches them.
+  (`EXECUTOR_CONTEXT_FIXTURE`, `mockLogger`).
 
 - Name the top-level `describe` after the exported unit; write `it(...)` names as
   behavior statements.
-- `@vitest/eslint-plugin` `recommended` lints spec files and the test artifacts above
-  (`*.{spec,test}.ts` and every suffix in the table, except `apps/*/e2e`, which gets the
+- `@vitest/eslint-plugin` `recommended` lints spec files (`*.{spec,test}.ts`, except
+  `apps/*/e2e`, which gets the Playwright rules) and every file under a `testing` lib's `src`
+  (`{libs,tools}/**/testing/src/**/*.ts`, except the shared Playwright lib, whose gate code gets the
   Playwright rules) — a left-in `.only`, an `expect()` with no matcher, or a duplicated `it()`
-  title fails `nx lint` (ADR 0008). A file named with one of these suffixes is linted as test
-  code, so don't use them for production files. The same block relaxes `@nx/enforce-module-boundaries` and a few TS rules for test code.
+  title fails `nx lint` (ADR 0008). A test artifact outside a `testing` lib's `src` is not linted
+  as test code, so keep production code out of `testing` libs and artifacts in them. The same
+  rules relax `@nx/enforce-module-boundaries` and a few TS rules for test code.
 - Prefer direct assertions over snapshots.
 - **Don't test a function by mocking the collaborator that holds its behavior.** A spec that
   hands canned output to a mocked `simple-git` or `raw` proves which calls the function makes,
@@ -63,7 +62,7 @@ defaults. Loads when working on specs, test artifacts, `type:testing` libs, or V
   A case real git cannot produce (unparsable output) may stay as one fake-client case.
 - Run one spec file with a path filter after `--`:
   `pnpm exec nx test {project} -- {file-filter}`. Nx forwards the filter to Vitest, which runs
-  the spec files whose path contains it (`git-repo.fixture` and `src/lib/git-repo.fixture.spec.ts`
+  the spec files whose path contains it (`git-repo-fixture` and `src/lib/git-repo-fixture.spec.ts`
   both work). A filter that matches nothing still exits 0 (`passWithNoTests`), so check the
   output names the spec you meant. Nx forwards unknown flags too, so `--testFile` fails the run.
 - **Vitest mock pitfalls.** `vi.mock` has no `{ virtual: true }`, so mock

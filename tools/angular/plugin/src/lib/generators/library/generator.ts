@@ -22,13 +22,13 @@ import {
   type Tree
 } from '@nx/devkit';
 import { omit } from 'lodash-es';
-import type { NgUnitTestRunner } from '../../types/ng-projects.types';
+import type { NgUnitTestRunner } from '../../types/ng-unit-test-runner';
 import {
   ensureEntrypointExports,
   replaceAngularPeerDependencies
-} from '../../utils/ng-package.utils';
-import { normalizeRoutesFile, useRoutesInLazyRegistration } from '../../utils/ng-routes.utils';
-import { configureAngularVitestProject } from '../../utils/ng-vitest.utils';
+} from '../../utils/lib-package-json';
+import { normalizeRoutesFile, useRoutesInLazyRegistration } from '../../utils/lib-routes';
+import { configureAngularVitestProject } from '../../utils/vitest-config';
 import type { NgLibGeneratorOptions, NormalizedNgLibGeneratorOptions } from './schema';
 
 /**
@@ -114,7 +114,7 @@ export async function ngLibGenerator(
   generateFiles(tree, filesPath, projectConfig.root, { fileName, propertyName, tmpl: '' });
 
   // Without a unit test runner nothing can run or typecheck a spec, so the library gets none.
-  const specPath = joinPathFragments(projectConfig.root, 'src/lib', `${fileName}.utils.spec.ts`);
+  const specPath = joinPathFragments(projectConfig.root, 'src/lib', `${fileName}.spec.ts`);
 
   if (unitTestRunner === UnitTestRunner.None && tree.exists(specPath)) {
     tree.delete(specPath);

@@ -6,11 +6,11 @@ update the release pull request.
 
 ## Contents
 
-- **`runGh`** (`src/lib/github-cli.utils.ts`) — thin wrapper around the `gh` CLI.
+- **`runGh`** (`src/lib/github-cli.ts`) — thin wrapper around the `gh` CLI.
   Uses `execFile` (no shell) so arguments such as a PR title are never
   shell-interpreted, and rejects with `gh`'s stderr on a non-zero exit.
 - **`createPullRequest` / `updatePullRequest` / `findOpenPullRequest`**
-  (`src/lib/pull-request.utils.ts`) — open, edit, and look up a pull request for
+  (`src/lib/pull-request.ts`) — open, edit, and look up a pull request for
   a `head → base` branch pair. Bodies are passed via a throwaway `--body-file`
   so long changelog bodies cannot hit OS command-line length limits.
 

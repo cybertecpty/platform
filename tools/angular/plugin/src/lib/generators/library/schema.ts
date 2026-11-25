@@ -5,7 +5,7 @@ import type {
 } from '@cybertecpty/nx-types';
 import type { Schema } from '@nx/angular/src/generators/library/schema';
 import type { Except, SetRequired, Simplify } from 'type-fest';
-import type { NgUnitTestRunner } from '../../types/ng-projects.types';
+import type { NgUnitTestRunner } from '../../types/ng-unit-test-runner';
 
 export type NgLibGeneratorOptions = Simplify<
   // Manual directory overrides are disallowed.  The directory is derived from the project options.
