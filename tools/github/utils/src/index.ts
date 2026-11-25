@@ -1,3 +1,3 @@
-export * from './lib/github-cli.utils';
-export * from './lib/github-user.utils';
-export * from './lib/pull-request.utils';
+export * from './lib/github-cli';
+export * from './lib/github-user';
+export * from './lib/pull-request';

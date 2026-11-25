@@ -1,1 +1,1 @@
-export * from './lib/<%= fileName %>.utils';
+export * from './lib/<%= fileName %>';

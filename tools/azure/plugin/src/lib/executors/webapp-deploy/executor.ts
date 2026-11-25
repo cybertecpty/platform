@@ -1,6 +1,6 @@
 import { logger, type PromiseExecutor } from '@nx/devkit';
-import { assertAzLoggedIn } from '../../utils/az-cli-auth.utils';
-import { az } from '../../utils/az-cli.utils';
+import { az } from '../../utils/az-cli';
+import { assertAzLoggedIn } from '../../utils/az-cli-auth';
 import type { WebappDeployExecutorOptions } from './schema';
 
 /**

@@ -415,7 +415,7 @@ skeleton confirms them on the real layout.
 - **Item 2, edges.** A `ProjectReference` appears as a `static` graph dependency
   (`Api` -> `Domain`) with no further configuration.
 - **Item 3, feasibility.** The edges and tags the check needs are in the project graph. The
-  matrix half is done: it lives in `nx-dep-constraints.const.mts` (#216), read by the ESLint
+  matrix half is done: it lives in `dep-constraints-const.mts` (#216), read by the ESLint
   config.
 - **Item 0, partly.** `@nx/dotnet` has a release at the pinned workspace version and installs
   there. Its source shows no module-boundaries rule. Its project generators were not checked,
@@ -557,3 +557,20 @@ choice stands. Only where the generated output lives changes.
 - **"A generated TypeScript client lib" in the sections above now reads as "a generated contract
   types lib".** The context, considered options and consequences that name `type:models` record the
   decision as it was made and are not rewritten.
+
+## Amendment (2026-11-25): generated contracts live in a `generated` folder (#390)
+
+- Status: accepted
+- Deciders: djmcgrath
+- Implemented by: ADR 0022
+
+ADR 0022 retires the `.contracts` suffix, which the 2026-11-13 amendment made the marker for
+generated code. Where the generated types go (an existing `type:types` lib) does not change.
+
+### Decision
+
+- **Generated contract types go in `src/lib/generated/` of the `type:types` lib**, in files named for
+  their content (`orders.ts`). The folder replaces the suffix as the marker: do not hand-edit a file
+  in it, and do not put a hand-written file there.
+- **Everything else in the 2026-11-13 amendment stands**: types only, no runtime client, and the
+  generator itself is still not chosen.

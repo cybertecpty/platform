@@ -45,7 +45,7 @@ pnpm nx g @cybertecpty/release-plugin:release-manifest <project> <version> --sou
 name resolves.
 
 The file's shape is the `ReleaseManifest` interface exported from
-[`@cybertecpty/types`](../../../../../../../libs/shared/types/src/lib/release.types.ts) — apps and
+[`@cybertecpty/types`](../../../../../../../libs/shared/types/src/lib/release.ts) — apps and
 libraries that read the manifest at runtime should import it from there.
 
 ## Options

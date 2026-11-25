@@ -349,7 +349,7 @@ ADR-0009-owned wrapper, and no requirement that library scaffolding be funneled 
 
 - Status: accepted
 - Deciders: djmcgrath
-- Implemented by: `projectNameFromOpts` in `tools/nx/utils/src/lib/nx-projects.utils.ts`
+- Implemented by: `projectNameFromOpts` in `tools/nx/utils/src/lib/project-options.ts`
 
 `shared-fs-utils` (the first grouped `shared`-domain library scaffolded since this ADR
 landed) read as noisier than it needed to: `shared` stacked in front of an
@@ -485,7 +485,7 @@ reality" with nothing enforcing it. This amendment removes the second place.
 
 - Status: accepted
 - Deciders: djmcgrath
-- Implemented by (planned): `projectNameFromOpts` in `tools/nx/utils/src/lib/nx-projects.utils.ts`,
+- Implemented by (planned): `projectNameFromOpts` in `tools/nx/utils/src/lib/project-options.ts`,
   plus a one-off rename of the two affected projects (see "Migration")
 
 The 2026-09-19 amendment dropped `shared` from the name of grouped `shared` projects and

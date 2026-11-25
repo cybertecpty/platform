@@ -18,7 +18,7 @@ one part of the repo lives next to it and loads on demand:
 | Vetting a new dependency                             | `.claude/skills/add-dependency`      | before `pnpm add`                            |
 | Generator templates & the five generator surfaces    | `.claude/rules/generators.md`        | working in `tools/*/plugin/**`               |
 | Spec style, test-artifact naming, coverage           | `.claude/rules/testing.md`           | editing specs, test artifacts, Vitest config |
-| Source file suffixes (`.util`, `.utils`, `.types`)   | `.claude/rules/file-naming.md`       | adding or renaming a lib or tool source file |
+| Source file names (after the export) & kept suffixes | `.claude/rules/file-naming.md`       | adding or renaming a lib or tool source file |
 | `tsconfig` layout, `baseUrl`, `typecheck` stub       | `.claude/rules/project-config.md`    | editing `project.json` / `tsconfig*.json`    |
 | Typed linting & the ESLint plugin layer              | `.claude/rules/linting.md`           | editing an `eslint.config.mjs`               |
 | Commitlint formatter internals                       | `.claude/rules/commitlint.md`        | working on `tools/git/utils/**`, `.husky/**` |
@@ -595,7 +595,7 @@ path → tier table is in the `review-pr` skill.
     beside each `.csproj` carrying the three tags (ADR 0017). The root solution is `Platform.slnx`; add every
     new .NET project to it.
   - The frontend's server contract is generated from the backend's OpenAPI document into
-    `*.contracts.ts` files in an existing `type:types` lib — derived output, never hand-edited
-    (ADR 0017, 2026-11-13 amendment). There is no `type:models`. ADR 0003's zod bans are unchanged.
+    `src/lib/generated/` of an existing `type:types` lib — derived output, never hand-edited
+    (ADR 0017, 2026-11-13 and 2026-11-25 amendments). There is no `type:models`. ADR 0003's zod bans are unchanged.
   - `@nx/enforce-module-boundaries` only reads TypeScript imports, so ADR 0004's matrix is
     enforced between .NET projects by the `check-boundaries` target (ADR 0019).

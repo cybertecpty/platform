@@ -2,17 +2,16 @@ export {
   createProjectRootMappings,
   findProjectForPath
 } from 'nx/src/project-graph/utils/find-project-for-path';
-export * from './lib/nx-affected.utils';
-export * from './lib/nx-dep-constraints.const.mjs';
-export * from './lib/nx-dep-constraints.utils';
-export * from './lib/nx-domain.utils';
-export * from './lib/nx-env.utils';
-export * from './lib/nx-executor.utils';
-export * from './lib/nx-generator.utils';
-export * from './lib/nx-path-segment.utils';
-export * from './lib/nx-project-tags.utils';
-export * from './lib/nx-projects.utils';
-export * from './lib/nx-targets.utils';
-export * from './lib/nx-tree.utils';
-export * from './lib/nx-vitest.utils';
-export * from './lib/nx-workspace.utils';
+export * from './lib/affected';
+export * from './lib/dep-constraints';
+export * from './lib/dep-constraints-const.mjs';
+export * from './lib/env';
+export * from './lib/project-dependencies';
+export * from './lib/project-options';
+export * from './lib/project-tags';
+export * from './lib/project-targets';
+export * from './lib/run-command';
+export * from './lib/tree';
+export * from './lib/ts-config';
+export * from './lib/vitest';
+export * from './lib/workspace';

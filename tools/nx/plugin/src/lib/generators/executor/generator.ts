@@ -14,7 +14,7 @@ import {
   removeUpstreamSchemaDeclaration,
   sortPluginCollection,
   sortPluginDependencies
-} from '../../utils/plugin-project.utils';
+} from '../../utils/nx-plugin-artifacts';
 import type { NxExecGeneratorOptions } from './schema';
 
 /** Path, relative to a plugin's root, that holds its executor folders. */

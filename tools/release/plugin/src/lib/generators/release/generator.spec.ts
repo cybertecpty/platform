@@ -14,19 +14,18 @@ import { releaseChangelog, releaseVersion } from 'nx/release';
 import { output } from 'nx/src/utils/output';
 import simpleGit from 'simple-git';
 import { vi, type Mock } from 'vitest';
-
-import { checkoutReleaseBranch, resolveReleaseBranchName } from '../../utils/release-branch.utils';
-import { buildReleasePrBody } from '../../utils/release-pr.utils';
+import { checkoutReleaseBranch, resolveReleaseBranchName } from '../../utils/release-branch';
+import { buildReleasePrBody } from '../../utils/release-pr';
 import {
   assertBaseIncludesTarget,
   assertReleaseTagsAvailable
-} from '../../utils/release-preflight.utils';
+} from '../../utils/release-preflight';
 import {
   resolveAffectedReleaseProjects,
   selectReleasableProjects,
   tagReleasedProjects
-} from '../../utils/release-projects.utils';
-import { resolveWorkspaceReleaseType } from '../../utils/release-versions.utils';
+} from '../../utils/release-projects';
+import { resolveWorkspaceReleaseType } from '../../utils/release-versions';
 import { packageVersionGenerator } from '../package-version/generator';
 import releaseManifestGenerator from '../release-manifest/generator';
 import { releaseGenerator } from './generator';
@@ -58,24 +57,22 @@ vi.mock('nx/src/utils/output', () => ({
   output: { note: vi.fn(), success: vi.fn() }
 }));
 
-vi.mock('../../utils/release-branch.utils', () => ({
+vi.mock('../../utils/release-branch', () => ({
   checkoutReleaseBranch: vi.fn(),
   resolveReleaseBranchName: vi.fn()
 }));
 
-vi.mock('../../utils/release-preflight.utils', () => ({
+vi.mock('../../utils/release-preflight', () => ({
   assertBaseIncludesTarget: vi.fn(),
   assertReleaseTagsAvailable: vi.fn()
 }));
 
-vi.mock('../../utils/release-pr.utils', () => ({
+vi.mock('../../utils/release-pr', () => ({
   buildReleasePrBody: vi.fn()
 }));
 
-vi.mock('../../utils/release-projects.utils', async () => {
-  const actual = await vi.importActual<Record<string, unknown>>(
-    '../../utils/release-projects.utils'
-  );
+vi.mock('../../utils/release-projects', async () => {
+  const actual = await vi.importActual<Record<string, unknown>>('../../utils/release-projects');
   return {
     getReleaseCommandOptions: actual.getReleaseCommandOptions,
     selectReleasableProjects: vi.fn(),
@@ -84,10 +81,8 @@ vi.mock('../../utils/release-projects.utils', async () => {
   };
 });
 
-vi.mock('../../utils/release-versions.utils', async () => {
-  const actual = await vi.importActual<Record<string, unknown>>(
-    '../../utils/release-versions.utils'
-  );
+vi.mock('../../utils/release-versions', async () => {
+  const actual = await vi.importActual<Record<string, unknown>>('../../utils/release-versions');
   return {
     pickVersionData: actual.pickVersionData,
     resolveWorkspaceReleaseType: vi.fn()

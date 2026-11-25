@@ -1,8 +1,7 @@
 import { createProjectGraphAsync, readJsonFile, type ProjectGraph } from '@nx/devkit';
 import type { ChangelogChange } from 'nx/release/changelog-renderer';
 import { vi } from 'vitest';
-
-import { findDependencyChanges } from '../utils/release-dependency-changes.utils';
+import { findDependencyChanges } from '../utils/release-dependency-changes';
 import DependencyChangelogRenderer from './dependency-changelog-renderer';
 
 vi.mock('@nx/devkit', async () => ({
@@ -11,7 +10,7 @@ vi.mock('@nx/devkit', async () => ({
   readJsonFile: vi.fn()
 }));
 
-vi.mock('../utils/release-dependency-changes.utils', () => ({
+vi.mock('../utils/release-dependency-changes', () => ({
   findDependencyChanges: vi.fn()
 }));
 

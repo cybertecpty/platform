@@ -8,7 +8,7 @@ import perfectionist from 'eslint-plugin-perfectionist';
 import playwright from 'eslint-plugin-playwright';
 import unicorn from 'eslint-plugin-unicorn';
 import tseslint from 'typescript-eslint';
-import { DEP_CONSTRAINTS } from './tools/nx/utils/src/lib/nx-dep-constraints.const.mts';
+import { DEP_CONSTRAINTS } from './tools/nx/utils/src/lib/dep-constraints-const.mts';
 
 // type:e2e projects (ADR 0010): Playwright, not Vitest. Flat config globs can't read
 // project tags, so they are listed by path. e2e projects are nested at `apps/<app>/e2e`
@@ -27,6 +27,23 @@ const playwrightLibIgnores = ['libs/shared/playwright/**/*.spec.ts'];
 // loads `apps/<app>/eslint.config.mjs`, which spreads this file. Every block that uses
 // them sets `basePath` to pin matching to the workspace root (ESLint >= 9.30).
 const workspaceRoot = import.meta.dirname;
+
+// Test artifacts (doubles, fixtures, builders) live in `type:testing` libs, whose last directory
+// is `testing` (ADR 0009). They have no file suffix, so the Vitest block matches them by folder.
+// The shared Playwright lib is a `testing` lib too, but its gate code gets the Playwright rules.
+const testArtifactFiles = ['{libs,tools}/**/testing/src/**/*.ts'];
+
+// What the Vitest blocks share: the recommended rules, relaxed for test code.
+const vitestTestCode = {
+  ...vitest.configs.recommended,
+  rules: {
+    ...vitest.configs.recommended.rules,
+    '@nx/enforce-module-boundaries': 'off',
+    '@typescript-eslint/no-empty-function': 'off',
+    '@typescript-eslint/no-explicit-any': 'off',
+    '@typescript-eslint/no-non-null-assertion': 'off'
+  }
+};
 
 const lodashMessage =
   'Import from lodash-es instead so bundle builds can tree-shake lodash utilities.';
@@ -150,7 +167,7 @@ export default [
   {
     // `import type` guards code that bare Node loads with type stripping. Specs run under
     // Vitest, whose transforms drop type-only imports, so the rule only adds friction
-    // there. Test artifacts (`*.fixture.ts` and the like) stay covered: other code can import them.
+    // there. Test artifacts (in `testing` libs) stay covered: other code can import them.
     files: ['**/*.{spec,test}.{ts,tsx,cts,mts}'],
     rules: {
       '@typescript-eslint/consistent-type-imports': 'off',
@@ -222,21 +239,21 @@ export default [
   // non-NgRx files. Revisit (per-project spread) when the Angular ADR lands.
   ...ngrx.configs.signals.map(config => ({ ...config, files: ['{apps,libs}/**/*.ts'] })),
   {
-    // Vitest lint rules for spec files and test artifacts (doubles and fixtures —
-    // `<name>.<kind>.ts`, ADR 0008 2026-10-17 amendment). `recommended` brings the
-    // plugin and the recommended rule set (no-focused-tests, no-disabled-tests,
-    // valid-expect, ...); the overrides below relax TS rules that are noise in test code.
+    // Vitest lint rules for spec files. `recommended` brings the plugin and the recommended rule
+    // set (no-focused-tests, no-disabled-tests, valid-expect, ...); the overrides in
+    // `vitestTestCode` relax TS rules that are noise in test code.
     basePath: workspaceRoot,
-    files: ['**/*.{spec,test}.ts', '**/*.{mock,mocks,stub,stubs,fake,fakes,fixture,fixtures}.ts'],
+    files: ['**/*.{spec,test}.ts'],
     ignores: playwrightSpecFiles,
-    ...vitest.configs.recommended,
-    rules: {
-      ...vitest.configs.recommended.rules,
-      '@nx/enforce-module-boundaries': 'off',
-      '@typescript-eslint/no-empty-function': 'off',
-      '@typescript-eslint/no-explicit-any': 'off',
-      '@typescript-eslint/no-non-null-assertion': 'off'
-    }
+    ...vitestTestCode
+  },
+  {
+    // The same rules for test artifacts (doubles and fixtures), matched by folder because they
+    // carry no suffix. See `testArtifactFiles`.
+    basePath: workspaceRoot,
+    files: testArtifactFiles,
+    ignores: playwrightLibFiles,
+    ...vitestTestCode
   },
   {
     // Playwright lint rules for e2e spec files (see `playwrightSpecFiles`), in place of

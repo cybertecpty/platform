@@ -89,7 +89,7 @@ project by an inferred target, reading the ADR 0004 matrix from its shared modul
   any of them changes and `nx affected` selects it when a project's references change.
 - **The check itself** is `checkDepConstraints(source, target, constraints)` in `nx-utils`: pure,
   with the constraints passed in, so `nx-utils` never loads the matrix.
-- **The matrix** is `DEP_CONSTRAINTS` in `nx-dep-constraints.const.mts`. The executor imports it from
+- **The matrix** is `DEP_CONSTRAINTS` in `dep-constraints-const.mts`. The executor imports it from
   the `nx-utils` barrel (ADR 0004, 2026-11-10 amendment).
 - **The plugin** is registered in `nx.json` as `@cybertecpty/dotnet-plugin`, with the target name
   as its option, **in the change that adds the workspace's first .NET project**. Until then it
@@ -211,7 +211,7 @@ What remains unverified:
 - `@nx-dotnet/core`: https://github.com/nx-dotnet/nx-dotnet — `check-module-boundaries.ts` and
   its spec under `packages/core/src/tasks/`, and `addPrebuildMsbuildTask` in
   `packages/core/src/generators/utils/generate-project.ts` for the MSBuild hook.
-- Code: `tools/nx/utils/src/lib/nx-dep-constraints.utils.ts`, `nx-dep-constraints.const.mts`,
+- Code: `tools/nx/utils/src/lib/dep-constraints.ts`, `dep-constraints-const.mts`,
   and `tools/dotnet/plugin`.
 
 ## Amendment (2026-10-27): registered, and checked on the first project

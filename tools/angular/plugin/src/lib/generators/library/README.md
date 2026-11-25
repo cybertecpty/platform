@@ -40,9 +40,9 @@ Creates an Angular library under `libs/<domain>[/<subdomain>...]/[<group>/]<type
 
 - Adds a folder skeleton from the files in `files/<type>/` (`.gitkeep` files for `core`,
   `data-access`, `feature`, `ui` and `testing`). A `utils` library also gets
-  `src/lib/<topic>.utils.ts`, its spec (not with `--unitTestRunner=none`), and a barrel export.
+  `src/lib/<topic>.ts`, its spec (not with `--unitTestRunner=none`), and a barrel export.
   `<topic>` is the project name without its `-utils` suffix, so `billing-format-utils` gets
-  `billing-format.utils.ts`.
+  `billing-format.ts`.
 - Writes `export {};` to a buildable or publishable library's `src/index.ts` when it is empty (the
   `core`, `data-access` and `ui` types generate no starter component). ng-packagr fails an
   entrypoint that exports nothing with "failed to get symbol for entrypoint".
@@ -134,6 +134,6 @@ pnpm nx g @cybertecpty/angular-plugin:ng-lib ui --domain=billing
 # libs/billing/checkout/feature, with billing-checkout-feature.routes.ts
 pnpm nx g @cybertecpty/angular-plugin:ng-lib feature --domain=billing/checkout
 
-# libs/billing/format/utils, with billing-format.utils.ts and its spec
+# libs/billing/format/utils, with billing-format.ts and its spec
 pnpm nx g @cybertecpty/angular-plugin:ng-lib utils --domain=billing --group=format
 ```
