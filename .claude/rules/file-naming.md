@@ -31,9 +31,9 @@ Three suffixes stay, because a tool or a framework convention reads them:
   catch-all name.
 - **Don't repeat the lib's path in the name.** `playwright/testing` has `define-axe-tests.ts`, not
   `playwright-axe-tests.ts`. Keep a prefix only when the name would be ambiguous without it.
-- **Don't reuse a name another lib already uses for something else.** Two `vitest.ts` files open as
-  the same editor tab and read the same in a stack trace; name the second for what it does
-  (`configure-angular-vitest-project.ts`).
+- **Don't reuse a name another lib already uses for something else.** Two files with
+  the same name open as the same editor tab and read the same in a stack trace; name the second for
+  what it does (`angular-plugin` has `vitest-config.ts` beside `nx-utils`' `vitest.ts`).
 - **A spec mirrors its file's name**: `derive-port.spec.ts` tests `derive-port.ts`. A type-only
   file has no spec; its type-level tests are `<name>.test-d.ts`.
 - **A tool that loads a file by name decides the extension, not the name.** Keep `.mts` on
