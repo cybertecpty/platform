@@ -60,13 +60,17 @@ const testingImportMessage =
   'Testing libraries are for specs and `testing` libs only. Move this code into a spec or a `testing` lib.';
 
 const testingImportRestrictions = {
-  paths: ['vitest', '@playwright/test', '@angular/core/testing'].map(name => ({
-    name,
-    message: testingImportMessage
-  })),
+  paths: ['vitest', '@playwright/test'].map(name => ({ name, message: testingImportMessage })),
   patterns: [
     {
-      group: ['vitest/*', '@vitest/*', '@cybertecpty/*-testing'],
+      group: [
+        'vitest/*',
+        '@vitest/*',
+        '@angular/**/testing',
+        '@nx/**/testing',
+        '@testing-library/*',
+        '@cybertecpty/*-testing'
+      ],
       message: testingImportMessage
     }
   ]
