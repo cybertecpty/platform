@@ -89,9 +89,9 @@ Chosen option: **2 — name files after the main export or topic.**
 
 - **A name no longer shows whether a file holds types or runtime code.** The `type:types` libs show
   it by their tag, and the `.test-d` files by their suffix.
-- **Two libraries can have a file with the same name** (`vitest.ts` in `nx-utils` and in
-  `angular-plugin`), which look the same in an editor tab and a stack trace. The rule asks for a name
-  that says what the file does when that happens.
+- **Two libraries can have a file with the same name**, which look the same in an editor tab and a
+  stack trace. The rule asks for a name that says what the file does when that happens:
+  `angular-plugin` has `vitest-config.ts` beside `nx-utils`' `vitest.ts`.
 - **A test artifact outside a `testing` lib's `src` is no longer linted as test code, and nothing
   reports it.** It would get the production rules, so an `any` in it fails lint, which is loud. A
   left-in `.only` in one would not be caught. `testing.md` already requires artifacts to live in a
