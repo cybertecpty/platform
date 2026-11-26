@@ -52,6 +52,13 @@ defaults. Loads when working on specs, test artifacts, `type:testing` libs, or V
   title fails `nx lint` (ADR 0008). A test artifact outside a `testing` lib's `src` is not linted
   as test code, so keep production code out of `testing` libs and artifacts in them. The same
   rules relax `@nx/enforce-module-boundaries` and a few TS rules for test code.
+- **Production source cannot import a testing library.** `vitest`, `@vitest/*`, `@playwright/test`,
+  `@testing-library/*`, every `@angular/**/testing` and `@nx/**/testing` entry point, and the
+  `@cybertecpty/*-testing` aliases fail `nx lint` (even as
+  `import type`) outside specs, `testing` libs, the Playwright e2e files and the Vitest and ESLint
+  configs. Tags cannot enforce this, because a lib's specs and source share a project, so it is a
+  `no-restricted-imports` block in `eslint.config.mjs`. A new `type:testing` lib's alias must
+  match `*-testing`, or the ban misses it.
 - Prefer direct assertions over snapshots.
 - **Don't test a function by mocking the collaborator that holds its behavior.** A spec that
   hands canned output to a mocked `simple-git` or `raw` proves which calls the function makes,
