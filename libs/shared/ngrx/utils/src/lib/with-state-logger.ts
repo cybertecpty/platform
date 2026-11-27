@@ -1,8 +1,8 @@
 import { injectLogger } from '@cybertecpty/angular-utils';
-import { signalStoreFeature, watchState, withHooks } from '@ngrx/signals';
+import { getState, signalStoreFeature, watchState, withHooks } from '@ngrx/signals';
 
 /** Replaces the value of a masked state field in the logged state. */
-export const REDACTED = '[REDACTED]';
+const REDACTED = '[REDACTED]';
 
 export interface StateLoggerOptions {
   /** Top-level state fields left out of the logged state. */
@@ -33,6 +33,12 @@ export function withStateLogger(source: string, options: StateLoggerOptions = {}
   return signalStoreFeature(
     withHooks({
       onInit(store, logger = injectLogger(source)) {
+        const unknown = [...omit, ...mask].filter(key => !(key in getState(store)));
+        if (unknown.length > 0) {
+          throw new Error(
+            `withStateLogger('${source}') cannot omit or mask unknown state fields: ${unknown.join(', ')}`
+          );
+        }
         watchState(store, state => {
           logger.debug('[watchState]', redact(state));
         });

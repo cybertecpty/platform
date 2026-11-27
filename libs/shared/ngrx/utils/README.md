@@ -25,7 +25,8 @@ transport:
 withStateLogger('Session', { omit: ['token'], mask: ['email'] });
 ```
 
-Only top-level fields are matched. A store that passes no options logs its whole state.
+Only top-level fields are matched, and naming a field the store does not have throws when the
+store is created, so a typo cannot leak a value. A store that passes no options logs its whole state.
 
 ## Running unit tests
 

@@ -96,6 +96,35 @@ describe('withStateLogger', () => {
     expect(store.token()).toBe('another-secret');
   });
 
+  it('omits a field named in both lists', () => {
+    const transport = createMockTransport();
+    const BothStore = signalStore(
+      { providedIn: 'root' },
+      withStateLogger('Both', { omit: ['token'], mask: ['token'] }),
+      withState({ user: 'ada', token: 's3cret' })
+    );
+    configureTestingModule([{ provide: Logger, useValue: new Logger('app', [transport]) }]);
+
+    TestBed.inject(BothStore);
+
+    expect(transport.log).toHaveBeenCalledExactlyOnceWith('app:both', 'debug', '[watchState]', {
+      user: 'ada'
+    });
+  });
+
+  it('throws when an omitted or masked field is not in the state', () => {
+    const TypoStore = signalStore(
+      { providedIn: 'root' },
+      withStateLogger('Typo', { omit: ['tokn'] }),
+      withState({ token: 's3cret' })
+    );
+    configureTestingModule([
+      { provide: Logger, useValue: new Logger('app', [createMockTransport()]) }
+    ]);
+
+    expect(() => TestBed.inject(TypoStore)).toThrow('unknown state fields: tokn');
+  });
+
   it('throws when the Logger is not provided', () => {
     configureTestingModule();
 
