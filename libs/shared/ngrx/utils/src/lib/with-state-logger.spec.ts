@@ -21,7 +21,30 @@ const TestStore = signalStore(
   }))
 );
 
+interface SessionState {
+  user: string;
+  token: string;
+  email: string;
+}
+
 type TestStoreInstance = InstanceType<typeof TestStore>;
+
+const initialSessionState: SessionState = {
+  user: 'ada',
+  token: 's3cret',
+  email: 'ada@example.com'
+};
+
+const SessionStore = signalStore(
+  { providedIn: 'root' },
+  withStateLogger('Session', { omit: ['token'], mask: ['email'] }),
+  withState(initialSessionState),
+  withMethods(store => ({
+    setToken(token: string) {
+      patchState(store, () => ({ token }));
+    }
+  }))
+);
 
 const configureTestingModule = (providers: unknown[] = []) =>
   TestBed.configureTestingModule({
@@ -55,6 +78,22 @@ describe('withStateLogger', () => {
       count: 1
     });
     expect(transport.log).toHaveBeenCalledTimes(2);
+  });
+
+  it('keeps omitted fields away from the transport and masks the masked ones', () => {
+    const transport = createMockTransport();
+    configureTestingModule([{ provide: Logger, useValue: new Logger('app', [transport]) }]);
+
+    const store = TestBed.inject(SessionStore);
+    store.setToken('another-secret');
+
+    expect(transport.log).toHaveBeenCalledTimes(2);
+    for (const call of vi.mocked(transport.log).mock.calls) {
+      expect(call[3]).toEqual({ user: 'ada', email: '[REDACTED]' });
+      expect(JSON.stringify(call)).not.toContain('secret');
+      expect(JSON.stringify(call)).not.toContain('ada@example.com');
+    }
+    expect(store.token()).toBe('another-secret');
   });
 
   it('throws when the Logger is not provided', () => {

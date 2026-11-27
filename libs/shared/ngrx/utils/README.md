@@ -17,8 +17,15 @@ const CartStore = signalStore(
 Output is off by default. Switch it on with `DEBUG=cart:*` in Node, or `localStorage.debug = 'cart:*'`
 in the browser (see `@cybertecpty/logging-utils`).
 
-State is logged as-is, with no redaction. Do not use `withStateLogger` on a store that holds secrets
-or personal data if a transport that leaves the device is in use.
+State is logged as-is unless the store says otherwise. Name the top-level fields to leave out
+(`omit`) or to show as `[REDACTED]` (`mask`), and their values never reach the logger or any
+transport:
+
+```ts
+withStateLogger('Session', { omit: ['token'], mask: ['email'] });
+```
+
+Only top-level fields are matched. A store that passes no options logs its whole state.
 
 ## Running unit tests
 
