@@ -127,3 +127,33 @@ type depend on, `type:ui` included). The library is not buildable: consumers com
 - ADR 0017 (`dotnet-backend`) — the backend, which logs through .NET's own mechanisms.
 - `libs/shared/logging/utils/README.md` — how to create a logger and switch output on.
 - [`debug`](https://www.npmjs.com/package/debug).
+
+## Amendment (2026-11-27): logger features from other libs, and NgRx Signals logging
+
+- Status: accepted
+- Deciders: djmcg
+- Implemented by: issue #398 (`withStateLogger` in `ngrx-utils`, `withEventsLogging` in `ngrx-core`)
+
+`provideLogger` in `@cybertecpty/angular-core` takes features that change how the root `Logger`
+behaves (`withLoggerTransports`, `withRouterEventsLogging`). A feature in another lib, such as
+`withEventsLogging` in `ngrx-core`, has to plug into it too.
+
+### Considered options
+
+1. **`provideLogger` takes any `AngularProviderFeature`.** **(chosen)** The `features` parameter
+   is the generic provider-feature type from `angular-utils`, so a feature from any lib that can
+   inject the root `Logger` is accepted.
+2. **A shared `LoggerFeature<K>` type with a marker, in `angular-utils`.** Rejected for now: the
+   type is generic over its kind, so no lib needs to know the others' features. A bare
+   `LoggerFeature<string>` is structurally identical to `AngularProviderFeature<string>` and checks
+   nothing unless it carries a marker, which each feature then has to declare.
+3. **A union of every logger feature, as `LoggerFeatures` was.** Rejected: `angular-core` cannot
+   name a feature in `ngrx-core` without a dependency cycle.
+
+### Consequences
+
+- **`provideLogger` no longer rejects an unrelated provider feature at compile time.** Revisit
+  option 2 if a wrongly passed feature causes a bug.
+- **`LoggerFeatures` is no longer exported**, and `withTransports` is now `withLoggerTransports`.
+- **`withStateLogger` and `withEventsLogging` log state and event payloads as-is**, so the
+  no-redaction risk above applies to them. Redaction is tracked in #399.
