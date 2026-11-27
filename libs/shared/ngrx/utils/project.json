@@ -1,0 +1,11 @@
+{
+  "name": "ngrx-utils",
+  "$schema": "../../../../node_modules/nx/schemas/project-schema.json",
+  "sourceRoot": "libs/shared/ngrx/utils/src",
+  "prefix": "ct",
+  "projectType": "library",
+  "tags": ["domain:shared", "platform:frontend", "type:utils"],
+  "targets": {
+    "typecheck": {}
+  }
+}

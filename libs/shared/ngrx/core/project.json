@@ -1,0 +1,11 @@
+{
+  "name": "ngrx-core",
+  "$schema": "../../../../node_modules/nx/schemas/project-schema.json",
+  "sourceRoot": "libs/shared/ngrx/core/src",
+  "prefix": "ct",
+  "projectType": "library",
+  "tags": ["domain:shared", "platform:frontend", "type:core"],
+  "targets": {
+    "typecheck": {}
+  }
+}
