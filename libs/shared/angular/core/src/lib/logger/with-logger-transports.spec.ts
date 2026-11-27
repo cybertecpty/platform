@@ -1,10 +1,10 @@
 import { TestBed } from '@angular/core/testing';
 import { injectLogger } from '@cybertecpty/angular-utils';
 import { createMockTransport } from '@cybertecpty/logging-testing';
-import { withTransports } from './logger-transports';
 import { provideLogger } from './provide-logger';
+import { withLoggerTransports } from './with-logger-transports';
 
-describe('logger-transports', () => {
+describe('with-logger-transports', () => {
   afterEach(() => {
     vitest.restoreAllMocks();
     vitest.unstubAllGlobals();
@@ -26,12 +26,12 @@ describe('logger-transports', () => {
     });
   });
 
-  describe('withTransports', () => {
+  describe('withLoggerTransports', () => {
     it('sends log calls to the given transports', () => {
       const first = createMockTransport();
       const second = createMockTransport();
       TestBed.configureTestingModule({
-        providers: [provideLogger('app', withTransports(first, second))]
+        providers: [provideLogger('app', withLoggerTransports(first, second))]
       });
 
       TestBed.runInInjectionContext(() => injectLogger('Invoice')).info('hello');
@@ -43,7 +43,7 @@ describe('logger-transports', () => {
     it('replaces the default console transport', () => {
       const info = vitest.spyOn(console, 'info').mockImplementation(() => undefined);
       TestBed.configureTestingModule({
-        providers: [provideLogger('app', withTransports(createMockTransport()))]
+        providers: [provideLogger('app', withLoggerTransports(createMockTransport()))]
       });
 
       TestBed.runInInjectionContext(() => injectLogger('Invoice')).info('hello');
@@ -55,7 +55,7 @@ describe('logger-transports', () => {
       const first = createMockTransport();
       const second = createMockTransport();
       TestBed.configureTestingModule({
-        providers: [provideLogger('app', withTransports(first), withTransports(second))]
+        providers: [provideLogger('app', withLoggerTransports(first), withLoggerTransports(second))]
       });
 
       TestBed.runInInjectionContext(() => injectLogger('Invoice')).info('hello');

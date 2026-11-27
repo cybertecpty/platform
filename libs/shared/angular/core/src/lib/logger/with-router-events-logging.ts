@@ -19,7 +19,7 @@ export type RouterEventsLoggingFeature = LoggerFeature<LoggerFeatureKind.RouterE
  * a cancelled navigation at `warn`, a failed one at `error` and a skipped one at `debug`.
  *
  * URLs are logged as navigated, query string and fragment included. A transport that leaves the
- * device, such as one added with `withTransports`, must strip sensitive parameters itself.
+ * device, such as one added with `withLoggerTransports`, must strip sensitive parameters itself.
  */
 export function withRouterEventsLogging(): RouterEventsLoggingFeature {
   return {

@@ -1,7 +1,7 @@
 import { TestBed } from '@angular/core/testing';
 import { provideRouter, Router } from '@angular/router';
 import { provideLogger } from './provide-logger';
-import { withRouterEventsLogging } from './router-events-logging';
+import { withRouterEventsLogging } from './with-router-events-logging';
 
 const loggedEvents = (spy: { mock: { calls: unknown[][] } }) =>
   spy.mock.calls.map(([message]) => String(message));

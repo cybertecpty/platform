@@ -23,10 +23,10 @@ production only `warn` and `error` are logged until enabled through `localStorag
 
 | Feature                     | Effect                                                             |
 | --------------------------- | ------------------------------------------------------------------ |
-| `withTransports(...)`       | Replaces the default console transport with the ones given.        |
+| `withLoggerTransports(...)` | Replaces the default console transport with the ones given.        |
 | `withRouterEventsLogging()` | Logs router navigation events under the `router-navigation` scope. |
 
-- **`withTransports` replaces the default.** Pass a `ConsoleTransport` as well to keep console
+- **`withLoggerTransports` replaces the default.** Pass a `ConsoleTransport` as well to keep console
   output. A transport you supply is not enabled for you in dev mode, so call `enableAll()` on it
   if you want that. Providing the feature twice keeps the last one.
 - **`withRouterEventsLogging`** logs start and end at `info`, a cancelled navigation at `warn`, a

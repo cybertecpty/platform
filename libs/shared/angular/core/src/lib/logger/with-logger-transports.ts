@@ -5,7 +5,7 @@ import { type LoggerFeature, LoggerFeatureKind } from './logger-feature';
 export type LoggerTransportsFeature = LoggerFeature<LoggerFeatureKind.Transports>;
 
 /**
- * The transports the root `Logger` writes to: the ones `withTransports` registers, or a default
+ * The transports the root `Logger` writes to: the ones `withLoggerTransports` registers, or a default
  * console transport.
  */
 export const LOGGER_TRANSPORTS = new InjectionToken<readonly LogTransport[]>('LOGGER_TRANSPORTS', {
@@ -18,7 +18,7 @@ export const LOGGER_TRANSPORTS = new InjectionToken<readonly LogTransport[]>('LO
  * to keep console output; a transport you supply is not enabled in dev mode, so call
  * `enableAll()` on it for that. When provided twice, the last call wins.
  */
-export function withTransports(...transports: LogTransport[]): LoggerTransportsFeature {
+export function withLoggerTransports(...transports: LogTransport[]): LoggerTransportsFeature {
   return {
     kind: LoggerFeatureKind.Transports,
     providers: [{ provide: LOGGER_TRANSPORTS, useValue: transports }]
