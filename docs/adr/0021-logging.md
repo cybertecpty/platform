@@ -110,8 +110,9 @@ type depend on, `type:ui` included). The library is not buildable: consumers com
   module-level state", so an instance holding its own state is allowed. A new tag was not an option,
   because `type:ui` may depend only on `type:utils` among the runtime types.
 - **`debug` ships to the browser** for any project that logs, and only for those.
-- **There is no redaction.** A message goes to the transport as written, so nothing stops a secret
-  or personal data reaching a log.
+- **There is no redaction in `Logger`.** A message goes to the transport as written, so nothing
+  stops a secret or personal data reaching a log. `withStateLogger` redacts its own state (see the
+  2026-11-27 amendment).
 
 ### Unverified
 
@@ -156,4 +157,18 @@ behaves (`withLoggerTransports`, `withRouterEventsLogging`). A feature in anothe
   option 2 if a wrongly passed feature causes a bug.
 - **`LoggerFeatures` is no longer exported**, and `withTransports` is now `withLoggerTransports`.
 - **`withStateLogger` and `withEventsLogging` log state and event payloads as-is**, so the
-  no-redaction risk above applies to them. Redaction is tracked in #399.
+  no-redaction risk above applies to them. `withStateLogger` can omit or mask fields (see the next
+  amendment); `withEventsLogging` cannot.
+
+## Amendment (2026-11-27): redaction is an option on `withStateLogger`, not a transport step
+
+`withStateLogger(source, { omit, mask })` filters the state before it reaches `logger.debug`, so a
+value that is omitted or masked never reaches any transport. `LogTransport` and `Logger` are
+unchanged.
+
+- **Why not a transport step.** A transport sees only an opaque argument list. It cannot tell which
+  field of a state object is a secret, and each transport would have to repeat the rule. The store
+  knows its own fields.
+- **Scope.** Only top-level state fields are matched, by name. A nested secret needs its own
+  top-level field to omit, or the whole parent omitted. A message logged straight through `Logger`
+  is still written as given.
