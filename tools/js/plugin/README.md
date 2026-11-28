@@ -11,6 +11,7 @@ options.
 
 - [`ts-lib`](src/lib/generators/library/README.md): create a TypeScript library under
   `libs/<domain>/[<group>/]<type>` or `tools/[<group>/]<type>` (ADR 0009), wrapping `@nx/js:library`.
+  `--app` places it under `apps/<app>/...` and tags it `app:<app>` (ADR 0023).
 
   ```sh
   pnpm nx g @cybertecpty/js-plugin:ts-lib {type} --domain={domain} --platform={platform}

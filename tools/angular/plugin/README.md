@@ -11,7 +11,8 @@ options.
 
 - [`ng-lib`](src/lib/generators/library/README.md): create an Angular library (`core`,
   `data-access`, `feature`, `ui`, `testing` or `utils`) under
-  `libs/<domain>[/<subdomain>...]/[<group>/]<type>`, wrapping `@nx/angular:library`.
+  `libs/<domain>[/<subdomain>...]/[<group>/]<type>` (or `apps/<app>/...` with `--app`, ADR 0023),
+  wrapping `@nx/angular:library`.
 
   ```sh
   pnpm nx g @cybertecpty/angular-plugin:ng-lib {type} --domain={domain}

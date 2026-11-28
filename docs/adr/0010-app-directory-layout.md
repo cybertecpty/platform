@@ -189,3 +189,12 @@ still needs its own ADR (ADR 0004), enforced by the conformance check that amend
 Supersedes the `workspaceDomains` references in "Considered options" (option 3),
 "`domain:`/`platform:`/`type:` are explicit generator inputs", and "Negative / risks". The
 original text is kept for the record.
+
+## Amendment (2026-11-28): an app may own libs
+
+- Status: proposed
+- Deciders: djmcgrath
+- Implemented by: ADR 0023 (issue #405)
+
+Libs scaffolded with `--app` sit inside the app folder, as `apps/<app>/<domain>/.../<type>`, the way
+`apps/<app>/e2e` already does. The app's own name, tags and flat `apps/<name>` placement are unchanged.

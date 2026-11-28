@@ -139,6 +139,85 @@ describe('jsLibGenerator', () => {
     });
   });
 
+  describe('libs owned by an app (`--app`)', () => {
+    beforeEach(() => {
+      addProjectConfiguration(tree, 'cybertec-io', {
+        root: 'apps/cybertec-io',
+        tags: ['domain:cybertec-io', 'platform:frontend', 'type:app']
+      });
+      addProjectConfiguration(tree, 'gamers-source-api', {
+        root: 'apps/gamers-source-api',
+        tags: ['domain:gamers-source', 'platform:backend', 'type:app']
+      });
+    });
+
+    it('places the lib under `apps/<app>` and tags it `app:<app>`, keeping the derived name', async () => {
+      await run(tree, {
+        app: 'cybertec-io',
+        domain: 'billing/checkout',
+        group: 'cart',
+        platform: 'shared',
+        type: 'utils'
+      });
+
+      expect(forwardedOptions()).toMatchObject({
+        name: 'billing-checkout-cart-utils',
+        directory: 'apps/cybertec-io/billing/checkout/cart/utils',
+        tags: 'app:cybertec-io,domain:billing-checkout,platform:shared,type:utils'
+      });
+    });
+
+    it('does not forward `app` to `@nx/js:library`', async () => {
+      await run(tree, { app: 'cybertec-io', domain: 'billing', platform: 'shared', type: 'types' });
+
+      expect(forwardedOptions()).not.toHaveProperty('app');
+    });
+
+    it('is unchanged without `app`: the lib stays under `libs` with no `app:` tag', async () => {
+      await run(tree, { domain: 'billing', platform: 'shared', type: 'types' });
+
+      expect(forwardedOptions()).toMatchObject({
+        directory: 'libs/billing/types',
+        tags: 'domain:billing,platform:shared,type:types'
+      });
+    });
+
+    it('rejects an app that is not in the workspace before delegating', async () => {
+      await expect(
+        run(tree, { app: 'missing', domain: 'billing', platform: 'shared', type: 'types' })
+      ).rejects.toThrow('`app` "missing" is not a project in this workspace.');
+      expect(nxJsLibraryGeneratorMock).not.toHaveBeenCalled();
+    });
+
+    it('rejects the `shared` domain before delegating', async () => {
+      await expect(
+        run(tree, { app: 'cybertec-io', domain: 'shared', platform: 'shared', type: 'types' })
+      ).rejects.toThrow('`app` cannot be set for the `shared` domain');
+      expect(nxJsLibraryGeneratorMock).not.toHaveBeenCalled();
+    });
+
+    it('rejects `--platform=tools` before delegating', async () => {
+      await expect(
+        run(tree, { app: 'cybertec-io', group: 'git', platform: 'tools', type: 'types' })
+      ).rejects.toThrow('`app` cannot be set for a `platform:tools` project.');
+      expect(nxJsLibraryGeneratorMock).not.toHaveBeenCalled();
+    });
+
+    it('rejects a lib whose platform differs from its app’s before delegating', async () => {
+      await expect(
+        run(tree, {
+          app: 'gamers-source-api',
+          domain: 'billing',
+          platform: 'frontend',
+          type: 'types'
+        })
+      ).rejects.toThrow(
+        'A `platform:frontend` lib cannot belong to `gamers-source-api`, a `platform:backend` app.'
+      );
+      expect(nxJsLibraryGeneratorMock).not.toHaveBeenCalled();
+    });
+  });
+
   describe('frontend framework libraries', () => {
     it.each(['utils', 'testing'] as const)(
       'rejects a `platform:frontend` `%s` library, pointing to the Angular generator',

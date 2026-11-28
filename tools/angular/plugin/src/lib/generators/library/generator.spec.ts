@@ -4,6 +4,7 @@ import { libraryGenerator as nxAngularLibraryGenerator } from '@nx/angular/gener
 import type { Tree } from '@nx/devkit';
 import * as devkit from '@nx/devkit';
 import {
+  addProjectConfiguration,
   readJson,
   readNxJson,
   readProjectConfiguration,
@@ -186,6 +187,78 @@ describe('ngLibGenerator', () => {
       await run(tree, { type: 'ui', prefix: 'bil' });
 
       expect(forwardedOptions()).toMatchObject({ prefix: 'bil' });
+    });
+  });
+
+  describe('libs owned by an app (`--app`)', () => {
+    beforeEach(() => {
+      addProjectConfiguration(tree, 'cybertec-io', {
+        root: 'apps/cybertec-io',
+        tags: ['domain:cybertec-io', 'platform:frontend', 'type:app']
+      });
+      addProjectConfiguration(tree, 'gamers-source-api', {
+        root: 'apps/gamers-source-api',
+        tags: ['domain:gamers-source', 'platform:backend', 'type:app']
+      });
+    });
+
+    it('places the lib under `apps/<app>` and tags it `app:<app>`, keeping the derived name', async () => {
+      await run(tree, {
+        type: 'feature',
+        app: 'cybertec-io',
+        domain: 'billing/checkout',
+        group: 'cart'
+      });
+
+      expect(forwardedOptions()).toMatchObject({
+        name: 'billing-checkout-cart-feature',
+        directory: 'apps/cybertec-io/billing/checkout/cart/feature',
+        tags: 'app:cybertec-io,domain:billing-checkout,platform:frontend,type:feature'
+      });
+    });
+
+    it('keeps `app` away from `@nx/angular:library`', async () => {
+      await run(tree, { type: 'ui', app: 'cybertec-io' });
+
+      expect(forwardedOptions()).not.toHaveProperty('app');
+    });
+
+    it('leaves the lib under `libs` with no `app:` tag without `app`', async () => {
+      await run(tree, { type: 'ui' });
+
+      expect(forwardedOptions()).toMatchObject({
+        directory: 'libs/billing/ui',
+        tags: 'domain:billing,platform:frontend,type:ui'
+      });
+    });
+
+    it('rejects an app that is not in the workspace before delegating', async () => {
+      await expect(run(tree, { type: 'ui', app: 'missing' })).rejects.toThrow(
+        '`app` "missing" is not a project in this workspace.'
+      );
+      expect(nxAngularLibraryGeneratorMock).not.toHaveBeenCalled();
+    });
+
+    it('rejects the `shared` domain before delegating', async () => {
+      await expect(run(tree, { type: 'ui', app: 'cybertec-io', domain: 'shared' })).rejects.toThrow(
+        '`app` cannot be set for the `shared` domain'
+      );
+      expect(nxAngularLibraryGeneratorMock).not.toHaveBeenCalled();
+    });
+
+    it('rejects an app on another platform before delegating', async () => {
+      await expect(run(tree, { type: 'ui', app: 'gamers-source-api' })).rejects.toThrow(
+        'A `platform:frontend` lib cannot belong to `gamers-source-api`, a `platform:backend` app.'
+      );
+      expect(nxAngularLibraryGeneratorMock).not.toHaveBeenCalled();
+    });
+
+    it('writes the lib files inside the app', async () => {
+      await run(tree, { type: 'utils', app: 'cybertec-io', group: 'format' });
+
+      expect(tree.exists('apps/cybertec-io/billing/format/utils/src/lib/billing-format.ts')).toBe(
+        true
+      );
     });
   });
 

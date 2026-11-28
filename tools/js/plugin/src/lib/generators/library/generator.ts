@@ -2,6 +2,8 @@ import {
   addTsConfigTypes,
   addTypecheckTarget,
   assertNotJestRunner,
+  assertOwningApp,
+  assertValidAppOption,
   configureVitestProject,
   forceTestingLibNotBuildable,
   formatProjectTags,
@@ -29,6 +31,10 @@ import type { JsLibGeneratorOptions } from './schema';
  * or `tools/[<group>/]<type>` for `platform:tools`, ADR 0009), and tags from the shared `nx-utils` helpers rather than taking a raw
  * `directory`, then forwards every other option to `@nx/js:library` unchanged.
  *
+ * With `--app` the lib is owned by that app (ADR 0023): it goes under `apps/<app>` instead of
+ * `libs`, and is tagged `app:<app>`. The app must exist, be a `type:app` project and share the
+ * lib's platform (or the lib is `platform:shared`).
+ *
  * Backend library types (`api`, `services`, `infra`) are rejected: the backend is .NET
  * (ADR 0017), and those libraries are created with `dotnet new`, not this generator.
  *
@@ -45,6 +51,9 @@ export async function jsLibGenerator(
   assertDomainMatchesPlatform(options.domain, platform);
 
   const projectOptions = { ...options, platform };
+  assertValidAppOption(projectOptions);
+  assertOwningApp(tree, projectOptions);
+
   const name = projectNameFromOpts(projectOptions);
   const directory = projectDirFromOpts(projectOptions);
   const tags = formatProjectTags(projectTagsFromOptions(projectOptions));

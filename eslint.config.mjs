@@ -7,7 +7,9 @@ import astro from 'eslint-plugin-astro';
 import perfectionist from 'eslint-plugin-perfectionist';
 import playwright from 'eslint-plugin-playwright';
 import unicorn from 'eslint-plugin-unicorn';
+import { readFileSync } from 'node:fs';
 import tseslint from 'typescript-eslint';
+import { appOwnedLibAliases } from './tools/nx/utils/src/lib/app-owned-lib-aliases.mts';
 import { DEP_CONSTRAINTS } from './tools/nx/utils/src/lib/dep-constraints-const.mts';
 
 // type:e2e projects (ADR 0010): Playwright, not Vitest. Flat config globs can't read
@@ -88,6 +90,58 @@ const testingImportFiles = [
   'vitest.base.mts',
   '**/eslint.config.{mjs,js,cjs}'
 ];
+
+// A lib under `apps/<app>/` belongs to that app (ADR 0023) and only code under `apps/<app>/` may
+// import it. `@nx/enforce-module-boundaries` picks its rules by the importing project's tags and
+// has no negation, so it cannot say "only this app"; the location can. The base
+// `no-restricted-imports` is free for this: the block above turns it off in favor of the
+// TypeScript-aware rule, which keeps the lodash and testing bans. An app's own code may import its
+// libs and nobody else's; all other code may import none of them. With no app-owned lib, no block.
+const appOwnedAliases = appOwnedLibAliases(
+  JSON.parse(readFileSync(`${workspaceRoot}/tsconfig.base.json`, 'utf8')).compilerOptions.paths ??
+    {}
+);
+const ownerApps = Object.keys(appOwnedAliases);
+
+const appOwnedImportBan = aliasApps => ({
+  paths: aliasApps.map(([alias, app]) => ({
+    name: alias,
+    message: `This lib belongs to the app "${app}" (ADR 0023), so only code under apps/${app}/ may import it. Move it to libs/ to share it.`
+  }))
+});
+
+const appOwnedImportBlocks = ownerApps.length
+  ? [
+      {
+        basePath: workspaceRoot,
+        files: ['**/*.{ts,tsx,cts,mts,js,jsx,cjs,mjs}'],
+        ignores: ownerApps.map(app => `apps/${app}/**`),
+        rules: {
+          'no-restricted-imports': [
+            'error',
+            appOwnedImportBan(
+              ownerApps.flatMap(app => appOwnedAliases[app].map(alias => [alias, app]))
+            )
+          ]
+        }
+      },
+      ...ownerApps.flatMap(app => {
+        const otherAliases = ownerApps
+          .filter(other => other !== app)
+          .flatMap(other => appOwnedAliases[other].map(alias => [alias, other]));
+
+        return otherAliases.length
+          ? [
+              {
+                basePath: workspaceRoot,
+                files: [`apps/${app}/**/*.{ts,tsx,cts,mts,js,jsx,cjs,mjs}`],
+                rules: { 'no-restricted-imports': ['error', appOwnedImportBan(otherAliases)] }
+              }
+            ]
+          : [];
+      })
+    ]
+  : [];
 
 export default [
   ...nx.configs['flat/base'],
@@ -241,6 +295,7 @@ export default [
       '@typescript-eslint/no-restricted-imports': ['error', lodashRestrictions]
     }
   },
+  ...appOwnedImportBlocks,
   {
     // eslint-plugin-unicorn: a curated list of bug-catching rules, never its opinionated
     // `recommended` preset. Held at ^65 until the ESLint 10 migration. See ADR 0008,

@@ -20,6 +20,13 @@ export interface NxProjectOptions<
   T extends NxProjectType = NxProjectType
 > {
   /**
+   * The name of the app that owns this library (ADR 0023). The lib is placed
+   * under `apps/<app>` instead of `libs` — `apps/<app>/<domain>[/<subdomain>...]/[<group>/]<type>` —
+   * and tagged `app:<app>`. Must be a single path segment. Not for `app` or
+   * `platform:tools` projects, nor the `shared` domain.
+   */
+  app?: string;
+  /**
    * The product domain and optional subdomains this project belongs to.
    * Subdomains are separated by a forward slash (e.g. `atlas/identity`). Each
    * segment must be lowercase alphanumeric words joined by single hyphens

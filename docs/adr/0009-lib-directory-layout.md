@@ -596,3 +596,13 @@ those examples are historical and the `platform` tag no longer maps onto a TypeS
 The table row "`infra`, `core` (one per app)" describes an app's own core lib. ADR 0004 now also
 allows a shared `type:core` lib for provider functions that every Angular app reuses, so `core` can
 sit in the `shared` domain, as `angular-core` does. No directory, naming or tag rule here changes.
+
+## Amendment (2026-11-28): a lib may be owned by one app
+
+- Status: proposed
+- Deciders: djmcgrath
+- Implemented by: ADR 0023 (issue #405)
+
+With `--app`, the lib's directory is `apps/<app>/<domain>[/<subdomain>...]/[<group>/]<type>`: the
+layout above with `libs` replaced by `apps/<app>`. Name, import path and the other tags are derived
+as before, and the lib also carries `app:<app>`. There is still no `--directory` passthrough.
