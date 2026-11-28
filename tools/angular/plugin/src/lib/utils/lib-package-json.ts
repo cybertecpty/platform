@@ -1,4 +1,8 @@
-import { listImportedPackages, readWorkspacePackageJson } from '@cybertecpty/nx-utils';
+import {
+  listImportedPackages,
+  projectBarrelPath,
+  readWorkspacePackageJson
+} from '@cybertecpty/nx-utils';
 import { joinPathFragments, readJson, writeJson, type Tree } from '@nx/devkit';
 import { minVersion, validRange } from 'semver';
 import type { PackageJson } from 'type-fest';
@@ -14,7 +18,7 @@ const NON_PUBLISHED_FILE = /\.(spec|test-d)\.ts$|(^|\/)test-setup\.ts$/;
  * `src/index.ts` has content. `root` is the library's project root.
  */
 export function ensureEntrypointExports(tree: Tree, root: string): void {
-  const indexPath = joinPathFragments(root, 'src/index.ts');
+  const indexPath = projectBarrelPath({ root });
 
   if (
     tree.exists(joinPathFragments(root, 'package.json')) &&

@@ -1,0 +1,42 @@
+{
+  "name": "ngrx-plugin",
+  "$schema": "../../../node_modules/nx/schemas/project-schema.json",
+  "sourceRoot": "tools/ngrx/plugin/src",
+  "projectType": "library",
+  "tags": ["platform:tools", "type:plugin"],
+  "targets": {
+    "build": {
+      "executor": "@nx/js:tsc",
+      "outputs": ["{options.outputPath}"],
+      "options": {
+        "outputPath": "dist/tools/ngrx/plugin",
+        "main": "tools/ngrx/plugin/src/index.ts",
+        "tsConfig": "tools/ngrx/plugin/tsconfig.lib.json",
+        "assets": [
+          "tools/ngrx/plugin/*.md",
+          {
+            "input": "./tools/ngrx/plugin/src",
+            "glob": "**/!(*.ts)",
+            "output": "./src"
+          },
+          {
+            "input": "./tools/ngrx/plugin/src",
+            "glob": "**/*.d.ts",
+            "output": "./src"
+          },
+          {
+            "input": "./tools/ngrx/plugin",
+            "glob": "generators.json",
+            "output": "."
+          },
+          {
+            "input": "./tools/ngrx/plugin",
+            "glob": "executors.json",
+            "output": "."
+          }
+        ]
+      }
+    },
+    "typecheck": {}
+  }
+}

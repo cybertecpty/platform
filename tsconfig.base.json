@@ -17,6 +17,7 @@
       "@cybertecpty/logging-testing": ["./libs/shared/logging/testing/src/index.ts"],
       "@cybertecpty/logging-utils": ["./libs/shared/logging/utils/src/index.ts"],
       "@cybertecpty/ngrx-core": ["./libs/shared/ngrx/core/src/index.ts"],
+      "@cybertecpty/ngrx-plugin": ["./tools/ngrx/plugin/src/index.ts"],
       "@cybertecpty/ngrx-utils": ["./libs/shared/ngrx/utils/src/index.ts"],
       "@cybertecpty/node-plugin": ["./tools/node/plugin/src/index.ts"],
       "@cybertecpty/nx-plugin": ["./tools/nx/plugin/src/index.ts"],

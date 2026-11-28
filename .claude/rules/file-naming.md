@@ -38,6 +38,9 @@ Three suffixes stay, because a tool or a framework convention reads them:
   file has no spec; its type-level tests are `<name>.test-d.ts`.
 - **A tool that loads a file by name decides the extension, not the name.** Keep `.mts` on
   `dep-constraints-const.mts`, which bare Node and ESLint import as ESM.
+- **A signal store ends in `-store`, with a dash, not a dot.** The export is `BookSearchStore`, so
+  the file is `book-search-store.ts` (NgRx's own docs name them this way), and its spec is
+  `book-search-store.spec.ts`. A store feature is named for its function (`with-request-status.ts`).
 - **`.routes` is named for the library.** A routed Angular library has one routes file, so the
   `ng-lib` generator names it after the library (`billing-feature.routes.ts`) instead of using
   Nx's `lib.routes.ts`.

@@ -6,9 +6,9 @@ import type { <%= className %>GeneratorOptions } from './schema';
  */
 export async function <%= generatorFnName %>(
   tree: Tree,
-  options: <%= className %>GeneratorOptions
+  rawOptions: <%= className %>GeneratorOptions
 ): Promise<void> {
-  logger.info(`TODO: implement the "${options.name}" generator`);
+  logger.info(`TODO: implement the "${rawOptions.name}" generator`);
 
   await formatFiles(tree);
 }

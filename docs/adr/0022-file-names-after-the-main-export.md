@@ -120,3 +120,18 @@ Chosen option: **2 — name files after the main export or topic.**
   replaces.
 - ADR 0009 (`lib-directory-layout`): why a testing lib's last directory is `testing`.
 - Issue #390.
+
+## Amendment (2026-11-27): a signal store ends in `-store`
+
+- Status: accepted
+- Deciders: djmcgrath
+- Implemented by: `.claude/rules/file-naming.md`; issue #401 (the `signal-store` generator)
+
+This is not an exception to the decision. `-store` is part of the export's name, so the rule already
+gives it: `BookSearchStore` is in `book-search-store.ts`, and its spec is `book-search-store.spec.ts`.
+It is joined with a dash, not a dot, so it is not one of the retired kind-of-module suffixes
+(`.store.ts` would be). NgRx's own SignalStore docs name store files this way (`book-search-store.ts`,
+`counter-store.ts`), so the workspace follows them. A store feature is named for its function
+(`with-request-status.ts`).
+
+The `**/*.store.ts` glob that ADR 0008 lists as a scoping option would match nothing under this rule.

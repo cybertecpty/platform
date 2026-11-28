@@ -1,10 +1,70 @@
 import { escapeRegExp } from '@cybertecpty/utils';
-import type { Tree } from '@nx/devkit';
+import type { ProjectConfiguration, Tree } from '@nx/devkit';
 import { joinPathFragments } from '@nx/devkit';
+import { addGlobal } from '@nx/js';
+import { ensureTypescript } from '@nx/js/internal';
+import { posix } from 'node:path';
 
 const BLOCK_COMMENT = /\/\*[\s\S]*?\*\//g;
 const LINE_COMMENT = /(^|[^:'"`])\/\/.*$/gm;
 const MODULE_SPECIFIER = /(?:from|import)\s*\(?\s*['"]([^'"]+)['"]/g;
+
+/** The part of a project configuration that locates its source: enough to find its barrel. */
+type ProjectSourceLocation = Pick<ProjectConfiguration, 'root' | 'sourceRoot'>;
+
+/** The TypeScript module, loaded on first use the way `@nx/*` generators load it. */
+let tsModule: ReturnType<typeof ensureTypescript> | undefined;
+
+/**
+ * Adds an export statement to a barrel file with `@nx/js`'s `addGlobal`, which inserts it after the
+ * last `import` (at the top of an exports-only barrel). `statement` is the whole line as the barrel
+ * should hold it, such as `export * from './lib/a';`. Creates the barrel when it does not exist. A
+ * no-op when one of the barrel's own statements already matches it, whatever its quote style, line
+ * breaks, trailing semicolon or trailing comma. A copy of the statement in a comment does not count.
+ *
+ * It does not sort or format the barrel: run `formatFiles` afterwards for that.
+ */
+export function addBarrelExport(tree: Tree, barrelPath: string, statement: string): void {
+  if (!tree.exists(barrelPath)) {
+    tree.write(barrelPath, '');
+  }
+
+  tsModule ??= ensureTypescript();
+
+  const sourceFile = tsModule.createSourceFile(
+    barrelPath,
+    tree.read(barrelPath, 'utf-8') ?? '',
+    tsModule.ScriptTarget.Latest,
+    true
+  );
+  const wanted = normalizeStatement(statement);
+
+  if (
+    sourceFile.statements.some(
+      existing => normalizeStatement(existing.getText(sourceFile)) === wanted
+    )
+  ) {
+    return;
+  }
+
+  addGlobal(tree, sourceFile, barrelPath, statement);
+}
+
+/**
+ * Re-exports a module from a project's barrel as `export * from './lib/a';`. `modulePath` is the
+ * module's workspace-relative path without its extension, such as `libs/demo/src/lib/a`, and the
+ * specifier is written relative to the project's source root. See `addBarrelExport` for how the
+ * statement is added.
+ */
+export function addProjectExport(
+  tree: Tree,
+  projectConfig: ProjectSourceLocation,
+  modulePath: string
+): void {
+  const specifier = `./${posix.relative(projectSrcRootPath(projectConfig), modulePath)}`;
+
+  addBarrelExport(tree, projectBarrelPath(projectConfig), `export * from '${specifier}';`);
+}
 
 /**
  * Recursively lists every file under `dir`, workspace-relative, regardless of
@@ -54,6 +114,27 @@ export function listImportedPackages(tree: Tree, dir: string, ignoredFiles?: Reg
 }
 
 /**
+ * The project's barrel file, `index.ts` in its source root, as a workspace-relative path. The file
+ * may not exist yet.
+ */
+export function projectBarrelPath(projectConfig: ProjectSourceLocation): string {
+  return joinPathFragments(projectSrcRootPath(projectConfig), 'index.ts');
+}
+
+/** The `lib` folder of the project's source root, as a workspace-relative path. */
+export function projectSrcLibPath(projectConfig: ProjectSourceLocation): string {
+  return joinPathFragments(projectSrcRootPath(projectConfig), 'lib');
+}
+
+/**
+ * The project's source root as a workspace-relative path: its `sourceRoot`, or `{root}/src` when it
+ * has none.
+ */
+export function projectSrcRootPath(projectConfig: ProjectSourceLocation): string {
+  return projectConfig.sourceRoot ?? joinPathFragments(projectConfig.root, 'src');
+}
+
+/**
  * Points the re-exports of one module in a barrel file at another: `export * from './lib/a'` and
  * `export { x } from './lib/a'` become `./lib/b` for `from: './lib/a'`, `to: './lib/b'`. `from` and
  * `to` are module specifiers as the barrel writes them, and either quote style matches. Other
@@ -84,6 +165,19 @@ export function replaceBarrelExport(
       (_match, prefix: string, quote: string) => `${prefix}${quote}${to}${quote}`
     )
   );
+}
+
+/**
+ * Writes a statement so two spellings of it compare equal: every quote single, whitespace
+ * collapsed, and no trailing semicolon or trailing comma.
+ */
+function normalizeStatement(source: string): string {
+  return source
+    .replace(/"/g, "'")
+    .replace(/\s+/g, ' ')
+    .replace(/,\s*}/g, ' }')
+    .replace(/;$/, '')
+    .trim();
 }
 
 /** `@scope/name/deep/path` is `@scope/name`, and `name/deep/path` is `name`. */

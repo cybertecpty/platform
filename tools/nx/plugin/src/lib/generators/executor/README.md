@@ -27,8 +27,8 @@ e.g. `nx g @cybertecpty/nx-plugin:nx-exec swa-deploy --project=azure-plugin` add
 - Refuses to run when the executor folder or its collection entry already exists, because upstream
   would silently overwrite a real implementation with the starter. Delete the folder first to
   regenerate.
-- Re-exports the executor and its options type from the plugin's `src/index.ts`, using `@nx/js`'s
-  `addGlobal`.
+- Re-exports the executor and its options type from the plugin's `src/index.ts`, using `addBarrelExport`
+  from `nx-utils`.
 - Alpha-sorts the plugin's `executors.json` and its `package.json` dependencies, which upstream
   reorders by moving `@nx/devkit` to the top.
 

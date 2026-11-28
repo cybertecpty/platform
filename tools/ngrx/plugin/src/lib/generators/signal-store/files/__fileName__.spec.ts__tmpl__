@@ -1,0 +1,19 @@
+import { TestBed } from '@angular/core/testing';<% if (!skipLogger) { %>
+import { provideLogger } from '@cybertecpty/angular-core';<% } %>
+import { <%= storeClassName %> } from './<%= fileName %>';
+
+describe('<%= storeClassName %>', () => {<% if (testProviders.length) { %>
+  beforeEach(() => {
+    TestBed.configureTestingModule({ providers: [<%- testProviders.join(', ') %>] });
+  });
+<% } %>
+  it('should be truthy', () => {
+    const store = TestBed.inject(<%= storeClassName %>);
+    expect(store).toBeTruthy();
+  });
+<% if (addEntities) { %>
+  it('should start with no entities', () => {
+    const store = TestBed.inject(<%= storeClassName %>);
+    expect(store.entities()).toEqual([]);
+  });
+<% } %>});
