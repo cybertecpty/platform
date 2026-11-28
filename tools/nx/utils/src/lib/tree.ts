@@ -19,7 +19,8 @@ let tsModule: ReturnType<typeof ensureTypescript> | undefined;
  * Adds an export statement to a barrel file with `@nx/js`'s `addGlobal`, which inserts it after the
  * last `import` (at the top of an exports-only barrel). `statement` is the whole line as the barrel
  * should hold it, such as `export * from './lib/a';`. Creates the barrel when it does not exist. A
- * no-op when the barrel already holds the statement, whatever its quote style or line breaks.
+ * no-op when one of the barrel's own statements already matches it, whatever its quote style, line
+ * breaks, trailing semicolon or trailing comma. A copy of the statement in a comment does not count.
  *
  * It does not sort or format the barrel: run `formatFiles` afterwards for that.
  */
@@ -28,19 +29,25 @@ export function addBarrelExport(tree: Tree, barrelPath: string, statement: strin
     tree.write(barrelPath, '');
   }
 
-  const barrel = tree.read(barrelPath, 'utf-8') ?? '';
+  tsModule ??= ensureTypescript();
 
-  if (normalizeStatement(barrel).includes(normalizeStatement(statement))) {
+  const sourceFile = tsModule.createSourceFile(
+    barrelPath,
+    tree.read(barrelPath, 'utf-8') ?? '',
+    tsModule.ScriptTarget.Latest,
+    true
+  );
+  const wanted = normalizeStatement(statement);
+
+  if (
+    sourceFile.statements.some(
+      existing => normalizeStatement(existing.getText(sourceFile)) === wanted
+    )
+  ) {
     return;
   }
 
-  tsModule ??= ensureTypescript();
-  addGlobal(
-    tree,
-    tsModule.createSourceFile(barrelPath, barrel, tsModule.ScriptTarget.Latest, true),
-    barrelPath,
-    statement
-  );
+  addGlobal(tree, sourceFile, barrelPath, statement);
 }
 
 /**
@@ -160,9 +167,17 @@ export function replaceBarrelExport(
   );
 }
 
-/** Collapses whitespace and writes every quote single, so two spellings of a statement compare equal. */
+/**
+ * Writes a statement so two spellings of it compare equal: every quote single, whitespace
+ * collapsed, and no trailing semicolon or trailing comma.
+ */
 function normalizeStatement(source: string): string {
-  return source.replace(/"/g, "'").replace(/\s+/g, ' ');
+  return source
+    .replace(/"/g, "'")
+    .replace(/\s+/g, ' ')
+    .replace(/,\s*}/g, ' }')
+    .replace(/;$/, '')
+    .trim();
 }
 
 /** `@scope/name/deep/path` is `@scope/name`, and `name/deep/path` is `name`. */

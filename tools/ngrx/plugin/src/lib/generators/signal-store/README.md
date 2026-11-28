@@ -4,7 +4,7 @@ Scaffolds an NgRx signal store in a project, with a spec, and exports it from th
 The store file is named for the store (`book-search` becomes `book-search-store.ts`, exporting
 `BookSearchStore`) and holds:
 
-- a state interface and its initial state,
+- a state type, empty for you to fill in, and its initial state,
 - an event group for the store, with no events yet,
 - the `signalStore(...)` itself, provided in root and logging its state changes with
   `withStateLogger` from `@cybertecpty/ngrx-utils`.
@@ -13,7 +13,9 @@ The spec injects the store and checks it exists. Both files go in the `lib` fold
 source root, under `--directory`.
 
 The generator fails for a project tagged `type:testing` or `type:types`; a `type:utils` project is
-fine. It does not add `@ngrx/signals` to the workspace; install it yourself.
+fine. It also fails when the store or its spec already exists, so a rerun cannot replace a store you
+have edited; delete the files first to regenerate. It does not add `@ngrx/signals` to the workspace;
+install it yourself.
 
 ## Usage
 

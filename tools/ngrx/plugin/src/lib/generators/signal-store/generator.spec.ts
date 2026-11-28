@@ -41,7 +41,7 @@ describe('signalStoreGenerator', () => {
     const store = tree.read(`${STORE_DIR}/book-search-store.ts`, 'utf-8');
 
     expect(store).toContain('export const BookSearchStore = signalStore(');
-    expect(store).toContain('export interface BookSearchState');
+    expect(store).toContain('export type BookSearchState = Record<string, never>;');
     expect(store).toContain('export const bookSearchEvents = eventGroup(');
     expect(store).toContain("source: 'Book Search'");
   });
@@ -72,26 +72,49 @@ describe('signalStoreGenerator', () => {
     expect(store).not.toContain('providedIn');
   });
 
-  it('provides the store in the generated spec only when it is not provided in root', async () => {
-    await generate({ providedInRoot: false });
-    const notInRootSpec = tree.read(`${STORE_DIR}/book-search-store.spec.ts`, 'utf-8');
+  describe('generated spec providers', () => {
+    const readSpec = () => tree.read(`${STORE_DIR}/book-search-store.spec.ts`, 'utf-8');
 
-    tree = createTreeWithEmptyWorkspace();
-    addProject(tree);
-    await generate();
-    const inRootSpec = tree.read(`${STORE_DIR}/book-search-store.spec.ts`, 'utf-8');
+    it('provides the logger by default, because the store logs its state', async () => {
+      await generate();
 
-    expect(notInRootSpec).toContain('providers: [BookSearchStore]');
-    expect(inRootSpec).not.toContain('providers');
+      expect(readSpec()).toContain("import { provideLogger } from '@cybertecpty/angular-core';");
+      expect(readSpec()).toContain("providers: [provideLogger('test')]");
+    });
+
+    it('provides nothing when the store is in root and has no logger', async () => {
+      await generate({ skipLogger: true });
+
+      expect(readSpec()).not.toContain('providers');
+      expect(readSpec()).not.toContain('provideLogger');
+    });
+
+    it('provides the store itself when it is not provided in root', async () => {
+      await generate({ providedInRoot: false, skipLogger: true });
+
+      expect(readSpec()).toContain('providers: [BookSearchStore]');
+    });
+
+    it('provides both the store and the logger when it needs both', async () => {
+      await generate({ providedInRoot: false });
+
+      expect(readSpec()).toContain("providers: [BookSearchStore, provideLogger('test')]");
+    });
+
+    it('writes a well-formed spec when formatting is skipped', async () => {
+      await generate({ providedInRoot: false, skipLogger: true, skipFormat: true });
+
+      expect(readSpec()).toContain('providers: [BookSearchStore] });\n  });\n');
+      expect(readSpec()).not.toMatch(/[;{)]it\(/);
+    });
   });
 
-  it('writes a well-formed spec when formatting is skipped', async () => {
-    await generate({ providedInRoot: false, skipFormat: true });
+  it('refuses to overwrite a store that already exists, and leaves it as it was', async () => {
+    await generate();
+    tree.write(`${STORE_DIR}/book-search-store.ts`, '// edited by hand\n');
 
-    const spec = tree.read(`${STORE_DIR}/book-search-store.spec.ts`, 'utf-8');
-
-    expect(spec).toContain('providers: [BookSearchStore] });\n  });\n');
-    expect(spec).not.toMatch(/[;{)]it\(/);
+    await expect(generate()).rejects.toThrow(/book-search-store\.ts and .* already exists/);
+    expect(tree.read(`${STORE_DIR}/book-search-store.ts`, 'utf-8')).toBe('// edited by hand\n');
   });
 
   describe('skipEvents', () => {

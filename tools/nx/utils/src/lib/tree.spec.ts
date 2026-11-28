@@ -121,6 +121,22 @@ describe('tree', () => {
       );
     });
 
+    it('adds a statement whose only copy in the barrel is a comment', () => {
+      tree.write(BARREL, `// export * from './lib/a';\nexport * from './lib/b';\n`);
+
+      addBarrelExport(tree, BARREL, `export * from './lib/a';`);
+
+      expect(tree.read(BARREL, 'utf-8')).toMatch(/^export \* from '\.\/lib\/a';$/m);
+    });
+
+    it('adds a statement that is only a prefix of an existing one', () => {
+      tree.write(BARREL, `export * from './lib/a/deep';\n`);
+
+      addBarrelExport(tree, BARREL, `export * from './lib/a';`);
+
+      expect(tree.read(BARREL, 'utf-8')).toContain(`export * from './lib/a';`);
+    });
+
     it('does not add a statement the barrel already holds', () => {
       tree.write(BARREL, `export * from './lib/a';\n`);
 

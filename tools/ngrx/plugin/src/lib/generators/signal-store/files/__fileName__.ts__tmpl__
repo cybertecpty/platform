@@ -7,7 +7,7 @@ export interface <%= className %>Entity {
   id: string;
 }
 <% } %>
-export interface <%= className %>State {}
+export type <%= className %>State = Record<string, never>;
 
 export const initial<%= className %>State: <%= className %>State = {};
 <% if (!skipEvents) { %>

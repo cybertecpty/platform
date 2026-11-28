@@ -37,6 +37,12 @@ export async function signalStoreGenerator(
 
   const storeClassName = `${className}Store`;
   const fileName = `${options.name}-store`;
+  const testProviders = [
+    ...(options.providedInRoot ? [] : [storeClassName]),
+    ...(options.skipLogger ? [] : ["provideLogger('test')"])
+  ];
+
+  assertStoreFilesAbsent(tree, targetDir, fileName);
 
   generateFiles(tree, joinPathFragments(__dirname, 'files'), targetDir, {
     ...options,
@@ -44,6 +50,7 @@ export async function signalStoreGenerator(
     fileName,
     propertyName,
     storeClassName,
+    testProviders,
     titleName: startCase(options.name),
     tmpl: ''
   });
@@ -58,6 +65,23 @@ export async function signalStoreGenerator(
 }
 
 export default signalStoreGenerator;
+
+/**
+ * Throws when the store or its spec already exists in `targetDir`, so a rerun cannot replace a
+ * store the user has edited. `generateFiles` overwrites without warning.
+ */
+function assertStoreFilesAbsent(tree: Tree, targetDir: string, fileName: string): void {
+  const existing = [`${fileName}.ts`, `${fileName}.spec.ts`]
+    .map(file => joinPathFragments(targetDir, file))
+    .filter(path => tree.exists(path));
+
+  if (existing.length > 0) {
+    throw new Error(
+      `${existing.join(' and ')} already exists. Delete it first to regenerate the store, ` +
+        'or pass a different `name` or `directory`.'
+    );
+  }
+}
 
 function assertValidProjectType(projectConfig: ProjectConfiguration): void {
   const invalidType = SIGNAL_STORE_INVALID_PROJECT_TYPES.find(type =>
