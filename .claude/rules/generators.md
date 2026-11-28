@@ -30,6 +30,17 @@ Moved here from `docs/agents/conventions.md` §8. Loads when working in an Nx pl
   rerun leaves the project unchanged, but throws when the existing target runs a different one, so
   a generator can't silently wipe out a target the user wrote. Pass `{ replace: true }` only when
   overwriting is the point.
+- Name a boolean option for what it does when it is not the default. An opt-in feature is
+  `add…` and defaults to `false` (`addEntities`). An opt-out is `skip…` and defaults to `false`
+  (`skipLogger`, `skipFormat`). A feature most runs want is on by default and gets a `skip…`
+  option, not an `add…` that defaults to `true`. Never a `skip…` that defaults to `true`, because
+  turning it off reads as a double negative (`--skipEvents=false`).
+- Add an export to a project's barrel with `addProjectExport(tree, projectConfig, modulePath)` from
+  `@cybertecpty/nx-utils`, which writes `export * from './lib/…'` relative to the source root from
+  the module's workspace-relative path (no extension). Use `addBarrelExport(tree, barrelPath,
+statement)` for any other export statement. Neither sorts or formats, so run `formatFiles`
+  afterwards. Both skip a statement the barrel already holds and create a barrel that is missing.
+  Don't edit the barrel's text by hand.
 - Before the PR, run the generator for real, not only as a dry run, and run what it made through the
   project's own checks. A spec with a fake upstream generator, and `--dry-run`, show file names. They
   don't show whether the generated project passes `nx test`, `nx lint` and `nx typecheck`, or how it
