@@ -5,8 +5,8 @@
 - Deciders: djmcgrath
 - Implemented by: issue #405: an `app` option in `projectDirFromOpts` and `projectTagsFromOptions`
   and `assertOwningApp` (`tools/nx/utils`), the `--app` option of `ng-lib` (`tools/angular/plugin`)
-  and `ts-lib` (`tools/js/plugin`), and the app-owned import block in `eslint.config.mjs`
-  (`appOwnedLibAliases`)
+  and `ts-lib` (`tools/js/plugin`), and the app-owned import blocks in `eslint.config.mjs`
+  (`appOwnedLibAliases`, `appOwnedImportBlocks`)
 - Amends: ADR 0004, ADR 0009 and ADR 0010; each carries a 2026-11-28 amendment pointing here
 
 ## Context and problem statement
