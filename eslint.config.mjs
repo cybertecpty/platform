@@ -99,11 +99,9 @@ const testingImportFiles = [
 // `apps/<app>/`, because `@nx/enforce-module-boundaries` cannot say "only this app". The base rule
 // is free for it: the blocks below turn it off in favor of the TypeScript-aware one. With no
 // app-owned lib, there are no blocks.
+const tsconfigBase = JSON.parse(readFileSync(`${workspaceRoot}/tsconfig.base.json`, 'utf8'));
 const appOwnedBlocks = appOwnedImportBlocks(
-  appOwnedLibAliases(
-    JSON.parse(readFileSync(`${workspaceRoot}/tsconfig.base.json`, 'utf8')).compilerOptions.paths ??
-      {}
-  ),
+  appOwnedLibAliases(tsconfigBase.compilerOptions.paths ?? {}),
   workspaceRoot
 );
 
