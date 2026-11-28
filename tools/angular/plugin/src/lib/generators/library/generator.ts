@@ -2,7 +2,6 @@ import {
   addTsConfigTypes,
   addTypecheckTarget,
   assertOwningApp,
-  assertValidAppOption,
   forceTestingLibNotBuildable,
   normalizeProjectOptions,
   removeRedundantLintTarget,
@@ -187,11 +186,9 @@ function normalizeOptions(
   tree: Tree,
   rawOptions: NgLibGeneratorOptions
 ): NormalizedNgLibGeneratorOptions {
-  // Check `app` before anything is written: the options alone, then the workspace (the app exists
-  // and shares the platform).
-  const projectOptions = { ...rawOptions, platform: 'frontend' } as const;
-  assertValidAppOption(projectOptions);
-  assertOwningApp(tree, projectOptions);
+  // Check `app` before anything is written: the options, then the workspace (the app exists and
+  // shares the platform).
+  assertOwningApp(tree, { ...rawOptions, platform: 'frontend' });
 
   let options: NormalizedNgLibGeneratorOptions = normalizeProjectOptions({
     ...rawOptions,

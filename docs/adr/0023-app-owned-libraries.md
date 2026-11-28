@@ -75,8 +75,10 @@ Chosen option: **2**.
   app. The check runs on the importing project, so `nx affected -t lint` runs it when an importer
   changes, which a check on the owned lib would not. It reads the path, not the `app:` tag, so a
   hand-edited tag cannot weaken it. With no app-owned lib there is no block.
-- **Moving a lib** between `libs/` and an app uses `nx g @nx/workspace:move` and a tag edit
-  (`docs/agents/conventions.md` §11), the same as any other relocation.
+- **Moving a lib** between `libs/` and an app uses `nx g @nx/workspace:move`
+  (`docs/agents/conventions.md` §11), then a hand edit of its tags in `project.json` to add or drop
+  `app:<app>` (and, going to `libs/`, to pick the domain): the move generator does not change tags.
+  The import ban follows the move on its own, because it reads the alias's new path.
 
 ## Consequences
 
@@ -93,7 +95,8 @@ Chosen option: **2**.
   way ADR 0009 derives the rest.
 - **The ownership ban matches import aliases, not paths.** A deep or relative import of an owned
   lib's file is already refused by `@nx/enforce-module-boundaries`, so the alias is the one way in.
-  The ban covers `import type` as well.
+  The ban covers `import type` as well. It does not see `vi.mock` or `require` of an alias; those
+  stay for review.
 - **An app tagged `domain:shared` cannot use an app-owned lib of a product domain.** `cybertec-io`
   is tagged that way, and its row allows only `domain:shared` (ADR 0004, 2026-10-27 amendment), so
   it may not import a `domain:billing` lib until the app takes a domain whose row allows

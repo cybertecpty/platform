@@ -101,7 +101,8 @@ const appOwnedAliases = appOwnedLibAliases(
   JSON.parse(readFileSync(`${workspaceRoot}/tsconfig.base.json`, 'utf8')).compilerOptions.paths ??
     {}
 );
-const ownerApps = Object.keys(appOwnedAliases);
+const appsWithLibs = Object.keys(appOwnedAliases);
+const aliasesOf = app => appOwnedAliases[app].map(alias => [alias, app]);
 
 const appOwnedImportBan = aliasApps => ({
   paths: aliasApps.map(([alias, app]) => ({
@@ -110,25 +111,18 @@ const appOwnedImportBan = aliasApps => ({
   }))
 });
 
-const appOwnedImportBlocks = ownerApps.length
+const appOwnedImportBlocks = appsWithLibs.length
   ? [
       {
         basePath: workspaceRoot,
         files: ['**/*.{ts,tsx,cts,mts,js,jsx,cjs,mjs}'],
-        ignores: ownerApps.map(app => `apps/${app}/**`),
+        ignores: appsWithLibs.map(app => `apps/${app}/**`),
         rules: {
-          'no-restricted-imports': [
-            'error',
-            appOwnedImportBan(
-              ownerApps.flatMap(app => appOwnedAliases[app].map(alias => [alias, app]))
-            )
-          ]
+          'no-restricted-imports': ['error', appOwnedImportBan(appsWithLibs.flatMap(aliasesOf))]
         }
       },
-      ...ownerApps.flatMap(app => {
-        const otherAliases = ownerApps
-          .filter(other => other !== app)
-          .flatMap(other => appOwnedAliases[other].map(alias => [alias, other]));
+      ...appsWithLibs.flatMap(app => {
+        const otherAliases = appsWithLibs.filter(other => other !== app).flatMap(aliasesOf);
 
         return otherAliases.length
           ? [

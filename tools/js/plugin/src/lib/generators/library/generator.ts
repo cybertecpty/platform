@@ -3,7 +3,6 @@ import {
   addTypecheckTarget,
   assertNotJestRunner,
   assertOwningApp,
-  assertValidAppOption,
   configureVitestProject,
   forceTestingLibNotBuildable,
   formatProjectTags,
@@ -51,7 +50,6 @@ export async function jsLibGenerator(
   assertDomainMatchesPlatform(options.domain, platform);
 
   const projectOptions = { ...options, platform };
-  assertValidAppOption(projectOptions);
   assertOwningApp(tree, projectOptions);
 
   const name = projectNameFromOpts(projectOptions);

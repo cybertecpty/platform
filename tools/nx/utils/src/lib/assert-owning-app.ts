@@ -1,6 +1,7 @@
 import type { NxProjectOptions } from '@cybertecpty/nx-types';
 import type { ProjectConfiguration, Tree } from '@nx/devkit';
 import { readProjectConfiguration } from '@nx/devkit';
+import { assertValidAppOption } from './project-options';
 import { isProjectOfType, projectTagValues } from './project-tags';
 
 /**
@@ -8,7 +9,7 @@ import { isProjectOfType, projectTagValues } from './project-tags';
  * this workspace on a platform the lib can serve: a `type:app` project, whose `platform:` is the
  * lib's own, or the lib is `platform:shared`. A no-op without `options.app`.
  *
- * The workspace half of the check; `assertValidAppOption` checks the options alone.
+ * Checks the options first (`assertValidAppOption`), then the workspace.
  */
 export function assertOwningApp(tree: Tree, options: NxProjectOptions): void {
   const { app, platform } = options;
@@ -16,6 +17,8 @@ export function assertOwningApp(tree: Tree, options: NxProjectOptions): void {
   if (!app) {
     return;
   }
+
+  assertValidAppOption(options);
 
   let project: ProjectConfiguration;
 
