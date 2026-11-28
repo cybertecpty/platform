@@ -7,6 +7,26 @@
  * (`@nx/enforce-module-boundaries` selects its rules by the importing project's tags and cannot
  * say "only this app"). Like `dep-constraints-const.mts`, it has no value imports and keeps the
  * `.mts` extension so that bare Node can load it.
+ *
+ * @example
+ * // Libs under `apps/<app>/` are grouped by app, with each app's aliases sorted.
+ * appOwnedLibAliases({
+ *   '@cybertecpty/billing-ui': ['./apps/cybertec-io/billing/ui/src/index.ts'],
+ *   '@cybertecpty/billing-feature': ['./apps/cybertec-io/billing/feature/src/index.ts'],
+ *   '@cybertecpty/cart-ui': ['./apps/gamers-source/cart/ui/src/index.ts']
+ * });
+ * // => {
+ * //   'cybertec-io': ['@cybertecpty/billing-feature', '@cybertecpty/billing-ui'],
+ * //   'gamers-source': ['@cybertecpty/cart-ui']
+ * // }
+ *
+ * @example
+ * // Libs under `libs/` and `tools/` belong to no app, so they are left out.
+ * appOwnedLibAliases({
+ *   '@cybertecpty/fs-utils': ['./libs/shared/fs/utils/src/index.ts'],
+ *   '@cybertecpty/git-utils': ['./tools/git/utils/src/index.ts']
+ * });
+ * // => {}
  */
 export function appOwnedLibAliases(
   paths: Readonly<Record<string, readonly string[]>>
