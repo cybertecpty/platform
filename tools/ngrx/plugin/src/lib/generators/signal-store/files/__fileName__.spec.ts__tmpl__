@@ -1,0 +1,18 @@
+import { TestBed } from '@angular/core/testing';
+import { <%= storeClassName %> } from './<%= fileName %>';
+
+describe('<%= storeClassName %>', () => {<% if (!providedInRoot) { %>
+  beforeEach(() => {
+    TestBed.configureTestingModule({ providers: [<%= storeClassName %>] });
+  });
+<% } %>
+  it('should be truthy', () => {
+    const store = TestBed.inject(<%= storeClassName %>);
+    expect(store).toBeTruthy();
+  });
+<% if (addEntities) { %>
+  it('should start with no entities', () => {
+    const store = TestBed.inject(<%= storeClassName %>);
+    expect(store.entities()).toEqual([]);
+  });
+<% } %>});

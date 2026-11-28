@@ -1,0 +1,24 @@
+import { signalStore, withState } from '@ngrx/signals';<% if (addEntities) { %>
+import { withEntities } from '@ngrx/signals/entities';<% } %><% if (!skipEvents) { %>
+import { eventGroup } from '@ngrx/signals/events';<% } %><% if (!skipLogger) { %>
+import { withStateLogger } from '@cybertecpty/ngrx-utils';<% } %>
+<% if (addEntities) { %>
+export interface <%= className %>Entity {
+  id: string;
+}
+<% } %>
+export interface <%= className %>State {}
+
+export const initial<%= className %>State: <%= className %>State = {};
+<% if (!skipEvents) { %>
+export const <%= propertyName %>Events = eventGroup({
+  source: '<%= titleName %>',
+  events: {}
+});
+<% } %>
+export const <%= storeClassName %> = signalStore(<% if (providedInRoot) { %>
+  { providedIn: 'root' },<% } if (!skipLogger) { %>
+  withStateLogger('<%= storeClassName %>'),<% } %>
+  withState(initial<%= className %>State)<% if (addEntities) { %>,
+  withEntities<<%= className %>Entity>()<% } %>
+);

@@ -1,0 +1,9 @@
+{
+  "generators": {
+    "signal-store": {
+      "factory": "./src/lib/generators/signal-store/generator",
+      "schema": "./src/lib/generators/signal-store/schema.json",
+      "description": "Create an NgRx signal store and its spec in a project, and export it from the project's barrel."
+    }
+  }
+}

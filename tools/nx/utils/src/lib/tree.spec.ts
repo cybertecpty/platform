@@ -1,8 +1,151 @@
 import type { Tree } from '@nx/devkit';
 import { createTreeWithEmptyWorkspace } from '@nx/devkit/testing';
-import { listFilesRecursively, listImportedPackages, replaceBarrelExport } from './tree';
+import {
+  addBarrelExport,
+  addProjectExport,
+  listFilesRecursively,
+  listImportedPackages,
+  projectBarrelPath,
+  projectSrcLibPath,
+  projectSrcRootPath,
+  replaceBarrelExport
+} from './tree';
 
 describe('tree', () => {
+  describe('project source paths', () => {
+    const withSourceRoot = { root: 'libs/demo', sourceRoot: 'libs/demo/lib-src' };
+    const withoutSourceRoot = { root: 'libs/demo' };
+
+    describe('projectSrcRootPath', () => {
+      it('is the `sourceRoot` when the project has one', () => {
+        expect(projectSrcRootPath(withSourceRoot)).toBe('libs/demo/lib-src');
+      });
+
+      it('is `{root}/src` when the project has no `sourceRoot`', () => {
+        expect(projectSrcRootPath(withoutSourceRoot)).toBe('libs/demo/src');
+      });
+    });
+
+    describe('projectBarrelPath', () => {
+      it('is `index.ts` in the source root', () => {
+        expect(projectBarrelPath(withSourceRoot)).toBe('libs/demo/lib-src/index.ts');
+      });
+
+      it('falls back to `{root}/src/index.ts`', () => {
+        expect(projectBarrelPath(withoutSourceRoot)).toBe('libs/demo/src/index.ts');
+      });
+    });
+
+    describe('projectSrcLibPath', () => {
+      it('is the `lib` folder of the source root', () => {
+        expect(projectSrcLibPath(withSourceRoot)).toBe('libs/demo/lib-src/lib');
+      });
+
+      it('falls back to `{root}/src/lib`', () => {
+        expect(projectSrcLibPath(withoutSourceRoot)).toBe('libs/demo/src/lib');
+      });
+    });
+  });
+
+  describe('addProjectExport', () => {
+    const BARREL = 'libs/demo/src/index.ts';
+    let tree: Tree;
+
+    beforeEach(() => {
+      tree = createTreeWithEmptyWorkspace();
+      tree.write(BARREL, "export * from './lib/existing';\n");
+    });
+
+    it('exports the module relative to the source root', () => {
+      addProjectExport(tree, { root: 'libs/demo' }, 'libs/demo/src/lib/stores/a-store');
+
+      expect(tree.read(BARREL, 'utf-8')).toContain("export * from './lib/stores/a-store';");
+    });
+
+    it('writes to the barrel in a custom source root', () => {
+      tree.write('libs/demo/app/index.ts', '');
+
+      addProjectExport(
+        tree,
+        { root: 'libs/demo', sourceRoot: 'libs/demo/app' },
+        'libs/demo/app/lib/a-store'
+      );
+
+      expect(tree.read('libs/demo/app/index.ts', 'utf-8')).toContain(
+        "export * from './lib/a-store';"
+      );
+      expect(tree.read(BARREL, 'utf-8')).not.toContain('a-store');
+    });
+
+    it('does not add a module the barrel already exports', () => {
+      addProjectExport(tree, { root: 'libs/demo' }, 'libs/demo/src/lib/existing');
+
+      expect(tree.read(BARREL, 'utf-8')).toBe("export * from './lib/existing';\n");
+    });
+  });
+
+  describe('addBarrelExport', () => {
+    const BARREL = 'libs/demo/src/index.ts';
+    let tree: Tree;
+
+    beforeEach(() => {
+      tree = createTreeWithEmptyWorkspace();
+    });
+
+    it('adds the statement to an exports-only barrel', () => {
+      tree.write(BARREL, `export * from './lib/a';\n`);
+
+      addBarrelExport(tree, BARREL, `export * from './lib/b';`);
+
+      const barrel = tree.read(BARREL, 'utf-8');
+
+      expect(barrel).toContain(`export * from './lib/a';`);
+      expect(barrel).toContain(`export * from './lib/b';`);
+    });
+
+    it('creates the barrel when it does not exist', () => {
+      addBarrelExport(tree, BARREL, `export * from './lib/a';`);
+
+      expect(tree.read(BARREL, 'utf-8')).toContain(`export * from './lib/a';`);
+    });
+
+    it('adds the statement after the last import of a barrel that has imports', () => {
+      tree.write(BARREL, `import { x } from './lib/x';\n\nexport { x };\n`);
+
+      addBarrelExport(tree, BARREL, `export * from './lib/b';`);
+
+      const barrel = tree.read(BARREL, 'utf-8') ?? '';
+
+      expect(barrel.indexOf(`export * from './lib/b';`)).toBeGreaterThan(
+        barrel.indexOf(`import { x }`)
+      );
+    });
+
+    it('does not add a statement the barrel already holds', () => {
+      tree.write(BARREL, `export * from './lib/a';\n`);
+
+      addBarrelExport(tree, BARREL, `export * from './lib/a';`);
+
+      expect(tree.read(BARREL, 'utf-8')).toBe(`export * from './lib/a';\n`);
+    });
+
+    it('matches an existing statement in the other quote style', () => {
+      tree.write(BARREL, `export * from "./lib/a";\n`);
+
+      addBarrelExport(tree, BARREL, `export * from './lib/a';`);
+
+      expect(tree.read(BARREL, 'utf-8')).toBe(`export * from "./lib/a";\n`);
+    });
+
+    it('matches an existing statement written over several lines', () => {
+      tree.write(BARREL, `export {\n  one,\n  two\n} from './lib/a';\n`);
+
+      addBarrelExport(tree, BARREL, `export { one, two } from './lib/a';`);
+
+      expect(tree.read(BARREL, 'utf-8')).toBe(`export {\n  one,\n  two\n} from './lib/a';\n`);
+    });
+  });
+
   describe('listFilesRecursively', () => {
     let tree: Tree;
 

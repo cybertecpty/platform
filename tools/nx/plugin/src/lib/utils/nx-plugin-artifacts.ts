@@ -1,4 +1,9 @@
-import { isProjectOfType, readProjectPackageJson } from '@cybertecpty/nx-utils';
+import {
+  addBarrelExport,
+  isProjectOfType,
+  projectBarrelPath,
+  readProjectPackageJson
+} from '@cybertecpty/nx-utils';
 import { orderByKeys } from '@cybertecpty/utils';
 import {
   joinPathFragments,
@@ -8,8 +13,6 @@ import {
   type ProjectConfiguration,
   type Tree
 } from '@nx/devkit';
-import { addGlobal } from '@nx/js';
-import { ensureTypescript } from '@nx/js/internal';
 
 /** How the plugin's `src/index.ts` re-exports one artifact. */
 export interface PluginArtifactExport {
@@ -44,46 +47,22 @@ const WRAPPER_NAMES: Record<PluginArtifactKind, string> = {
   generator: 'nx-gen'
 };
 
-/** The TypeScript module, loaded on first use the way `@nx/*` generators load it. */
-let tsModule: ReturnType<typeof ensureTypescript> | undefined;
-
 /**
  * Re-exports an artifact's default function and options type from the plugin's
- * `src/index.ts` with `@nx/js`'s `addGlobal`, creating the index if it is missing.
- * `addGlobal` inserts after the last `import` (at the top of an exports-only barrel);
- * `formatFiles` then sorts the exports. It does not check for duplicates: the wrappers
- * refuse to regenerate an existing artifact (`assertArtifactAbsent`), and a duplicate
- * export would fail `typecheck` anyway.
+ * `src/index.ts` with `addBarrelExport`, creating the index if it is missing;
+ * `formatFiles` then sorts the exports.
  */
 export function addPluginExports(
   tree: Tree,
-  { root, sourceRoot }: Pick<ProjectConfiguration, 'root' | 'sourceRoot'>,
+  project: Pick<ProjectConfiguration, 'root' | 'sourceRoot'>,
   { kind, directory, fnName, optionsType }: PluginArtifactExport
 ): void {
-  const indexPath = joinPathFragments(sourceRoot ?? joinPathFragments(root, 'src'), 'index.ts');
+  const indexPath = projectBarrelPath(project);
   const artifactDir = `./lib/${kind}s/${directory}`;
 
-  if (!tree.exists(indexPath)) {
-    tree.write(indexPath, '');
-  }
-
-  tsModule ??= ensureTypescript();
-  let sourceFile = tsModule.createSourceFile(
-    indexPath,
-    tree.read(indexPath, 'utf-8') ?? '',
-    tsModule.ScriptTarget.Latest,
-    true
-  );
-
-  sourceFile = addGlobal(
+  addBarrelExport(tree, indexPath, `export type { ${optionsType} } from '${artifactDir}/schema';`);
+  addBarrelExport(
     tree,
-    sourceFile,
-    indexPath,
-    `export type { ${optionsType} } from '${artifactDir}/schema';`
-  );
-  addGlobal(
-    tree,
-    sourceFile,
     indexPath,
     `export { default as ${fnName} } from '${artifactDir}/${kind}';`
   );
