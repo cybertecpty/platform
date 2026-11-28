@@ -119,6 +119,29 @@ describe('project-tags', () => {
       ]);
     });
 
+    it('adds `app:<app>` for a lib owned by an app', () => {
+      const options: NxProjectOptions = {
+        app: 'cybertec-io',
+        domain: 'billing',
+        name: 'billing-ui',
+        platform: 'frontend',
+        type: 'ui'
+      };
+
+      expect(projectTagsFromOptions(options)).toEqual([
+        'app:cybertec-io',
+        'domain:billing',
+        'platform:frontend',
+        'type:ui'
+      ]);
+    });
+
+    it('rejects `app` with the `shared` domain', () => {
+      expect(() =>
+        projectTagsFromOptions({ app: 'cybertec-io', name: 'x', platform: 'frontend', type: 'ui' })
+      ).toThrow('`app` cannot be set for the `shared` domain');
+    });
+
     it('compounds a multi-segment (subdomain) domain into a single hyphenated domain tag', () => {
       const options: NxProjectOptions = {
         name: 'checkout',

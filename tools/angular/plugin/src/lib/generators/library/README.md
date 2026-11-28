@@ -12,6 +12,11 @@ Creates an Angular library under `libs/<domain>[/<subdomain>...]/[<group>/]<type
 - `--domain` is required. The project's `name`, `directory` and `platform:`/`type:`/`domain:` tags
   are derived from `--domain`/`--group`/`--name` through the shared `@cybertecpty/nx-utils` helpers,
   so there is no `--directory`.
+- `--app` makes the library app-owned (ADR 0023): it is placed under `apps/{app}/` in place of
+  `libs/`, with the same `{domain}[/{subdomain}...]/[{group}/]{type}` below it, and gets an
+  `app:{app}` tag. The name is unchanged. The app must exist and be a `platform:frontend`
+  `type:app` project. `--app` is rejected with the `shared` domain, and nothing is written when it
+  is rejected.
 - Applies per-type defaults for `routing`, `skipModule` and `standalone`, and forces the ones a type
   cannot have:
 
@@ -76,6 +81,7 @@ pnpm nx g @cybertecpty/angular-plugin:ng-lib {type} --domain={domain} [options]
 | ---------------- | ------- | -------- | --------------- | ----------------------------------------------------------------------------------------- |
 | `type`           | string  | yes      | —               | Positional 0. `core` \| `data-access` \| `feature` \| `testing` \| `ui` \| `utils`.       |
 | `domain`         | string  | yes      | —               | Product domain, optionally with `/`-separated subdomains (e.g. `billing/checkout`).       |
+| `app`            | string  | no       | —               | Owning app (ADR 0023): places the library under `apps/{app}/...` with an `app:{app}` tag. |
 | `group`          | string  | no       | —               | Distinguishes this library from siblings of the same type within its domain.              |
 | `name`           | string  | no       | derived         | Literal project-name override. Does not change where the project lives.                   |
 | `unitTestRunner` | string  | no       | `vitest-analog` | `vitest-analog` \| `vitest-angular` \| `none` (ADR 0018 — Vitest only).                   |

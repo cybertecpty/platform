@@ -1,6 +1,7 @@
 import {
   addTsConfigTypes,
   addTypecheckTarget,
+  assertOwningApp,
   forceTestingLibNotBuildable,
   normalizeProjectOptions,
   removeRedundantLintTarget,
@@ -36,7 +37,9 @@ import type { NgLibGeneratorOptions, NormalizedNgLibGeneratorOptions } from './s
  *
  * Fixes the project as `platform:frontend` and derives its name, directory
  * (`libs/<domain>[/<subdomain>...]/[<group>/]<type>`) and tags from the ADR 0009 helpers rather
- * than taking a raw `directory`. Applies the per-type defaults for `routing`, `skipModule` and
+ * than taking a raw `directory`. With `--app` the library is owned by that app (ADR 0023): it goes
+ * under `apps/<app>` instead of `libs`, is tagged `app:<app>`, and the app must be a frontend
+ * `type:app` project of the workspace. Applies the per-type defaults for `routing`, `skipModule` and
  * `standalone`, forces a `testing` library non-buildable, and turns the Vitest scaffold into the
  * ADR 0018 layout. Adds the folder skeleton for the library's type, and the `typecheck` stub, and
  * sets a buildable library's `@angular/*` peer dependencies from what it imports and gives it an
@@ -47,7 +50,7 @@ export async function ngLibGenerator(
   tree: Tree,
   rawOptions: NgLibGeneratorOptions
 ): Promise<GeneratorCallback> {
-  const options = normalizeOptions(rawOptions);
+  const options = normalizeOptions(tree, rawOptions);
   const { name, type, unitTestRunner } = options;
 
   const buildable = forceTestingLibNotBuildable({
@@ -63,7 +66,7 @@ export async function ngLibGenerator(
     value: options.publishable
   });
 
-  const nxOptions = omit(options, ['domain', 'group', 'platform', 'type']);
+  const nxOptions = omit(options, ['app', 'domain', 'group', 'platform', 'type']);
 
   // `@nx/vitest` adds `@vitest/ui` at its own pinned Vitest range (`~4.1.0`), which the workspace's
   // Vitest 5 is outside of, and nothing here uses it.
@@ -179,7 +182,14 @@ function normalizeFeatureOptions(
   };
 }
 
-function normalizeOptions(rawOptions: NgLibGeneratorOptions): NormalizedNgLibGeneratorOptions {
+function normalizeOptions(
+  tree: Tree,
+  rawOptions: NgLibGeneratorOptions
+): NormalizedNgLibGeneratorOptions {
+  // Check `app` before anything is written: the options, then the workspace (the app exists and
+  // shares the platform).
+  assertOwningApp(tree, { ...rawOptions, platform: 'frontend' });
+
   let options: NormalizedNgLibGeneratorOptions = normalizeProjectOptions({
     ...rawOptions,
     platform: 'frontend',

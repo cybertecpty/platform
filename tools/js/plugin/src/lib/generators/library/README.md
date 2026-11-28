@@ -20,6 +20,11 @@ directory, and tag conventions (ADR 0009).
   `--domain`/`--group`/`--name` via the shared `@cybertecpty/nx-utils` helpers
   (`projectNameFromOpts`, `projectDirFromOpts`, `projectTagsFromOptions`) rather than taking a raw
   `--directory`.
+- `--app` makes the library app-owned (ADR 0023): it is placed under `apps/<app>/` in place of
+  `libs/`, with the same `<domain>[/<subdomain>...]/[<group>/]<type>` below it, and gets an
+  `app:<app>` tag. The name is unchanged. The app must exist, be a `type:app` project and share the
+  library's platform (a `shared` library fits any app). `--app` is rejected with `--platform=tools`
+  and the `shared` domain, and nothing is written when it is rejected.
 - Forwards every other option to `@nx/js:library` unchanged, with workspace defaults applied
   where the native generator's own default doesn't match this workspace's conventions
   (`unitTestRunner: vitest`, `linter: eslint`, `testEnvironment: node`, `strict: true`).
@@ -51,6 +56,7 @@ pnpm nx g @cybertecpty/js-plugin:ts-lib <type> --domain=<domain> [options]
 | `type`               | string  | yes                     | —        | Positional 0. `testing` \| `types` \| `utils`. `api` \| `services` \| `infra` are rejected (ADR 0017). |
 | `domain`             | string  | yes, except for `tools` | —        | Product domain, optionally with `/`-separated subdomains (e.g. `billing/checkout`).                    |
 | `platform`           | string  | yes                     | —        | `frontend` \| `shared` \| `tools`. `frontend` is rejected for `utils` and `testing` (use `ng-lib`).    |
+| `app`                | string  | no                      | —        | Owning app (ADR 0023): places the library under `apps/<app>/...` and adds an `app:<app>` tag.          |
 | `group`              | string  | no                      | —        | Distinguishes this library from siblings of the same type within its domain.                           |
 | `name`               | string  | no                      | derived  | Literal project-name override. Does not change where the project lives.                                |
 | `bundler`            | string  | no                      | `none`   | `swc` \| `tsc` \| `rollup` \| `vite` \| `esbuild` \| `none`. Forced to `none` for `testing`.           |

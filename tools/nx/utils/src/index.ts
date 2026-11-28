@@ -3,6 +3,8 @@ export {
   findProjectForPath
 } from 'nx/src/project-graph/utils/find-project-for-path';
 export * from './lib/affected';
+export * from './lib/app-owned-libs.mjs';
+export * from './lib/assert-owning-app';
 export * from './lib/dep-constraints';
 export * from './lib/dep-constraints-const.mjs';
 export * from './lib/env';

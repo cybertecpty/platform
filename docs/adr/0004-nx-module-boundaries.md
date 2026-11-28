@@ -771,3 +771,14 @@ ADR 0022 retires that suffix, so they sit in `src/lib/generated/` of the `type:t
 (ADR 0017, 2026-11-25 amendment). The matrix is unchanged, and the generated-versus-hand-written
 distinction is still a path, not a boundary rule: a review has to catch a hand edit to a file under
 `generated/`.
+
+## Amendment (2026-11-28): the `app:` tag marks a lib owned by one app
+
+- Status: proposed
+- Deciders: djmcgrath
+- Implemented by: ADR 0023 (issue #405)
+
+A lib scaffolded with `--app` carries `app:<name>` as well as its `platform:`, `type:` and
+`domain:` tags. The matrix is unchanged: ownership cannot be a row, because a row is selected by the
+source project's tags and has no negation, so ADR 0023 enforces it by location with an ESLint import
+ban. Its `domain:` is a real domain, not the app's own, so a domain still does not mix apps and libs.

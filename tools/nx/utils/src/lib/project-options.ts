@@ -77,6 +77,46 @@ export const NX_PROJECT_TYPES: readonly NxProjectType[] = Object.keys(
 export const PATH_SEGMENT_PATTERN = /^[a-z0-9]+(-[a-z0-9]+)*$/;
 
 /**
+ * Throws unless `options.app` (the app that owns a lib, ADR 0023) is absent or valid: a
+ * well-formed path segment on a library of a product domain. Rejects an app project, a
+ * `platform:tools` project, the `shared` domain (which a project gets when it names none), and a
+ * domain starting with `e2e`, which would place the lib inside the app's e2e project.
+ *
+ * Checks the options only. That the app exists, and that the platforms agree, needs the
+ * workspace: see `assertOwningApp`.
+ */
+export function assertValidAppOption(options: NxProjectOptions): void {
+  const { app, domain, platform, type } = options;
+
+  if (!app) {
+    return;
+  }
+
+  assertValidPathSegment(app, 'app');
+
+  if (type === 'app') {
+    throw new Error('`app` cannot be set for an app project.');
+  }
+
+  if (platform === 'tools') {
+    throw new Error('`app` cannot be set for a `platform:tools` project.');
+  }
+
+  if (normalizeDomainPath(options) === 'shared') {
+    throw new Error(
+      '`app` cannot be set for the `shared` domain, which belongs to no one app. Pass a product `--domain`.'
+    );
+  }
+
+  if (domain?.split('/')[0] === 'e2e') {
+    throw new Error(
+      '`domain` cannot start with `e2e` for a lib owned by an app: it would sit inside the' +
+        " app's e2e project."
+    );
+  }
+}
+
+/**
  * Throws unless `value` is a single well-formed path segment: lowercase
  * alphanumeric words joined by single hyphens. Rejects empty strings,
  * leading/trailing/doubled hyphens, slashes, and uppercase — the class of
@@ -94,12 +134,16 @@ export function assertValidPathSegment(value: string, optionName: string): void 
 
 /**
  * Determines the top-level directory a project's source lives under: `apps`
- * for `type: 'app'` (ADR 0010), `tools` for `platform: 'tools'` projects, and
- * `libs` for everything else (ADR 0009).
+ * for `type: 'app'` (ADR 0010), `apps/<app>` for a lib owned by an app (ADR 0023),
+ * `tools` for `platform: 'tools'` projects, and `libs` for everything else (ADR 0009).
  */
 export function determineTopLevelProjectDir(options: NxProjectOptions): string {
   if (options.type === 'app') {
     return 'apps';
+  }
+
+  if (options.app) {
+    return joinPathFragments('apps', options.app);
   }
 
   if (options.platform === 'tools') {
@@ -205,9 +249,14 @@ export function normalizeProjectOptions<T extends NxProjectOptions>(
  * deliberate exception: a `shared`-domain project still lives under
  * `libs/shared/...` here even though `projectNameFromOpts` drops `shared`
  * from its *name* (ADR 0009 amendments, 2026-09-19 and 2026-11-05).
+ *
+ * A lib owned by an app (`app`, ADR 0023) gets `apps/<app>/<domain>/...` instead
+ * of `libs/<domain>/...`; the rest of the path is unchanged.
  */
 export function projectDirFromOpts(opts: NxProjectOptions): string {
   const { domain, group, name, type } = opts;
+
+  assertValidAppOption(opts);
 
   const topLevelDir = determineTopLevelProjectDir(opts);
 

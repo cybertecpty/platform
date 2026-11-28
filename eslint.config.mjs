@@ -7,7 +7,12 @@ import astro from 'eslint-plugin-astro';
 import perfectionist from 'eslint-plugin-perfectionist';
 import playwright from 'eslint-plugin-playwright';
 import unicorn from 'eslint-plugin-unicorn';
+import { readFileSync } from 'node:fs';
 import tseslint from 'typescript-eslint';
+import {
+  appOwnedImportBlocks,
+  appOwnedLibAliases
+} from './tools/nx/utils/src/lib/app-owned-libs.mts';
 import { DEP_CONSTRAINTS } from './tools/nx/utils/src/lib/dep-constraints-const.mts';
 
 // type:e2e projects (ADR 0010): Playwright, not Vitest. Flat config globs can't read
@@ -88,6 +93,17 @@ const testingImportFiles = [
   'vitest.base.mts',
   '**/eslint.config.{mjs,js,cjs}'
 ];
+
+// The libs an app owns (ADR 0023) may be imported only from that app. `appOwnedImportBlocks` builds
+// the `no-restricted-imports` blocks from the aliases in `tsconfig.base.json` that point under
+// `apps/<app>/`, because `@nx/enforce-module-boundaries` cannot say "only this app". The base rule
+// is free for it: the blocks below turn it off in favor of the TypeScript-aware one. With no
+// app-owned lib, there are no blocks.
+const tsconfigBase = JSON.parse(readFileSync(`${workspaceRoot}/tsconfig.base.json`, 'utf8'));
+const appOwnedBlocks = appOwnedImportBlocks(
+  appOwnedLibAliases(tsconfigBase.compilerOptions.paths ?? {}),
+  workspaceRoot
+);
 
 export default [
   ...nx.configs['flat/base'],
@@ -241,6 +257,7 @@ export default [
       '@typescript-eslint/no-restricted-imports': ['error', lodashRestrictions]
     }
   },
+  ...appOwnedBlocks,
   {
     // eslint-plugin-unicorn: a curated list of bug-catching rules, never its opinionated
     // `recommended` preset. Held at ^65 until the ESLint 10 migration. See ADR 0008,

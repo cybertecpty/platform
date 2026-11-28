@@ -1,6 +1,7 @@
 import { logger } from '@nx/devkit';
 import { MockInstance } from 'vitest';
 import {
+  assertValidAppOption,
   assertValidPathSegment,
   determineTopLevelProjectDir,
   domainPathToName,
@@ -69,7 +70,86 @@ describe('project-options', () => {
     });
   });
 
+  describe('assertValidAppOption', () => {
+    it('accepts a project with no `app`', () => {
+      expect(() =>
+        assertValidAppOption({ domain: 'billing', platform: 'frontend', type: 'ui' })
+      ).not.toThrow();
+    });
+
+    it('accepts a frontend lib of a product domain owned by an app', () => {
+      expect(() =>
+        assertValidAppOption({
+          app: 'cybertec-io',
+          domain: 'billing/checkout',
+          platform: 'frontend',
+          type: 'ui'
+        })
+      ).not.toThrow();
+    });
+
+    it('rejects `app` on an app project', () => {
+      expect(() =>
+        assertValidAppOption({
+          app: 'vault',
+          name: 'vault-admin',
+          platform: 'frontend',
+          type: 'app'
+        })
+      ).toThrow('`app` cannot be set for an app project.');
+    });
+
+    it('rejects `app` on a tools project', () => {
+      expect(() =>
+        assertValidAppOption({ app: 'vault', group: 'git', platform: 'tools', type: 'utils' })
+      ).toThrow('`app` cannot be set for a `platform:tools` project.');
+    });
+
+    it('rejects `app` with the `shared` domain', () => {
+      expect(() =>
+        assertValidAppOption({ app: 'vault', domain: 'shared', platform: 'frontend', type: 'ui' })
+      ).toThrow('`app` cannot be set for the `shared` domain');
+    });
+
+    it('rejects `app` with no domain, which defaults to `shared`', () => {
+      expect(() =>
+        assertValidAppOption({ app: 'vault', group: 'forms', platform: 'frontend', type: 'ui' })
+      ).toThrow('`app` cannot be set for the `shared` domain');
+    });
+
+    it.each(['e2e', 'e2e/smoke'])(
+      'rejects the domain `%s`, which sits inside the e2e project',
+      domain => {
+        expect(() =>
+          assertValidAppOption({ app: 'vault', domain, platform: 'frontend', type: 'ui' })
+        ).toThrow('`domain` cannot start with `e2e`');
+      }
+    );
+
+    it('rejects a malformed app name', () => {
+      expect(() =>
+        assertValidAppOption({
+          app: 'Vault/Admin',
+          domain: 'billing',
+          platform: 'frontend',
+          type: 'ui'
+        })
+      ).toThrow('`app` segment "Vault/Admin" must be lowercase alphanumeric words');
+    });
+  });
+
   describe('determineTopLevelProjectDir', () => {
+    it('returns apps/<app> for a lib owned by an app', () => {
+      expect(
+        determineTopLevelProjectDir({
+          app: 'cybertec-io',
+          domain: 'billing',
+          platform: 'frontend',
+          type: 'ui'
+        })
+      ).toBe('apps/cybertec-io');
+    });
+
     it('returns apps for an app project', () => {
       expect(
         determineTopLevelProjectDir({ name: 'game-collector', platform: 'frontend', type: 'app' })
@@ -280,6 +360,41 @@ describe('project-options', () => {
           type: 'ui'
         })
       ).toBe('libs/shared/design-system/ui');
+    });
+
+    it('places a lib owned by an app under apps/<app>/<domain>/<group>/<type>', () => {
+      expect(
+        projectDirFromOpts({
+          app: 'cybertec-io',
+          domain: 'billing/checkout',
+          group: 'cart',
+          platform: 'frontend',
+          type: 'feature'
+        })
+      ).toBe('apps/cybertec-io/billing/checkout/cart/feature');
+    });
+
+    it('keeps the directory when `name` overrides the name of a lib owned by an app', () => {
+      expect(
+        projectDirFromOpts({
+          app: 'cybertec-io',
+          domain: 'billing',
+          name: 'custom',
+          platform: 'frontend',
+          type: 'ui'
+        })
+      ).toBe('apps/cybertec-io/billing/ui');
+    });
+
+    it('rejects an app-owned lib in the shared domain before deriving a directory', () => {
+      expect(() =>
+        projectDirFromOpts({
+          app: 'cybertec-io',
+          domain: 'shared',
+          platform: 'frontend',
+          type: 'ui'
+        })
+      ).toThrow('`app` cannot be set for the `shared` domain');
     });
 
     it('places a tools project under tools/<group>/<type>', () => {

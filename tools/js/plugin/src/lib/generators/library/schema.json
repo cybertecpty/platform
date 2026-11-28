@@ -15,6 +15,10 @@
       "description": "Generates `billing-checkout-types` at `libs/billing/checkout/types`, tagged `domain:billing-checkout`."
     },
     {
+      "command": "nx g ts-lib utils --domain=billing --platform=shared --group=format --app=cybertec-io",
+      "description": "Generates `billing-format-utils` at `apps/cybertec-io/billing/format/utils`, tagged `app:cybertec-io,domain:billing,platform:shared,type:utils` (ADR 0023)."
+    },
+    {
       "command": "nx g ts-lib testing --platform=tools --group=nx",
       "description": "Generates `nx-testing` at `tools/nx/testing`, tagged `platform:tools,type:testing` — tools projects are domain-exempt, so `--domain` is not accepted."
     }
@@ -41,6 +45,11 @@
       "description": "The project's `platform:` tag. Required — `testing` /`utils` are platform-polymorphic (ADR 0009) so this must be given explicitly. `frontend` is rejected for `utils` and `testing`, which are Angular libraries (use `@cybertecpty/angular-plugin:ng-lib`). `tools` places the project under `tools/[<group>/]<type>` with no `domain:` tag.",
       "enum": ["frontend", "shared", "tools"],
       "x-priority": "important"
+    },
+    "app": {
+      "type": "string",
+      "description": "The app that owns this library (ADR 0023). The library is placed under `apps/<app>/<domain>[/<subdomain>...]/[<group>/]<type>` instead of `libs`, and tagged `app:<app>`. The app must exist, be a `type:app` project, and share the library's platform (a `shared` library fits any app). Rejected with `--platform=tools` and the `shared` domain.",
+      "pattern": "^[a-z0-9]+(?:-[a-z0-9]+)*$"
     },
     "group": {
       "type": "string",

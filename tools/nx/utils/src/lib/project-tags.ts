@@ -1,7 +1,7 @@
 import type { NxProjectOptions, NxProjectType } from '@cybertecpty/nx-types';
 import { wildcardToRegExp } from '@cybertecpty/utils';
 import type { ProjectConfiguration } from '@nx/devkit';
-import { domainPathToName, normalizeDomainPath } from './project-options';
+import { assertValidAppOption, domainPathToName, normalizeDomainPath } from './project-options';
 
 /**
  * The separator between a tag's key and its value, as in `platform:backend`.
@@ -108,14 +108,17 @@ export function parseProjectTags(input: string | readonly string[]): string[] {
 
 /**
  * Derives a project's tags from its generator options: the explicit `tags`, plus `platform`,
- * `type` and, when the project has one, `domain` (a subdomain path is joined with hyphens).
+ * `type` and, when the project has one, `domain` (a subdomain path is joined with hyphens) and
+ * `app` (the app that owns the lib, ADR 0023).
  */
 export function projectTagsFromOptions(options: NxProjectOptions): string[] {
-  const { platform, tags, type } = options;
+  const { app, platform, tags, type } = options;
+  assertValidAppOption(options);
   const domainPath = normalizeDomainPath(options);
 
   return parseProjectTags([
     ...(tags ? tags.split(PROJECT_TAGS_SEPARATOR) : []),
+    ...(app ? [createProjectTag('app', app)] : []),
     createProjectTag('platform', platform),
     createProjectTag('type', type),
     ...(domainPath ? [createProjectTag('domain', domainPathToName(domainPath))] : [])
